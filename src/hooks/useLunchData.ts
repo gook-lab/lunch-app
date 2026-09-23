@@ -1,0 +1,81 @@
+/**
+ * 화면이 쓰는 데이터 한 덩어리.
+ *
+ * places 와 최근 14일 visits 는 1회 읽기, 오늘 문서만 실시간 구독한다.
+ * 오늘 결정이 바뀌면 그 값을 14일 목록에 머지해서 후보 산출이 바로 반영되게 한다
+ * (같은 날 재결정하면 후보에서 그 가게가 빠져야 한다).
+ *
+ * day 가 바뀌면(자정 롤오버) 구독을 갈아끼우고 이력을 다시 읽는다.
+ */
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { DayId } from '../lib/date';
+import type { Place, Visit } from '../lib/candidates';
+import {
+  fetchPlaces,
+  fetchRecentVisits,
+  subscribeToday,
+  type TodayDecision,
+} from '../services/lunch';
+
+export type LoadState = 'loading' | 'ready' | 'error';
+
+export interface LunchData {
+  state: LoadState;
+  error: unknown;
+  places: Place[];
+  /** 최근 14일 + 오늘 결정이 머지된 목록. */
+  visits: Visit[];
+  today: TodayDecision | null;
+  reload: () => void;
+}
+
+export function useLunchData(day: DayId): LunchData {
+  const [state, setState] = useState<LoadState>('loading');
+  const [error, setError] = useState<unknown>(null);
+  const [places, setPlaces] = useState<Place[]>([]);
+  const [history, setHistory] = useState<Visit[]>([]);
+  const [today, setToday] = useState<TodayDecision | null>(null);
+  const [nonce, setNonce] = useState(0);
+
+  const reload = useCallback(() => setNonce((n) => n + 1), []);
+
+  useEffect(() => {
+    let alive = true;
+    setState('loading');
+    setError(null);
+
+    Promise.all([fetchPlaces(), fetchRecentVisits(day)])
+      .then(([p, v]) => {
+        if (!alive) return;
+        setPlaces(p);
+        setHistory(v);
+        setState('ready');
+      })
+      .catch((e) => {
+        if (!alive) return;
+        setError(e);
+        setState('error');
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [day, nonce]);
+
+  useEffect(() => {
+    // 구독은 익명 로그인이 붙은 뒤에 걸린다 — subscribeToday 안에서 기다린다.
+    // 에러가 나면 리스너가 죽은 것이므로 화면을 에러 상태로 내린다. 조용히
+    // 두면 오늘 결정이 이미 있어도 "아직 안 정했습니다" 로 보인다.
+    return subscribeToday(day, setToday, (e) => {
+      setError(e);
+      setState('error');
+    });
+  }, [day, nonce]);
+
+  const visits = useMemo(() => {
+    const withoutToday = history.filter((v) => v.id !== day);
+    return today ? [...withoutToday, { id: day, placeId: today.placeId }] : withoutToday;
+  }, [history, today, day]);
+
+  return { state, error, places, visits, today, reload };
+}

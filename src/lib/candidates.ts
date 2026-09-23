@@ -1,0 +1,204 @@
+/**
+ * 후보 산출 — 이 앱의 진짜 로직 (엔지니어링 리뷰 D5).
+ *
+ * 돌림판 애니메이션은 표시일 뿐이고, "오늘 뭐가 후보인가" 를 정하는 것은 여기다.
+ * 순수 함수로 두는 이유는 하나 — 14일 제외와 최소 5곳 보정이 섞인 부분이 가장
+ * 틀리기 쉬운데, 화면 안에 있으면 브라우저를 열어야만 확인할 수 있기 때문이다.
+ *
+ * 반환은 단계별 카운트다. totalCount 하나로는 화면에 띄울 문구를 만들 수 없다.
+ * 12곳 중 도보에서 3곳, 카테고리에서 2곳이 빠지고 남은 7곳 중 5곳이 최근 방문이면
+ * "12곳 중 7곳은 최근에 갔습니다" 의 7 은 실제(5)와 다르다. 이 문구가 이 앱의
+ * 유일한 공정성 장치라 숫자가 틀리면 기능의 명분이 사라진다.
+ */
+
+import { daysBetween, type DayId } from './date';
+
+export interface Place {
+  id: string;
+  name: string;
+  category: string;
+  lat: number;
+  lng: number;
+  /** 저장 필드. lat/lng 를 고치면 같이 재계산해서 쓴다. */
+  walkMin: number;
+  /** 중복 등록 방지 키. */
+  kakaoPlaceId: string;
+  active: boolean;
+  /** 익명 로그인 uid. 사람을 특정하지 못한다. */
+  createdBy: string;
+}
+
+export interface Visit {
+  /** 'YYYYMMDD' (KST). 하루 한 건. */
+  id: DayId;
+  placeId: string;
+}
+
+export interface Filters {
+  /** 도보 상한(분). */
+  maxWalkMin: number;
+  /** 켜진 카테고리 칩. 비어 있으면 카테고리로 거르지 않는다. */
+  categories: string[];
+  /** 최근 방문 제외 칩. 끌 수 있다. */
+  excludeRecent: boolean;
+}
+
+export type EmptyReason =
+  | { kind: 'no-places' }
+  | { kind: 'all-inactive'; total: number }
+  | { kind: 'walk'; widerWalkMin: number; countAtWiderWalk: number }
+  | { kind: 'category'; countWithoutCategory: number };
+
+export interface CandidateResult {
+  candidates: Place[];
+  /** active === true 인 가게 수. */
+  activeCount: number;
+  /** 도보 필터까지 통과한 수. */
+  afterWalkCount: number;
+  /** 카테고리 칩까지 통과한 수. 화면 문구의 "N곳 중". */
+  afterCategoryCount: number;
+  /** 그 N곳 중 최근 14일 안에 간 곳 수. 화면 문구의 "M곳은 최근에 갔습니다". */
+  recentlyVisitedCount: number;
+  /** 최소 5곳을 채우려고 제외에서 다시 꺼낸 수. 몰래 풀지 않고 밝힌다. */
+  releasedCount: number;
+  /** 전부 풀어도 5곳이 안 되는 상태. 있는 만큼 돌린다. */
+  shortOfMinimum: boolean;
+  emptyReason: EmptyReason | null;
+}
+
+/** 방문 제외 창. UI 로 길이를 바꾸지 못한다. */
+export const RECENT_WINDOW_DAYS = 14;
+
+/** 이 아래로 떨어지면 오래된 방문부터 풀어서 채운다. */
+export const MIN_CANDIDATES = 5;
+
+/**
+ * 풀이 이 수를 넘으면 위 보정은 사실상 발동하지 않는다.
+ * 설계의 2주차 목표이기도 하다 — 로직에는 쓰지 않고 화면 안내에만 쓴다.
+ */
+export const HEALTHY_POOL_SIZE = 20;
+
+/** 도보 칩 단계. 후보 0곳일 때 "넓히면 N곳" 을 제안하는 데 쓴다. */
+export const WALK_STEPS = [5, 10, 15] as const;
+
+/** placeId -> 창 안에서 가장 마지막 방문일. 창 밖 방문은 담지 않는다. */
+function lastVisitWithinWindow(
+  visits: readonly Visit[],
+  today: DayId,
+): Map<string, DayId> {
+  const last = new Map<string, DayId>();
+  for (const visit of visits) {
+    const age = daysBetween(visit.id, today);
+    // 미래 날짜(기기 시계가 빠른 경우)는 창 밖으로 보지 않고 최신으로 취급한다.
+    if (age > RECENT_WINDOW_DAYS) continue;
+    const current = last.get(visit.placeId);
+    if (current === undefined || visit.id > current) {
+      last.set(visit.placeId, visit.id);
+    }
+  }
+  return last;
+}
+
+function emptyReasonFor(
+  places: readonly Place[],
+  active: readonly Place[],
+  afterWalk: readonly Place[],
+  filters: Filters,
+): EmptyReason {
+  if (places.length === 0) return { kind: 'no-places' };
+  if (active.length === 0) return { kind: 'all-inactive', total: places.length };
+
+  if (afterWalk.length === 0) {
+    const wider = WALK_STEPS.find((step) => step > filters.maxWalkMin);
+    const widerWalkMin = wider ?? filters.maxWalkMin;
+    return {
+      kind: 'walk',
+      widerWalkMin,
+      countAtWiderWalk: active.filter((p) => p.walkMin <= widerWalkMin).length,
+    };
+  }
+
+  // 도보까지는 통과했는데 비었다면 원인은 카테고리뿐이다.
+  return { kind: 'category', countWithoutCategory: afterWalk.length };
+}
+
+/**
+ * 필터 순서는 (1) active → (2) 도보 → (3) 카테고리 → (4) 최근 방문 제외.
+ * (4) 를 걸어 5곳 미만이 되면 마지막 방문일이 오래된 순으로 하나씩 푼다.
+ */
+export function selectCandidates(
+  places: readonly Place[],
+  visits: readonly Visit[],
+  filters: Filters,
+  today: DayId,
+): CandidateResult {
+  const active = places.filter((p) => p.active);
+  const afterWalk = active.filter((p) => p.walkMin <= filters.maxWalkMin);
+  const afterCategory =
+    filters.categories.length === 0
+      ? afterWalk
+      : afterWalk.filter((p) => filters.categories.includes(p.category));
+
+  const base = {
+    activeCount: active.length,
+    afterWalkCount: afterWalk.length,
+    afterCategoryCount: afterCategory.length,
+  };
+
+  if (afterCategory.length === 0) {
+    return {
+      ...base,
+      candidates: [],
+      recentlyVisitedCount: 0,
+      releasedCount: 0,
+      shortOfMinimum: true,
+      emptyReason: emptyReasonFor(places, active, afterWalk, filters),
+    };
+  }
+
+  const lastVisit = lastVisitWithinWindow(visits, today);
+  const recent = afterCategory.filter((p) => lastVisit.has(p.id));
+
+  if (!filters.excludeRecent) {
+    return {
+      ...base,
+      candidates: [...afterCategory],
+      recentlyVisitedCount: recent.length,
+      releasedCount: 0,
+      shortOfMinimum: afterCategory.length < MIN_CANDIDATES,
+      emptyReason: null,
+    };
+  }
+
+  const fresh = afterCategory.filter((p) => !lastVisit.has(p.id));
+  const shortfall = MIN_CANDIDATES - fresh.length;
+
+  if (shortfall <= 0) {
+    return {
+      ...base,
+      candidates: fresh,
+      recentlyVisitedCount: recent.length,
+      releasedCount: 0,
+      shortOfMinimum: false,
+      emptyReason: null,
+    };
+  }
+
+  // 마지막 방문일이 오래된 순으로 푼다. 같은 날이면 id 로 안정 정렬.
+  const released = [...recent]
+    .sort((a, b) => {
+      const av = lastVisit.get(a.id)!;
+      const bv = lastVisit.get(b.id)!;
+      return av === bv ? a.id.localeCompare(b.id) : av.localeCompare(bv);
+    })
+    .slice(0, shortfall);
+
+  return {
+    ...base,
+    candidates: [...fresh, ...released],
+    recentlyVisitedCount: recent.length,
+    releasedCount: released.length,
+    shortOfMinimum: fresh.length + released.length < MIN_CANDIDATES,
+    emptyReason: null,
+  };
+}

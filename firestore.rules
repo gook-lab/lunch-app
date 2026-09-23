@@ -1,0 +1,108 @@
+rules_version = '2';
+
+// 로그인 화면이 없는 공개 링크다. 규칙이 유일한 방어선이다 (엔지니어링 리뷰 D2).
+//
+// 여기서 할 수 없는 것을 먼저 적는다 — 컬렉션 문서 수 상한은 구현할 수 없다.
+// Firestore 규칙에는 집계·카운트가 없고 get()/exists() 는 단일 문서에 요청당
+// 10회 제한이다 (D9). 막았다고 적지 않는다. 대량 삽입은 사람이 목록에서 보고
+// active 로 정리하며, 삭제 금지가 복구를 보장한다.
+//
+// auth != null 은 "링크를 아는 누구나" 와 동치다. 접근 통제가 아니라
+// 기기당 신원을 만들어 필드 검사와 감사를 가능하게 하는 장치다.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // 규칙 언어에는 타임존 변환도 zero-pad 문자열 포맷도 없고
+    // request.time.year() 는 항상 UTC 다. string(2026)+string(9)+string(16) 은
+    // "2026916" 이 되어 "20260916" 과 절대 일치하지 않는다.
+    // 그래서 문자열 비교를 포기하고 id 를 정수로 잘라 서버 KST 와 대조한다.
+    // 클라이언트 구현은 src/lib/date.ts 의 todayKST(). 구현은 둘, 계약은 하나다.
+    function isTodayKST(dayId) {
+      let kst = request.time + duration.value(9, 'h');
+      return dayId.matches('^[0-9]{8}$')
+        && int(dayId[0:4]) == kst.year()
+        && int(dayId[4:6]) == kst.month()
+        && int(dayId[6:8]) == kst.day();
+    }
+
+    function validCoord(lat, lng) {
+      return lat is number && lng is number
+        && lat > 33.0 && lat < 39.0
+        && lng > 124.0 && lng < 132.0;
+    }
+
+    function validWalkMin(walkMin) {
+      return walkMin is number && walkMin > 0 && walkMin <= 60;
+    }
+
+    match /places/{placeId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(
+             ['name', 'category', 'lat', 'lng', 'walkMin', 'kakaoPlaceId', 'active', 'createdBy'])
+        && request.resource.data.keys().hasAll(
+             ['name', 'category', 'lat', 'lng', 'walkMin', 'kakaoPlaceId', 'active', 'createdBy'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 40
+        && request.resource.data.category is string
+        && request.resource.data.category.size() <= 20
+        && request.resource.data.kakaoPlaceId is string
+        && request.resource.data.kakaoPlaceId.size() <= 40
+        && request.resource.data.active is bool
+        && validCoord(request.resource.data.lat, request.resource.data.lng)
+        && validWalkMin(request.resource.data.walkMin)
+        // 누가 올렸는지 남긴다. 사람을 특정하지 못하지만, 이상한 항목이
+        // 한 기기에서 몰려 들어왔는지는 볼 수 있다 — 문서 수 상한을
+        // 포기한 뒤로 남은 유일한 단서다.
+        && request.resource.data.createdBy == request.auth.uid;
+
+      // 폐업은 active 로 끄고, 오타와 잘못 고른 지점은 고친다 (D8).
+      // 수정을 막아두면 좌표를 틀린 가게가 walkMin 탓에 영원히 후보에서
+      // 빠지는데 고칠 경로가 없어, 2주차 판정의 근거인 풀 크기가 오염된다.
+      allow update: if signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+             ['name', 'lat', 'lng', 'walkMin', 'category', 'active'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 40
+        && request.resource.data.category is string
+        && request.resource.data.category.size() <= 20
+        && request.resource.data.active is bool
+        && validCoord(request.resource.data.lat, request.resource.data.lng)
+        && validWalkMin(request.resource.data.walkMin);
+
+      // visits 가 참조한다. 지우지 않는다.
+      allow delete: if false;
+    }
+
+    match /visits/{dayId} {
+      // 최근 14일 범위 쿼리(documentId 기준)가 list 로 나간다.
+      allow read: if signedIn();
+
+      // 오늘(KST) 문서만 쓰고 고칠 수 있다. 지난 날짜는 불변이다.
+      // decidedAt 을 서버 시각으로 못 박아 클라이언트가 임의 시각을 쓰지 못하게 한다.
+      allow create, update: if signedIn()
+        && isTodayKST(dayId)
+        && request.resource.data.keys().hasOnly(['placeId', 'decidedAt'])
+        && request.resource.data.keys().hasAll(['placeId', 'decidedAt'])
+        && request.resource.data.placeId is string
+        && request.resource.data.placeId.size() > 0
+        && request.resource.data.placeId.size() <= 64
+        && request.resource.data.decidedAt == request.time;
+
+      allow delete: if false;
+    }
+
+    // 그 외에는 전부 막는다.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

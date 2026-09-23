@@ -1,0 +1,131 @@
+/**
+ * 데이터 접근 — places / visits.
+ *
+ * 읽기 경로는 셋이다 (엔지니어링 리뷰 D3 + 외부 검증 교정):
+ *  1. places        — 1회 읽기. 실시간 구독하지 않는다.
+ *  2. 최근 14일 visits — 부팅 시 documentId() 범위 쿼리로 1회.
+ *  3. visits/{오늘}  — 실시간 구독. 이 앱의 유일한 동시성 지점이다.
+ *
+ * 2번이 빠져 있으면 "최근 방문 제외" 가 동작할 근거가 없다. 설계에 이 경로가
+ * 없었고 외부 검증에서 잡혔다.
+ */
+import {
+  collection,
+  doc,
+  documentId,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  where,
+  type Unsubscribe,
+} from 'firebase/firestore';
+import { db, authReady } from './firebase';
+import { dayIdBefore, type DayId } from '../lib/date';
+import { RECENT_WINDOW_DAYS, type Place, type Visit } from '../lib/candidates';
+
+const places = () => collection(db, 'places');
+const visits = () => collection(db, 'visits');
+
+/** 가게 목록 1회 읽기. */
+export async function fetchPlaces(): Promise<Place[]> {
+  await authReady;
+  const snap = await getDocs(places());
+  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Place, 'id'>) }));
+}
+
+/** 최근 14일 결정 기록. 문서 id 가 YYYYMMDD 라 documentId() 범위 쿼리로 읽는다. */
+export async function fetchRecentVisits(today: DayId): Promise<Visit[]> {
+  await authReady;
+  const snap = await getDocs(
+    query(
+      visits(),
+      where(documentId(), '>=', dayIdBefore(today, RECENT_WINDOW_DAYS)),
+      where(documentId(), '<=', today),
+    ),
+  );
+  return snap.docs.map((d) => ({ id: d.id, placeId: (d.data() as { placeId: string }).placeId }));
+}
+
+export interface TodayDecision {
+  dayId: DayId;
+  placeId: string;
+}
+
+/**
+ * 오늘 결정 문서 구독. 반드시 익명 로그인이 붙은 뒤에 건다.
+ * onError 는 무시하면 안 된다 — permission-denied 로 리스너가 죽으면
+ * 화면은 영원히 "아직 안 정했습니다" 에 머문다.
+ */
+export function subscribeToday(
+  today: DayId,
+  onChange: (decision: TodayDecision | null) => void,
+  onError: (error: unknown) => void,
+): Unsubscribe {
+  let stopped = false;
+  let inner: Unsubscribe | undefined;
+
+  authReady
+    .then(() => {
+      if (stopped) return;
+      inner = onSnapshot(
+        doc(visits(), today),
+        (snap) => {
+          onChange(
+            snap.exists()
+              ? { dayId: today, placeId: (snap.data() as { placeId: string }).placeId }
+              : null,
+          );
+        },
+        onError,
+      );
+    })
+    .catch(onError);
+
+  return () => {
+    stopped = true;
+    inner?.();
+  };
+}
+
+/**
+ * 오늘의 결정을 쓴다. 같은 날 다시 쓰면 덮어쓴다 — 재결정 확인은 화면이 한다.
+ * decidedAt 은 서버 시각이다. 규칙이 request.time 과 같은지 검사한다.
+ */
+export async function decideToday(today: DayId, placeId: string): Promise<void> {
+  await authReady;
+  await setDoc(doc(visits(), today), { placeId, decidedAt: serverTimestamp() });
+}
+
+/** 가게 추가. 같은 kakaoPlaceId 가 이미 있으면 쓰지 않고 false 를 돌려준다. */
+export async function addPlace(
+  input: Omit<Place, 'id' | 'createdBy'>,
+): Promise<{ added: boolean; id?: string }> {
+  const user = await authReady;
+  const existing = await getDocs(
+    query(places(), where('kakaoPlaceId', '==', input.kakaoPlaceId)),
+  );
+  if (!existing.empty) return { added: false };
+
+  const ref = doc(places());
+  await setDoc(ref, { ...input, createdBy: user.uid });
+  return { added: true, id: ref.id };
+}
+
+/** 폐업 처리와 오타·좌표 수정 (D8). 삭제는 없다. */
+export async function updatePlace(
+  id: string,
+  patch: Partial<Pick<Place, 'name' | 'lat' | 'lng' | 'walkMin' | 'category' | 'active'>>,
+): Promise<void> {
+  await authReady;
+  await updateDoc(doc(places(), id), patch);
+}
+
+export async function fetchPlace(id: string): Promise<Place | null> {
+  await authReady;
+  const snap = await getDoc(doc(places(), id));
+  return snap.exists() ? { id: snap.id, ...(snap.data() as Omit<Place, 'id'>) } : null;
+}
