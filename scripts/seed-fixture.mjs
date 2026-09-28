@@ -185,5 +185,5 @@ for (const [i, daysAgo] of recent.entries()) {
 }
 
 console.log(`\n최근 방문 ${recent.length}건 (${recent.map((d) => `${d}일 전`).join(' · ')})`);
-console.log('활성 11곳 중 7곳이 최근 방문 → 남는 4곳이라 보정이 1곳 발동합니다.');
+console.log('기본 필터(도보 10분)에서는 9곳이 남고 그 중 6곳이 최근 방문 → 보정이 2곳 발동합니다.');
 console.log('오늘 문서는 비워 둡니다 — 돌리고 "여기로 결정" 을 눌러 보세요.\n');
