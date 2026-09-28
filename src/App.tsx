@@ -35,6 +35,9 @@ const MapTab = lazy(() => import('./components/MapTab'));
 
 type Tab = 'roadmap' | 'list' | 'map';
 
+/** 연출 잠금 해제 상한. 가장 긴 연출(핀볼 5.5초)의 두 배 남짓. */
+const SPIN_TIMEOUT_MS = 12_000;
+
 const TAB_TITLE: Record<Tab, string> = {
   roadmap: '오늘 점심',
   list: '가게 목록',
@@ -124,6 +127,31 @@ export default function App() {
     setSpinning(false);
     setWinner((prev) => (winnerIndex === null ? prev : (board?.[winnerIndex] ?? prev)));
   }, [winnerIndex, board]);
+
+  // 탭을 옮기면 연출을 끊는다. 게임판은 로드맵 탭에만 렌더되므로
+  // (tab === 'roadmap' && ...) 옮기는 순간 언마운트되고, effect cleanup 이
+  // 타이머를 지워 onSpinEnd 가 영영 안 불린다. 돌아오면 "진행 중" 에
+  // 갇혀 있다. 어차피 딴 탭에서는 연출이 안 보이니 끊는 게 맞다.
+  useEffect(() => {
+    setSpinning(false);
+  }, [tab]);
+
+  /**
+   * 연출 잠금의 마지막 방어선.
+   *
+   * onSpinEnd 가 안 불리면 spinning 이 true 로 박혀 모드 칩과 실행 버튼이
+   * 전부 잠긴다. 새로고침 말고는 복구가 없다. 실제로 두 경로에서 그랬다 —
+   * 연출 중 필터 변경, 연출 중 탭 전환. 둘 다 막았지만 게임 컴포넌트가
+   * 하나라도 onSpinEnd 를 놓치면 같은 일이 또 난다.
+   *
+   * 가장 긴 연출이 핀볼 5.5초다. 그 두 배를 넘기면 뭔가 잘못된 것이니
+   * 결과를 만들지 말고 잠금만 푼다 — 안 본 경기를 당첨으로 기록할 수는 없다.
+   */
+  useEffect(() => {
+    if (!spinning) return;
+    const t = window.setTimeout(() => setSpinning(false), SPIN_TIMEOUT_MS);
+    return () => window.clearTimeout(t);
+  }, [spinning]);
 
   // 조건을 바꾸면 얼려둔 판을 버리고 현재 후보로 돌아간다.
   // 안 그러면 칩을 눌러도 지난 결과가 그대로 떠 있어 화면이 거짓말을 한다.
