@@ -1,221 +1,235 @@
 /**
- * 핀볼 — 공이 핀 삼각형을 타고 당첨 칸으로 떨어진다.
+ * 핀볼 — 이름 붙은 구슬들이 코스를 굴러 내려가고, 오른쪽에서 순위가 실시간으로 바뀐다.
  *
- * 경로는 lib/pinball.ts 가 역산한다. 여기서는 그 경로를 따라 공을 움직이고,
- * 부딪힌 핀을 빛내고, 범퍼를 번쩍이고, HIT 를 센다. 결과 계산은 없다.
+ * 당첨은 이미 정해져 있고(winnerIndex), 여기서는 그 구슬이 1등으로 들어오는
+ * 시드를 찾아 그 경기를 재생한다. 물리는 조작하지 않는다 — lib/pinball.ts 참고.
  *
- * 구슬 레이스와 나란히 두는 이유: 레이스는 물리를 실제로 돌리고(느리고 무겁다),
- * 핀볼은 경로를 역산한다(가볍고 즉각적이다). 손맛이 다른 연출이다.
+ * 캔버스로 그린다. 구슬·핀·벽이 매 프레임 움직이는데 이걸 DOM 으로 하면
+ * 노드가 수십 개씩 갱신된다.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { categoryHue } from '../../lib/category';
 import {
-  BOARD_W,
-  buildPegs,
-  buildPinballRun,
-  pinballGeometry,
-  type PinballRun,
+  BOARD_H,
+  COURSE_W,
+  FINISH_Y,
+  buildCourse,
+  seedForWinner,
+  simulateRace,
+  type RaceResult,
 } from '../../lib/pinball';
-import { PINBALL_SEG_MS, prefersReducedMotion, type GameProps } from './types';
+import { prefersReducedMotion, type GameProps } from './types';
 
-/** 범퍼가 켜졌을 때 / 꺼졌을 때. 게임 영역만 색을 쓴다. */
-const BUMPER_HUES = [200, 320] as const;
+/** 캔버스 = 코스 + 오른쪽 순위판. */
+const PANEL_W = 112;
+const CANVAS_W = COURSE_W + PANEL_W;
+const MARBLE_R = 7;
+const COURSE = buildCourse();
 
-interface Bumper {
-  x: number;
-  y: number;
-  /** HIT 수의 홀짝 중 어느 쪽에서 켜지는가. */
-  side: 0 | 1;
-  hue: number;
+/** 한 구간에 200ms 씩. 후보가 많으면 길어지는 게 아니라 코스 길이가 정한다. */
+const PLAY_MS = 4200;
+
+/** 구슬 색. 토큰이 아니라 구분용 팔레트라 여기서만 쓴다. 네온이라 밝게 잡는다. */
+function marbleHue(i: number): number {
+  // 황금각으로 돌려서 이웃끼리 색이 겹치지 않게 한다.
+  return (i * 137.508) % 360;
+}
+const marbleColor = (i: number) => `oklch(0.78 0.19 ${marbleHue(i)})`;
+const marbleGlow = (i: number) => `oklch(0.78 0.19 ${marbleHue(i)} / 0.45)`;
+
+/** "샘플 고기집 1" 처럼 긴 이름은 코스 위에서 겹친다. 접두를 떼고 줄인다. */
+function shortName(name: string): string {
+  const trimmed = name.replace(/^샘플\s+/, '');
+  return trimmed.length > 6 ? `${trimmed.slice(0, 5)}…` : trimmed;
 }
 
 export function Pinball({ candidates, winnerIndex, spinning, onSpinEnd }: GameProps) {
   const count = candidates.length;
-  const [ballPos, setBallPos] = useState<{ x: number; y: number } | null>(null);
-  const [litPeg, setLitPeg] = useState(-1);
-  const [hits, setHits] = useState(0);
-  const [litBin, setLitBin] = useState(-1);
-  const frame = useRef(0);
-  const timer = useRef(0);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const frameRef = useRef(0);
+  const timerRef = useRef(0);
+  const [progress, setProgress] = useState(0);
+  const [finished, setFinished] = useState(false);
 
-  /*
-   * 판은 후보 수만 있으면 그릴 수 있다. 경로는 당첨이 정해진 뒤에야 나온다.
-   * 둘을 묶어 두면 쉬고 있을 때 판이 통째로 빈 칸이 되고, 모드 칩을 눌러도
-   * 아무 일도 안 일어나는 것처럼 보인다.
-   */
-  const geometry = useMemo(() => pinballGeometry(count), [count]);
-  const pegs = useMemo(() => buildPegs(geometry), [geometry]);
-
-  const run: PinballRun | null = useMemo(
-    () => (winnerIndex === null ? null : buildPinballRun(count, winnerIndex)),
-    [count, winnerIndex],
-  );
-
-  const bumpers: Bumper[] = useMemo(() => {
-    const { pegTop, rows, rowH } = geometry;
-    const y = pegTop + rows * rowH * 0.42;
-    return [
-      { x: 34, y, side: 0, hue: BUMPER_HUES[0] },
-      { x: BOARD_W - 34, y, side: 1, hue: BUMPER_HUES[1] },
-      { x: 22, y: y + 46, side: 1, hue: BUMPER_HUES[1] },
-      { x: BOARD_W - 22, y: y + 46, side: 0, hue: BUMPER_HUES[0] },
-    ];
-  }, [geometry]);
+  // 돌릴 때마다 당첨 구슬이 이기는 경기를 찾는다.
+  const race: RaceResult | null = useMemo(() => {
+    if (winnerIndex === null || count === 0) return null;
+    const seed = seedForWinner(count, winnerIndex);
+    if (seed === null) return null;
+    return simulateRace(count, seed);
+  }, [count, winnerIndex]);
 
   useEffect(() => {
-    if (!spinning || !run) return;
+    if (!spinning || !race) return;
+    setFinished(false);
 
-    const points = run.points;
-    const segments = points.length - 1;
-    setLitBin(-1);
-    setHits(0);
-    setLitPeg(-1);
-
-    if (prefersReducedMotion() || segments <= 0) {
-      setBallPos(points[points.length - 1]);
-      setLitBin(run.rights.filter(Boolean).length);
+    if (prefersReducedMotion()) {
+      setProgress(1);
+      setFinished(true);
       onSpinEnd();
       return;
     }
 
-    const total = PINBALL_SEG_MS * segments;
+    setProgress(0);
     const started = performance.now();
-    let lastSegment = -1;
 
     const tick = (now: number) => {
-      /*
-       * 아래를 0 으로 안 가두면 애니메이션이 통째로 죽는다.
-       *
-       * rAF 가 넘겨주는 now 는 그 프레임이 시작된 시각이라, 바로 앞에서 잰
-       * performance.now() 보다 이전일 수 있다. 그러면 t 가 음수가 되고
-       * i 가 -1 이 되어 points[-1] 이 undefined 다. rAF 안에서 난 예외는
-       * 화면에 아무 표시도 남기지 않으므로, 공은 setTimeout 이 놓는
-       * 마지막 위치로 순간이동하고 연출만 조용히 사라진다.
-       */
-      const t = Math.min(1, Math.max(0, (now - started) / total));
-      const f = t * segments;
-      const i = Math.min(segments - 1, Math.max(0, Math.floor(f)));
-      const u = f - i;
-      const a = points[i];
-      const b = points[i + 1];
-
-      // y 는 u² 로 떨어지고(중력 느낌), sin 으로 살짝 튄다.
-      setBallPos({
-        x: a.x + (b.x - a.x) * u,
-        y: a.y + (b.y - a.y) * (u * u) - Math.sin(Math.PI * u) * 7,
-      });
-      setLitPeg(u < 0.45 ? a.peg : -1);
-
-      if (i !== lastSegment && a.peg >= 0) {
-        lastSegment = i;
-        setHits((n) => n + 1);
-      }
-
-      if (t < 1) frame.current = requestAnimationFrame(tick);
+      // now 는 프레임 시작 시각이라 started 보다 이전일 수 있다. 음수 진행도를
+      // 흘리면 인덱스가 -1 이 된다.
+      const t = Math.min(1, Math.max(0, (now - started) / PLAY_MS));
+      setProgress(t);
+      if (t < 1) frameRef.current = requestAnimationFrame(tick);
     };
-    frame.current = requestAnimationFrame(tick);
+    frameRef.current = requestAnimationFrame(tick);
 
-    timer.current = window.setTimeout(() => {
-      setBallPos(points[points.length - 1]);
-      setLitPeg(-1);
-      // 당첨 칸을 먼저 칠하고 나서 알린다. 순서를 바꾸면 재렌더의 정리가
-      // rAF 를 끊어 칸이 강조되지 않은 채로 끝난다 (사다리에서 겪었다).
-      setLitBin(run.rights.filter(Boolean).length);
+    timerRef.current = window.setTimeout(() => {
+      setProgress(1);
+      setFinished(true);
       onSpinEnd();
-    }, total);
+    }, PLAY_MS);
 
     return () => {
-      cancelAnimationFrame(frame.current);
-      window.clearTimeout(timer.current);
+      cancelAnimationFrame(frameRef.current);
+      window.clearTimeout(timerRef.current);
     };
-  }, [spinning, run, onSpinEnd]);
+  }, [spinning, race, onSpinEnd]);
 
-  if (count === 0) {
-    return <div className="pinball pinball--empty" />;
-  }
+  /** 지금 그릴 프레임 번호. 당첨 구슬이 들어오는 순간에서 끝난다. */
+  const frameIndex = useMemo(() => {
+    if (!race) return -1;
+    const last = Math.max(1, race.winnerFrame);
+    return Math.min(race.frames.length - 1, Math.floor(progress * last));
+  }, [race, progress]);
+
+  /** 순위판이 읽는 값. 아직 안 돌렸으면 후보 순서 그대로. */
+  const standing = useMemo(() => {
+    if (!race || frameIndex < 0) return candidates.map((_, i) => i);
+    return race.standings[frameIndex] ?? race.order;
+  }, [race, frameIndex, candidates]);
+
+  const arrived = useMemo(() => {
+    if (!race || frameIndex < 0) return 0;
+    return race.frames[frameIndex].filter((m) => m.y >= FINISH_Y).length;
+  }, [race, frameIndex]);
+
+  // 그리기
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = CANVAS_W * dpr;
+    canvas.height = BOARD_H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    ctx.fillStyle = '#08070c';
+    ctx.fillRect(0, 0, CANVAS_W, BOARD_H);
+
+    // 코스와 순위판 경계
+    ctx.strokeStyle = 'oklch(0.45 0.02 260)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(COURSE_W + 0.5, 0);
+    ctx.lineTo(COURSE_W + 0.5, BOARD_H);
+    ctx.stroke();
+
+    // 지그재그 벽 — 흰 네온
+    ctx.save();
+    ctx.strokeStyle = '#ffffff';
+    ctx.shadowColor = 'oklch(0.9 0.12 200)';
+    ctx.shadowBlur = 8;
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    for (const w of COURSE.walls) {
+      ctx.beginPath();
+      ctx.moveTo(w.x1, w.y1);
+      ctx.lineTo(w.x2, w.y2);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // 핀 — 청록 네온
+    ctx.save();
+    ctx.fillStyle = 'oklch(0.82 0.15 195)';
+    ctx.shadowColor = 'oklch(0.82 0.15 195)';
+    ctx.shadowBlur = 8;
+    for (const peg of COURSE.pegs) {
+      ctx.beginPath();
+      ctx.arc(peg.x, peg.y, peg.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // 결승선
+    ctx.strokeStyle = 'oklch(0.7 0.18 145)';
+    ctx.setLineDash([5, 4]);
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, FINISH_Y);
+    ctx.lineTo(COURSE_W, FINISH_Y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 순위판
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'oklch(0.6 0.02 260)';
+    ctx.font = '600 10px ui-monospace, monospace';
+    ctx.fillText(`${arrived} / ${count}`, CANVAS_W - 8, 14);
+
+    standing.forEach((marble, rank) => {
+      const place = candidates[marble];
+      if (!place) return;
+      const y = 34 + rank * 15;
+      if (y > BOARD_H - 8) return;
+      ctx.fillStyle = marbleColor(marble);
+      ctx.font = `${rank === 0 ? '700' : '500'} 10px system-ui, sans-serif`;
+      ctx.fillText(`${shortName(place.name)} #${rank + 1}`, CANVAS_W - 8, y);
+    });
+
+    // 구슬
+    const frame = race && frameIndex >= 0 ? race.frames[frameIndex] : null;
+    const resting = candidates.map((_, i) => ({
+      x: (COURSE_W / (count + 1)) * (i + 1),
+      y: 16,
+    }));
+    const positions = frame ?? resting;
+
+    positions.forEach((m, i) => {
+      ctx.save();
+      ctx.shadowColor = marbleGlow(i);
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, MARBLE_R, 0, Math.PI * 2);
+      ctx.fillStyle = marbleColor(i);
+      ctx.fill();
+      ctx.restore();
+
+      const place = candidates[i];
+      if (!place) return;
+      ctx.fillStyle = marbleColor(i);
+      ctx.font = '600 9px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(shortName(place.name), m.x, m.y + MARBLE_R + 2);
+    });
+  }, [race, frameIndex, standing, arrived, candidates, count]);
+
+  if (count === 0) return <div className="pinball pinball--empty" />;
+
+  const champion = finished ? (race?.winner ?? null) : null;
 
   return (
     <div className="pinball">
-      <span className="pinball__hits">HIT {hits}</span>
-      <svg viewBox={`0 0 ${BOARD_W} ${geometry.svgH}`} className="pinball__board" aria-hidden="true">
-        {bumpers.map((b, i) => {
-          const on = spinning && hits > 0 && hits % 2 === b.side;
-          return (
-            <g key={i}>
-              <circle
-                cx={b.x}
-                cy={b.y}
-                r={19}
-                fill="none"
-                stroke={`oklch(0.9 0.15 ${b.hue})`}
-                strokeWidth={2}
-                opacity={on ? 0.9 : 0.25}
-              />
-              <circle
-                cx={b.x}
-                cy={b.y}
-                r={on ? 15 : 13}
-                fill={`oklch(${on ? 0.85 : 0.5} ${on ? 0.2 : 0.14} ${b.hue})`}
-              />
-            </g>
-          );
-        })}
-
-        {pegs.map((peg, i) => (
-          <circle
-            key={i}
-            cx={peg.x}
-            cy={peg.y}
-            r={i === litPeg ? 5 : 3}
-            className={i === litPeg ? 'pinball__peg pinball__peg--lit' : 'pinball__peg'}
-          />
-        ))}
-        {litPeg >= 0 && pegs[litPeg] && (
-          <circle
-            cx={pegs[litPeg].x}
-            cy={pegs[litPeg].y}
-            r={11}
-            className="pinball__ring"
-            fill="none"
-          />
-        )}
-
-        {Array.from({ length: Math.max(count - 1, 0) }, (_, i) => (
-          <line
-            key={i}
-            x1={(i + 1) * geometry.binW}
-            y1={geometry.binsTop}
-            x2={(i + 1) * geometry.binW}
-            y2={geometry.svgH}
-            className="pinball__wall"
-          />
-        ))}
-
-        {ballPos && (
-          <>
-            <circle cx={ballPos.x} cy={ballPos.y} r={11} className="pinball__glow" />
-            <circle cx={ballPos.x} cy={ballPos.y} r={6} className="pinball__ball" />
-          </>
-        )}
-      </svg>
-
-      <ol
-        className="pinball__bins"
-        style={{ gridTemplateColumns: `repeat(${Math.max(count, 1)}, 1fr)` }}
-      >
-        {candidates.map((place, i) => (
-          <li
-            key={place.id}
-            className={litBin === i ? 'pinball__bin pinball__bin--win' : 'pinball__bin'}
-            style={{ '--cat-hue': categoryHue(place.category) } as React.CSSProperties}
-          >
-            {/* 칸 하나가 64px 남짓이고 세로쓰기다. 접두를 떼야 이름이 남는다. */}
-            <span>{place.name.replace(/^샘플 /, '')}</span>
-          </li>
-        ))}
-      </ol>
+      <canvas
+        ref={canvasRef}
+        style={{ width: CANVAS_W, height: BOARD_H }}
+        role="img"
+        aria-label={`구슬 ${count}개 핀볼`}
+      />
       <span className="pinball__sr" aria-live="polite">
-        {litBin >= 0 && candidates[litBin] ? `${candidates[litBin].name} 당첨` : ''}
+        {champion !== null && candidates[champion] ? `${candidates[champion].name} 당첨` : ''}
       </span>
     </div>
   );

@@ -12,7 +12,6 @@ import { Button, Tag, Sheet } from '@gook-lab/ui';
 import { Wheel } from './components/games/Wheel';
 import { Ladder } from './components/games/Ladder';
 import { Slot } from './components/games/Slot';
-import { Race } from './components/games/Race';
 import { Pinball } from './components/games/Pinball';
 import {
   actionLabel,
@@ -285,7 +284,6 @@ export default function App() {
             };
             if (mode === 'ladder') return <Ladder {...game} />;
             if (mode === 'slot') return <Slot {...game} />;
-            if (mode === 'race') return <Race {...game} />;
             if (mode === 'pinball') return <Pinball {...game} />;
             return <Wheel {...game} />;
           })()}

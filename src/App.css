@@ -520,62 +520,6 @@ footer.muted { text-align: center; }
 }
 
 /* 구슬 레이스 */
-.race {
-  --race-peg: var(--color-neutral-400);
-  --race-line: var(--color-neutral-600);
-  --race-text: var(--color-bg);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  align-items: center;
-}
-
-.race--empty { height: 300px; }
-
-.race canvas {
-  border: 1px solid var(--color-neutral-300);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  max-width: 100%;
-  height: auto;
-}
-
-.race__legend {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-1) var(--space-3);
-  width: 100%;
-}
-
-.race__legend li {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--fs-xs);
-  color: var(--color-neutral-700);
-  min-width: 0;
-}
-
-.race__legend--win { color: var(--color-text); font-weight: 700; }
-
-.race__dot {
-  flex-shrink: 0;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  color: var(--color-bg);
-  font-size: 10px;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.race__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.race__rank { flex-shrink: 0; margin-left: auto; }
 
 /* 지도 탭 — 캔버스 안의 배지·핀 라벨은 카카오가 그린 DOM 에 들어가므로
    전역 클래스로 둔다. CSS 모듈로 바꾸면 이 둘이 스타일을 잃는다. */
@@ -694,77 +638,24 @@ footer.muted { text-align: center; }
 
 .row--end { justify-content: flex-end; }
 
-/* 핀볼 — 게임 영역만 색을 쓴다. 나머지 UI 는 흑백을 유지한다. */
+/* 핀볼 — 검은 판에 네온. 게임 영역만 색을 쓴다. */
 .pinball {
   position: relative;
   width: min(320px, 86vw);
   margin: 0 auto;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  background: var(--color-neutral-900);
-  padding-top: var(--space-2);
+  background: #08070c;
+  line-height: 0;
 }
 
 .pinball--empty { height: 300px; }
 
-.pinball__board { width: 100%; display: block; }
-
-.pinball__hits {
-  position: absolute;
-  top: var(--space-2);
-  right: var(--space-3);
-  font-family: ui-monospace, monospace;
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  letter-spacing: 1px;
-  color: oklch(0.85 0.17 90);
-  z-index: 1;
+.pinball canvas {
+  width: 100%;
+  height: auto;
+  display: block;
 }
-
-.pinball__peg { fill: var(--color-neutral-600); }
-.pinball__peg--lit { fill: oklch(0.85 0.17 90); }
-
-.pinball__ring {
-  stroke: oklch(0.85 0.17 90);
-  stroke-width: 2;
-  opacity: 0.7;
-}
-
-.pinball__wall { stroke: var(--color-neutral-700); stroke-width: 1.5; }
-
-.pinball__ball { fill: var(--color-bg); }
-.pinball__glow { fill: oklch(0.95 0.1 90 / 0.3); }
-
-.pinball__bins {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  height: 96px;
-}
-
-.pinball__bin {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: var(--space-2);
-  overflow: hidden;
-  background: var(--color-neutral-800);
-  border-top: 3px solid oklch(0.72 0.15 var(--cat-hue));
-}
-
-.pinball__bin span {
-  writing-mode: vertical-rl;
-  font-size: var(--fs-xs);
-  color: var(--color-neutral-300);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-height: 84px;
-}
-
-.pinball__bin--win { background: oklch(0.87 0.12 var(--cat-hue)); }
-.pinball__bin--win span { color: var(--color-neutral-900); font-weight: 700; }
 
 .pinball__sr {
   position: absolute;
