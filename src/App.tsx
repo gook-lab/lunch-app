@@ -127,10 +127,17 @@ export default function App() {
 
   // 조건을 바꾸면 얼려둔 판을 버리고 현재 후보로 돌아간다.
   // 안 그러면 칩을 눌러도 지난 결과가 그대로 떠 있어 화면이 거짓말을 한다.
+  //
+  // 연출 중이었으면 여기서 끊어야 한다. winnerIndex 를 null 로 만들면 게임
+  // 컴포넌트의 effect 가 타이머를 정리하고 early-return 해서 onSpinEnd 를
+  // 영영 안 부른다. spinning 이 true 로 박히고 모드 칩 4개와 실행 버튼이
+  // 잠긴 채 새로고침 말고는 복구가 없다. 필터 칩은 연출 중에도 눌리므로
+  // (모드 칩과 달리 disabled 가 없다) 실제로 도달한다.
   useEffect(() => {
     setBoard(null);
     setWinner(null);
     setWinnerIndex(null);
+    setSpinning(false);
   }, [filters]);
 
   const commit = useCallback(
