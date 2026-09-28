@@ -265,6 +265,11 @@ body {
   inset: 0;
   display: flex;
   justify-content: center;
+  /* flex-start 가 필요하다. 늘어난 칸(기본 stretch)은 높이가 원판만 해서
+     --flip 의 rotate(180deg) 가 글자를 제자리에서 뒤집는 게 아니라
+     원판 중심을 축으로 반대편으로 날려 보낸다. 아래쪽 절반 라벨이
+     자기 칸에서 180도 떨어진 곳에 찍혔다. */
+  align-items: flex-start;
   padding-top: var(--space-3);
 }
 
@@ -385,6 +390,9 @@ body {
   font-size: var(--fs-lg);
   font-family: var(--font-heading);
 }
+
+/* 멈춘 칸 강조 — 프레임만으로는 어느 줄이 결과인지 덜 읽힌다 */
+.slot__item--win span:first-child { color: var(--color-accent); }
 
 .slot__meta {
   font-size: var(--fs-xs);

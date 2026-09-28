@@ -20,14 +20,21 @@ export function Ladder({ candidates, winnerIndex, spinning, onSpinEnd }: GamePro
   const [drawn, setDrawn] = useState(0);
   const pathRef = useRef<SVGPolylineElement>(null);
 
-  // 돌릴 때마다 새 사다리를 만든다. winnerIndex 가 바뀌는 시점이 그 순간이다.
+  // 판 번호. winnerIndex 만으로는 부족하다 — 같은 곳이 연달아 당첨되면
+  // 값이 안 바뀌어 사다리가 그대로 남고, 방금 본 경로가 똑같이 한 번 더
+  // 재생된다. "아까랑 똑같은데" 가 된다.
+  const [run, setRun] = useState(0);
+  useEffect(() => {
+    if (spinning) setRun((r) => r + 1);
+  }, [spinning]);
+
   const ladder = useMemo(
     () => buildLadder(Math.max(count, 1), ROWS),
-    // 돌릴 때마다 새 사다리를 만든다. winnerIndex 가 바뀌는 순간이 그때다.
-    // spinning 을 넣으면 멈추는 순간(true -> false) 사다리가 새로 만들어져
+    // 돌릴 때마다 새 사다리를 만든다. run 이 올라가는 순간이 그때다.
+    // spinning 을 직접 넣으면 멈추는 순간(true -> false) 에도 다시 만들어져
     // 사용자가 보고 있던 경로와 최종 경로가 달라진다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [count, winnerIndex],
+    [count, run],
   );
 
   const start = winnerIndex === null ? null : startForTarget(ladder, winnerIndex);
