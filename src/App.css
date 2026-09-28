@@ -583,7 +583,8 @@ footer.muted { text-align: center; }
 
 .map__canvas {
   width: 100%;
-  height: 320px;
+  /* 꾹 눌러 핀을 꽂는 판이라 손가락이 들어갈 자리가 필요하다. */
+  height: 360px;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-neutral-300);
   overflow: hidden;
@@ -954,3 +955,79 @@ footer.muted { text-align: center; }
   width: 7px;
   height: 7px;
 }
+
+/* 가게 저장·수정 폼 */
+.pf { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.pf__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--fs-sm);
+  color: var(--color-neutral-700);
+}
+
+.pf__field input,
+.pf__field textarea {
+  padding: var(--space-3);
+  font-size: var(--fs-md);
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-neutral-400);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+}
+
+.pf__dupe {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-neutral-400);
+  border-radius: var(--radius-sm);
+  background: var(--color-neutral-100);
+}
+
+.pf__dupe p { margin: 0; }
+
+.pf__stars { display: flex; align-items: center; gap: var(--space-1); }
+
+.pf__star {
+  background: none;
+  border: 0;
+  padding: 2px;
+  font-size: var(--fs-lg);
+  line-height: 1;
+  color: var(--color-neutral-400);
+  cursor: pointer;
+}
+
+.pf__star--on { color: var(--color-text); }
+
+/* 지도 정보 카드 */
+.mp__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-md);
+}
+
+.mp__card p { margin: 0; }
+
+.mp__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.mp__head strong { font-size: var(--fs-md); }
+
+.mp__stars { display: flex; gap: 1px; line-height: 1; }
+.mp__star { color: var(--color-neutral-400); font-size: var(--fs-sm); }
+.mp__star--on { color: var(--color-text); }

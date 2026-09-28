@@ -100,28 +100,59 @@ export async function decideToday(today: DayId, placeId: string): Promise<void> 
   await setDoc(doc(visits(), today), { placeId, decidedAt: serverTimestamp() });
 }
 
-/** 가게 추가. 같은 kakaoPlaceId 가 이미 있으면 쓰지 않고 false 를 돌려준다. */
+/**
+ * 빈 선택 필드를 털어낸다.
+ *
+ * Firestore 는 undefined 를 그대로 받으면 던진다. 그리고 빈 문자열을 쓰면
+ * 규칙의 "없으면 통과" 가 아니라 "있는데 빈 값" 이 되어, 나중에 필드가 있는
+ * 문서와 없는 문서가 뒤섞인다. 아예 키를 빼는 쪽이 깨끗하다.
+ */
+function withoutEmpty<T extends Record<string, unknown>>(input: T): Partial<T> {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(input)) {
+    if (value === undefined || value === null) continue;
+    if (typeof value === 'string' && value.trim() === '') continue;
+    out[key] = value;
+  }
+  return out as Partial<T>;
+}
+
+/**
+ * 가게 추가. 같은 kakaoPlaceId 가 이미 있으면 쓰지 않고 false 를 돌려준다.
+ *
+ * 화면도 findDuplicate 로 미리 거르지만 여기서 한 번 더 본다 — 두 사람이
+ * 동시에 넣으면 화면 쪽 검사는 둘 다 통과한다. kakaoPlaceId 가 없는
+ * (지도에서 길게 눌러 넣은) 가게는 이 검사가 안 걸리므로 화면 경고가 전부다.
+ */
 export async function addPlace(
   input: Omit<Place, 'id' | 'createdBy'>,
 ): Promise<{ added: boolean; id?: string }> {
   const user = await authReady;
-  const existing = await getDocs(
-    query(places(), where('kakaoPlaceId', '==', input.kakaoPlaceId)),
-  );
-  if (!existing.empty) return { added: false };
+  if (input.kakaoPlaceId) {
+    const existing = await getDocs(
+      query(places(), where('kakaoPlaceId', '==', input.kakaoPlaceId)),
+    );
+    if (!existing.empty) return { added: false, id: existing.docs[0].id };
+  }
 
   const ref = doc(places());
-  await setDoc(ref, { ...input, createdBy: user.uid });
+  await setDoc(ref, { ...withoutEmpty(input), createdBy: user.uid });
   return { added: true, id: ref.id };
 }
 
 /** 폐업 처리와 오타·좌표 수정 (D8). 삭제는 없다. */
 export async function updatePlace(
   id: string,
-  patch: Partial<Pick<Place, 'name' | 'lat' | 'lng' | 'walkMin' | 'category' | 'active'>>,
+  patch: Partial<
+    Pick<
+      Place,
+      'name' | 'lat' | 'lng' | 'walkMin' | 'category' | 'active'
+      | 'price' | 'rating' | 'review' | 'memo'
+    >
+  >,
 ): Promise<void> {
   await authReady;
-  await updateDoc(doc(places(), id), patch);
+  await updateDoc(doc(places(), id), withoutEmpty(patch));
 }
 
 export async function fetchPlace(id: string): Promise<Place | null> {

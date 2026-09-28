@@ -91,11 +91,56 @@ d('firestore.rules', () => {
 
     it('R3 — 허용 외 필드가 섞이면 거부', async () => {
       await assertFails(
-        setDoc(doc(db(ALICE), 'places/p1'), validPlace({ memo: '사장님이 친절함' })),
+        setDoc(doc(db(ALICE), 'places/p1'), validPlace({ ownerNote: '사장님이 친절함' })),
       );
       await assertFails(
-        setDoc(doc(db(ALICE), 'places/p1'), validPlace({ price: 12000 })),
+        setDoc(doc(db(ALICE), 'places/p1'), validPlace({ visitCount: 3 })),
       );
+    });
+
+    /*
+     * 선택 필드(price·rating·review·memo)는 지도에서 꽂은 핀만 채운다.
+     * 규칙은 "없으면 통과, 있으면 검사" 여야 한다 — 기존 문서에는 없고,
+     * 있는데 아무 값이나 들어오면 화면이 깨진다.
+     */
+    it('R3b — 선택 필드는 없어도 통과한다', async () => {
+      await assertSucceeds(setDoc(doc(db(ALICE), 'places/p1'), validPlace()));
+    });
+
+    it('R3c — 선택 필드가 제대로 들어오면 허용', async () => {
+      await assertSucceeds(
+        setDoc(
+          doc(db(ALICE), 'places/p1'),
+          validPlace({ price: '1~1.5만', rating: 4, review: '면이 쫄깃함', memo: '12시 전에' }),
+        ),
+      );
+    });
+
+    it('R3d — 가격대는 정해진 세 칸 밖이면 거부', async () => {
+      await assertFails(setDoc(doc(db(ALICE), 'places/p1'), validPlace({ price: '2만~' })));
+      await assertFails(setDoc(doc(db(ALICE), 'places/p1'), validPlace({ price: 12000 })));
+    });
+
+    it('R3e — 별점은 1~5 정수만', async () => {
+      await assertFails(setDoc(doc(db(ALICE), 'places/p1'), validPlace({ rating: 0 })));
+      await assertFails(setDoc(doc(db(ALICE), 'places/p1'), validPlace({ rating: 6 })));
+      await assertFails(setDoc(doc(db(ALICE), 'places/p1'), validPlace({ rating: 3.5 })));
+      await assertFails(setDoc(doc(db(ALICE), 'places/p1'), validPlace({ rating: '4' })));
+    });
+
+    it('R3f — 한줄평 40자·메모 120자를 넘으면 거부', async () => {
+      await assertFails(setDoc(doc(db(ALICE), 'places/p1'), validPlace({ review: 'ㄱ'.repeat(41) })));
+      await assertFails(setDoc(doc(db(ALICE), 'places/p1'), validPlace({ memo: 'ㄱ'.repeat(121) })));
+      await assertSucceeds(
+        setDoc(doc(db(ALICE), 'places/p1'), validPlace({ review: 'ㄱ'.repeat(40) })),
+      );
+    });
+
+    it('R3g — 선택 필드를 나중에 고칠 수 있다', async () => {
+      await assertSucceeds(
+        updateDoc(doc(db(BOB), 'places/seed'), { rating: 5, memo: '회식 때 좋음' }),
+      );
+      await assertFails(updateDoc(doc(db(BOB), 'places/seed'), { rating: 9 }));
     });
 
     it('R3b — 필드가 빠지면 거부', async () => {

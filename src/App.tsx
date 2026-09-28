@@ -32,7 +32,6 @@ import './App.css';
 
 // 지도와 추가는 결정 화면 첫 페인트에 섞이지 않는다 (D7).
 const MapTab = lazy(() => import('./components/MapTab'));
-const AddPlace = lazy(() => import('./components/AddPlace'));
 
 type Tab = 'roadmap' | 'list' | 'map';
 
@@ -65,7 +64,6 @@ export default function App() {
   const [confirming, setConfirming] = useState<Place | null>(null);
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<Tab>('roadmap');
-  const [adding, setAdding] = useState(false);
   const boardRef = useRef<HTMLDivElement>(null);
   // 마지막에 고른 게임 방식은 이 브라우저에만 남는다. 공유 상태가 아니다.
   const [mode, setMode] = useState<GameMode>(() => {
@@ -203,9 +201,13 @@ export default function App() {
 
       {tab === 'list' && (
         <>
+          {/*
+            * 추가 경로는 지도 하나뿐이다. 여기에도 폼을 두면 가격대·별점이
+            * 한쪽에만 있는 채로 갈라진다. 버튼은 지도로 보내기만 한다.
+            */}
           <div className="row row--end">
-            <Button size="sm" onClick={() => setAdding(true)}>
-              가게 추가
+            <Button size="sm" onClick={() => setTab('map')}>
+              지도에서 가게 추가
             </Button>
           </div>
           <PlaceList places={places} visits={visits} today={today} onChanged={reload} />
@@ -214,7 +216,7 @@ export default function App() {
 
       {tab === 'map' && (
         <Suspense fallback={<p className="muted small">지도 화면을 준비하는 중입니다</p>}>
-          <MapTab places={places} />
+          <MapTab places={places} onChanged={reload} />
         </Suspense>
       )}
 
@@ -337,12 +339,6 @@ export default function App() {
       )}
 
       <footer className="muted small">로그인 없음 · 링크만 있으면 누구나</footer>
-
-      <Sheet open={adding} onClose={() => setAdding(false)} title="가게 추가">
-        <Suspense fallback={<p className="muted small">준비하는 중입니다</p>}>
-          {adding && <AddPlace onAdded={reload} />}
-        </Suspense>
-      </Sheet>
 
       <Sheet
         open={confirming !== null}

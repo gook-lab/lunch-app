@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { straightLineMeters, walkMinutesBetween } from './walk';
+import { straightLineMeters, walkMinutesBetween, metersForWalkMinutes } from './walk';
 
 // 좌표는 검증 가능한 공개 지점만 쓴다. 사무실 좌표는 아직 정해지지 않았으므로
 // 테스트에서도 지어내지 않고 인자로 넘긴다.
@@ -49,5 +49,28 @@ describe('walkMinutesBetween', () => {
   it('규칙의 상한(60분)을 넘는 거리도 계산은 된다 — 막는 것은 규칙과 화면', () => {
     const far = { lat: SEOUL_CITY_HALL.lat + 0.05, lng: SEOUL_CITY_HALL.lng };
     expect(walkMinutesBetween(far.lat, far.lng, SEOUL_CITY_HALL)).toBeGreaterThan(60);
+  });
+});
+
+describe('metersForWalkMinutes — 지도 원의 반지름', () => {
+  it('walkMinutesBetween 과 맞물린다 — 반경 위의 점이 같은 분으로 돌아온다', () => {
+    const office = { lat: 37.5, lng: 127.0 };
+    for (const walkMin of [5, 10, 15]) {
+      const meters = metersForWalkMinutes(walkMin);
+      // 정북으로 그만큼 떨어진 점. 위도 1도 ≈ 111,320m.
+      const north = { lat: office.lat + meters / 111_320, lng: office.lng };
+      expect(walkMinutesBetween(north.lat, north.lng, office)).toBe(walkMin);
+    }
+  });
+
+  it('분이 늘면 반경도 늘고, 0분은 0m 다', () => {
+    expect(metersForWalkMinutes(0)).toBe(0);
+    expect(metersForWalkMinutes(10)).toBeGreaterThan(metersForWalkMinutes(5));
+    expect(metersForWalkMinutes(15)).toBeGreaterThan(metersForWalkMinutes(10));
+  });
+
+  it('5분은 250m 안팎이다 — 산식이 바뀌면 여기서 걸린다', () => {
+    expect(metersForWalkMinutes(5)).toBeGreaterThan(230);
+    expect(metersForWalkMinutes(5)).toBeLessThan(280);
   });
 });

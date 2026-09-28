@@ -24,10 +24,29 @@ export interface KakaoPlace {
   y: string;
 }
 
+export interface KakaoPoint {
+  x: number;
+  y: number;
+}
+
+/** 화면 픽셀 ↔ 좌표 변환. 길게 누른 지점을 좌표로 바꾸는 데 쓴다. */
+export interface KakaoProjection {
+  coordsFromContainerPoint: (point: KakaoPoint) => KakaoLatLng;
+  containerPointFromCoords: (latlng: KakaoLatLng) => KakaoPoint;
+}
+
 export interface KakaoMap {
   setCenter: (latlng: KakaoLatLng) => void;
+  panTo: (latlng: KakaoLatLng) => void;
+  setLevel: (level: number) => void;
+  getLevel: () => number;
   setBounds: (bounds: KakaoLatLngBounds, ...padding: number[]) => void;
+  getProjection: () => KakaoProjection;
   relayout: () => void;
+}
+
+export interface KakaoCircle {
+  setMap: (map: KakaoMap | null) => void;
 }
 
 export interface KakaoLatLngBounds {
@@ -36,6 +55,9 @@ export interface KakaoLatLngBounds {
 
 export interface KakaoMarker {
   setMap: (map: KakaoMap | null) => void;
+  setOpacity: (opacity: number) => void;
+  setPosition: (latlng: KakaoLatLng) => void;
+  setZIndex: (zIndex: number) => void;
 }
 
 export interface KakaoCustomOverlay {
@@ -46,7 +68,25 @@ export interface KakaoMaps {
   LatLng: new (lat: number, lng: number) => KakaoLatLng;
   LatLngBounds: new () => KakaoLatLngBounds;
   Map: new (container: HTMLElement, options: { center: KakaoLatLng; level: number }) => KakaoMap;
-  Marker: new (options: { position: KakaoLatLng; title?: string; map?: KakaoMap }) => KakaoMarker;
+  Point: new (x: number, y: number) => KakaoPoint;
+  Marker: new (options: {
+    position: KakaoLatLng;
+    title?: string;
+    map?: KakaoMap;
+    opacity?: number;
+    zIndex?: number;
+  }) => KakaoMarker;
+  Circle: new (options: {
+    center: KakaoLatLng;
+    radius: number;
+    strokeWeight?: number;
+    strokeColor?: string;
+    strokeOpacity?: number;
+    strokeStyle?: string;
+    fillColor?: string;
+    fillOpacity?: number;
+    map?: KakaoMap;
+  }) => KakaoCircle;
   CustomOverlay: new (options: {
     position: KakaoLatLng;
     content: string | HTMLElement;
@@ -55,7 +95,8 @@ export interface KakaoMaps {
     zIndex?: number;
   }) => KakaoCustomOverlay;
   event: {
-    addListener: (target: unknown, type: string, handler: () => void) => void;
+    addListener: (target: unknown, type: string, handler: (...args: never[]) => void) => void;
+    removeListener: (target: unknown, type: string, handler: (...args: never[]) => void) => void;
   };
   services: {
     Places: new () => {

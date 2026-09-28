@@ -54,3 +54,14 @@ export function walkMinutesBetween(
   const meters = straightLineMeters(office.lat, office.lng, lat, lng);
   return Math.max(1, Math.round((meters * DETOUR_FACTOR) / METERS_PER_MINUTE));
 }
+
+/**
+ * 도보시간 → 직선 반경(m). walkMinutesBetween 의 역산이다.
+ *
+ * 지도에 5·10·15분 원을 그리는 데 쓴다. 반올림이 있어 완전한 역함수는 아니다 —
+ * 이 반경으로 나온 지점을 walkMinutesBetween 에 넣으면 같은 분이 나오지만,
+ * 그 안의 모든 점이 그런 것은 아니다. 원은 눈금이지 판정선이 아니다.
+ */
+export function metersForWalkMinutes(walkMin: number): number {
+  return (walkMin * METERS_PER_MINUTE) / DETOUR_FACTOR;
+}
