@@ -11,6 +11,7 @@
  * gradient 만으로는 경계가 안 보인다.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { wheelAngle } from '../../lib/spin';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
 
 const TURNS = 4;
@@ -26,11 +27,10 @@ export function Wheel({ candidates, winnerIndex, spinning, onSpinEnd }: GameProp
     if (!spinning || winnerIndex === null || count === 0) return;
     setLanded(null);
 
-    // 바늘은 12시 방향. 당첨 칸의 가운데가 거기 오도록 돌린다.
-    const target = 360 - (winnerIndex * slice + slice / 2);
+    // 바늘은 12시 방향. 당첨 칸의 가운데가 거기 오도록 돌린다 (lib/spin.ts).
     const reduced = prefersReducedMotion();
     turns.current += reduced ? 0 : TURNS;
-    setAngle(turns.current * 360 + target);
+    setAngle(wheelAngle(winnerIndex, count, turns.current));
 
     const timer = window.setTimeout(() => {
       setLanded(winnerIndex);

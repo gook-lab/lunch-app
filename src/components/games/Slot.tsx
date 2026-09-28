@@ -7,6 +7,7 @@
  * 여기서도 결과는 winnerIndex 가 정한다 — 멈추는 위치를 계산할 뿐이다.
  */
 import { useEffect, useRef, useState } from 'react';
+import { slotReelCopies, slotStops } from '../../lib/spin';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
 
 const ITEM_H = 56;
@@ -40,16 +41,9 @@ export function Slot({ candidates, winnerIndex, spinning, onSpinEnd }: GameProps
       return;
     }
 
-    // 목표 위치를 절대값으로 잡으면 두 번째 판부터 릴이 서 있다. 같은 곳이
-    // 또 당첨되면 이동량이 0px 이라 1.8초 동안 멈춰 있고, 다른 곳이면 한두
-    // 칸만 기어가거나 뒤로 간다. 실측으로 1판 1680px, 2판 0px, 3판 112px,
-    // 4판은 역주행이었다.
-    //
-    // 목록은 count 칸마다 똑같이 반복되므로, 돌리기 직전에 같은 그림을 주는
-    // 첫 바퀴 위치로 소리 없이 되감고(home) 거기서부터 항상 앞으로 LOOPS
-    // 바퀴를 돈다.
-    const home = ((idxRef.current % count) + count) % count;
-    const forward = (((winnerIndex - home) % count) + count) % count;
+    // 되감을 위치와 멈출 위치는 lib/spin.ts 가 계산한다 (slotStops 참고 —
+    // 절대값으로 잡으면 두 판째부터 릴이 서는 이유가 거기 적혀 있다).
+    const { home, target } = slotStops(idxRef.current, winnerIndex, count, LOOPS);
 
     setAnimating(false);
     put(home);
@@ -60,7 +54,7 @@ export function Slot({ candidates, winnerIndex, spinning, onSpinEnd }: GameProps
     const first = requestAnimationFrame(() => {
       second = requestAnimationFrame(() => {
         setAnimating(true);
-        put(home + LOOPS * count + forward);
+        put(target);
       });
     });
 
@@ -79,7 +73,7 @@ export function Slot({ candidates, winnerIndex, spinning, onSpinEnd }: GameProps
   if (count === 0) return <div className="slot slot--empty" />;
 
   // 반복 목록. 되감기 덕분에 최대 인덱스는 (LOOPS + 2) * count 를 넘지 않는다.
-  const reel = Array.from({ length: LOOPS + 3 }, () => candidates).flat();
+  const reel = Array.from({ length: slotReelCopies(LOOPS) }, () => candidates).flat();
   const landed = !animating && !spinning ? idx : -1;
 
   return (
