@@ -241,3 +241,42 @@ describe('완주 — 마지막 프레임에 전원이 결승선 아래', () => {
     expect(tailless).toBeLessThan(4);
   });
 })
+
+describe('시드 탐색이 매번 같은 경기를 주지 않는다', () => {
+  // 컴포넌트가 startSeed 를 안 넘기면 seedForWinner 는 (후보 수, 당첨) 마다
+  // 늘 같은 시드를 준다 — 후보 5곳이면 항상 2, 1, 5, 4, 3 이라 같은 곳이
+  // 당첨될 때마다 똑같은 경기가 재생된다. 시작 시드를 흔들어야 한다.
+  it('기본 시작 시드는 결정적이다 — 그래서 흔들어야 한다', () => {
+    for (const count of [3, 5, 8]) {
+      for (let t = 0; t < count; t += 1) {
+        expect(seedForWinner(count, t)).toBe(seedForWinner(count, t));
+      }
+    }
+  });
+
+  it('시작 시드를 흔들면 어디서 시작해도 찾는다', () => {
+    for (const count of [2, 3, 5, 8, 12]) {
+      for (let k = 0; k < 40; k += 1) {
+        const start = 1 + Math.floor(Math.random() * 100_000);
+        const target = k % count;
+        const seed = seedForWinner(count, target, 600, start);
+        expect(seed).not.toBeNull();
+        expect(seed).toBeGreaterThanOrEqual(start);
+        // 흔들어도 당첨은 그대로다. 연출만 달라진다.
+        expect(simulateRace(count, seed!).winner).toBe(target);
+      }
+    }
+  });
+
+  it('시작 시드가 다르면 경기도 대체로 다르다', () => {
+    for (const count of [5, 12]) {
+      const orders = new Set<string>();
+      for (let k = 0; k < 60; k += 1) {
+        const seed = seedForWinner(count, 0, 600, 1 + Math.floor(Math.random() * 100_000))!;
+        orders.add(simulateRace(count, seed).order.join('>'));
+      }
+      // 후보 5곳은 1등이 고정이라 나머지 4곳의 순열 24개가 상한이다.
+      expect(orders.size).toBeGreaterThan(count === 5 ? 8 : 20);
+    }
+  });
+})
