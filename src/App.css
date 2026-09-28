@@ -775,9 +775,11 @@ footer.muted { text-align: center; }
 }
 
 /* 로드맵 — 도보권 지도. 흑백만 쓴다. 색은 게임 영역에만 있다. */
-.rm { display: flex; flex-direction: column; gap: var(--space-3); }
+.rm { display: flex; flex-direction: column; gap: var(--space-2); }
 
-.rm__stage { position: relative; }
+/* 그림이지 지도가 아니다. 폭을 다 쓸 필요가 없고, 줄인 만큼 실행 버튼이
+   화면 안으로 들어온다. 라벨 위치가 전부 % 라 같이 줄어든다. */
+.rm__stage { position: relative; max-width: 300px; margin: 0 auto; width: 100%; }
 .rm__svg { width: 100%; display: block; }
 
 .rm__disc { fill: var(--color-neutral-100); }

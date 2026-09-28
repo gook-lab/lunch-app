@@ -22,10 +22,14 @@ interface Props {
   winnerId: string | null;
 }
 
+/*
+ * 짧게 쓴다. 다섯 줄이 두 줄로 접히면 그만큼 실행 버튼이 아래로 밀린다.
+ * "다시 넣음" 이 무슨 뜻인지는 아래 안내 문구가 숫자까지 넣어 풀어 준다.
+ */
 const LEGEND: { status: string; label: string }[] = [
   { status: 'candidate', label: '후보' },
-  { status: 'released', label: '최근 갔지만 다시 넣음' },
-  { status: 'recent', label: '최근 2주 제외' },
+  { status: 'released', label: '다시 넣음' },
+  { status: 'recent', label: '최근 제외' },
   { status: 'out', label: '범위 밖' },
   { status: 'off', label: '꺼짐' },
 ];

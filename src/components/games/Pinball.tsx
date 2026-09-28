@@ -11,7 +11,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { categoryHue } from '../../lib/category';
 import {
   BOARD_W,
+  buildPegs,
   buildPinballRun,
+  pinballGeometry,
   type PinballRun,
 } from '../../lib/pinball';
 import { PINBALL_SEG_MS, prefersReducedMotion, type GameProps } from './types';
@@ -36,14 +38,21 @@ export function Pinball({ candidates, winnerIndex, spinning, onSpinEnd }: GamePr
   const frame = useRef(0);
   const timer = useRef(0);
 
+  /*
+   * 판은 후보 수만 있으면 그릴 수 있다. 경로는 당첨이 정해진 뒤에야 나온다.
+   * 둘을 묶어 두면 쉬고 있을 때 판이 통째로 빈 칸이 되고, 모드 칩을 눌러도
+   * 아무 일도 안 일어나는 것처럼 보인다.
+   */
+  const geometry = useMemo(() => pinballGeometry(count), [count]);
+  const pegs = useMemo(() => buildPegs(geometry), [geometry]);
+
   const run: PinballRun | null = useMemo(
     () => (winnerIndex === null ? null : buildPinballRun(count, winnerIndex)),
     [count, winnerIndex],
   );
 
   const bumpers: Bumper[] = useMemo(() => {
-    if (!run) return [];
-    const { pegTop, rows, rowH } = run.geometry;
+    const { pegTop, rows, rowH } = geometry;
     const y = pegTop + rows * rowH * 0.42;
     return [
       { x: 34, y, side: 0, hue: BUMPER_HUES[0] },
@@ -51,7 +60,7 @@ export function Pinball({ candidates, winnerIndex, spinning, onSpinEnd }: GamePr
       { x: 22, y: y + 46, side: 1, hue: BUMPER_HUES[1] },
       { x: BOARD_W - 22, y: y + 46, side: 0, hue: BUMPER_HUES[0] },
     ];
-  }, [run]);
+  }, [geometry]);
 
   useEffect(() => {
     if (!spinning || !run) return;
@@ -121,11 +130,9 @@ export function Pinball({ candidates, winnerIndex, spinning, onSpinEnd }: GamePr
     };
   }, [spinning, run, onSpinEnd]);
 
-  if (count === 0 || !run) {
+  if (count === 0) {
     return <div className="pinball pinball--empty" />;
   }
-
-  const { geometry, pegs } = run;
 
   return (
     <div className="pinball">

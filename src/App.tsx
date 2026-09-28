@@ -263,30 +263,32 @@ export default function App() {
             </Tag>
           ))}
         </div>
-        <p className="muted small">
-          방식은 보여주는 것만 다릅니다 — 어느 쪽으로 돌려도 후보와 확률은 같습니다.
-        </p>
+        <p className="muted small">방식은 연출만 다릅니다 · 확률은 같습니다</p>
 
         {/*
-          * 게임은 실행한 뒤에만 그린다.
+          * 게임판은 쉴 때도 그린다.
           *
-          * 로드맵(356px)과 게임(300px)을 같이 쌓으면 390x844 에서 실행 버튼이
-          * 1097px 로 밀려나 "스크롤 없이 실행 버튼까지" 가 깨진다. 실측값이다.
-          * 쉬고 있을 때의 첫 화면은 로드맵이고, 누르면 게임이 나타난다.
+          * 한동안 실행 전에는 감춰 뒀다. 로드맵(356px)과 게임(300px)을 같이
+          * 쌓으면 390x844 에서 실행 버튼이 1097px 로 밀려나기 때문이었다.
+          * 그런데 그러면 모드 칩 5개가 죽은 것처럼 보인다 — 눌러도 화면이
+          * 그대로라 "배선이 안 된 것 같다" 는 말을 들었다. 실제로 그렇게 읽힌다.
+          *
+          * 스크롤 한 번보다 그게 더 나쁘다. 칩을 누르면 판이 바로 바뀐다.
           */}
-        <div ref={boardRef}>
-          {board && (
-            <div className="stage__board">
-              {(() => {
-                const game = { candidates: board, winnerIndex, spinning, onSpinEnd };
-                if (mode === 'ladder') return <Ladder {...game} />;
-                if (mode === 'slot') return <Slot {...game} />;
-                if (mode === 'race') return <Race {...game} />;
-                if (mode === 'pinball') return <Pinball {...game} />;
-                return <Wheel {...game} />;
-              })()}
-            </div>
-          )}
+        <div ref={boardRef} className="stage__board">
+          {(() => {
+            const game = {
+              candidates: board ?? result.candidates,
+              winnerIndex,
+              spinning,
+              onSpinEnd,
+            };
+            if (mode === 'ladder') return <Ladder {...game} />;
+            if (mode === 'slot') return <Slot {...game} />;
+            if (mode === 'race') return <Race {...game} />;
+            if (mode === 'pinball') return <Pinball {...game} />;
+            return <Wheel {...game} />;
+          })()}
         </div>
 
         {winner ? (
