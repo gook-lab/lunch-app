@@ -57,7 +57,9 @@ export function Race({ candidates, winnerIndex, spinning, onSpinEnd }: GameProps
     let frame = 0;
 
     const tick = (now: number) => {
-      const t = Math.min(1, (now - started) / SPIN_MS.race);
+      // now 는 프레임 시작 시각이라 started 보다 이전일 수 있다. 음수 진행도를
+      // 그대로 흘리면 인덱스가 -1 이 된다 (Pinball.tsx 에서 실제로 터졌다).
+      const t = Math.min(1, Math.max(0, (now - started) / SPIN_MS.race));
       setProgress(t);
       if (t < 1) frame = requestAnimationFrame(tick);
     };

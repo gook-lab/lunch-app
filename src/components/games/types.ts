@@ -15,22 +15,36 @@ export interface GameProps {
   onSpinEnd: () => void;
 }
 
-export type GameMode = 'wheel' | 'ladder' | 'slot' | 'race';
+export type GameMode = 'wheel' | 'ladder' | 'slot' | 'race' | 'pinball';
 
-export const GAME_MODES: { id: GameMode; label: string }[] = [
-  { id: 'wheel', label: '돌림판' },
-  { id: 'ladder', label: '사다리' },
-  { id: 'slot', label: '슬롯' },
-  { id: 'race', label: '구슬' },
+/** label 은 칩에, action 은 실행 버튼에 쓴다. "돌리기" 는 슬롯·핀볼에 안 맞는다. */
+export const GAME_MODES: { id: GameMode; label: string; action: string }[] = [
+  { id: 'wheel', label: '돌림판', action: '돌리기' },
+  { id: 'ladder', label: '사다리', action: '사다리 타기' },
+  { id: 'slot', label: '슬롯', action: '레버 당기기' },
+  { id: 'race', label: '구슬', action: '구슬 굴리기' },
+  { id: 'pinball', label: '핀볼', action: '공 떨어뜨리기' },
 ];
 
-/** 모드마다 연출 길이가 다르다. 결과는 같다. */
-export const SPIN_MS: Record<GameMode, number> = {
+export function actionLabel(mode: GameMode): string {
+  return GAME_MODES.find((m) => m.id === mode)?.action ?? '돌리기';
+}
+
+/**
+ * 모드마다 연출 길이가 다르다. 결과는 같다.
+ *
+ * 핀볼은 여기 없다 — 구간마다 200ms 라 총 길이가 후보 수에 따라 달라진다.
+ * 상수처럼 적어두면 누군가 총 길이로 읽고 타이밍을 틀린다.
+ */
+export const SPIN_MS: Record<Exclude<GameMode, 'pinball'>, number> = {
   wheel: 2600,
   ladder: 2200,
   slot: 1800,
   race: 3200,
 };
+
+/** 핀볼 한 구간(핀 하나 사이) 길이. */
+export const PINBALL_SEG_MS = 200;
 
 /** 모션을 줄이는 설정이면 연출을 건너뛴다. */
 export function prefersReducedMotion(): boolean {

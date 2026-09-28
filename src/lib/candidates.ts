@@ -26,7 +26,26 @@ export interface Place {
   active: boolean;
   /** 익명 로그인 uid. 사람을 특정하지 못한다. */
   createdBy: string;
+
+  /*
+   * 아래는 전부 선택 필드다. 지도에서 핀을 꽂아 넣은 가게만 채워지고,
+   * 기존 문서에는 없다. 없어도 동작해야 한다 — 후보 산출은 이 값을
+   * 하나도 보지 않는다. 사람이 고르는 데 쓰는 정보다.
+   */
+  price?: PriceBand;
+  /** 1~5. 0 이나 소수는 없다. */
+  rating?: Rating;
+  /** 한줄평. 40자. */
+  review?: string;
+  /** 메모. 120자. */
+  memo?: string;
 }
+
+/** 가격대. 세 칸뿐이다 — 더 쪼개면 아무도 안 고른다. */
+export const PRICE_BANDS = ['~1만', '1~1.5만', '1.5만~'] as const;
+export type PriceBand = (typeof PRICE_BANDS)[number];
+
+export type Rating = 1 | 2 | 3 | 4 | 5;
 
 export interface Visit {
   /** 'YYYYMMDD' (KST). 하루 한 건. */
@@ -51,6 +70,13 @@ export type EmptyReason =
 
 export interface CandidateResult {
   candidates: Place[];
+  /**
+   * 최근 14일 안에 간 곳 목록. 카운트만으로는 로드맵에서 점 하나하나를
+   * 어떤 상태로 그릴지 알 수 없다 — 그래서 목록도 같이 준다.
+   */
+  recent: Place[];
+  /** 최소 5곳을 채우려고 다시 꺼낸 곳 목록. candidates 안에 들어 있다. */
+  released: Place[];
   /** active === true 인 가게 수. */
   activeCount: number;
   /** 도보 필터까지 통과한 수. */
@@ -149,6 +175,8 @@ export function selectCandidates(
     return {
       ...base,
       candidates: [],
+      recent: [],
+      released: [],
       recentlyVisitedCount: 0,
       releasedCount: 0,
       shortOfMinimum: true,
@@ -163,6 +191,8 @@ export function selectCandidates(
     return {
       ...base,
       candidates: [...afterCategory],
+      recent,
+      released: [],
       recentlyVisitedCount: recent.length,
       releasedCount: 0,
       shortOfMinimum: afterCategory.length < MIN_CANDIDATES,
@@ -177,6 +207,8 @@ export function selectCandidates(
     return {
       ...base,
       candidates: fresh,
+      recent,
+      released: [],
       recentlyVisitedCount: recent.length,
       releasedCount: 0,
       shortOfMinimum: false,
@@ -196,9 +228,47 @@ export function selectCandidates(
   return {
     ...base,
     candidates: [...fresh, ...released],
+    recent,
+    released,
     recentlyVisitedCount: recent.length,
     releasedCount: released.length,
     shortOfMinimum: fresh.length + released.length < MIN_CANDIDATES,
     emptyReason: null,
   };
+}
+
+/**
+ * 가게 하나가 지금 필터에서 어떤 처지인지.
+ *
+ * 로드맵이 점을 다르게 그리려면 "후보다/아니다" 보다 한 단계 자세한 값이
+ * 필요하다. 특히 released 와 cand 를 구분해야 한다 — 다시 꺼낸 곳을 그냥
+ * 후보로 그리면 화면이 "최근 2주 제외" 를 지킨 것처럼 보이지만 실제로는
+ * 풀어준 것이고, 그 사실을 감추면 이 앱의 유일한 공정성 장치가 무의미해진다.
+ */
+export type PlaceStatus =
+  /** 후보 */
+  | 'candidate'
+  /** 최근에 갔지만 5곳을 채우려고 다시 넣음 */
+  | 'released'
+  /** 최근 2주 안에 가서 빠짐 */
+  | 'recent'
+  /** 도보·카테고리 범위 밖 */
+  | 'out'
+  /** active 가 꺼짐 */
+  | 'off';
+
+export function placeStatus(
+  place: Place,
+  filters: Filters,
+  result: CandidateResult,
+): PlaceStatus {
+  if (!place.active) return 'off';
+  if (place.walkMin > filters.maxWalkMin) return 'out';
+  if (filters.categories.length > 0 && !filters.categories.includes(place.category)) {
+    return 'out';
+  }
+  // released 를 먼저 본다. released 는 candidates 안에도 들어 있다.
+  if (result.released.some((p) => p.id === place.id)) return 'released';
+  if (result.candidates.some((p) => p.id === place.id)) return 'candidate';
+  return 'recent';
 }

@@ -7,18 +7,25 @@
  * 지도·추가 화면은 lazy 로 갈라 둔다. 주석으로 "받지 않는다" 고 적어 두면
  * 누군가 import 한 줄을 늘리는 순간 조용히 깨진다. 청크를 갈라 두면 깨지지 않는다.
  */
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Tag, Sheet } from '@gook-lab/ui';
 import { Wheel } from './components/games/Wheel';
 import { Ladder } from './components/games/Ladder';
 import { Slot } from './components/games/Slot';
 import { Race } from './components/games/Race';
-import { GAME_MODES, type GameMode } from './components/games/types';
+import { Pinball } from './components/games/Pinball';
+import {
+  actionLabel,
+  GAME_MODES,
+  prefersReducedMotion,
+  type GameMode,
+} from './components/games/types';
 import { PlaceList } from './components/PlaceList';
+import { Roadmap } from './components/Roadmap';
 import { useTodayKST } from './hooks/useTodayKST';
 import { useLunchData } from './hooks/useLunchData';
-import { selectCandidates, WALK_STEPS, type Filters, type Place } from './lib/candidates';
-import { CATEGORIES } from './lib/category';
+import { selectCandidates, type Filters, type Place } from './lib/candidates';
+import { categoryHue } from './lib/category';
 import { emptyMessage, noticeMessage } from './lib/messages';
 import { decideToday } from './services/lunch';
 import './App.css';
@@ -27,12 +34,12 @@ import './App.css';
 const MapTab = lazy(() => import('./components/MapTab'));
 const AddPlace = lazy(() => import('./components/AddPlace'));
 
-type Tab = 'decide' | 'map' | 'list';
+type Tab = 'roadmap' | 'list' | 'map';
 
 const TAB_TITLE: Record<Tab, string> = {
-  decide: '오늘 점심',
-  map: '우리 도보권',
+  roadmap: '오늘 점심',
   list: '가게 목록',
+  map: '우리 도보권',
 };
 
 export default function App() {
@@ -57,8 +64,9 @@ export default function App() {
   const [board, setBoard] = useState<Place[] | null>(null);
   const [confirming, setConfirming] = useState<Place | null>(null);
   const [saving, setSaving] = useState(false);
-  const [tab, setTab] = useState<Tab>('decide');
+  const [tab, setTab] = useState<Tab>('roadmap');
   const [adding, setAdding] = useState(false);
+  const boardRef = useRef<HTMLDivElement>(null);
   // 마지막에 고른 게임 방식은 이 브라우저에만 남는다. 공유 상태가 아니다.
   const [mode, setMode] = useState<GameMode>(() => {
     try {
@@ -103,6 +111,15 @@ export default function App() {
     setWinnerIndex(index);
     setWinner(null);
     setSpinning(true);
+
+    // 게임 영역은 실행 전까지 없다. 나타난 다음 프레임에 화면 안으로 끌어온다 —
+    // 안 하면 눌렀는데 아무 일도 안 일어난 것처럼 보인다.
+    requestAnimationFrame(() => {
+      boardRef.current?.scrollIntoView({
+        behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+        block: 'center',
+      });
+    });
   }, [result.candidates, spinning]);
 
   const onSpinEnd = useCallback(() => {
@@ -173,14 +190,14 @@ export default function App() {
       </header>
 
       <nav className="tabs">
-        <button className={tab === 'decide' ? 'on' : ''} onClick={() => setTab('decide')}>
-          돌림판
-        </button>
-        <button className={tab === 'map' ? 'on' : ''} onClick={() => setTab('map')}>
-          지도
+        <button className={tab === 'roadmap' ? 'on' : ''} onClick={() => setTab('roadmap')}>
+          로드맵
         </button>
         <button className={tab === 'list' ? 'on' : ''} onClick={() => setTab('list')}>
           목록
+        </button>
+        <button className={tab === 'map' ? 'on' : ''} onClick={() => setTab('map')}>
+          지도
         </button>
       </nav>
 
@@ -201,7 +218,7 @@ export default function App() {
         </Suspense>
       )}
 
-      {tab === 'decide' && (
+      {tab === 'roadmap' && (
       <>
 
       {decidedPlace && !winner && (
@@ -214,99 +231,15 @@ export default function App() {
         </section>
       )}
 
-      <section className="stage">
-        <div className="stage__board">
-          {(() => {
-            const game = { candidates: board ?? result.candidates, winnerIndex, spinning, onSpinEnd };
-            if (mode === 'ladder') return <Ladder {...game} />;
-            if (mode === 'slot') return <Slot {...game} />;
-            if (mode === 'race') return <Race {...game} />;
-            return <Wheel {...game} />;
-          })()}
-        </div>
-
-        {winner ? (
-          <div className="card card--result">
-            <h2>{winner.name}</h2>
-            <p className="muted small">
-              {winner.category} · 도보 {winner.walkMin}분
-            </p>
-            {confirmed ? (
-              <>
-                <p className="confirmed">오늘 점심으로 정했습니다</p>
-                <Button block variant="secondary" onClick={spin}>
-                  그래도 다시 돌리기
-                </Button>
-                <p className="muted small">다시 돌려 다른 곳을 정하면 오늘 기록을 덮어씁니다.</p>
-              </>
-            ) : (
-              <>
-                <div className="card__actions">
-                  <Button block size="lg" onClick={() => onDecide(winner)} loading={saving}>
-                    여기로 결정
-                  </Button>
-                  <Button block variant="secondary" onClick={spin}>
-                    다시 돌리기
-                  </Button>
-                </div>
-                <p className="muted small">
-                  눌러야 방문 기록이 남고, 다음 2주 후보에서 빠집니다.
-                </p>
-              </>
-            )}
-          </div>
-        ) : (
-          <Button block size="lg" onClick={spin} disabled={result.candidates.length === 0 || spinning}>
-            {spinning ? '돌리는 중' : `돌리기 (후보 ${result.candidates.length}곳)`}
-          </Button>
-        )}
-
-        {empty && <p className="notice notice--empty">{empty}</p>}
-        {notice && <p className="notice">{notice}</p>}
-      </section>
-
-      <section className="filters">
-        <div className="filters__row">
-          <span className="filters__label">도보</span>
-          <div className="segmented" role="group" aria-label="도보 시간 상한">
-            {WALK_STEPS.map((step) => (
-              <button
-                key={step}
-                type="button"
-                aria-pressed={filters.maxWalkMin === step}
-                className={filters.maxWalkMin === step ? 'on' : ''}
-                onClick={() => setFilters((f) => ({ ...f, maxWalkMin: step }))}
-              >
-                {step}분
-              </button>
-            ))}
-          </div>
-          <Tag
-            as="button"
-            variant={filters.excludeRecent ? 'accent' : 'outline'}
-            aria-pressed={filters.excludeRecent}
-            className={filters.excludeRecent ? 'chip chip--on' : 'chip'}
-            onClick={() => setFilters((f) => ({ ...f, excludeRecent: !f.excludeRecent }))}
-          >
-            최근 2주 제외
-          </Tag>
-        </div>
-        <div className="chips">
-          {CATEGORIES.map((c) => (
-            <Tag
-              key={c}
-              as="button"
-              variant={filters.categories.includes(c) ? 'accent' : 'outline'}
-              aria-pressed={filters.categories.includes(c)}
-              className={filters.categories.includes(c) ? 'chip chip--on' : 'chip'}
-              onClick={() => toggleCategory(c)}
-            >
-              {c}
-            </Tag>
-          ))}
-        </div>
-        <p className="muted small">조건을 바꾸면 후보가 바로 바뀝니다</p>
-      </section>
+      <Roadmap
+        places={places}
+        filters={filters}
+        result={result}
+        winnerId={winner?.id ?? null}
+        onWalk={(walkMin) => setFilters((f) => ({ ...f, maxWalkMin: walkMin }))}
+        onCategory={toggleCategory}
+        onExcludeRecent={() => setFilters((f) => ({ ...f, excludeRecent: !f.excludeRecent }))}
+      />
 
       <section className="modes">
         <div className="filters__row">
@@ -328,6 +261,76 @@ export default function App() {
         <p className="muted small">
           방식은 보여주는 것만 다릅니다 — 어느 쪽으로 돌려도 후보와 확률은 같습니다.
         </p>
+
+        {/*
+          * 게임은 실행한 뒤에만 그린다.
+          *
+          * 로드맵(356px)과 게임(300px)을 같이 쌓으면 390x844 에서 실행 버튼이
+          * 1097px 로 밀려나 "스크롤 없이 실행 버튼까지" 가 깨진다. 실측값이다.
+          * 쉬고 있을 때의 첫 화면은 로드맵이고, 누르면 게임이 나타난다.
+          */}
+        <div ref={boardRef}>
+          {board && (
+            <div className="stage__board">
+              {(() => {
+                const game = { candidates: board, winnerIndex, spinning, onSpinEnd };
+                if (mode === 'ladder') return <Ladder {...game} />;
+                if (mode === 'slot') return <Slot {...game} />;
+                if (mode === 'race') return <Race {...game} />;
+                if (mode === 'pinball') return <Pinball {...game} />;
+                return <Wheel {...game} />;
+              })()}
+            </div>
+          )}
+        </div>
+
+        {winner ? (
+          <div className="card card--result">
+            <span
+              className="card__cat"
+              style={{ '--cat-hue': categoryHue(winner.category) } as React.CSSProperties}
+            >
+              {winner.category}
+            </span>
+            <h2>{winner.name}</h2>
+            <p className="muted small">도보 {winner.walkMin}분</p>
+            {confirmed ? (
+              <>
+                <p className="confirmed">오늘 점심으로 정했습니다</p>
+                <Button block variant="secondary" onClick={spin} disabled={spinning}>
+                  그래도 다시 하기
+                </Button>
+                <p className="muted small">다시 해서 다른 곳을 정하면 오늘 기록을 덮어씁니다.</p>
+              </>
+            ) : (
+              <>
+                <div className="card__actions">
+                  <Button block size="lg" onClick={() => onDecide(winner)} loading={saving}>
+                    여기로 결정
+                  </Button>
+                  <Button block variant="secondary" onClick={spin} disabled={spinning}>
+                    다시 하기
+                  </Button>
+                </div>
+                <p className="muted small">
+                  눌러야 방문 기록이 남고, 다음 2주 후보에서 빠집니다.
+                </p>
+              </>
+            )}
+          </div>
+        ) : (
+          <Button
+            block
+            size="lg"
+            onClick={spin}
+            disabled={result.candidates.length === 0 || spinning}
+          >
+            {spinning ? '진행 중' : `${actionLabel(mode)} (후보 ${result.candidates.length}곳)`}
+          </Button>
+        )}
+
+        {empty && <p className="notice notice--empty">{empty}</p>}
+        {notice && <p className="notice">{notice}</p>}
       </section>
 
       </>

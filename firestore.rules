@@ -40,14 +40,31 @@ service cloud.firestore {
       return walkMin is number && walkMin > 0 && walkMin <= 60;
     }
 
+    // 지도에서 꽂은 핀만 채우는 선택 필드다. 기존 문서에는 없으므로
+    // "없으면 통과, 있으면 검사" 형태여야 한다. 있는지만 보고 넘기면
+    // 아무 문자열이나 들어와 화면이 깨진다.
+    function validExtras(data) {
+      return (!('price' in data)
+               || (data.price is string && data.price in ['~1만', '1~1.5만', '1.5만~']))
+        && (!('rating' in data)
+               || (data.rating is int && data.rating >= 1 && data.rating <= 5))
+        && (!('review' in data)
+               || (data.review is string && data.review.size() <= 40))
+        && (!('memo' in data)
+               || (data.memo is string && data.memo.size() <= 120));
+    }
+
     match /places/{placeId} {
       allow read: if signedIn();
 
       allow create: if signedIn()
         && request.resource.data.keys().hasOnly(
-             ['name', 'category', 'lat', 'lng', 'walkMin', 'kakaoPlaceId', 'active', 'createdBy'])
+             ['name', 'category', 'lat', 'lng', 'walkMin', 'kakaoPlaceId', 'active', 'createdBy',
+              'price', 'rating', 'review', 'memo'])
+        // hasAll 은 필수 필드만이다. 선택 필드를 여기 넣으면 기존 흐름이 전부 막힌다.
         && request.resource.data.keys().hasAll(
              ['name', 'category', 'lat', 'lng', 'walkMin', 'kakaoPlaceId', 'active', 'createdBy'])
+        && validExtras(request.resource.data)
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
         && request.resource.data.name.size() <= 40
@@ -68,7 +85,8 @@ service cloud.firestore {
       // 빠지는데 고칠 경로가 없어, 2주차 판정의 근거인 풀 크기가 오염된다.
       allow update: if signedIn()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
-             ['name', 'lat', 'lng', 'walkMin', 'category', 'active'])
+             ['name', 'lat', 'lng', 'walkMin', 'category', 'active',
+              'price', 'rating', 'review', 'memo'])
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
         && request.resource.data.name.size() <= 40
@@ -76,7 +94,8 @@ service cloud.firestore {
         && request.resource.data.category.size() <= 20
         && request.resource.data.active is bool
         && validCoord(request.resource.data.lat, request.resource.data.lng)
-        && validWalkMin(request.resource.data.walkMin);
+        && validWalkMin(request.resource.data.walkMin)
+        && validExtras(request.resource.data);
 
       // visits 가 참조한다. 지우지 않는다.
       allow delete: if false;

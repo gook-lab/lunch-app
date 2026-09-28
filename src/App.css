@@ -692,3 +692,265 @@ footer.muted { text-align: center; }
 .add__confirm p { margin: 0; }
 
 .row--end { justify-content: flex-end; }
+
+/* 핀볼 — 게임 영역만 색을 쓴다. 나머지 UI 는 흑백을 유지한다. */
+.pinball {
+  position: relative;
+  width: min(320px, 86vw);
+  margin: 0 auto;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-neutral-900);
+  padding-top: var(--space-2);
+}
+
+.pinball--empty { height: 300px; }
+
+.pinball__board { width: 100%; display: block; }
+
+.pinball__hits {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-3);
+  font-family: ui-monospace, monospace;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: oklch(0.85 0.17 90);
+  z-index: 1;
+}
+
+.pinball__peg { fill: var(--color-neutral-600); }
+.pinball__peg--lit { fill: oklch(0.85 0.17 90); }
+
+.pinball__ring {
+  stroke: oklch(0.85 0.17 90);
+  stroke-width: 2;
+  opacity: 0.7;
+}
+
+.pinball__wall { stroke: var(--color-neutral-700); stroke-width: 1.5; }
+
+.pinball__ball { fill: var(--color-bg); }
+.pinball__glow { fill: oklch(0.95 0.1 90 / 0.3); }
+
+.pinball__bins {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  height: 96px;
+}
+
+.pinball__bin {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: var(--space-2);
+  overflow: hidden;
+  background: var(--color-neutral-800);
+  border-top: 3px solid oklch(0.72 0.15 var(--cat-hue));
+}
+
+.pinball__bin span {
+  writing-mode: vertical-rl;
+  font-size: var(--fs-xs);
+  color: var(--color-neutral-300);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-height: 84px;
+}
+
+.pinball__bin--win { background: oklch(0.87 0.12 var(--cat-hue)); }
+.pinball__bin--win span { color: var(--color-neutral-900); font-weight: 700; }
+
+.pinball__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* 로드맵 — 도보권 지도. 흑백만 쓴다. 색은 게임 영역에만 있다. */
+.rm { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.rm__stage { position: relative; }
+.rm__svg { width: 100%; display: block; }
+
+.rm__disc { fill: var(--color-neutral-100); }
+.rm__wedgeFill { fill: var(--color-neutral-200); }
+.rm__spoke { stroke: var(--color-neutral-200); stroke-width: 1; }
+
+.rm__ring {
+  fill: none;
+  stroke: var(--color-neutral-300);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+
+.rm__ring--on {
+  stroke: var(--color-text);
+  stroke-width: 1.5;
+  stroke-dasharray: none;
+}
+
+/* 조각 전체가 과녁이다. 라벨만 누르게 하면 손가락으로는 못 맞힌다. */
+.rm__hit { fill: transparent; cursor: pointer; }
+
+.rm__dot { transition: r 160ms var(--ease-out); }
+.rm__dot--candidate { fill: var(--color-text); }
+.rm__dot--released {
+  fill: var(--color-bg);
+  stroke: var(--color-text);
+  stroke-width: 2;
+}
+.rm__dot--recent {
+  fill: var(--color-bg);
+  stroke: var(--color-neutral-500);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+.rm__dot--out { fill: var(--color-neutral-300); }
+.rm__dot--off { fill: none; stroke: var(--color-neutral-300); stroke-width: 1; }
+
+.rm__halo {
+  fill: none;
+  stroke: var(--color-text);
+  stroke-width: 1.5;
+  animation: rm-halo 900ms var(--ease-out) infinite;
+}
+
+@keyframes rm-halo {
+  0% { r: 8; opacity: 1; }
+  100% { r: 15; opacity: 0; }
+}
+
+.rm__office { fill: var(--color-text); }
+
+/* 네모 아래에 둔다. 위에 두면 북쪽 가까운 가게의 이름표와 겹친다 —
+   점 이름표는 항상 점 아래에 붙으므로 북쪽 점의 이름표가 여기로 내려온다. */
+.rm__here {
+  position: absolute;
+  left: 50%;
+  top: 52.5%;
+  translate: -50% 0;
+  font-size: var(--fs-xs);
+  color: var(--color-neutral-700);
+  background: var(--color-neutral-100);
+  padding: 1px 3px;
+  border-radius: var(--radius-sm);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.rm__wedgeLabel {
+  position: absolute;
+  translate: -50% -50%;
+  background: none;
+  border: 0;
+  padding: var(--space-1);
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  color: var(--color-text);
+  cursor: pointer;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.rm__wedgeLabel--on { font-weight: 700; }
+.rm__wedgeLabel--dim { color: var(--color-neutral-500); }
+
+.rm__dotLabel {
+  position: absolute;
+  translate: -50% 0;
+  font-size: 9.5px;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  color: var(--color-text);
+}
+
+.rm__dotLabel--candidate { font-weight: 600; }
+.rm__dotLabel--released { font-weight: 600; }
+.rm__dotLabel--recent { color: var(--color-neutral-700); }
+
+.rm__pill {
+  position: absolute;
+  translate: -50% -50%;
+  height: 18px;
+  padding: 0 var(--space-2);
+  border-radius: 9px;
+  border: 1px solid var(--color-neutral-300);
+  background: var(--color-bg);
+  color: var(--color-neutral-700);
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.rm__pill--on {
+  border-color: var(--color-text);
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+
+.rm__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  justify-content: center;
+  font-size: var(--fs-xs);
+  color: var(--color-neutral-700);
+}
+
+.rm__legend span { display: flex; align-items: center; gap: 5px; }
+
+.rm__key {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rm__key--candidate { background: var(--color-text); }
+.rm__key--released { border: 2px solid var(--color-text); background: var(--color-bg); }
+.rm__key--recent { border: 1px dashed var(--color-neutral-500); }
+.rm__key--out { background: var(--color-neutral-300); width: 7px; height: 7px; }
+
+.rm__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rm__halo { animation: none; opacity: 0.6; }
+  .rm__dot { transition: none; }
+}
+
+/* 결과 카드의 카테고리 배지. 게임 영역 밖에서 색을 쓰는 유일한 곳이다 —
+   방금 어느 갈래에서 나왔는지가 결과의 일부라서다. */
+.card__cat {
+  align-self: flex-start;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  background: oklch(0.9 0.08 var(--cat-hue));
+  color: var(--color-neutral-900);
+}
+
+/* 로드맵이 필터를 겸하므로 게임 영역이 곧바로 붙는다. */
+.modes { gap: var(--space-3); }
+
+.rm__key--off {
+  border: 1px solid var(--color-neutral-300);
+  width: 7px;
+  height: 7px;
+}

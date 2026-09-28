@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  placeStatus,
   selectCandidates,
   MIN_CANDIDATES,
   type Place,
@@ -221,5 +222,66 @@ describe('selectCandidates — 후보 0곳', () => {
       kind: 'all-inactive',
       total: 4,
     });
+  });
+});
+
+describe('placeStatus — 로드맵이 점을 그릴 때 쓰는 처지', () => {
+  const filters: Filters = { maxWalkMin: 10, categories: [], excludeRecent: true };
+
+  it('꺼진 가게는 off — 범위 안이어도 off 가 먼저다', () => {
+    const near = place('a', { walkMin: 3, active: false });
+    const result = selectCandidates([near], [], filters, TODAY);
+    expect(placeStatus(near, filters, result)).toBe('off');
+  });
+
+  it('도보 상한을 넘으면 out', () => {
+    const far = place('a', { walkMin: 30 });
+    const result = selectCandidates([far], [], filters, TODAY);
+    expect(placeStatus(far, filters, result)).toBe('out');
+  });
+
+  it('고른 카테고리가 아니면 out', () => {
+    const p = place('a', { category: '한식', walkMin: 3 });
+    const withCat: Filters = { ...filters, categories: ['면'] };
+    const result = selectCandidates([p], [], withCat, TODAY);
+    expect(placeStatus(p, withCat, result)).toBe('out');
+  });
+
+  it('전부 최근이면 다 풀려서 released 로 읽힌다', () => {
+    const a = place('a', { walkMin: 3 });
+    const b = place('b', { walkMin: 4 });
+    const c = place('c', { walkMin: 5 });
+    const visits = [visit('a', 1), visit('b', 2), visit('c', 3)];
+    const result = selectCandidates([a, b, c], visits, filters, TODAY);
+
+    // 신선한 곳이 0 이라 MIN_CANDIDATES 를 채우려고 있는 대로 다 꺼낸다.
+    expect(result.releasedCount).toBe(3);
+    for (const p of [a, b, c]) {
+      expect(placeStatus(p, filters, result)).toBe('released');
+    }
+  });
+
+  it('안 간 곳은 candidate, 보정이 안 걸리면 최근 방문은 recent', () => {
+    const fresh = [1, 2, 3, 4, 5].map((n) => place(`f${n}`, { walkMin: 3 }));
+    const visited = place('v', { walkMin: 4 });
+    const result = selectCandidates([...fresh, visited], [visit('v', 1)], filters, TODAY);
+
+    expect(result.releasedCount).toBe(0);
+    expect(placeStatus(fresh[0], filters, result)).toBe('candidate');
+    expect(placeStatus(visited, filters, result)).toBe('recent');
+  });
+
+  it('released 는 candidates 에도 있지만 released 로 읽힌다', () => {
+    const a = place('a', { walkMin: 3 });
+    const result = selectCandidates([a], [visit('a', 1)], filters, TODAY);
+    expect(result.candidates.some((p) => p.id === 'a')).toBe(true);
+    expect(placeStatus(a, filters, result)).toBe('released');
+  });
+
+  it('excludeRecent 를 끄면 최근 방문도 candidate 다', () => {
+    const off: Filters = { ...filters, excludeRecent: false };
+    const a = place('a', { walkMin: 3 });
+    const result = selectCandidates([a], [visit('a', 1)], off, TODAY);
+    expect(placeStatus(a, off, result)).toBe('candidate');
   });
 });
