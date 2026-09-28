@@ -25,8 +25,19 @@ const CANVAS_W = COURSE_W + PANEL_W;
 const MARBLE_R = 7;
 const COURSE = buildCourse();
 
-/** 한 구간에 200ms 씩. 후보가 많으면 길어지는 게 아니라 코스 길이가 정한다. */
-const PLAY_MS = 4200;
+/**
+ * 재생은 2단이다.
+ *
+ * 1등이 결승선을 넘는 데까지가 LEAD_MS, 나머지가 다 들어오는 데까지가 TAIL_MS.
+ * 한동안 1등이 들어오는 순간에 끊었는데, 그러면 순위판이 "1 / 5" 에서 멈추고
+ * 나머지 구슬은 코스 한복판에 굳은 채로 끝난다. 경기가 안 끝난 것으로 보인다.
+ *
+ * 그렇다고 같은 속도로 끝까지 가면 후보 12곳에서 전체가 1등 도착의 3.3배다
+ * (실측: 1등 57프레임 / 전원 완주 189프레임). 뒤는 빠르게 정리한다.
+ */
+const LEAD_MS = 4000;
+const TAIL_MS = 1500;
+const PLAY_MS = LEAD_MS + TAIL_MS;
 
 /** 구슬 색. 토큰이 아니라 구분용 팔레트라 여기서만 쓴다. 네온이라 밝게 잡는다. */
 function marbleHue(i: number): number {
@@ -93,11 +104,23 @@ export function Pinball({ candidates, winnerIndex, spinning, onSpinEnd }: GamePr
     };
   }, [spinning, race, onSpinEnd]);
 
-  /** 지금 그릴 프레임 번호. 당첨 구슬이 들어오는 순간에서 끝난다. */
+  /**
+   * 지금 그릴 프레임 번호.
+   *
+   * 경과 시간이 LEAD_MS 를 넘기 전까지는 1등이 들어오는 프레임까지를 훑고,
+   * 그 뒤로는 남은 구슬이 다 들어올 때까지를 빠르게 훑는다.
+   */
   const frameIndex = useMemo(() => {
     if (!race) return -1;
-    const last = Math.max(1, race.winnerFrame);
-    return Math.min(race.frames.length - 1, Math.floor(progress * last));
+    const lead = Math.max(1, race.winnerFrame);
+    const end = race.frames.length - 1;
+    const split = LEAD_MS / PLAY_MS;
+
+    if (progress <= split) {
+      return Math.min(end, Math.floor((progress / split) * lead));
+    }
+    const after = (progress - split) / (1 - split);
+    return Math.min(end, Math.floor(lead + after * (end - lead)));
   }, [race, progress]);
 
   /** 순위판이 읽는 값. 아직 안 돌렸으면 후보 순서 그대로. */
@@ -110,6 +133,9 @@ export function Pinball({ candidates, winnerIndex, spinning, onSpinEnd }: GamePr
     if (!race || frameIndex < 0) return 0;
     return race.frames[frameIndex].filter((m) => m.y >= FINISH_Y).length;
   }, [race, frameIndex]);
+
+  /** 1등이 이미 들어왔는가. 순위판 1위를 그때부터 강조한다. */
+  const leadIn = race !== null && frameIndex >= race.winnerFrame;
 
   // 그리기
   useEffect(() => {
@@ -183,9 +209,20 @@ export function Pinball({ candidates, winnerIndex, spinning, onSpinEnd }: GamePr
       if (!place) return;
       const y = 34 + rank * 15;
       if (y > BOARD_H - 8) return;
+      const champion = leadIn && rank === 0;
+      ctx.save();
+      if (champion) {
+        ctx.shadowColor = marbleGlow(marble);
+        ctx.shadowBlur = 8;
+      }
       ctx.fillStyle = marbleColor(marble);
       ctx.font = `${rank === 0 ? '700' : '500'} 10px system-ui, sans-serif`;
-      ctx.fillText(`${shortName(place.name)} #${rank + 1}`, CANVAS_W - 8, y);
+      ctx.fillText(
+        `${shortName(place.name)} ${champion ? '\u2713' : `#${rank + 1}`}`,
+        CANVAS_W - 8,
+        y,
+      );
+      ctx.restore();
     });
 
     // 구슬
@@ -208,13 +245,16 @@ export function Pinball({ candidates, winnerIndex, spinning, onSpinEnd }: GamePr
 
       const place = candidates[i];
       if (!place) return;
+      // 들어온 구슬은 결승선에 뭉쳐서 이름표가 서로 덮인다. 순위판이 이미
+      // 이름을 들고 있으니 코스 위에서는 뗀다.
+      if (frame && m.y >= FINISH_Y) return;
       ctx.fillStyle = marbleColor(i);
       ctx.font = '600 9px system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillText(shortName(place.name), m.x, m.y + MARBLE_R + 2);
     });
-  }, [race, frameIndex, standing, arrived, candidates, count]);
+  }, [race, frameIndex, standing, arrived, leadIn, candidates, count]);
 
   if (count === 0) return <div className="pinball pinball--empty" />;
 

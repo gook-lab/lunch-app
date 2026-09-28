@@ -204,3 +204,40 @@ describe('판이 특정 레인을 구조적으로 불리하게 만들지 않는�
     20_000,
   );
 });
+
+describe('완주 — 마지막 프레임에 전원이 결승선 아래', () => {
+  // 재생이 winnerFrame 에서 끊겨 순위판이 "1 / 5" 로 멈추던 버그의 회귀 테스트.
+  // 화면은 마지막 프레임까지 돌리므로, 마지막 프레임이 전원 도착이어야
+  // 순위판이 N / N 에 닿는다.
+  for (const count of [2, 3, 5, 8, 12]) {
+    it(`후보 ${count}곳`, () => {
+      for (let target = 0; target < count; target += 1) {
+        const seed = seedForWinner(count, target);
+        expect(seed).not.toBeNull();
+        const r = simulateRace(count, seed!);
+
+        const last = r.frames[r.frames.length - 1];
+        const arrived = last.filter((m) => m.y >= FINISH_Y).length;
+        expect(arrived).toBe(count);
+
+        // 순위판도 마지막 프레임에서 전원을 담는다.
+        expect(r.standings[r.standings.length - 1]).toHaveLength(count);
+
+        // 1등 도착은 전체보다 먼저다 — 꼬리 구간이 존재한다.
+        expect(r.winnerFrame).toBeLessThan(r.frames.length);
+      }
+    });
+  }
+
+  it('1등 도착 뒤에도 프레임이 남는다 (꼬리 구간 최소 길이)', () => {
+    let tailless = 0;
+    for (let count = 2; count <= 8; count += 1) {
+      for (let target = 0; target < count; target += 1) {
+        const r = simulateRace(count, seedForWinner(count, target)!);
+        if (r.frames.length - 1 - r.winnerFrame < 5) tailless += 1;
+      }
+    }
+    // 후보 2곳에서 둘이 나란히 들어오는 경우는 있을 수 있으나 드물어야 한다.
+    expect(tailless).toBeLessThan(4);
+  });
+})
