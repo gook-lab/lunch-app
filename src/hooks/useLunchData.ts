@@ -6,6 +6,11 @@
  * (같은 날 재결정하면 후보에서 그 가게가 빠져야 한다).
  *
  * day 가 바뀌면(자정 롤오버) 구독을 갈아끼우고 이력을 다시 읽는다.
+ *
+ * 첫 로드와 새로고침을 구분한다. 새로고침에서도 state 를 'loading' 으로 내리면
+ * App 이 화면 전체를 자리표시자로 바꾸고, 그러면 지도 탭이 언마운트돼 지도가
+ * 통째로 다시 만들어진다 — 중심·배율·열어둔 정보 카드가 전부 날아간다.
+ * 목록에서 가게 하나를 끄기만 해도 화면이 깜빡였다.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { DayId } from '../lib/date';
@@ -26,6 +31,8 @@ export interface LunchData {
   /** 최근 14일 + 오늘 결정이 머지된 목록. */
   visits: Visit[];
   today: TodayDecision | null;
+  /** 이미 화면이 떠 있는 상태에서 데이터를 다시 읽는 중. 화면을 가리지 않는다. */
+  refreshing: boolean;
   reload: () => void;
 }
 
@@ -36,12 +43,15 @@ export function useLunchData(day: DayId): LunchData {
   const [history, setHistory] = useState<Visit[]>([]);
   const [today, setToday] = useState<TodayDecision | null>(null);
   const [nonce, setNonce] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
 
   useEffect(() => {
     let alive = true;
-    setState('loading');
+    // 이미 한 번 떠 있으면 화면을 유지한 채 데이터만 갈아 끼운다.
+    setState((s) => (s === 'ready' ? 'ready' : 'loading'));
+    setRefreshing(true);
     setError(null);
 
     Promise.all([fetchPlaces(), fetchRecentVisits(day)])
@@ -55,6 +65,9 @@ export function useLunchData(day: DayId): LunchData {
         if (!alive) return;
         setError(e);
         setState('error');
+      })
+      .finally(() => {
+        if (alive) setRefreshing(false);
       });
 
     return () => {
@@ -77,5 +90,5 @@ export function useLunchData(day: DayId): LunchData {
     return today ? [...withoutToday, { id: day, placeId: today.placeId }] : withoutToday;
   }, [history, today, day]);
 
-  return { state, error, places, visits, today, reload };
+  return { state, error, places, visits, today, refreshing, reload };
 }

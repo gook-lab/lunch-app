@@ -14,6 +14,7 @@ import { Button, Tag } from '@gook-lab/ui';
 import { PRICE_BANDS, type Place, type PriceBand, type Rating } from '../../lib/candidates';
 import { CATEGORIES, categoryFromKakao, type Category } from '../../lib/category';
 import { findDuplicate } from '../../lib/duplicate';
+import { josa } from '../../lib/josa';
 import { walkMinutesBetween } from '../../lib/walk';
 import { addPlace } from '../../services/lunch';
 
@@ -136,7 +137,8 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
       {duplicate && (
         <div className="pf__dupe">
           <p className="small">
-            <strong>{duplicate.place.name}</strong> 이 이미 등록돼 있습니다
+            <strong>{duplicate.place.name}</strong>
+            {josa(duplicate.place.name, '이/가')} 이미 등록돼 있습니다
             {duplicate.reason === 'name-and-distance' && duplicate.meters !== null
               ? ` (${Math.round(duplicate.meters)}m 거리)`
               : ''}

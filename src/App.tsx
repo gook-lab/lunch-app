@@ -26,6 +26,7 @@ import { useTodayKST } from './hooks/useTodayKST';
 import { useLunchData } from './hooks/useLunchData';
 import { selectCandidates, type Filters, type Place } from './lib/candidates';
 import { categoryHue } from './lib/category';
+import { withJosa } from './lib/josa';
 import { emptyMessage, noticeMessage } from './lib/messages';
 import { decideToday } from './services/lunch';
 import './App.css';
@@ -43,7 +44,7 @@ const TAB_TITLE: Record<Tab, string> = {
 
 export default function App() {
   const today = useTodayKST();
-  const { state, error, places, visits, today: decision, reload } = useLunchData(today);
+  const { state, error, places, visits, today: decision, refreshing, reload } = useLunchData(today);
 
   const [filters, setFilters] = useState<Filters>({
     maxWalkMin: 10,
@@ -184,7 +185,9 @@ export default function App() {
     <main className="app">
       <header className="app__header">
         <h1>{TAB_TITLE[tab]}</h1>
-        <span className="muted small">{places.filter((p) => p.active).length}곳 등록됨</span>
+        <span className="muted small">
+          {refreshing ? '새로고침 중' : `${places.filter((p) => p.active).length}곳 등록됨`}
+        </span>
       </header>
 
       <nav className="tabs">
@@ -346,7 +349,7 @@ export default function App() {
         title="오늘은 이미 정했습니다"
         description={
           decidedPlace && confirming
-            ? `${decidedPlace.name} 에서 ${confirming.name} 으로 바꿀까요?`
+            ? `${decidedPlace.name}에서 ${withJosa(confirming.name, '으로/로')} 바꿀까요?`
             : undefined
         }
       >
