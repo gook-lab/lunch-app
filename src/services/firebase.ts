@@ -10,8 +10,14 @@
  * 그래서 구독은 반드시 ready 가 resolve 된 뒤에 건다.
  */
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, type User } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import {
+  getAuth,
+  signInAnonymously,
+  onAuthStateChanged,
+  connectAuthEmulator,
+  type User,
+} from 'firebase/auth';
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 
 const config = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -25,6 +31,20 @@ const config = {
 export const app = initializeApp(config);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
+
+/**
+ * 로컬 확인용 에뮬레이터. VITE_FIREBASE_EMULATOR=1 일 때만 붙는다.
+ * 붙는 규칙은 firestore.rules 그대로라, 여기서 통과하면 실제 배포에서도
+ * 같은 검사를 통과한다. 익명 로그인도 auth 에뮬레이터가 처리하므로
+ * Firebase 콘솔 설정이 없어도 전체 흐름을 눌러볼 수 있다.
+ *
+ * 데이터는 에뮬레이터를 끄면 사라진다.
+ */
+if (import.meta.env.VITE_FIREBASE_EMULATOR === '1') {
+  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  console.info('[lunch-app] Firebase 에뮬레이터에 붙었습니다 (firestore 8080 / auth 9099)');
+}
 
 /**
  * 익명 로그인이 끝나면 resolve 한다. 여러 번 호출해도 로그인은 한 번만 일어난다.

@@ -6,7 +6,10 @@
  */
 import { useCallback, useMemo, useState } from 'react';
 import { Button, Tag, Sheet } from '@gook-lab/ui';
-import { Wheel } from './components/Wheel';
+import { Wheel } from './components/games/Wheel';
+import { Ladder } from './components/games/Ladder';
+import { Slot } from './components/games/Slot';
+import { GAME_MODES, type GameMode } from './components/games/types';
 import { PlaceList } from './components/PlaceList';
 import { useTodayKST } from './hooks/useTodayKST';
 import { useLunchData } from './hooks/useLunchData';
@@ -34,6 +37,24 @@ export default function App() {
   const [confirming, setConfirming] = useState<Place | null>(null);
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<Tab>('decide');
+  // 마지막에 고른 게임 방식은 이 브라우저에만 남는다. 공유 상태가 아니다.
+  const [mode, setMode] = useState<GameMode>(() => {
+    try {
+      const saved = localStorage.getItem('lunch-app:mode');
+      return GAME_MODES.some((m) => m.id === saved) ? (saved as GameMode) : 'wheel';
+    } catch {
+      return 'wheel';
+    }
+  });
+
+  const pickMode = useCallback((next: GameMode) => {
+    setMode(next);
+    try {
+      localStorage.setItem('lunch-app:mode', next);
+    } catch {
+      // 시크릿 창에서는 저장이 막힌다. 동작에는 영향 없다.
+    }
+  }, []);
 
   const result = useMemo(
     () => selectCandidates(places, visits, filters, today),
@@ -137,12 +158,12 @@ export default function App() {
       )}
 
       <section className="stage">
-        <Wheel
-          candidates={result.candidates}
-          winnerIndex={winnerIndex}
-          spinning={spinning}
-          onSpinEnd={onSpinEnd}
-        />
+        {(() => {
+          const game = { candidates: result.candidates, winnerIndex, spinning, onSpinEnd };
+          if (mode === 'ladder') return <Ladder {...game} />;
+          if (mode === 'slot') return <Slot {...game} />;
+          return <Wheel {...game} />;
+        })()}
 
         {winner ? (
           <div className="card">
@@ -177,6 +198,8 @@ export default function App() {
           <Tag
             as="button"
             variant={filters.excludeRecent ? 'accent' : 'outline'}
+            aria-pressed={filters.excludeRecent}
+            className={filters.excludeRecent ? 'chip chip--on' : 'chip'}
             onClick={() => setFilters((f) => ({ ...f, excludeRecent: !f.excludeRecent }))}
           >
             최근 2주 제외
@@ -186,6 +209,8 @@ export default function App() {
               key={step}
               as="button"
               variant={filters.maxWalkMin === step ? 'accent' : 'outline'}
+              aria-pressed={filters.maxWalkMin === step}
+              className={filters.maxWalkMin === step ? 'chip chip--on' : 'chip'}
               onClick={() => setFilters((f) => ({ ...f, maxWalkMin: step }))}
             >
               도보 {step}분
@@ -198,13 +223,36 @@ export default function App() {
               key={c}
               as="button"
               variant={filters.categories.includes(c) ? 'accent' : 'outline'}
+              aria-pressed={filters.categories.includes(c)}
+              className={filters.categories.includes(c) ? 'chip chip--on' : 'chip'}
               onClick={() => toggleCategory(c)}
             >
               {c}
             </Tag>
           ))}
         </div>
-        <p className="muted small">조건을 바꾸면 돌림판 후보가 바로 바뀝니다</p>
+        <p className="muted small">조건을 바꾸면 후보가 바로 바뀝니다</p>
+      </section>
+
+      <section className="modes">
+        <div className="chips">
+          {GAME_MODES.map((m) => (
+            <Tag
+              key={m.id}
+              as="button"
+              variant={mode === m.id ? 'accent' : 'outline'}
+              aria-pressed={mode === m.id}
+              className={mode === m.id ? 'chip chip--on' : 'chip'}
+              onClick={() => pickMode(m.id)}
+              disabled={spinning}
+            >
+              {m.label}
+            </Tag>
+          ))}
+        </div>
+        <p className="muted small">
+          방식은 보여주는 것만 다릅니다 — 어느 쪽으로 돌려도 후보와 확률은 같습니다.
+        </p>
       </section>
 
       </>

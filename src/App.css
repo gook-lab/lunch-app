@@ -65,12 +65,28 @@
 .chips { display: flex; flex-wrap: wrap; gap: var(--space-2, 8px); }
 .chips button { cursor: pointer; }
 
+/* 켜진 칩을 눈으로 구분한다. MODUL 의 accent/outline 만으로는 구분이 안 됐다. */
+.chip { cursor: pointer; }
+
+.chip--on {
+  background: var(--color-neutral-900);
+  color: var(--color-neutral-0, #fff);
+  border-color: var(--color-neutral-900);
+  font-weight: 600;
+}
+
+.chip[disabled] { opacity: 0.4; cursor: default; }
+
+.modes { display: flex; flex-direction: column; gap: var(--space-2, 8px); }
+
 /* 돌림판 */
 .wheel {
   position: relative;
   width: min(280px, 72vw);
   aspect-ratio: 1;
   margin: 0 auto;
+  --wheel-a: var(--color-neutral-100);
+  --wheel-b: var(--color-neutral-200);
 }
 
 .wheel__needle {
@@ -105,15 +121,100 @@
 
 .wheel__label {
   font-size: var(--font-size-sm, 13px);
-  max-width: 7em;
+  color: var(--color-neutral-900);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .wheel__disc { transition-duration: 0ms !important; }
+/* 아래쪽 절반은 뒤집어야 읽힌다 */
+.wheel__label--flip {
+  transform: rotate(180deg);
+  transform-origin: center;
 }
+
+/* 사다리 */
+.ladder { width: min(320px, 86vw); margin: 0 auto; }
+.ladder--empty, .slot--empty { height: 260px; }
+.ladder svg { width: 100%; display: block; }
+
+.ladder__rail { stroke: var(--color-neutral-400); stroke-width: 1.5; }
+.ladder__rung { stroke: var(--color-neutral-400); stroke-width: 1.5; }
+
+.ladder__path {
+  fill: none;
+  stroke: var(--color-neutral-900);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.ladder__head { fill: var(--color-neutral-900); }
+
+.ladder__labels {
+  display: grid;
+  gap: 2px;
+  margin-top: var(--space-2, 8px);
+}
+
+.ladder__label {
+  font-size: var(--font-size-xs, 11px);
+  color: var(--color-neutral-700);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ladder__label--win {
+  color: var(--color-neutral-900);
+  font-weight: 700;
+}
+
+/* 슬롯 */
+.slot { position: relative; width: min(320px, 86vw); margin: 0 auto; }
+
+.slot__window {
+  height: 168px;
+  overflow: hidden;
+  border-radius: var(--radius-lg, 12px);
+  background: var(--color-neutral-100);
+  -webkit-mask-image: linear-gradient(transparent, #000 28%, #000 72%, transparent);
+  mask-image: linear-gradient(transparent, #000 28%, #000 72%, transparent);
+}
+
+.slot__reel {
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.12, 0.8, 0.15, 1);
+}
+
+.slot__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: var(--font-size-lg, 18px);
+}
+
+.slot__meta { font-size: var(--font-size-xs, 11px); color: var(--color-neutral-700); }
+
+/* 가운데 한 칸을 표시 */
+.slot__frame {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 56px;
+  height: 56px;
+  border-top: 2px solid var(--color-neutral-900);
+  border-bottom: 2px solid var(--color-neutral-900);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wheel__disc, .slot__reel { transition-duration: 0ms !important; }
+}
+
 
 /* 탭 */
 .tabs {

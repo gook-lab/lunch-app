@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "test:rules": "firebase emulators:exec --only firestore --project lunch-rules-test \"vitest run src/services/__tests__/firestore-rules.test.ts\"",
     "seed": "node scripts/seed.mjs",
-    "seed:write": "node scripts/seed.mjs --write"
+    "seed:write": "node scripts/seed.mjs --write",
+    "dev:emu": "firebase emulators:exec --only firestore,auth \"node scripts/seed-fixture.mjs && vite --port 5173 --strictPort\""
   },
   "dependencies": {
     "@gook-lab/tokens": "^0.2.7",
