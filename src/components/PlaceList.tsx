@@ -5,14 +5,17 @@
  * 대신 수정을 연다 — 잠가 두면 카카오 검색에서 동명 지점을 잘못 고른 가게가
  * walkMin 탓에 영원히 후보에서 빠지고, 고칠 길이 없어 2주차 판정의 근거인
  * 풀 크기가 오염된다.
+ *
+ * 화면에서는 "최근 2주 안에 간 곳" 을 강조한다. 그게 오늘 후보에서 빠진
+ * 이유라서, 표시하지 않으면 목록과 돌림판이 어긋나 보인다.
  */
 import { useState } from 'react';
-import { Button, Tag } from '@gook-lab/ui';
+import { Button } from '@gook-lab/ui';
 import type { Place, Visit } from '../lib/candidates';
-import { daysBetween } from '../lib/date';
+import { RECENT_WINDOW_DAYS } from '../lib/candidates';
+import { daysBetween, type DayId } from '../lib/date';
 import { walkMinutesBetween } from '../lib/walk';
 import { updatePlace } from '../services/lunch';
-import type { DayId } from '../lib/date';
 
 interface Props {
   places: Place[];
@@ -21,15 +24,23 @@ interface Props {
   onChanged: () => void;
 }
 
-function lastVisitLabel(place: Place, visits: Visit[], today: DayId): string {
+interface LastVisit {
+  label: string;
+  recent: boolean;
+}
+
+function lastVisit(place: Place, visits: Visit[], today: DayId): LastVisit {
   const mine = visits.filter((v) => v.placeId === place.id).map((v) => v.id);
-  if (mine.length === 0) return '기록 없음';
+  if (mine.length === 0) return { label: '기록 없음', recent: false };
+
   const last = mine.reduce((a, b) => (a > b ? a : b));
   const days = daysBetween(last, today);
-  if (days === 0) return '오늘';
-  if (days === 1) return '어제';
-  if (days < 7) return `${days}일 전`;
-  return `${Math.floor(days / 7)}주 전`;
+  const recent = days <= RECENT_WINDOW_DAYS;
+
+  if (days === 0) return { label: '오늘', recent };
+  if (days === 1) return { label: '어제', recent };
+  if (days < 7) return { label: `${days}일 전`, recent };
+  return { label: `${Math.floor(days / 7)}주 전`, recent };
 }
 
 function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
@@ -52,7 +63,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
     // 따로 두면 좌표와 도보시간이 어긋난 채로 남는다.
     const walkMin = walkMinutesBetween(nextLat, nextLng);
     if (walkMin <= 0 || walkMin > 60) {
-      return setProblem('도보 60분을 넘는 곳은 넣을 수 없습니다.');
+      return setProblem(`도보 ${walkMin}분으로 계산됩니다 — 60분을 넘는 곳은 넣을 수 없습니다.`);
     }
 
     setSaving(true);
@@ -96,8 +107,12 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
       <p className="muted small">좌표를 고치면 도보시간이 같이 다시 계산됩니다.</p>
       {problem && <p className="notice notice--empty">{problem}</p>}
       <div className="row">
-        <Button block onClick={() => void save()} loading={saving}>저장</Button>
-        <Button block variant="ghost" onClick={onDone}>취소</Button>
+        <Button block onClick={() => void save()} loading={saving}>
+          저장
+        </Button>
+        <Button block variant="secondary" onClick={onDone}>
+          취소
+        </Button>
       </div>
     </div>
   );
@@ -105,6 +120,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
 
 export function PlaceList({ places, visits, today, onChanged }: Props) {
   const [editing, setEditing] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
 
   if (places.length === 0) {
     return <p className="muted">아직 등록된 가게가 없습니다.</p>;
@@ -115,47 +131,70 @@ export function PlaceList({ places, visits, today, onChanged }: Props) {
     return a.walkMin - b.walkMin;
   });
 
+  const recentCount = sorted.filter((p) => p.active && lastVisit(p, visits, today).recent).length;
+
+  const toggle = async (place: Place) => {
+    setBusy(place.id);
+    try {
+      await updatePlace(place.id, { active: !place.active });
+      onChanged();
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
-    <ul className="list">
-      {sorted.map((place) => (
-        <li key={place.id} className={place.active ? '' : 'list__row--off'}>
-          <div className="list__main">
-            <div>
-              <strong>{place.name}</strong>
-              <div className="muted small">
-                {place.category} · 도보 {place.walkMin}분 · {lastVisitLabel(place, visits, today)}
+    <>
+      <p className="muted small">
+        도보 가까운 순 · 최근 2주에 간 {recentCount}곳은 오늘 후보에서 빠집니다
+      </p>
+      <ul className="list">
+        {sorted.map((place) => {
+          const visit = lastVisit(place, visits, today);
+          return (
+            <li key={place.id} className={place.active ? '' : 'list__off'}>
+              <div className="list__main">
+                <div>
+                  <div className="list__name">
+                    <strong>{place.name}</strong>
+                    {!place.active && <span className="badge">꺼짐</span>}
+                  </div>
+                  <div className="list__meta">
+                    {place.category} · 도보 {place.walkMin}분 ·{' '}
+                    <span className={visit.recent ? 'list__recent' : undefined}>{visit.label}</span>
+                  </div>
+                </div>
+                <div className="list__actions">
+                  <button
+                    type="button"
+                    className="linkish"
+                    disabled={busy === place.id}
+                    onClick={() => void toggle(place)}
+                  >
+                    {place.active ? '끄기' : '켜기'}
+                  </button>
+                  <button
+                    type="button"
+                    className="linkish"
+                    onClick={() => setEditing(editing === place.id ? null : place.id)}
+                  >
+                    고치기
+                  </button>
+                </div>
               </div>
-            </div>
-            <div className="row">
-              <Tag
-                as="button"
-                variant={place.active ? 'accent' : 'outline'}
-                onClick={() => {
-                  void updatePlace(place.id, { active: !place.active }).then(onChanged);
-                }}
-              >
-                {place.active ? '사용 중' : '꺼짐'}
-              </Tag>
-              <Tag
-                as="button"
-                variant="outline"
-                onClick={() => setEditing(editing === place.id ? null : place.id)}
-              >
-                고치기
-              </Tag>
-            </div>
-          </div>
-          {editing === place.id && (
-            <EditRow
-              place={place}
-              onDone={() => {
-                setEditing(null);
-                onChanged();
-              }}
-            />
-          )}
-        </li>
-      ))}
-    </ul>
+              {editing === place.id && (
+                <EditRow
+                  place={place}
+                  onDone={() => {
+                    setEditing(null);
+                    onChanged();
+                  }}
+                />
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </>
   );
 }

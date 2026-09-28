@@ -23,8 +23,11 @@ export function Ladder({ candidates, winnerIndex, spinning, onSpinEnd }: GamePro
   // 돌릴 때마다 새 사다리를 만든다. winnerIndex 가 바뀌는 시점이 그 순간이다.
   const ladder = useMemo(
     () => buildLadder(Math.max(count, 1), ROWS),
+    // 돌릴 때마다 새 사다리를 만든다. winnerIndex 가 바뀌는 순간이 그때다.
+    // spinning 을 넣으면 멈추는 순간(true -> false) 사다리가 새로 만들어져
+    // 사용자가 보고 있던 경로와 최종 경로가 달라진다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [count, winnerIndex, spinning],
+    [count, winnerIndex],
   );
 
   const start = winnerIndex === null ? null : startForTarget(ladder, winnerIndex);
@@ -39,7 +42,11 @@ export function Ladder({ candidates, winnerIndex, spinning, onSpinEnd }: GamePro
     const reduced = prefersReducedMotion();
     setDrawn(reduced ? 1 : 0);
 
-    const timer = window.setTimeout(onSpinEnd, reduced ? 0 : SPIN_MS.ladder);
+    const finish = () => {
+      setDrawn(1);
+      onSpinEnd();
+    };
+    const timer = window.setTimeout(finish, reduced ? 0 : SPIN_MS.ladder);
     if (reduced) return () => window.clearTimeout(timer);
 
     const started = performance.now();

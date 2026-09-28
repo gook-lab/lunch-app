@@ -15,12 +15,13 @@ export interface GameProps {
   onSpinEnd: () => void;
 }
 
-export type GameMode = 'wheel' | 'ladder' | 'slot';
+export type GameMode = 'wheel' | 'ladder' | 'slot' | 'race';
 
 export const GAME_MODES: { id: GameMode; label: string }[] = [
   { id: 'wheel', label: '돌림판' },
   { id: 'ladder', label: '사다리' },
   { id: 'slot', label: '슬롯' },
+  { id: 'race', label: '구슬' },
 ];
 
 /** 모드마다 연출 길이가 다르다. 결과는 같다. */
@@ -28,6 +29,7 @@ export const SPIN_MS: Record<GameMode, number> = {
   wheel: 2600,
   ladder: 2200,
   slot: 1800,
+  race: 3200,
 };
 
 /** 모션을 줄이는 설정이면 연출을 건너뛴다. */

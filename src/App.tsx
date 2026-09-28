@@ -4,11 +4,12 @@
  * 경쟁 상대는 메신저 스레드다. 스크롤 없이 돌리기까지 도달해야 하고,
  * 지도 SDK 는 여기서 한 바이트도 받지 않는다 (엔지니어링 리뷰 D7).
  */
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Tag, Sheet } from '@gook-lab/ui';
 import { Wheel } from './components/games/Wheel';
 import { Ladder } from './components/games/Ladder';
 import { Slot } from './components/games/Slot';
+import { Race } from './components/games/Race';
 import { GAME_MODES, type GameMode } from './components/games/types';
 import { PlaceList } from './components/PlaceList';
 import { useTodayKST } from './hooks/useTodayKST';
@@ -34,6 +35,14 @@ export default function App() {
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState<Place | null>(null);
   const [winnerIndex, setWinnerIndex] = useState<number | null>(null);
+  /**
+   * 돌린 순간의 후보 목록. 게임 화면은 이걸 본다.
+   *
+   * 결정을 저장하면 onSnapshot 이 오늘 방문을 돌려주고 후보가 다시 계산된다.
+   * 게임은 인덱스로 이름을 읽으므로, 얼려두지 않으면 바뀐 배열에 옛 인덱스를
+   * 꽂아 엉뚱한 가게를 보여준다. 돌린 판은 그대로 두는 게 맞기도 하다.
+   */
+  const [board, setBoard] = useState<Place[] | null>(null);
   const [confirming, setConfirming] = useState<Place | null>(null);
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<Tab>('decide');
@@ -66,9 +75,18 @@ export default function App() {
     [decision, places],
   );
 
+  /**
+   * 방금 돌린 결과가 오늘 결정으로 저장됐는가.
+   * onSnapshot 이 돌려준 값과 비교하므로, true 면 쓰기가 실제로 서버에
+   * 닿았다는 뜻이다. 버튼 스피너만으로는 저장 여부를 알 수 없다.
+   */
+  const confirmed = winner !== null && decision?.placeId === winner.id;
+
   const spin = useCallback(() => {
     if (result.candidates.length === 0 || spinning) return;
-    const index = Math.floor(Math.random() * result.candidates.length);
+    const frozen = result.candidates;
+    const index = Math.floor(Math.random() * frozen.length);
+    setBoard(frozen);
     setWinnerIndex(index);
     setWinner(null);
     setSpinning(true);
@@ -76,8 +94,16 @@ export default function App() {
 
   const onSpinEnd = useCallback(() => {
     setSpinning(false);
-    if (winnerIndex !== null) setWinner(result.candidates[winnerIndex] ?? null);
-  }, [winnerIndex, result.candidates]);
+    setWinner((prev) => (winnerIndex === null ? prev : (board?.[winnerIndex] ?? prev)));
+  }, [winnerIndex, board]);
+
+  // 조건을 바꾸면 얼려둔 판을 버리고 현재 후보로 돌아간다.
+  // 안 그러면 칩을 눌러도 지난 결과가 그대로 떠 있어 화면이 거짓말을 한다.
+  useEffect(() => {
+    setBoard(null);
+    setWinner(null);
+    setWinnerIndex(null);
+  }, [filters]);
 
   const commit = useCallback(
     async (place: Place) => {
@@ -158,30 +184,45 @@ export default function App() {
       )}
 
       <section className="stage">
-        {(() => {
-          const game = { candidates: result.candidates, winnerIndex, spinning, onSpinEnd };
-          if (mode === 'ladder') return <Ladder {...game} />;
-          if (mode === 'slot') return <Slot {...game} />;
-          return <Wheel {...game} />;
-        })()}
+        <div className="stage__board">
+          {(() => {
+            const game = { candidates: board ?? result.candidates, winnerIndex, spinning, onSpinEnd };
+            if (mode === 'ladder') return <Ladder {...game} />;
+            if (mode === 'slot') return <Slot {...game} />;
+            if (mode === 'race') return <Race {...game} />;
+            return <Wheel {...game} />;
+          })()}
+        </div>
 
         {winner ? (
-          <div className="card">
+          <div className="card card--result">
             <h2>{winner.name}</h2>
             <p className="muted small">
               {winner.category} · 도보 {winner.walkMin}분
             </p>
-            <div className="row">
-              <Button block onClick={() => onDecide(winner)} loading={saving}>
-                여기로 결정
-              </Button>
-              <Button block variant="ghost" onClick={spin}>
-                다시 돌리기
-              </Button>
-            </div>
-            <p className="muted small">
-              "여기로 결정"을 눌러야 방문 기록이 남고, 다음 2주 후보에서 빠집니다.
-            </p>
+            {confirmed ? (
+              <>
+                <p className="confirmed">오늘 점심으로 정했습니다</p>
+                <Button block variant="secondary" onClick={spin}>
+                  그래도 다시 돌리기
+                </Button>
+                <p className="muted small">다시 돌려 다른 곳을 정하면 오늘 기록을 덮어씁니다.</p>
+              </>
+            ) : (
+              <>
+                <div className="card__actions">
+                  <Button block size="lg" onClick={() => onDecide(winner)} loading={saving}>
+                    여기로 결정
+                  </Button>
+                  <Button block variant="secondary" onClick={spin}>
+                    다시 돌리기
+                  </Button>
+                </div>
+                <p className="muted small">
+                  눌러야 방문 기록이 남고, 다음 2주 후보에서 빠집니다.
+                </p>
+              </>
+            )}
           </div>
         ) : (
           <Button block size="lg" onClick={spin} disabled={result.candidates.length === 0 || spinning}>
@@ -194,7 +235,21 @@ export default function App() {
       </section>
 
       <section className="filters">
-        <div className="chips">
+        <div className="filters__row">
+          <span className="filters__label">도보</span>
+          <div className="segmented" role="group" aria-label="도보 시간 상한">
+            {WALK_STEPS.map((step) => (
+              <button
+                key={step}
+                type="button"
+                aria-pressed={filters.maxWalkMin === step}
+                className={filters.maxWalkMin === step ? 'on' : ''}
+                onClick={() => setFilters((f) => ({ ...f, maxWalkMin: step }))}
+              >
+                {step}분
+              </button>
+            ))}
+          </div>
           <Tag
             as="button"
             variant={filters.excludeRecent ? 'accent' : 'outline'}
@@ -204,18 +259,6 @@ export default function App() {
           >
             최근 2주 제외
           </Tag>
-          {WALK_STEPS.map((step) => (
-            <Tag
-              key={step}
-              as="button"
-              variant={filters.maxWalkMin === step ? 'accent' : 'outline'}
-              aria-pressed={filters.maxWalkMin === step}
-              className={filters.maxWalkMin === step ? 'chip chip--on' : 'chip'}
-              onClick={() => setFilters((f) => ({ ...f, maxWalkMin: step }))}
-            >
-              도보 {step}분
-            </Tag>
-          ))}
         </div>
         <div className="chips">
           {CATEGORIES.map((c) => (
@@ -235,7 +278,8 @@ export default function App() {
       </section>
 
       <section className="modes">
-        <div className="chips">
+        <div className="filters__row">
+          <span className="filters__label">방식</span>
           {GAME_MODES.map((m) => (
             <Tag
               key={m.id}
