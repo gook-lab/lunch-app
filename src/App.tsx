@@ -3,8 +3,11 @@
  *
  * 경쟁 상대는 메신저 스레드다. 스크롤 없이 돌리기까지 도달해야 하고,
  * 지도 SDK 는 여기서 한 바이트도 받지 않는다 (엔지니어링 리뷰 D7).
+ *
+ * 지도·추가 화면은 lazy 로 갈라 둔다. 주석으로 "받지 않는다" 고 적어 두면
+ * 누군가 import 한 줄을 늘리는 순간 조용히 깨진다. 청크를 갈라 두면 깨지지 않는다.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Tag, Sheet } from '@gook-lab/ui';
 import { Wheel } from './components/games/Wheel';
 import { Ladder } from './components/games/Ladder';
@@ -15,13 +18,22 @@ import { PlaceList } from './components/PlaceList';
 import { useTodayKST } from './hooks/useTodayKST';
 import { useLunchData } from './hooks/useLunchData';
 import { selectCandidates, WALK_STEPS, type Filters, type Place } from './lib/candidates';
+import { CATEGORIES } from './lib/category';
 import { emptyMessage, noticeMessage } from './lib/messages';
 import { decideToday } from './services/lunch';
 import './App.css';
 
-const CATEGORIES = ['한식', '면', '고기', '분식', '양식', '중식'];
+// 지도와 추가는 결정 화면 첫 페인트에 섞이지 않는다 (D7).
+const MapTab = lazy(() => import('./components/MapTab'));
+const AddPlace = lazy(() => import('./components/AddPlace'));
 
-type Tab = 'decide' | 'list';
+type Tab = 'decide' | 'map' | 'list';
+
+const TAB_TITLE: Record<Tab, string> = {
+  decide: '오늘 점심',
+  map: '우리 도보권',
+  list: '가게 목록',
+};
 
 export default function App() {
   const today = useTodayKST();
@@ -46,6 +58,7 @@ export default function App() {
   const [confirming, setConfirming] = useState<Place | null>(null);
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<Tab>('decide');
+  const [adding, setAdding] = useState(false);
   // 마지막에 고른 게임 방식은 이 브라우저에만 남는다. 공유 상태가 아니다.
   const [mode, setMode] = useState<GameMode>(() => {
     try {
@@ -155,7 +168,7 @@ export default function App() {
   return (
     <main className="app">
       <header className="app__header">
-        <h1>{tab === 'decide' ? '오늘 점심' : '우리 도보권'}</h1>
+        <h1>{TAB_TITLE[tab]}</h1>
         <span className="muted small">{places.filter((p) => p.active).length}곳 등록됨</span>
       </header>
 
@@ -163,14 +176,32 @@ export default function App() {
         <button className={tab === 'decide' ? 'on' : ''} onClick={() => setTab('decide')}>
           돌림판
         </button>
+        <button className={tab === 'map' ? 'on' : ''} onClick={() => setTab('map')}>
+          지도
+        </button>
         <button className={tab === 'list' ? 'on' : ''} onClick={() => setTab('list')}>
           목록
         </button>
       </nav>
 
-      {tab === 'list' ? (
-        <PlaceList places={places} visits={visits} today={today} onChanged={reload} />
-      ) : (
+      {tab === 'list' && (
+        <>
+          <div className="row row--end">
+            <Button size="sm" onClick={() => setAdding(true)}>
+              가게 추가
+            </Button>
+          </div>
+          <PlaceList places={places} visits={visits} today={today} onChanged={reload} />
+        </>
+      )}
+
+      {tab === 'map' && (
+        <Suspense fallback={<p className="muted small">지도 화면을 준비하는 중입니다</p>}>
+          <MapTab places={places} />
+        </Suspense>
+      )}
+
+      {tab === 'decide' && (
       <>
 
       {decidedPlace && !winner && (
@@ -303,6 +334,12 @@ export default function App() {
       )}
 
       <footer className="muted small">로그인 없음 · 링크만 있으면 누구나</footer>
+
+      <Sheet open={adding} onClose={() => setAdding(false)} title="가게 추가">
+        <Suspense fallback={<p className="muted small">준비하는 중입니다</p>}>
+          {adding && <AddPlace onAdded={reload} />}
+        </Suspense>
+      </Sheet>
 
       <Sheet
         open={confirming !== null}

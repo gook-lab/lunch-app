@@ -576,3 +576,119 @@ footer.muted { text-align: center; }
 
 .race__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .race__rank { flex-shrink: 0; margin-left: auto; }
+
+/* 지도 탭 — 캔버스 안의 배지·핀 라벨은 카카오가 그린 DOM 에 들어가므로
+   전역 클래스로 둔다. CSS 모듈로 바꾸면 이 둘이 스타일을 잃는다. */
+.map { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.map__canvas {
+  width: 100%;
+  height: 320px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-neutral-300);
+  overflow: hidden;
+  background: var(--color-neutral-100);
+}
+
+.map--trouble {
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.map__office {
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+}
+
+.map__pill {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-neutral-400);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.map__info {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-md);
+}
+
+.map__info p { margin: 2px 0 0; }
+
+/* 가게 추가 시트 */
+.add { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.add__search { display: flex; gap: var(--space-2); }
+
+.add__search input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-3);
+  font-size: var(--fs-md);
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-neutral-400);
+  border-radius: var(--radius-sm);
+}
+
+.add__results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 44vh;
+  overflow-y: auto;
+}
+
+.add__hit {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 120ms var(--ease-out);
+}
+
+.add__hit:hover { border-color: var(--color-neutral-600); }
+
+.add__hit--on {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.add__hit strong { font-size: var(--fs-md); }
+
+.add__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-divider, var(--color-neutral-300));
+}
+
+.add__confirm p { margin: 0; }
+
+.row--end { justify-content: flex-end; }

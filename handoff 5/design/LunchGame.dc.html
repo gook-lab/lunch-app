@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="display:flex;flex-direction:column;gap:16px;align-items:stretch;font-family:system-ui, 'Segoe UI', Roboto, sans-serif;color:#18181b">
+  <sc-if value="{{ isWheel }}" hint-placeholder-val="{{ true }}">
+    <div style="position:relative;width:280px;max-width:72vw;aspect-ratio:1;margin:0 auto">
+      <div style="position:absolute;top:-2px;left:50%;translate:-50% 0;z-index:1;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:14px solid {{ needleColor }}"></div>
+      <div style="width:100%;height:100%;border-radius:50%;border:1px solid #a1a1aa;position:relative;overflow:hidden;box-sizing:border-box;background:{{ wheelBg }};transform:rotate({{ angle }}deg);transition:transform {{ wheelDur }}ms cubic-bezier(0.15, 0.85, 0.2, 1)">
+        <sc-for list="{{ slices }}" as="s" hint-placeholder-count="5">
+          <div style="position:absolute;inset:0;display:flex;justify-content:center;padding-top:12px;transform:rotate({{ s.mid }}deg)">
+            <span style="font-size:13px;line-height:1.3;height:1.3em;color:#18181b;font-weight:{{ s.fw }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:{{ s.maxW }};transform:{{ s.flip }};transform-origin:center">{{ s.name }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <sc-if value="{{ vivid }}">
+        <div style="position:absolute;left:50%;top:50%;width:44px;height:44px;translate:-50% -50%;border-radius:50%;background:#18181b;box-shadow:0 0 0 4px #fff, 0 2px 10px rgba(0,0,0,0.25)"></div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isSlot }}">
+    <div style="position:relative;width:320px;max-width:86vw;margin:0 auto">
+      <div style="height:168px;overflow:hidden;border-radius:12px;background:{{ slotBg }};-webkit-mask-image:linear-gradient(transparent, #000 28%, #000 72%, transparent);mask-image:linear-gradient(transparent, #000 28%, #000 72%, transparent)">
+        <div style="transform:translateY({{ slotY }}px);transition:transform {{ slotDur }}ms cubic-bezier(0.12, 0.8, 0.15, 1)">
+          <sc-for list="{{ reel }}" as="r" hint-placeholder-count="3">
+            <div style="height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:18px;color:{{ slotInk }}">
+              <span>{{ r.name }}</span>
+              <span style="font-size:11px;color:{{ slotMeta }}">도보 {{ r.walkMin }}분</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="position:absolute;left:0;right:0;top:56px;height:56px;border-top:2px solid {{ slotFrame }};border-bottom:2px solid {{ slotFrame }};pointer-events:none"></div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isLadder }}">
+    <div style="width:320px;max-width:86vw;margin:0 auto">
+      <svg viewBox="0 0 320 260" style="width:100%;display:block">
+        <sc-for list="{{ rails }}" as="l"><line x1="{{ l.x1 }}" y1="{{ l.y1 }}" x2="{{ l.x2 }}" y2="{{ l.y2 }}" stroke="#a1a1aa" stroke-width="1.5"></line></sc-for>
+        <sc-for list="{{ rungs }}" as="l"><line x1="{{ l.x1 }}" y1="{{ l.y1 }}" x2="{{ l.x2 }}" y2="{{ l.y2 }}" stroke="#a1a1aa" stroke-width="1.5"></line></sc-for>
+        <polyline points="{{ ladderPts }}" fill="none" stroke="{{ ladderInk }}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+        <sc-if value="{{ ladderHead }}"><circle cx="{{ ladderHead.x }}" cy="{{ ladderHead.y }}" r="5" fill="{{ ladderInk }}"></circle></sc-if>
+      </svg>
+      <div style="display:grid;gap:2px;margin-top:8px;grid-template-columns:{{ ladderCols }}">
+        <sc-for list="{{ ladderLabels }}" as="lb">
+          <span style="font-size:11px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:{{ lb.ink }};font-weight:{{ lb.fw }}">{{ lb.name }}</span>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isPinball }}">
+    <div style="position:relative;width:320px;max-width:86vw;margin:0 auto;border-radius:14px;overflow:hidden;background:{{ pbBg }};padding:10px 0 0">
+      <span style="position:absolute;top:8px;right:10px;font:700 11px ui-monospace, Consolas, monospace;letter-spacing:1px;color:{{ hitInk }}">{{ hitLabel }}</span>
+      <svg viewBox="0 0 320 {{ pbSvgH }}" style="width:100%;display:block">
+        <sc-for list="{{ bumpers }}" as="bp">
+          <circle cx="{{ bp.x }}" cy="{{ bp.y }}" r="19" fill="none" stroke="{{ bp.ring }}" stroke-width="2" opacity="{{ bp.ringOp }}"></circle>
+          <circle cx="{{ bp.x }}" cy="{{ bp.y }}" r="{{ bp.r }}" fill="{{ bp.fill }}"></circle>
+        </sc-for>
+        <sc-for list="{{ pegs }}" as="p"><circle cx="{{ p.x }}" cy="{{ p.y }}" r="{{ p.r }}" fill="{{ p.fill }}"></circle></sc-for>
+        <sc-if value="{{ pegRing }}"><circle cx="{{ pegRing.x }}" cy="{{ pegRing.y }}" r="11" fill="none" stroke="oklch(0.85 0.17 90)" stroke-width="2" opacity="0.7"></circle></sc-if>
+        <sc-for list="{{ binWalls }}" as="w"><line x1="{{ w.x }}" y1="{{ w.y1 }}" x2="{{ w.x }}" y2="{{ w.y2 }}" stroke="{{ pbWall }}" stroke-width="1.5"></line></sc-for>
+        <sc-if value="{{ ball }}">
+          <circle cx="{{ ball.x }}" cy="{{ ball.y }}" r="11" fill="{{ pbGlow }}"></circle>
+          <circle cx="{{ ball.x }}" cy="{{ ball.y }}" r="6" fill="{{ pbBall }}"></circle>
+        </sc-if>
+      </svg>
+      <div style="display:grid;grid-template-columns:{{ pbCols }};height:96px">
+        <sc-for list="{{ bins }}" as="b">
+          <div style="display:flex;align-items:flex-start;justify-content:center;padding-top:6px;background:{{ b.bg }};border-top:3px solid {{ b.bar }};overflow:hidden">
+            <span style="writing-mode:vertical-rl;font-size:11px;letter-spacing:0;color:{{ b.ink }};font-weight:{{ b.fw }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:84px">{{ b.name }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ hasWinner }}">
+    <div style="border:1px solid #d4d4d8;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px;background:#fff">
+      <sc-if value="{{ vivid }}">
+        <span style="align-self:flex-start;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:{{ winnerTint }};color:#18181b">{{ winnerCat }}</span>
+      </sc-if>
+      <h2 style="margin:0;font-size:22px;font-weight:500;line-height:1.18;color:#18181b">{{ winnerName }}</h2>
+      <p style="margin:0;font-size:13px;color:#52525b">{{ winnerMeta }}</p>
+      <div style="display:flex;gap:8px">
+        <button onClick="{{ decide }}" style="flex:1;height:40px;border:0;border-radius:8px;background:#18181b;color:#fff;font:600 15px system-ui, sans-serif;cursor:pointer">여기로 결정</button>
+        <button onClick="{{ spin }}" style="flex:1;height:40px;border:1px solid #d4d4d8;border-radius:8px;background:transparent;color:#18181b;font:600 15px system-ui, sans-serif;cursor:pointer">{{ againLabel }}</button>
+      </div>
+      <p style="margin:0;font-size:13px;color:#52525b">"여기로 결정"을 눌러야 방문 기록이 남고, 다음 2주 후보에서 빠집니다.</p>
+    </div>
+  </sc-if>
+  <sc-if value="{{ noWinner }}" hint-placeholder-val="{{ true }}">
+    <button onClick="{{ spin }}" disabled="{{ spinDisabled }}" style="width:100%;height:48px;border:0;border-radius:8px;background:#18181b;color:#fff;font:600 16px system-ui, sans-serif;cursor:pointer;opacity:{{ spinOpacity }}">{{ spinLabel }}</button>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:520},&quot;candidates&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Place[]&quot;,&quot;default&quot;:[{&quot;id&quot;:&quot;a&quot;,&quot;name&quot;:&quot;샘플 한식집 1&quot;,&quot;category&quot;:&quot;한식&quot;,&quot;walkMin&quot;:4},{&quot;id&quot;:&quot;b&quot;,&quot;name&quot;:&quot;샘플 면집 1&quot;,&quot;category&quot;:&quot;면&quot;,&quot;walkMin&quot;:5},{&quot;id&quot;:&quot;c&quot;,&quot;name&quot;:&quot;샘플 분식집 1&quot;,&quot;category&quot;:&quot;분식&quot;,&quot;walkMin&quot;:3},{&quot;id&quot;:&quot;d&quot;,&quot;name&quot;:&quot;샘플 고기집 2&quot;,&quot;category&quot;:&quot;고기&quot;,&quot;walkMin&quot;:10},{&quot;id&quot;:&quot;e&quot;,&quot;name&quot;:&quot;샘플 분식집 2&quot;,&quot;category&quot;:&quot;분식&quot;,&quot;walkMin&quot;:9}]},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;wheel&quot;,&quot;ladder&quot;,&quot;slot&quot;,&quot;pinball&quot;],&quot;default&quot;:&quot;pinball&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;vivid&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;legacy&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;onResult&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(p)=&gt;void&quot;},&quot;onDecide&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(p)=&gt;void&quot;}}">
+const HUE = { 한식: 25, 면: 80, 고기: 355, 분식: 145, 양식: 250, 중식: 300 };
+const hue = (c) => HUE[c] ?? 200;
+const ITEM_H = 56, LOOPS = 6, ROWS = 9;
+const LABEL = { wheel: '돌리기', ladder: '사다리 타기', slot: '레버 당기기', pinball: '공 떨어뜨리기' };
+const reduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+
+class Component extends DCLogic {
+  state = { hits: 0, spinning: false, winnerIndex: null, winner: null, angle: 0, wheelDur: 0, slotY: 56, slotDur: 0, ladder: null, drawn: 0, ball: null, litPeg: -1, litBin: -1 };
+  turns = 0;
+
+  componentDidUpdate(prev) {
+    if (prev.mode !== this.props.mode) {
+      this.cancel();
+      this.setState({ spinning: false, winner: null, winnerIndex: null, ball: null, litPeg: -1, litBin: -1, drawn: 0, ladder: null });
+    }
+  }
+  componentWillUnmount() { this.cancel(); }
+  cancel() { clearTimeout(this.timer); clearTimeout(this.kick); cancelAnimationFrame(this.raf); }
+  cands() { return this.props.candidates || []; }
+  mode() { return this.props.mode || 'wheel'; }
+
+  finish(idx) {
+    const c = this.cands()[idx];
+    this.setState({ spinning: false, winner: c });
+    this.props.onResult?.(c);
+  }
+
+  animate(ms, onFrame, onDone) {
+    const t0 = performance.now();
+    const tick = (now) => {
+      const t = Math.min(1, (now - t0) / ms);
+      onFrame(t);
+      if (t < 1) this.raf = requestAnimationFrame(tick); else onDone();
+    };
+    this.raf = requestAnimationFrame(tick);
+  }
+
+  colX(col, n) { return n <= 1 ? 160 : 18 + (col * 284) / (n - 1); }
+  rowY(row) { return 26 + (row * 208) / ROWS; }
+
+  buildLadder(n) {
+    const rungs = [];
+    for (let r = 0; r < ROWS; r++) {
+      let prev = -2;
+      for (let c = 0; c < n - 1; c++) {
+        if (c - prev > 1 && Math.random() < 0.5) { rungs.push({ row: r, col: c }); prev = c; }
+      }
+    }
+    return rungs;
+  }
+  ladderPath(rungs, start) {
+    let col = start;
+    const pts = [{ col, row: 0 }];
+    for (let r = 0; r < ROWS; r++) {
+      const right = rungs.find((g) => g.row === r && g.col === col);
+      const left = rungs.find((g) => g.row === r && g.col === col - 1);
+      if (right || left) {
+        pts.push({ col, row: r + 0.5 });
+        col = right ? col + 1 : col - 1;
+        pts.push({ col, row: r + 0.5 });
+      }
+    }
+    pts.push({ col, row: ROWS });
+    return pts;
+  }
+
+  geo(n) {
+    const binW = 320 / n, R = n - 1;
+    const rowH = R > 0 ? Math.min(26, 210 / R) : 0;
+    const pegTop = 18;
+    const binsTop = pegTop + R * rowH + 16;
+    const peg = (r, k) => ({ x: 160 + (k - r / 2) * binW, y: pegTop + r * rowH });
+    return { binW, R, rowH, pegTop, binsTop, peg, svgH: binsTop + 18 };
+  }
+
+  spin = () => {
+    const c = this.cands();
+    const n = c.length;
+    if (n === 0 || this.state.spinning) return;
+    this.cancel();
+    const idx = Math.floor(Math.random() * n);
+    const rm = reduced();
+    this.setState({ winnerIndex: idx, winner: null, spinning: true, litBin: -1, litPeg: -1 });
+    const m = this.mode();
+
+    if (m === 'wheel') {
+      const slice = 360 / n;
+      if (!rm) this.turns += 4;
+      this.setState({ angle: this.turns * 360 + (360 - (idx * slice + slice / 2)), wheelDur: rm ? 0 : 2600 });
+      this.timer = setTimeout(() => this.finish(idx), rm ? 0 : 2600);
+    } else if (m === 'slot') {
+      this.setState({ slotDur: 0 });
+      this.kick = setTimeout(() => {
+        this.setState({ slotDur: rm ? 0 : 1800, slotY: -((rm ? 0 : LOOPS * n) + idx - 1) * ITEM_H });
+      }, 30);
+      this.timer = setTimeout(() => {
+        this.setState({ slotDur: 0, slotY: -(n + idx - 1) * ITEM_H });
+        this.finish(idx);
+      }, rm ? 40 : 1850);
+    } else if (m === 'ladder') {
+      const rungs = this.buildLadder(n);
+      let start = 0;
+      for (let s = 0; s < n; s++) {
+        const p = this.ladderPath(rungs, s);
+        if (p[p.length - 1].col === idx) { start = s; break; }
+      }
+      const path = this.ladderPath(rungs, start).map((p) => ({ x: this.colX(p.col, n), y: this.rowY(p.row) }));
+      this.setState({ ladder: { rungs, path, n }, drawn: rm ? 1 : 0 });
+      if (rm) return this.finish(idx);
+      this.animate(2200, (t) => this.setState({ drawn: t }), () => this.finish(idx));
+    } else {
+      const g = this.geo(n);
+      const rights = Array.from({ length: g.R }, (_, i) => i < idx);
+      for (let i = rights.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [rights[i], rights[j]] = [rights[j], rights[i]]; }
+      const pts = [{ x: 160, y: -6, peg: -1 }];
+      let k = 0, pegIdx = 0;
+      for (let r = 0; r < g.R; r++) {
+        const p = g.peg(r, k);
+        pts.push({ x: p.x, y: p.y - 7, peg: (r * (r + 1)) / 2 + k });
+        if (rights[r]) k++;
+      }
+      pts.push({ x: (idx + 0.5) * g.binW, y: g.binsTop + 8, peg: -1 });
+      if (rm) { this.setState({ ball: pts[pts.length - 1], litBin: idx }); return this.finish(idx); }
+      const seg = 200, total = seg * (pts.length - 1);
+      let lastSeg = -1;
+      this.setState({ hits: 0 });
+      this.animate(total, (t) => {
+        const f = t * (pts.length - 1);
+        const i = Math.min(pts.length - 2, Math.floor(f));
+        const u = f - i;
+        const a = pts[i], b = pts[i + 1];
+        const x = a.x + (b.x - a.x) * u;
+        const y = a.y + (b.y - a.y) * (u * u) - Math.sin(Math.PI * u) * 7;
+        const patch = { ball: { x, y }, litPeg: u < 0.45 ? a.peg : -1 };
+        if (i !== lastSeg && a.peg >= 0) { lastSeg = i; patch.hits = (this.state.hits || 0) + 1; }
+        this.setState(patch);
+      }, () => { this.setState({ ball: pts[pts.length - 1], litBin: idx, litPeg: -1 }); this.finish(idx); });
+    }
+  };
+
+  renderVals() {
+    const c = this.cands();
+    const n = c.length;
+    const m = this.mode();
+    const vivid = !!this.props.vivid;
+    const legacy = !!this.props.legacy;
+    const s = this.state;
+    const tint = (p, i) => vivid ? `oklch(${i % 2 ? 0.8 : 0.87} 0.1 ${hue(p.category)})` : (i % 2 === 0 ? '#f4f4f5' : '#e4e4e7');
+
+    const slice = n > 0 ? 360 / n : 360;
+    const wheelBg = n === 0 ? 'transparent' : `conic-gradient(${c.map((p, i) => `${tint(p, i)} ${i * slice}deg ${(i + 1) * slice}deg`).join(', ')})`;
+    const slices = c.map((p, i) => {
+      const mid = i * slice + slice / 2;
+      return { name: p.name, mid, maxW: n > 6 ? '5.5em' : '7em', flip: mid > 90 && mid < 270 ? 'rotate(180deg)' : 'none', fw: vivid ? 600 : 400 };
+    });
+
+    const reel = Array.from({ length: LOOPS + 3 }, () => c).flat();
+
+    const lad = s.ladder && s.ladder.n === n ? s.ladder : null;
+    const rails = c.map((_, i) => ({ x1: this.colX(i, n), y1: this.rowY(0), x2: this.colX(i, n), y2: this.rowY(ROWS) }));
+    const rungSrc = lad ? lad.rungs : (this._idle && this._idle.n === n ? this._idle.rungs : (this._idle = { n, rungs: this.buildLadder(n) }).rungs);
+    const rungs = rungSrc.map((r) => ({ x1: this.colX(r.col, n), y1: this.rowY(r.row + 0.5), x2: this.colX(r.col + 1, n), y2: this.rowY(r.row + 0.5) }));
+    let drawnPts = [];
+    if (lad && s.drawn > 0) {
+      const pts = lad.path;
+      const seg = pts.slice(1).map((p, i) => Math.hypot(p.x - pts[i].x, p.y - pts[i].y));
+      let rem = s.drawn * seg.reduce((a, b) => a + b, 0);
+      drawnPts = [pts[0]];
+      for (let i = 0; i < seg.length && rem > 0; i++) {
+        if (rem >= seg[i]) { drawnPts.push(pts[i + 1]); rem -= seg[i]; }
+        else { const t = rem / seg[i]; drawnPts.push({ x: pts[i].x + (pts[i + 1].x - pts[i].x) * t, y: pts[i].y + (pts[i + 1].y - pts[i].y) * t }); rem = 0; }
+      }
+    }
+    const ladderDone = lad && s.drawn >= 1;
+    const ladderLabels = c.map((p, i) => ({ name: p.name, ink: ladderDone && s.winnerIndex === i ? '#18181b' : '#52525b', fw: ladderDone && s.winnerIndex === i ? 700 : 400 }));
+
+    const g = this.geo(Math.max(n, 1));
+    const pegs = [];
+    for (let r = 0; r < g.R; r++) for (let k = 0; k <= r; k++) {
+      const p = g.peg(r, k);
+      const lit = pegs.length === s.litPeg;
+      pegs.push({ x: p.x, y: p.y, r: lit ? 5 : 3, fill: lit ? 'oklch(0.85 0.17 90)' : (vivid ? '#71717a' : '#a1a1aa') });
+    }
+    const litP = s.litPeg >= 0 ? pegs[s.litPeg] : null;
+    const pegRing = litP ? { x: litP.x, y: litP.y } : null;
+    const hits = s.hits || 0;
+    const bY = g.pegTop + g.R * g.rowH * 0.42;
+    const bumpers = [[34, bY, 0], [286, bY, 1], [22, bY + 46, 1], [298, bY + 46, 0]].map(([x, y, side]) => {
+      const on = s.spinning && hits > 0 && hits % 2 === side;
+      const h = side ? 320 : 200;
+      return { x, y, r: on ? 15 : 13, fill: vivid ? `oklch(${on ? 0.85 : 0.5} ${on ? 0.2 : 0.14} ${h})` : (on ? '#18181b' : '#d4d4d8'), ring: vivid ? `oklch(0.9 0.15 ${h})` : '#18181b', ringOp: on ? 0.9 : 0.25 };
+    });
+    const binWalls = Array.from({ length: Math.max(n - 1, 0) }, (_, i) => ({ x: (i + 1) * g.binW, y1: g.binsTop, y2: g.svgH }));
+    const bins = c.map((p, i) => {
+      const win = s.litBin === i;
+      const short = p.name.replace('샘플 ', '');
+      return vivid
+        ? { name: short, bg: win ? `oklch(0.87 0.12 ${hue(p.category)})` : '#27272a', bar: `oklch(0.72 0.15 ${hue(p.category)})`, ink: win ? '#18181b' : '#e4e4e7', fw: win ? 700 : 400 }
+        : { name: short, bg: win ? '#e4e4e7' : '#f4f4f5', bar: '#18181b', ink: '#18181b', fw: win ? 700 : 400 };
+    });
+
+    const w = s.winner;
+    return {
+      vivid,
+      isWheel: m === 'wheel', isSlot: m === 'slot', isLadder: m === 'ladder', isPinball: m === 'pinball',
+      needleColor: vivid ? '#18181b' : '#18181b',
+      wheelBg, angle: s.angle, wheelDur: s.wheelDur, slices,
+      reel, slotY: s.slotY, slotDur: s.slotDur,
+      slotBg: vivid ? '#18181b' : '#f4f4f5', slotInk: vivid ? '#fff' : '#18181b', slotMeta: vivid ? '#a1a1aa' : '#52525b', slotFrame: vivid ? 'oklch(0.85 0.17 90)' : '#18181b',
+      rails, rungs, ladderPts: drawnPts.length > 1 ? drawnPts.map((p) => `${p.x},${p.y}`).join(' ') : '',
+      ladderHead: drawnPts.length > 0 ? drawnPts[drawnPts.length - 1] : null,
+      ladderInk: vivid ? 'oklch(0.6 0.2 25)' : '#18181b',
+      ladderCols: `repeat(${Math.max(n, 1)}, 1fr)`, ladderLabels,
+      pegs, binWalls, bins, ball: s.ball, pegRing, bumpers, hitLabel: `HIT ${hits}`, hitInk: vivid ? 'oklch(0.85 0.17 90)' : '#18181b', pbSvgH: g.svgH, pbCols: `repeat(${Math.max(n, 1)}, 1fr)`,
+      pbBg: vivid ? '#18181b' : '#f4f4f5', pbWall: vivid ? '#3f3f46' : '#d4d4d8',
+      pbBall: vivid ? '#fff' : '#18181b', pbGlow: vivid ? 'rgba(255,240,180,0.35)' : 'rgba(0,0,0,0.08)',
+      hasWinner: !!w, noWinner: !w,
+      winnerName: w?.name, winnerMeta: w ? `${w.category} · 도보 ${w.walkMin}분` : '',
+      winnerCat: w?.category, winnerTint: w ? `oklch(0.9 0.08 ${hue(w.category)})` : '',
+      decide: () => w && this.props.onDecide?.(w),
+      spin: this.spin,
+      againLabel: legacy ? '다시 돌리기' : '다시 하기',
+      spinDisabled: n === 0 || s.spinning, spinOpacity: n === 0 || s.spinning ? 0.4 : 1,
+      spinLabel: s.spinning ? (legacy ? '돌리는 중' : '고르는 중') : `${legacy ? '돌리기' : LABEL[m]} (후보 ${n}곳)`,
+    };
+  }
+}
+</script>
+</body>
+</html>
