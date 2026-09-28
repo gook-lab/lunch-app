@@ -30,6 +30,24 @@ export function wheelLabelOffset(winnerIndex: number, count: number, turns: numb
 }
 
 /**
+ * 돌림판 라벨을 뒤집어야 하는가.
+ *
+ * 읽히는 방향은 라벨의 **화면 각도**(mid + 원판 회전)가 정한다. 안 돌아간
+ * 상태의 mid 로만 판단하면, 원판이 멈춘 뒤 당첨 라벨이 바늘 밑에서 거꾸로
+ * 선다 — 후보 5곳이면 mid 가 36·108·180·252·324 라 셋이 (90, 270) 안이고,
+ * 실측으로 6판 중 4판이 거꾸로였다. 후보 1곳이면 mid 가 180 이라 매번이다.
+ *
+ * 당첨 칸은 항상 화면 0도로 오므로 여기서 false 가 나온다.
+ */
+export function wheelLabelFlipped(index: number, count: number, angle: number): boolean {
+  if (count <= 0) return false;
+  const slice = 360 / count;
+  const mid = index * slice + slice / 2;
+  const at = (((mid + angle) % 360) + 360) % 360;
+  return at > 90 && at < 270;
+}
+
+/**
  * 슬롯 릴의 되감을 위치와 멈출 위치.
  *
  * 위치는 "이어 붙인 목록에서 가운데 칸에 보이는 인덱스" 다. 목표를 절대값으로

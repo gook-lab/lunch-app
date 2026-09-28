@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { wheelAngle, wheelLabelOffset, slotStops, slotReelCopies } from './spin';
+import {
+  wheelAngle,
+  wheelLabelOffset,
+  wheelLabelFlipped,
+  slotStops,
+  slotReelCopies,
+} from './spin';
 
 const COUNTS = [1, 2, 3, 4, 5, 6, 8, 12];
 
@@ -100,3 +106,39 @@ describe('slotStops — 릴이 매 판 돈다', () => {
     expect(slotStops(5, 0, 0, 6)).toEqual({ home: 0, target: 0 });
   });
 });
+
+describe('wheelLabelFlipped — 멈춘 뒤 당첨 이름이 바로 선다', () => {
+  it('당첨 라벨은 어떤 후보 수에서도 안 뒤집힌다', () => {
+    // 당첨 칸은 항상 화면 0도(바늘 밑)로 온다. 거기서 뒤집으면 거꾸로 읽힌다.
+    for (const count of COUNTS) {
+      for (let i = 0; i < count; i += 1) {
+        for (const turns of [0, 4, 8, 40]) {
+          expect(wheelLabelFlipped(i, count, wheelAngle(i, count, turns))).toBe(false);
+        }
+      }
+    }
+  });
+
+  it('화면 아래쪽 절반에 선 라벨은 뒤집는다', () => {
+    // 원판이 안 돌아간 상태: mid 가 그대로 화면 각도다.
+    // 90 도와 270 도는 경계다 — 글자가 세로로 서서 어느 쪽도 거꾸로가 아니다.
+    expect(wheelLabelFlipped(0, 2, 0)).toBe(false); // mid 90
+    expect(wheelLabelFlipped(1, 2, 0)).toBe(false); // mid 270
+    for (const count of [4, 5, 8, 12]) {
+      const slice = 360 / count;
+      for (let i = 0; i < count; i += 1) {
+        const mid = i * slice + slice / 2;
+        expect(wheelLabelFlipped(i, count, 0)).toBe(mid > 90 && mid < 270);
+      }
+    }
+  });
+
+  it('후보 1곳 — mid 가 180 이라 안 고치면 매번 거꾸로 선다', () => {
+    expect(wheelLabelFlipped(0, 1, 0)).toBe(true); // 안 돌린 상태에서는 뒤집힌다
+    expect(wheelLabelFlipped(0, 1, wheelAngle(0, 1, 4))).toBe(false); // 멈추면 바로 선다
+  });
+
+  it('후보 0곳이면 안 뒤집는다', () => {
+    expect(wheelLabelFlipped(0, 0, 0)).toBe(false);
+  });
+})

@@ -2,7 +2,8 @@
  * 돌림판.
  *
  * 읽기 문제를 두 가지로 나눠 푼다.
- *  - 칸 이름: 반지름 방향으로 눕히되 아래쪽 절반은 180도 돌려 거꾸로 읽히지 않게.
+ *  - 칸 이름: 반지름 방향으로 눕히되 화면 아래쪽 절반은 180도 돌려 거꾸로
+ *    읽히지 않게. 판정은 원판 회전까지 넣은 화면 각도로 한다.
  *    그래도 돌아가는 동안에는 읽기 어렵다.
  *  - 그래서 멈춘 뒤에는 **가운데 원에 당첨 이름을 크게** 띄운다. 결과를 읽는 건
  *    이쪽이고, 칸 라벨은 "어디에 걸렸는지" 를 보여주는 역할만 한다.
@@ -11,7 +12,7 @@
  * gradient 만으로는 경계가 안 보인다.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { wheelAngle } from '../../lib/spin';
+import { wheelAngle, wheelLabelFlipped } from '../../lib/spin';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
 
 const TURNS = 4;
@@ -77,7 +78,8 @@ export function Wheel({ candidates, winnerIndex, spinning, onSpinEnd }: GameProp
 
         {candidates.map((place, i) => {
           const mid = i * slice + slice / 2;
-          const upsideDown = mid > 90 && mid < 270;
+          // 지금 원판이 돌아간 만큼까지 넣어서 판단한다 (lib/spin.ts).
+          const upsideDown = wheelLabelFlipped(i, count, angle);
           return (
             <div key={place.id} className="wheel__slice" style={{ transform: `rotate(${mid}deg)` }}>
               <span className={`wheel__label${upsideDown ? ' wheel__label--flip' : ''}`}>
