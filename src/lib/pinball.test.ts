@@ -255,8 +255,12 @@ describe('시드 탐색이 매번 같은 경기를 주지 않는다', () => {
   });
 
   it('시작 시드를 흔들면 어디서 시작해도 찾는다', () => {
-    for (const count of [2, 3, 5, 8, 12]) {
-      for (let k = 0; k < 40; k += 1) {
+    // 후보 수를 1..12 전부 훑는다. 못 찾으면 race 가 null 이 되고 연출이
+    // 끝나지 않는다 — 워치독이 12초 뒤 잠금만 풀 뿐 결과가 안 나온다.
+    // 실측으로 4680회 탐색에서 실패 0회였지만, 물리를 건드리면 특정 레인이
+    // 도달 불가가 될 수 있으므로 여기서 막는다.
+    for (let count = 1; count <= 12; count += 1) {
+      for (let k = 0; k < 16; k += 1) {
         const start = 1 + Math.floor(Math.random() * 100_000);
         const target = k % count;
         const seed = seedForWinner(count, target, 600, start);
