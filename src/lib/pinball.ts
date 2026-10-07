@@ -17,6 +17,7 @@
  * 무엇보다 중앙이 구조적으로 유리해지는 편중이 덜하다. 벽은 선분이라
  * 점-선분 최단거리로 충돌을 본다.
  */
+import { seededRandom } from './random';
 
 /** 구슬이 굴러가는 코스 폭. 캔버스는 이보다 넓고, 남는 오른쪽이 순위판이다. */
 export const COURSE_W = 208;
@@ -62,17 +63,6 @@ export interface RaceResult {
   winner: number;
   /** 당첨 구슬이 결승선에 닿은 프레임. 재생은 여기서 끝낸다. */
   winnerFrame: number;
-}
-
-/** 재현 가능한 난수 (mulberry32). 같은 시드는 항상 같은 경기를 만든다. */
-function rng(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
 }
 
 /**
@@ -133,7 +123,7 @@ function closestOnSegment(px: number, py: number, w: Wall) {
 
 /** 시드 하나로 경기를 끝까지 돌린다. 물리는 여기서만 일어난다. */
 export function simulateRace(count: number, seed: number): RaceResult {
-  const random = rng(seed);
+  const random = seededRandom(seed);
   const lane = COURSE_W / (count + 1);
 
   const x = new Array<number>(count);

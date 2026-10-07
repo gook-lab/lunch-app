@@ -368,6 +368,18 @@ body {
   font-weight: 700;
 }
 
+/* 후보가 많으면(7곳~) 열 간격이 좁아 가로 라벨이 전부 잘린다. 세로로 쓴다. */
+.ladder__labels--tall { height: 8.5em; }
+
+.ladder__labels--tall .ladder__label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  width: auto;
+  max-height: 100%;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
 /* 슬롯 */
 .slot { position: relative; width: min(320px, 84vw); }
 

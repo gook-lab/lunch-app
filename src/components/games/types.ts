@@ -12,6 +12,15 @@ export interface GameProps {
   /** null 이면 아직 안 돌린 상태. */
   winnerIndex: number | null;
   spinning: boolean;
+  /**
+   * 판 번호. 돌릴 때마다 바뀐다(증가 + 난수).
+   *
+   * winnerIndex 만으로는 부족하다 — 같은 곳이 연달아 당첨되면 값이 안
+   * 바뀌어 사다리·핀볼 경기가 그대로 남고 방금 본 연출이 똑같이 한 번 더
+   * 재생된다. 게임은 이 값이 바뀌면 새 판을 만든다. 핀볼은 시드 탐색의
+   * 시작점으로도 쓴다.
+   */
+  run: number;
   onSpinEnd: () => void;
 }
 

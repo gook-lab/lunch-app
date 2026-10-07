@@ -7,6 +7,7 @@
  * 캔버스로 그린다. 구슬·핀·벽이 매 프레임 움직이는데 이걸 DOM 으로 하면
  * 노드가 수십 개씩 갱신된다.
  */
+import { shortName } from '../../lib/name';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   BOARD_H,
@@ -42,7 +43,8 @@ const PLAY_MS = LEAD_MS + TAIL_MS;
 /** 시드 탐색 한 번에 훑을 개수. 실측으로 무작위 시작 200회 중 실패 0회. */
 const MAX_SEEDS = 600;
 
-const randomStart = () => 1 + Math.floor(Math.random() * 100_000);
+/** 판 번호를 seedForWinner 의 시작 시드(1 이상)로 접는다. */
+const startSeedFor = (run: number) => 1 + (Math.abs(Math.floor(run)) % 100_000);
 
 /** 구슬 색. 토큰이 아니라 구분용 팔레트라 여기서만 쓴다. 네온이라 밝게 잡는다. */
 function marbleHue(i: number): number {
@@ -52,13 +54,7 @@ function marbleHue(i: number): number {
 const marbleColor = (i: number) => `oklch(0.78 0.19 ${marbleHue(i)})`;
 const marbleGlow = (i: number) => `oklch(0.78 0.19 ${marbleHue(i)} / 0.45)`;
 
-/** "샘플 고기집 1" 처럼 긴 이름은 코스 위에서 겹친다. 접두를 떼고 줄인다. */
-function shortName(name: string): string {
-  const trimmed = name.replace(/^샘플\s+/, '');
-  return trimmed.length > 6 ? `${trimmed.slice(0, 5)}…` : trimmed;
-}
-
-export function Pinball({ candidates, winnerIndex, spinning, onSpinEnd }: GameProps) {
+export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: GameProps) {
   const count = candidates.length;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameRef = useRef(0);
@@ -66,20 +62,14 @@ export function Pinball({ candidates, winnerIndex, spinning, onSpinEnd }: GamePr
   const [progress, setProgress] = useState(0);
   const [finished, setFinished] = useState(false);
 
-  // 판 번호. winnerIndex 만으로는 부족하다 — 같은 곳이 연달아 당첨되면
-  // 값이 안 바뀌어 경기가 그대로 남는다.
-  const [run, setRun] = useState(0);
-  useEffect(() => {
-    if (spinning) setRun((r) => r + 1);
-  }, [spinning]);
-
   // 돌릴 때마다 당첨 구슬이 이기는 경기를 찾는다.
   const race: RaceResult | null = useMemo(() => {
     if (winnerIndex === null || count === 0) return null;
     // 시작 시드를 판마다 흔든다. 기본값(1)으로 두면 seedForWinner 가 같은
     // (후보 수, 당첨) 에 늘 같은 시드를 돌려준다 — 후보 5곳이면 시드가
-    // 항상 2, 1, 5, 4, 3 이라 평생 경기 5가지만 보게 된다.
-    const seed = seedForWinner(count, winnerIndex, MAX_SEEDS, randomStart());
+    // 항상 2, 1, 5, 4, 3 이라 평생 경기 5가지만 보게 된다. run 은 App 이
+    // 판마다 난수를 섞어 만든 번호라 그대로 시작점으로 쓴다.
+    const seed = seedForWinner(count, winnerIndex, MAX_SEEDS, startSeedFor(run));
     if (seed === null) return null;
     return simulateRace(count, seed);
   }, [count, winnerIndex, run]);

@@ -7,6 +7,8 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildLadder, ladderPath, startForTarget } from '../../lib/ladder';
+import { shortName } from '../../lib/name';
+import { seededRandom } from '../../lib/random';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
 
 const ROWS = 9;
@@ -14,26 +16,20 @@ const VIEW_W = 320;
 const VIEW_H = 260;
 const PAD_X = 18;
 const PAD_Y = 26;
+/** 이 수를 넘는 후보 수부터 라벨을 세로쓰기로 바꾼다. */
+export const TALL_LABELS_FROM = 6;
 
-export function Ladder({ candidates, winnerIndex, spinning, onSpinEnd }: GameProps) {
+export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd }: GameProps) {
   const count = candidates.length;
   const [drawn, setDrawn] = useState(0);
   const pathRef = useRef<SVGPolylineElement>(null);
 
-  // 판 번호. winnerIndex 만으로는 부족하다 — 같은 곳이 연달아 당첨되면
-  // 값이 안 바뀌어 사다리가 그대로 남고, 방금 본 경로가 똑같이 한 번 더
-  // 재생된다. "아까랑 똑같은데" 가 된다.
-  const [run, setRun] = useState(0);
-  useEffect(() => {
-    if (spinning) setRun((r) => r + 1);
-  }, [spinning]);
-
+  // 돌릴 때마다 새 사다리를 만든다. run(판 번호)이 바뀌는 순간이 그때다.
+  // spinning 을 넣으면 멈추는 순간(true -> false)에도 다시 만들어져
+  // 사용자가 보고 있던 경로와 최종 경로가 달라진다. run 을 시드로 쓰므로
+  // 같은 판은 다시 렌더돼도 같은 사다리다.
   const ladder = useMemo(
-    () => buildLadder(Math.max(count, 1), ROWS),
-    // 돌릴 때마다 새 사다리를 만든다. run 이 올라가는 순간이 그때다.
-    // spinning 을 직접 넣으면 멈추는 순간(true -> false) 에도 다시 만들어져
-    // 사용자가 보고 있던 경로와 최종 경로가 달라진다.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    () => buildLadder(Math.max(count, 1), ROWS, seededRandom(run)),
     [count, run],
   );
 
@@ -74,6 +70,10 @@ export function Ladder({ candidates, winnerIndex, spinning, onSpinEnd }: GamePro
   }, [spinning, winnerIndex, count, onSpinEnd]);
 
   if (count === 0) return <div className="ladder ladder--empty" />;
+
+  // 열이 7개를 넘으면 한 열이 320px 기준 40px 아래라 가로 라벨이 전부
+  // "샘플…" 로 잘린다(11곳에서 실측). 그때는 세로로 쓴다.
+  const tall = count > TALL_LABELS_FROM;
 
   // 경로를 화면 좌표로 바꾸고, 지나온 만큼만 잘라서 그린다.
   // 점 개수가 아니라 실제 길이로 나눠야 내려가는 속도가 일정해 보인다.
@@ -139,16 +139,21 @@ export function Ladder({ candidates, winnerIndex, spinning, onSpinEnd }: GamePro
         * 있어 양 끝 라벨이 줄과 최대 14px 어긋난다 — 당첨 강조가 옆 줄
         * 밑에 뜬 것처럼 보인다. 줄과 같은 colX 로 자리를 잡는다.
         */}
-      <div className="ladder__labels">
+      <div className={tall ? 'ladder__labels ladder__labels--tall' : 'ladder__labels'}>
         {candidates.map((place, i) => (
           <span
             key={place.id}
             className={
               winnerIndex === i && drawn >= 1 ? 'ladder__label ladder__label--win' : 'ladder__label'
             }
-            style={{ left: `${(colX(i) / VIEW_W) * 100}%`, width: `${100 / count}%` }}
+            style={
+              tall
+                ? { left: `${(colX(i) / VIEW_W) * 100}%` }
+                : { left: `${(colX(i) / VIEW_W) * 100}%`, width: `${100 / count}%` }
+            }
+            title={place.name}
           >
-            {place.name}
+            {tall ? shortName(place.name, 8) : place.name}
           </span>
         ))}
       </div>

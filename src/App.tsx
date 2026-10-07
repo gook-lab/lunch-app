@@ -64,6 +64,8 @@ export default function App() {
    * 꽂아 엉뚱한 가게를 보여준다. 돌린 판은 그대로 두는 게 맞기도 하다.
    */
   const [board, setBoard] = useState<Place[] | null>(null);
+  // 판 번호. 돌릴 때마다 증가 + 난수. 게임이 새 판을 만드는 키이자 핀볼 시드 시작점.
+  const [run, setRun] = useState(0);
   const [confirming, setConfirming] = useState<Place | null>(null);
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<Tab>('roadmap');
@@ -111,6 +113,7 @@ export default function App() {
     setBoard(frozen);
     setWinnerIndex(index);
     setWinner(null);
+    setRun((r) => r + 1 + Math.floor(Math.random() * 1_000_000));
     setSpinning(true);
 
     // 게임 영역은 실행 전까지 없다. 나타난 다음 프레임에 화면 안으로 끌어온다 —
@@ -132,9 +135,11 @@ export default function App() {
   // (tab === 'roadmap' && ...) 옮기는 순간 언마운트되고, effect cleanup 이
   // 타이머를 지워 onSpinEnd 가 영영 안 불린다. 돌아오면 "진행 중" 에
   // 갇혀 있다. 어차피 딴 탭에서는 연출이 안 보이니 끊는 게 맞다.
-  useEffect(() => {
+  // 탭 이동은 전부 이 함수를 거친다 — setTab 을 직접 부르면 이 방어가 빠진다.
+  const goTab = useCallback((next: Tab) => {
     setSpinning(false);
-  }, [tab]);
+    setTab(next);
+  }, []);
 
   /**
    * 연출 잠금의 마지막 방어선.
@@ -161,12 +166,14 @@ export default function App() {
   // 영영 안 부른다. spinning 이 true 로 박히고 모드 칩 4개와 실행 버튼이
   // 잠긴 채 새로고침 말고는 복구가 없다. 필터 칩은 연출 중에도 눌리므로
   // (모드 칩과 달리 disabled 가 없다) 실제로 도달한다.
-  useEffect(() => {
+  // 필터를 바꾸는 손잡이는 전부 이 함수를 같이 부른다(아래 updateFilters).
+  const updateFilters = useCallback((patch: (f: Filters) => Filters) => {
     setBoard(null);
     setWinner(null);
     setWinnerIndex(null);
     setSpinning(false);
-  }, [filters]);
+    setFilters(patch);
+  }, []);
 
   const commit = useCallback(
     async (place: Place) => {
@@ -191,7 +198,7 @@ export default function App() {
   );
 
   const toggleCategory = (c: string) =>
-    setFilters((f) => ({
+    updateFilters((f) => ({
       ...f,
       categories: f.categories.includes(c)
         ? f.categories.filter((x) => x !== c)
@@ -225,13 +232,13 @@ export default function App() {
       </header>
 
       <nav className="tabs">
-        <button className={tab === 'roadmap' ? 'on' : ''} onClick={() => setTab('roadmap')}>
+        <button className={tab === 'roadmap' ? 'on' : ''} onClick={() => goTab('roadmap')}>
           로드맵
         </button>
-        <button className={tab === 'list' ? 'on' : ''} onClick={() => setTab('list')}>
+        <button className={tab === 'list' ? 'on' : ''} onClick={() => goTab('list')}>
           목록
         </button>
-        <button className={tab === 'map' ? 'on' : ''} onClick={() => setTab('map')}>
+        <button className={tab === 'map' ? 'on' : ''} onClick={() => goTab('map')}>
           지도
         </button>
       </nav>
@@ -243,7 +250,7 @@ export default function App() {
             * 한쪽에만 있는 채로 갈라진다. 버튼은 지도로 보내기만 한다.
             */}
           <div className="row row--end">
-            <Button size="sm" onClick={() => setTab('map')}>
+            <Button size="sm" onClick={() => goTab('map')}>
               지도에서 가게 추가
             </Button>
           </div>
@@ -275,9 +282,9 @@ export default function App() {
         filters={filters}
         result={result}
         winnerId={winner?.id ?? null}
-        onWalk={(walkMin) => setFilters((f) => ({ ...f, maxWalkMin: walkMin }))}
+        onWalk={(walkMin) => updateFilters((f) => ({ ...f, maxWalkMin: walkMin }))}
         onCategory={toggleCategory}
-        onExcludeRecent={() => setFilters((f) => ({ ...f, excludeRecent: !f.excludeRecent }))}
+        onExcludeRecent={() => updateFilters((f) => ({ ...f, excludeRecent: !f.excludeRecent }))}
       />
 
       <section className="modes">
@@ -315,6 +322,7 @@ export default function App() {
               candidates: board ?? result.candidates,
               winnerIndex,
               spinning,
+              run,
               onSpinEnd,
             };
             if (mode === 'ladder') return <Ladder {...game} />;
