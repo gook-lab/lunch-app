@@ -44,6 +44,13 @@ export function noticeMessage(result: CandidateResult): string | null {
     return `후보가 ${result.candidates.length}곳뿐입니다. 가게가 ${HEALTHY_POOL_SIZE}곳은 돼야 최근 방문 제외가 제대로 돌아갑니다.`;
   }
 
+  // 제외를 껐으면 최근에 간 곳도 그대로 후보다. "빠졌습니다" 는 거짓이 된다.
+  if (!result.excludedRecent) {
+    return recentlyVisitedCount > 0
+      ? `최근 2주 제외를 꺼서 최근에 간 ${recentlyVisitedCount}곳도 후보에 들어 있습니다.`
+      : null;
+  }
+
   if (releasedCount > 0) {
     return `${afterCategoryCount}곳 중 ${recentlyVisitedCount}곳은 최근 2주 안에 갔습니다 — 후보 ${MIN_CANDIDATES}곳을 채우려고 그 중 오래된 ${releasedCount}곳을 다시 넣었습니다.`;
   }

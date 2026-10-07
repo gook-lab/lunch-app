@@ -89,6 +89,11 @@ export interface CandidateResult {
   releasedCount: number;
   /** 전부 풀어도 5곳이 안 되는 상태. 있는 만큼 돌린다. */
   shortOfMinimum: boolean;
+  /**
+   * "최근 2주 제외" 가 실제로 적용됐는가. 끄면 recent 는 그대로 세되
+   * 아무도 빠지지 않는다 — 문구가 "빠졌습니다" 라고 말하면 거짓이다.
+   */
+  excludedRecent: boolean;
   emptyReason: EmptyReason | null;
 }
 
@@ -166,6 +171,7 @@ export function selectCandidates(
       : afterWalk.filter((p) => filters.categories.includes(p.category));
 
   const base = {
+    excludedRecent: filters.excludeRecent,
     activeCount: active.length,
     afterWalkCount: afterWalk.length,
     afterCategoryCount: afterCategory.length,
