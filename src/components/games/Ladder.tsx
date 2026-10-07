@@ -134,13 +134,19 @@ export function Ladder({ candidates, winnerIndex, spinning, onSpinEnd }: GamePro
         {drawn > 0 && head && <circle cx={head.x} cy={head.y} r={5} className="ladder__head" />}
       </svg>
 
-      <div className="ladder__labels" style={{ gridTemplateColumns: `repeat(${count}, 1fr)` }}>
+      {/*
+        * 라벨은 세로줄 바로 밑에 둔다. 균등 grid 로 나누면 줄이 PAD_X 안쪽에
+        * 있어 양 끝 라벨이 줄과 최대 14px 어긋난다 — 당첨 강조가 옆 줄
+        * 밑에 뜬 것처럼 보인다. 줄과 같은 colX 로 자리를 잡는다.
+        */}
+      <div className="ladder__labels">
         {candidates.map((place, i) => (
           <span
             key={place.id}
             className={
               winnerIndex === i && drawn >= 1 ? 'ladder__label ladder__label--win' : 'ladder__label'
             }
+            style={{ left: `${(colX(i) / VIEW_W) * 100}%`, width: `${100 / count}%` }}
           >
             {place.name}
           </span>
