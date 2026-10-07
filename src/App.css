@@ -295,6 +295,20 @@ body {
 
 .wheel__label--flip { transform: rotate(180deg); }
 
+/* 후보 9곳~ : 라벨을 바퀴살 방향으로 세워 쓴다 (Wheel.tsx RADIAL_FROM) */
+.wheel--radial .wheel__slice { padding-top: var(--space-2); }
+
+.wheel--radial .wheel__label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  max-width: none;
+  max-height: 30%;
+  line-height: 1;
+}
+
+/* 가운데 원을 조금 줄여 라벨 자리를 낸다 */
+.wheel--radial .wheel__center { inset: 33%; }
+
 /* 멈춘 뒤 가운데에 당첨 이름 — 돌아가는 라벨은 읽기 어렵다 */
 .wheel__center {
   position: absolute;

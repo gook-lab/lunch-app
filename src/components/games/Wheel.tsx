@@ -13,9 +13,13 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { wheelAngle, wheelLabelFlipped } from '../../lib/spin';
+import { shortName } from '../../lib/name';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
 
 const TURNS = 4;
+
+/** 이 수를 넘는 후보 수부터 라벨을 바퀴살 방향(세로)으로 쓴다. */
+export const RADIAL_FROM = 8;
 
 export function Wheel({ candidates, winnerIndex, spinning, onSpinEnd }: GameProps) {
   const [angle, setAngle] = useState(0);
@@ -53,8 +57,14 @@ export function Wheel({ candidates, winnerIndex, spinning, onSpinEnd }: GameProp
 
   const winner = landed !== null ? (candidates[landed] ?? null) : null;
 
+  // 칸이 많으면 테두리를 따라 눕힌 라벨이 서로 겹친다. 20칸이면 칸 하나의
+  // 테두리 호가 43px 인데 라벨은 78px 까지 간다(실측). 그때는 글자를
+  // 바퀴살 방향으로 세워 쓴다. 거꾸로 판정(wheelLabelFlipped)은 그대로
+  // 쓴다 — 글자가 뒤집히는 조건은 눕히든 세우든 같은 반원이다.
+  const radial = count > RADIAL_FROM;
+
   return (
-    <div className="wheel">
+    <div className={radial ? 'wheel wheel--radial' : 'wheel'}>
       <div className="wheel__needle" aria-hidden="true" />
 
       <div
@@ -82,8 +92,11 @@ export function Wheel({ candidates, winnerIndex, spinning, onSpinEnd }: GameProp
           const upsideDown = wheelLabelFlipped(i, count, angle);
           return (
             <div key={place.id} className="wheel__slice" style={{ transform: `rotate(${mid}deg)` }}>
-              <span className={`wheel__label${upsideDown ? ' wheel__label--flip' : ''}`}>
-                {place.name}
+              <span
+                className={`wheel__label${upsideDown ? ' wheel__label--flip' : ''}`}
+                title={place.name}
+              >
+                {shortName(place.name, radial ? 6 : 12)}
               </span>
             </div>
           );
