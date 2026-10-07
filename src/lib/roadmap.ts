@@ -92,6 +92,8 @@ export interface RoadmapDot {
   label: string;
   /** 이름을 보여줄 처지인가. 범위 밖·꺼짐은 숨긴다. */
   labelled: boolean;
+  /** 라벨을 점 위에 놓았다(아래가 다른 라벨과 겹쳐서). */
+  labelAbove: boolean;
 }
 
 export interface RoadmapModel {
@@ -174,6 +176,7 @@ export function buildRoadmap(
         top: pct(at.y + DOT_R[status] + 3),
         label: place.name.replace(/^샘플 /, ''),
         labelled,
+        labelAbove: false,
       });
     });
   });
@@ -197,10 +200,86 @@ export function buildRoadmap(
       top: pct(at.y + DOT_R[status] + 3),
       label: place.name.replace(/^샘플 /, ''),
       labelled: status !== 'out' && status !== 'off',
+      labelAbove: false,
     });
   });
 
+  resolveLabels(dots);
+
   return { discR: filters.maxWalkMin * R_PER_MIN, rings, wedges, spokes, dots };
+}
+
+/*
+ * 라벨 충돌 회피.
+ *
+ * 한 조각(60도)에 가게가 다섯이면 라벨이 서로 덮는다 — 20곳 픽스처에서
+ * 라벨 20개 중 11쌍이 겹쳤다. 가까운 곳부터 자리를 잡고, 아래가 겹치면
+ * 점 위로 올리고, 위도 겹치면 라벨을 숨긴다. 점은 남으니 가게가 사라지는
+ * 건 아니고, 이름은 목록 탭에 있다.
+ *
+ * 글자 폭은 추정이다. 라벨은 HTML 이라 SVG 좌표로 재지 못한다. 무대 폭
+ * 300px 에 viewBox 400 이라 1px = 4/3 단위, 9.5px 글꼴에서 한글 한 자는
+ * 약 12.7 단위다. 무대가 300px 보다 좁으면 라벨이 상대적으로 커져 추정이
+ * 작아지는데, 그 경우는 390px 폰에서도 무대가 300px 이라 실제로는 없다.
+ */
+const LABEL_H = 13;
+const LABEL_GAP = 3;
+
+interface Box {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+/** 라벨 글자 폭 추정(VIEW 단위). */
+export function labelWidth(label: string): number {
+  let w = 0;
+  for (const ch of label) {
+    if (/[가-힣]/.test(ch)) w += 12.7;
+    else if (ch === ' ') w += 4;
+    else w += 7;
+  }
+  return w;
+}
+
+/** 라벨이 차지하는 상자(VIEW 단위). 테스트가 겹침을 재는 데 쓴다. */
+export function labelBox(dot: RoadmapDot): Box {
+  const w = labelWidth(dot.label);
+  const y1 = dot.labelAbove
+    ? dot.y - dot.r - LABEL_GAP - LABEL_H
+    : dot.y + dot.r + LABEL_GAP;
+  return { x1: dot.x - w / 2, x2: dot.x + w / 2, y1, y2: y1 + LABEL_H };
+}
+
+const intersects = (a: Box, b: Box) => a.x1 < b.x2 && b.x1 < a.x2 && a.y1 < b.y2 && b.y1 < a.y2;
+
+function resolveLabels(dots: RoadmapDot[]): void {
+  const taken: Box[] = [];
+  const free = (box: Box) => !taken.some((t) => intersects(box, t));
+  const order = dots
+    .filter((d) => d.labelled)
+    .sort((a, b) =>
+      a.place.walkMin === b.place.walkMin
+        ? a.place.id.localeCompare(b.place.id)
+        : a.place.walkMin - b.place.walkMin,
+    );
+  for (const d of order) {
+    const below = labelBox(d);
+    if (free(below)) {
+      taken.push(below);
+      continue;
+    }
+    d.labelAbove = true;
+    const above = labelBox(d);
+    if (free(above)) {
+      d.top = pct(above.y1);
+      taken.push(above);
+      continue;
+    }
+    d.labelAbove = false;
+    d.labelled = false;
+  }
 }
 
 /** 점이 어느 각도에 있는지. 기하 검증에 쓴다. */

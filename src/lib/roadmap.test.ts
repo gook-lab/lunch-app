@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { selectCandidates, WALK_STEPS, type Filters, type Place } from './candidates';
 import { CATEGORIES } from './category';
-import { VIEW, buildRoadmap, degreeOf, radiusForWalk } from './roadmap';
+import { VIEW, buildRoadmap, degreeOf, labelBox, radiusForWalk } from './roadmap';
 
 const TODAY = '20260916';
 const WEDGE = 360 / CATEGORIES.length;
@@ -144,5 +144,46 @@ describe('buildRoadmap — 필터를 반영한다', () => {
     const dots = model([place('a', '한식', 4)]).dots;
     expect(dots[0].place.name.startsWith('샘플 ')).toBe(true);
     expect(dots[0].label.startsWith('샘플 ')).toBe(false);
+  });
+});
+
+describe('buildRoadmap — 라벨 충돌 회피', () => {
+  const overlapping = (dots: ReturnType<typeof model>['dots']) => {
+    const shown = dots.filter((d) => d.labelled).map(labelBox);
+    let n = 0;
+    for (let a = 0; a < shown.length; a += 1)
+      for (let b = a + 1; b < shown.length; b += 1) {
+        const A = shown[a];
+        const B = shown[b];
+        if (A.x1 < B.x2 && B.x1 < A.x2 && A.y1 < B.y2 && B.y1 < A.y2) n += 1;
+      }
+    return n;
+  };
+
+  it('카테고리마다 두 곳이면 범위 안은 하나도 숨기지 않는다', () => {
+    // 4분짜리 여섯이 가운데에 모이면 아래 라벨끼리 닿아 몇은 위로 간다.
+    // 그래도 숨겨지는 건 없어야 한다.
+    const dots = model().dots.filter((d) => d.status !== 'out');
+    expect(dots.every((d) => d.labelled)).toBe(true);
+    expect(overlapping(dots)).toBe(0);
+  });
+
+  it('한 조각에 다섯 곳이 몰려도 보이는 라벨끼리는 겹치지 않는다', () => {
+    const crowd = [4, 5, 5, 6, 7].map((w, i) => place(`k${i}`, CATEGORIES[0], w, { name: `샘플 김치찌개 ${i}` }));
+    const dots = model([...PLACES, ...crowd]).dots;
+    expect(overlapping(dots)).toBe(0);
+    // 전부 숨기는 식으로 때우지 않는다 — 그 조각에서 가장 가까운 곳은 보인다.
+    const wedge = dots.filter((d) => d.place.category === CATEGORIES[0] && d.status !== 'out');
+    expect(wedge[0].labelled).toBe(true);
+    expect(wedge.filter((d) => d.labelled).length).toBeGreaterThanOrEqual(2);
+    expect(dots.some((d) => d.labelAbove)).toBe(true);
+  });
+
+  it('위로 올린 라벨은 top 이 점보다 위다', () => {
+    const crowd = [4, 5, 5, 6, 7].map((w, i) => place(`k${i}`, CATEGORIES[0], w));
+    const dots = model([...PLACES, ...crowd]).dots;
+    for (const d of dots.filter((x) => x.labelAbove)) {
+      expect(parseFloat(d.top)).toBeLessThan(d.y / 4);
+    }
   });
 });
