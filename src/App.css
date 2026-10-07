@@ -331,6 +331,10 @@ body {
   font-family: var(--font-heading);
   font-size: var(--fs-md);
   line-height: 1.25;
+  /* "샘플 추가 카 / 레집" 처럼 낱말 중간에서 끊기지 않게. 띄어쓰기 없는
+     긴 이름은 anywhere 가 받는다. */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 .wheel__center span { font-size: var(--fs-xs); color: var(--color-neutral-700); }
