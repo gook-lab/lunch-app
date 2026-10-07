@@ -9,6 +9,7 @@
  * 화면에서는 "최근 2주 안에 간 곳" 을 강조한다. 그게 오늘 후보에서 빠진
  * 이유라서, 표시하지 않으면 목록과 돌림판이 어긋나 보인다.
  */
+import { recentNote } from '../lib/messages';
 import { useState } from 'react';
 import { Button } from '@gook-lab/ui';
 import type { Place, Visit } from '../lib/candidates';
@@ -22,6 +23,8 @@ interface Props {
   visits: Visit[];
   today: DayId;
   onChanged: () => void;
+  /** 로드맵의 "최근 2주 제외" 칩 상태. 꺼져 있으면 "빠집니다" 가 거짓이 된다. */
+  excludeRecent: boolean;
 }
 
 interface LastVisit {
@@ -118,7 +121,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
   );
 }
 
-export function PlaceList({ places, visits, today, onChanged }: Props) {
+export function PlaceList({ places, visits, today, onChanged, excludeRecent }: Props) {
   const [editing, setEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -145,9 +148,7 @@ export function PlaceList({ places, visits, today, onChanged }: Props) {
 
   return (
     <>
-      <p className="muted small">
-        도보 가까운 순 · 최근 2주에 간 {recentCount}곳은 오늘 후보에서 빠집니다
-      </p>
+      <p className="muted small">도보 가까운 순 · {recentNote(recentCount, excludeRecent)}</p>
       <ul className="list">
         {sorted.map((place) => {
           const visit = lastVisit(place, visits, today);

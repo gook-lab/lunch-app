@@ -254,7 +254,13 @@ export default function App() {
               지도에서 가게 추가
             </Button>
           </div>
-          <PlaceList places={places} visits={visits} today={today} onChanged={reload} />
+          <PlaceList
+            places={places}
+            visits={visits}
+            today={today}
+            onChanged={reload}
+            excludeRecent={filters.excludeRecent}
+          />
         </>
       )}
 

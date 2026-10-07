@@ -61,3 +61,13 @@ export function noticeMessage(result: CandidateResult): string | null {
 
   return null;
 }
+
+/**
+ * 목록 탭 머리말의 최근 방문 문구. 로드맵에서 제외를 끈 상태면 "빠집니다" 라고
+ * 말하면 안 된다 — 같은 거짓말을 noticeMessage 에서 한 번 고쳤다.
+ */
+export function recentNote(recentCount: number, excludeRecent: boolean): string {
+  if (recentCount === 0) return '최근 2주에 간 곳 없음';
+  if (!excludeRecent) return `최근 2주 제외를 꺼 둬서 최근에 간 ${recentCount}곳도 오늘 후보입니다`;
+  return `최근 2주에 간 ${recentCount}곳은 오늘 후보에서 빠집니다`;
+}
