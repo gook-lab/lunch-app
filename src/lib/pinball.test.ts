@@ -254,9 +254,9 @@ describe('시드 탐색이 매번 같은 경기를 주지 않는다', () => {
     }
   });
 
-  it('시작 시드를 흔들면 어디서 시작해도 찾는다', () => {
+  it('시작 시드를 흔들면 어디서 시작해도 찾는다', { timeout: 60_000 }, () => {
     // 후보 수를 1..12 전부 훑는다. 못 찾으면 race 가 null 이 되고 연출이
-    // 끝나지 않는다 — 워치독이 12초 뒤 잠금만 풀 뿐 결과가 안 나온다.
+    // 끝나지 않는다 — 워치독이 20초 뒤 잠금만 풀 뿐 결과가 안 나온다.
     // 실측으로 4680회 탐색에서 실패 0회였지만, 물리를 건드리면 특정 레인이
     // 도달 불가가 될 수 있으므로 여기서 막는다.
     for (let count = 1; count <= 12; count += 1) {
@@ -289,14 +289,32 @@ describe('경기 길이 — 슬로모션 없이 재생할 수 있어야 한다',
   // 예전 코스는 1등이 52프레임(0.9초)에 들어와 4초로 늘려 틀었다. 0.22배
   // 슬로모션이라 출발 직후 구슬이 떠 있는 것처럼 보였다. 재생은 1등 도착을
   // 2.2~4.2초(132~252프레임)로 맞추므로, 경기 자체가 그 근처여야 배속이 1에 가깝다.
-  it.each([3, 5, 12, 20])('후보 %i곳: 1등 도착이 평균 90~260프레임', (count) => {
-    // 20곳은 구슬이 많아 누군가는 빨리 빠진다(평균 106프레임). 재생이 2.2초로
-    // 당겨 0.8배 남짓 — 눈에 띄는 슬로모션은 아니다.
+  it.each([3, 5, 12, 20])('후보 %i곳: 1등 도착이 평균 220~520프레임(3.7~8.7초)', (count) => {
+    // 긴 판이라 실시간 재생으로 4~6초가 나온다. 재생은 3.5~9초로 당기므로
+    // 이 범위면 거의 실시간이다. 너무 길면 점심 고르다 지친다.
     let sum = 0;
-    for (let s = 1; s <= 30; s += 1) sum += simulateRace(count, s).winnerFrame;
+    for (let s = 1; s <= 30; s += 1) sum += simulateRace(count, s, true).winnerFrame;
     const avg = sum / 30;
-    expect(avg).toBeGreaterThan(90);
-    expect(avg).toBeLessThan(260);
+    expect(avg).toBeGreaterThan(220);
+    expect(avg).toBeLessThan(520);
+  });
+
+  it('막판에 순위가 뒤집힌다 — 결승 60프레임 전 선두가 지는 경기가 있다', () => {
+    // 출구가 구슬 하나 폭이라 줄 선 순서가 막판에 바뀐다. 이게 긴박감이다.
+    let flips = 0;
+    for (let s = 1; s <= 40; s += 1) {
+      const r = simulateRace(8, s);
+      if (r.standings[Math.max(0, r.winnerFrame - 60)][0] !== r.winner) flips += 1;
+    }
+    expect(flips).toBeGreaterThanOrEqual(4);
+  });
+
+  it('1등만 보고 멈춘 경기와 끝까지 돌린 경기의 1등이 같다 — 시드 탐색이 믿을 만하다', () => {
+    for (const count of [3, 8, 20]) {
+      for (let s = 1; s <= 15; s += 1) {
+        expect(simulateRace(count, s, true).winner).toBe(simulateRace(count, s).winner);
+      }
+    }
   });
 
   it.each([2, 5, 8, 12, 20])('후보 %i곳: 구슬이 어디에도 걸리지 않고 전원 완주한다', (count) => {
@@ -325,9 +343,18 @@ describe('코스 — 구간이 달라야 단조롭지 않다', () => {
     }
   });
 
-  it('장애물이 위아래로 고르게 퍼져 있다 — 빈 구간이 60px 를 넘지 않는다', () => {
-    const { pegs, walls } = buildCourse();
-    const ys = [...pegs.map((p) => p.y), ...walls.flatMap((w) => [w.y1, w.y2])].sort((a, b) => a - b);
-    for (let i = 1; i < ys.length; i += 1) expect(ys[i] - ys[i - 1]).toBeLessThanOrEqual(60);
+  it('장애물이 위아래로 고르게 퍼져 있다 — 아무것도 없는 구간이 60px 를 넘지 않는다', () => {
+    // 벽은 양 끝점이 아니라 덮는 세로 구간 전체를 본다(깔때기 벽은 130px 를 덮는다).
+    const { pegs, walls, spinners } = buildCourse();
+    const spans = [
+      ...pegs.map((p) => [p.y - p.r, p.y + p.r]),
+      ...walls.map((w) => [Math.min(w.y1, w.y2), Math.max(w.y1, w.y2)]),
+      ...spinners.map((sp) => [sp.y - sp.half, sp.y + sp.half]),
+    ].sort((a, b) => a[0] - b[0]);
+    let reach = spans[0][1];
+    for (const [top, bottom] of spans) {
+      expect(top - reach, `${reach} 에서 ${top} 까지 비어 있습니다`).toBeLessThanOrEqual(60);
+      reach = Math.max(reach, bottom);
+    }
   });
 });

@@ -13,16 +13,21 @@
  * 물리는 조작하지 않는다. 실제로 일어난 여러 경기 중 하나를 고를 뿐이다.
  * 구슬이 벽을 뚫거나 갑자기 빨라지는 일은 없다.
  *
- * 코스는 위에서 내려다본 핀볼대다 — 롤오버 레인, 팝 범퍼, 오르빗 레인,
- * 슬링샷, 인레인과 드레인. 핀을 줄지어 박은 예전 판은 두 번이나
- * "단조롭다" 는 평을 들었다. 벽은 선분이라 점-선분 최단거리로 충돌을 보고,
- * 구슬끼리도 부딪친다.
+ * 코스는 화면보다 긴 마블 레이스 판이다(BOARD_H). 그리는 쪽이 선두를 따라
+ * 카메라를 내린다. 위에서부터 갈매기 막대, 큰 사선 막대, 팝 범퍼, 오르빗과
+ * 슬링샷, 핀밭, 풍차 두 개, 그리고 좁은 출구 하나로 모이는 깔때기와 출구 위
+ * 회전 막대. 마지막 깔때기에서 구슬이 한 줄로 서야 해서 막판 순위가 뒤집힌다.
+ * 화면 한 장짜리 판은 세 번 "단조롭다" 는 평을 들었다.
+ *
+ * 벽은 선분이라 점-선분 최단거리로 충돌을 보고, 구슬끼리도 부딪친다.
+ * 회전 막대는 스텝마다 각도가 정해진 선분이라 경기는 여전히 시드로 재현된다.
  */
 import { seededRandom } from './random';
 
 /** 구슬이 굴러가는 코스 폭. 캔버스는 이보다 넓고, 남는 오른쪽이 순위판이다. */
 export const COURSE_W = 208;
-export const BOARD_H = 372;
+/** 판 전체 높이. 화면(그리는 쪽 VIEW_H)보다 길어서 카메라가 따라 내려간다. */
+export const BOARD_H = 992;
 
 const MARBLE_R = 7;
 const PEG_R = 6;
@@ -33,15 +38,15 @@ const WALL_R = 3;
  * 구간이 0.7초나 늘어나 "초반에 멈춰 있다" 로 보였다. 지금은 코스가 길고
  * 장애물이 많아 실제 경기 자체가 2~4초이고, 거의 그대로 재생한다.
  */
-const GRAVITY = 0.16;
+const GRAVITY = 0.2;
 const RESTITUTION = 0.6;
 const FRICTION = 0.997;
-const MAX_SPEED = 5.2;
+const MAX_SPEED = 5.8;
 /** 출발 때 아래로 미는 속도. 0 이면 처음 몇 프레임이 제자리처럼 보인다. */
 const LAUNCH_VY = 1.6;
 /** 결승선. 그리는 쪽도 이 값을 써야 구슬이 선 위에 멈춘 것으로 보인다. */
 export const FINISH_Y = BOARD_H - 16;
-const MAX_STEPS = 3000;
+const MAX_STEPS = 6000;
 
 export interface Peg {
   x: number;
@@ -65,6 +70,28 @@ export interface Wall {
    * post = 레인 칸막이(짧은 기둥).
    */
   kind?: 'rail' | 'sling' | 'post';
+}
+
+/**
+ * 회전 막대(풍차, 출구 막대). 가운데를 축으로 일정한 속도로 돈다.
+ * 스텝 t 의 각도는 phase + omega * t — 시드와 무관하게 늘 같다.
+ */
+export interface Spinner {
+  x: number;
+  y: number;
+  /** 축에서 끝까지 길이. */
+  half: number;
+  /** 스텝당 회전(라디안). 부호가 방향. */
+  omega: number;
+  phase: number;
+}
+
+/** t 스텝일 때 회전 막대의 양 끝. 물리와 그리기가 같이 쓴다. */
+export function spinnerEnds(sp: Spinner, t: number) {
+  const a = sp.phase + sp.omega * t;
+  const dx = Math.cos(a) * sp.half;
+  const dy = Math.sin(a) * sp.half;
+  return { x1: sp.x - dx, y1: sp.y - dy, x2: sp.x + dx, y2: sp.y + dy };
 }
 
 /** 슬링샷 반발계수와 최소 차내기 속도. */
@@ -96,15 +123,22 @@ export interface RaceResult {
  * 불리해진다 — 예전 균일 핀밭에서 오른쪽 끝 구슬이 600 시드 중 한 번도
  * 못 이긴 적이 있다.
  */
-export function buildCourse(): { walls: Wall[]; pegs: Peg[] } {
+export interface Course {
+  walls: Wall[];
+  pegs: Peg[];
+  spinners: Spinner[];
+}
+
+export function buildCourse(): Course {
   const walls: Wall[] = [];
   const pegs: Peg[] = [];
+  const spinners: Spinner[] = [];
   const C = COURSE_W / 2;
-  /** 가운데 기준 좌우 대칭으로 한 쌍. dx=0 이면 하나만. */
   /*
    * 틈 규칙: 두 장애물 사이(반지름 빼고) 틈은 구슬 지름 14px 보다 넉넉해야
    * 한다. 좁으면 구슬이 그 주머니에 얹혀 경기가 안 끝난다 — 첫 탑다운 판에서
-   * 다섯 군데가 그랬다(pinball.test.ts "전원 완주").
+   * 다섯 군데가 그랬다(pinball.test.ts "전원 완주"). 같은 이유로 V 자로 모이는
+   * 막대 쌍은 쓰지 않는다(바닥 틈이 좁아진다). 사선 막대는 Λ 로 짝짓는다.
    */
   const pair = (dx: number, y: number, r: number, bumper = false) => {
     pegs.push({ x: C - dx, y, r, bumper });
@@ -114,34 +148,52 @@ export function buildCourse(): { walls: Wall[]; pegs: Peg[] } {
     walls.push({ x1, y1, x2, y2, kind });
     walls.push({ x1: COURSE_W - x1, y1, x2: COURSE_W - x2, y2, kind });
   };
+  /** 옆벽의 톱니. 벽을 타고 곧장 떨어지는 구슬을 한 번씩 튕겨 낸다. */
+  const notch = (y: number) => {
+    wallPair(0, y, 9, y + 9, 'post');
+    wallPair(9, y + 9, 0, y + 18, 'post');
+  };
 
-  // 롤오버 레인 — 맨 위 칸막이 넷이 다섯 레인을 만든다. 출발 줄이 여기서 갈린다.
-  for (const x of [28, 78]) wallPair(x, 36, x, 54, 'post');
+  // 1 — 갈매기 막대 두 줄. 출발 줄이 여기서 갈린다.
+  for (const x0 of [24, 52, 80]) wallPair(x0, 82, x0 + 10, 72, 'post');
+  for (const x0 of [40, 74]) wallPair(x0, 112, x0 + 10, 122, 'post');
+  notch(140);
 
-  // 오르빗 레인 — 양쪽 벽을 따라 내려가는 좁은 길. 들어가면 빠르게 떨어진다.
-  wallPair(24, 78, 24, 168);
+  // 2 — 큰 사선 막대. 좌우로 크게 휘둘린다. Λ 로 짝을 지어 바닥 틈이 넓다.
+  wallPair(18, 210, 44, 180);
+  wallPair(68, 180, 88, 204);
+  pair(0, 236, PEG_R);
+  notch(246);
 
-  // 팝 범퍼 — 삼각 배치. 맞으면 튕겨 순위가 뒤집힌다.
-  pair(32, 104, 12, true);
-  pair(0, 136, 12, true);
+  // 3 — 팝 범퍼 삼각 배치
+  pair(34, 292, 12, true);
+  pair(0, 326, 12, true);
+  pair(70, 330, PEG_R - 1);
 
-  // 범퍼 밑 기둥과 램프 입구 가이드
-  pair(52, 150, PEG_R - 1);
-  wallPair(44, 182, 70, 196);
+  // 4 — 오르빗 레일과 슬링샷
+  wallPair(24, 370, 24, 450);
+  pair(0, 410, PEG_R - 2);
+  wallPair(34, 476, 34, 516);
+  wallPair(34, 516, 60, 528);
+  wallPair(34, 476, 60, 528, 'sling');
+  notch(556);
 
-  // 스탠드업 타깃 — 가운데 작은 기둥 둘. 셋을 붙여 두면 사이(6px)에 구슬이 얹혀 멈췄다.
-  pair(16, 214, PEG_R - 2);
+  // 5 — 엇갈린 핀밭. 가로 간격 36px, 줄 간격 28px.
+  for (const y of [596, 652]) for (const dx of [0, 36, 72]) pair(dx, y, PEG_R - 2);
+  for (const y of [624, 680]) for (const dx of [18, 54]) pair(dx, y, PEG_R - 2);
+  notch(706);
 
-  // 슬링샷 — 인레인 옆 삼각형. 빗변 고무가 구슬을 가운데로 차낸다.
-  wallPair(30, 238, 30, 280);
-  wallPair(30, 280, 58, 292);
-  wallPair(30, 238, 58, 292, 'sling');
+  // 6 — 풍차 두 개. 서로 반대로 돌아 좌우 어느 쪽도 유리하지 않다.
+  spinners.push({ x: C - 46, y: 752, half: 22, omega: 0.055, phase: 0 });
+  spinners.push({ x: C + 46, y: 752, half: 22, omega: -0.055, phase: Math.PI });
 
-  // 인레인과 드레인 — 양쪽 가이드가 가운데 배수구로 모은다(플리퍼 자리).
-  wallPair(0, 300, 72, 334);
-  pair(0, 318, PEG_R - 2);
+  // 7 — 깔때기와 출구. 출구 폭 24px(구슬 14px)라 한 줄로만 빠진다.
+  //     출구 위 회전 막대가 줄 선 구슬을 흔들어 막판 순위가 뒤집힌다.
+  wallPair(0, 790, C - 15, 924);
+  wallPair(C - 15, 924, C - 15, 966);
+  spinners.push({ x: C, y: 876, half: 17, omega: 0.15, phase: Math.PI / 2 });
 
-  return { walls, pegs };
+  return { walls, pegs, spinners };
 }
 
 const COURSE = buildCourse();
@@ -158,7 +210,11 @@ function closestOnSegment(px: number, py: number, w: Wall) {
 }
 
 /** 시드 하나로 경기를 끝까지 돌린다. 물리는 여기서만 일어난다. */
-export function simulateRace(count: number, seed: number): RaceResult {
+/**
+ * untilWinner: 1등이 들어오는 순간 멈추고 프레임을 쌓지 않는다. 시드를 찾을
+ * 때는 누가 1등인지만 알면 되므로 판이 길어져도 탐색 비용이 크게 늘지 않는다.
+ */
+export function simulateRace(count: number, seed: number, untilWinner = false): RaceResult {
   const random = seededRandom(seed);
   const lane = COURSE_W / (count + 1);
 
@@ -240,6 +296,31 @@ export function simulateRace(count: number, seed: number): RaceResult {
         }
       }
 
+      // 회전 막대. 막대 위 접점의 속도를 빼고 튕긴 뒤 다시 더한다 —
+      // 돌아가는 막대에 맞으면 그 방향으로 쳐 내진다.
+      for (const sp of COURSE.spinners) {
+        const seg = spinnerEnds(sp, step);
+        const near = closestOnSegment(x[i], y[i], seg);
+        const dx = x[i] - near.x;
+        const dy = y[i] - near.y;
+        const dist = Math.hypot(dx, dy);
+        const min = MARBLE_R + WALL_R;
+        if (dist >= min || dist === 0) continue;
+
+        const nx = dx / dist;
+        const ny = dy / dist;
+        x[i] = near.x + nx * min;
+        y[i] = near.y + ny * min;
+        const svx = -sp.omega * (near.y - sp.y);
+        const svy = sp.omega * (near.x - sp.x);
+        const rvx = vx[i] - svx;
+        const rvy = vy[i] - svy;
+        const vn = rvx * nx + rvy * ny;
+        if (vn >= 0) continue;
+        vx[i] = rvx - (1 + RESTITUTION) * vn * nx + svx;
+        vy[i] = rvy - (1 + RESTITUTION) * vn * ny + svy;
+      }
+
       // 핀
       for (const peg of COURSE.pegs) {
         const dx = x[i] - peg.x;
@@ -307,6 +388,8 @@ export function simulateRace(count: number, seed: number): RaceResult {
       }
     }
 
+    if (untilWinner && order.length > 0) break;
+
     frames.push(Array.from({ length: count }, (_, i) => ({ x: x[i], y: y[i] })));
 
     // 이 시점의 순위. 들어온 구슬이 먼저, 나머지는 아래에 있는 순서다.
@@ -346,7 +429,7 @@ export function seedForWinner(
   if (count === 1) return startSeed;
 
   for (let s = startSeed; s < startSeed + maxSeeds; s += 1) {
-    if (simulateRace(count, s).winner === target) return s;
+    if (simulateRace(count, s, true).winner === target) return s;
   }
   return null;
 }

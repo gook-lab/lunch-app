@@ -35,8 +35,8 @@ const MapTab = lazy(() => import('./components/MapTab'));
 
 type Tab = 'roadmap' | 'list' | 'map';
 
-/** 연출 잠금 해제 상한. 가장 긴 연출(핀볼 최대 5.8초)의 두 배 남짓. */
-const SPIN_TIMEOUT_MS = 12_000;
+/** 연출 잠금 해제 상한. 가장 긴 연출(핀볼 최대 약 10.5초)의 두 배 남짓. */
+const SPIN_TIMEOUT_MS = 20_000;
 
 const TAB_TITLE: Record<Tab, string> = {
   roadmap: '오늘 점심',
@@ -156,7 +156,7 @@ export default function App() {
    * 연출 중 필터 변경, 연출 중 탭 전환. 둘 다 막았지만 게임 컴포넌트가
    * 하나라도 onSpinEnd 를 놓치면 같은 일이 또 난다.
    *
-   * 가장 긴 연출이 핀볼 최대 5.8초다. 그 두 배를 넘기면 뭔가 잘못된 것이니
+   * 가장 긴 연출이 핀볼 최대 약 10.5초다(게이트 + 9초 + 정리). 그 두 배를 넘기면 뭔가 잘못된 것이니
    * 결과를 만들지 말고 잠금만 푼다 — 안 본 경기를 당첨으로 기록할 수는 없다.
    */
   useEffect(() => {
