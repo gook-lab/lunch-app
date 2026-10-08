@@ -17,15 +17,15 @@ export function emptyMessage(result: CandidateResult): string | null {
 
   switch (reason.kind) {
     case 'no-places':
-      return '아직 등록된 가게가 없습니다. 지도 탭에서 몇 곳 넣어 주세요.';
+      return '아직 등록된 가게가 없어요. 지도 탭에서 몇 곳 넣어 주세요.';
     case 'all-inactive':
-      return `등록된 ${reason.total}곳이 모두 꺼져 있습니다. 목록에서 다시 켜 주세요.`;
+      return `등록된 ${reason.total}곳이 모두 꺼져 있어요. 목록에서 다시 켜 주세요.`;
     case 'walk':
       return reason.countAtWiderWalk > 0
-        ? `도보 ${reason.widerWalkMin}분으로 넓히면 ${reason.countAtWiderWalk}곳입니다.`
-        : `도보 ${reason.widerWalkMin}분으로 넓혀도 해당하는 곳이 없습니다.`;
+        ? `도보 ${reason.widerWalkMin}분으로 넓히면 ${reason.countAtWiderWalk}곳이에요.`
+        : `도보 ${reason.widerWalkMin}분으로 넓혀도 갈 만한 곳이 없어요.`;
     case 'category':
-      return `고른 카테고리에 해당하는 곳이 없습니다. 카테고리를 풀면 ${reason.countWithoutCategory}곳입니다.`;
+      return `고른 카테고리에 맞는 곳이 없어요. 카테고리를 풀면 ${reason.countWithoutCategory}곳이에요.`;
   }
 }
 
@@ -41,22 +41,22 @@ export function noticeMessage(result: CandidateResult): string | null {
   const { afterCategoryCount, recentlyVisitedCount, releasedCount, shortOfMinimum } = result;
 
   if (shortOfMinimum) {
-    return `후보가 ${result.candidates.length}곳뿐입니다. 가게가 ${HEALTHY_POOL_SIZE}곳은 돼야 최근 방문 제외가 제대로 돌아갑니다.`;
+    return `후보가 ${result.candidates.length}곳뿐이에요. 가게가 ${HEALTHY_POOL_SIZE}곳은 돼야 최근 방문 제외가 제대로 돌아가요.`;
   }
 
   // 제외를 껐으면 최근에 간 곳도 그대로 후보다. "빠졌습니다" 는 거짓이 된다.
   if (!result.excludedRecent) {
     return recentlyVisitedCount > 0
-      ? `최근 2주 제외를 꺼서 최근에 간 ${recentlyVisitedCount}곳도 후보에 들어 있습니다.`
+      ? `최근 2주 제외를 꺼서 최근에 간 ${recentlyVisitedCount}곳도 후보에 들어 있어요.`
       : null;
   }
 
   if (releasedCount > 0) {
-    return `${afterCategoryCount}곳 중 ${recentlyVisitedCount}곳은 최근 2주 안에 갔습니다 — 후보 ${MIN_CANDIDATES}곳을 채우려고 그 중 오래된 ${releasedCount}곳을 다시 넣었습니다.`;
+    return `${afterCategoryCount}곳 중 ${recentlyVisitedCount}곳은 최근 2주 안에 갔어요. 후보 ${MIN_CANDIDATES}곳을 채우려고 그중 오래된 ${releasedCount}곳을 다시 넣었어요.`;
   }
 
   if (recentlyVisitedCount > 0) {
-    return `최근 2주 안에 간 ${recentlyVisitedCount}곳은 빠졌습니다.`;
+    return `최근 2주 안에 간 ${recentlyVisitedCount}곳은 뺐어요.`;
   }
 
   return null;
@@ -68,6 +68,6 @@ export function noticeMessage(result: CandidateResult): string | null {
  */
 export function recentNote(recentCount: number, excludeRecent: boolean): string {
   if (recentCount === 0) return '최근 2주에 간 곳 없음';
-  if (!excludeRecent) return `최근 2주 제외를 꺼 둬서 최근에 간 ${recentCount}곳도 오늘 후보입니다`;
-  return `최근 2주에 간 ${recentCount}곳은 오늘 후보에서 빠집니다`;
+  if (!excludeRecent) return `최근 2주 제외를 꺼 둬서 최근에 간 ${recentCount}곳도 오늘 후보예요`;
+  return `최근 2주에 간 ${recentCount}곳은 오늘 후보에서 빠져요`;
 }

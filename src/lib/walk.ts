@@ -22,7 +22,7 @@ export function officeCoord(): { lat: number; lng: number } {
   const lng = Number(import.meta.env.VITE_OFFICE_LNG);
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     throw new Error(
-      'VITE_OFFICE_LAT / VITE_OFFICE_LNG 가 설정되지 않았습니다. .env.local 에 사무실 좌표를 넣어 주세요.',
+      'VITE_OFFICE_LAT / VITE_OFFICE_LNG 가 설정되지 않았어요. .env.local 에 사무실 좌표를 넣어 주세요.',
     );
   }
   return { lat, lng };

@@ -35,7 +35,7 @@ const MapTab = lazy(() => import('./components/MapTab'));
 
 type Tab = 'roadmap' | 'list' | 'map';
 
-/** 연출 잠금 해제 상한. 가장 긴 연출(핀볼 5.5초)의 두 배 남짓. */
+/** 연출 잠금 해제 상한. 가장 긴 연출(핀볼 최대 5.8초)의 두 배 남짓. */
 const SPIN_TIMEOUT_MS = 12_000;
 
 const TAB_TITLE: Record<Tab, string> = {
@@ -80,7 +80,14 @@ export default function App() {
     }
   });
 
+  // 방식을 바꾸면 지난 판을 지운다. 돌림판 결과 카드를 띄운 채 사다리로
+  // 넘어가면 사다리는 이미 당첨이 정해진 그림으로 나와 "안 돌렸는데 결과가
+  // 있다" 로 읽힌다. 모드 칩은 연출 중에 잠겨 있으니 여기서 연출을 끊을
+  // 일은 없다.
   const pickMode = useCallback((next: GameMode) => {
+    setBoard(null);
+    setWinner(null);
+    setWinnerIndex(null);
     setMode(next);
     try {
       localStorage.setItem('lunch-app:mode', next);
@@ -149,7 +156,7 @@ export default function App() {
    * 연출 중 필터 변경, 연출 중 탭 전환. 둘 다 막았지만 게임 컴포넌트가
    * 하나라도 onSpinEnd 를 놓치면 같은 일이 또 난다.
    *
-   * 가장 긴 연출이 핀볼 5.5초다. 그 두 배를 넘기면 뭔가 잘못된 것이니
+   * 가장 긴 연출이 핀볼 최대 5.8초다. 그 두 배를 넘기면 뭔가 잘못된 것이니
    * 결과를 만들지 말고 잠금만 푼다 — 안 본 경기를 당첨으로 기록할 수는 없다.
    */
   useEffect(() => {
@@ -206,13 +213,13 @@ export default function App() {
     }));
 
   if (state === 'loading') {
-    return <main className="app app--center"><p className="muted">불러오는 중입니다</p></main>;
+    return <main className="app app--center"><p className="muted">불러오는 중이에요</p></main>;
   }
 
   if (state === 'error') {
     return (
       <main className="app app--center">
-        <p>목록을 불러오지 못했습니다.</p>
+        <p>목록을 불러오지 못했어요.</p>
         <p className="muted small">{String((error as Error)?.message ?? error)}</p>
         <Button onClick={reload}>다시 시도</Button>
       </main>
@@ -231,14 +238,14 @@ export default function App() {
         </span>
       </header>
 
-      <nav className="tabs">
-        <button className={tab === 'roadmap' ? 'on' : ''} onClick={() => goTab('roadmap')}>
+      <nav className="tabs" role="tablist" aria-label="화면">
+        <button role="tab" aria-selected={tab === 'roadmap'} className={tab === 'roadmap' ? 'on' : ''} onClick={() => goTab('roadmap')}>
           로드맵
         </button>
-        <button className={tab === 'list' ? 'on' : ''} onClick={() => goTab('list')}>
+        <button role="tab" aria-selected={tab === 'list'} className={tab === 'list' ? 'on' : ''} onClick={() => goTab('list')}>
           목록
         </button>
-        <button className={tab === 'map' ? 'on' : ''} onClick={() => goTab('map')}>
+        <button role="tab" aria-selected={tab === 'map'} className={tab === 'map' ? 'on' : ''} onClick={() => goTab('map')}>
           지도
         </button>
       </nav>
@@ -265,7 +272,7 @@ export default function App() {
       )}
 
       {tab === 'map' && (
-        <Suspense fallback={<p className="muted small">지도 화면을 준비하는 중입니다</p>}>
+        <Suspense fallback={<p className="muted small">지도를 준비하고 있어요</p>}>
           <MapTab places={places} onChanged={reload} />
         </Suspense>
       )}
@@ -275,7 +282,7 @@ export default function App() {
 
       {decidedPlace && !winner && (
         <section className="card card--decided">
-          <p className="muted small">오늘은 이미 정했습니다</p>
+          <p className="muted small">오늘은 이미 정했어요</p>
           <h2>{decidedPlace.name}</h2>
           <p className="muted small">
             {decidedPlace.category} · 도보 {decidedPlace.walkMin}분
@@ -310,7 +317,7 @@ export default function App() {
             </Tag>
           ))}
         </div>
-        <p className="muted small">방식은 연출만 다릅니다 · 확률은 같습니다</p>
+        <p className="muted small">방식은 보여주는 것만 달라요 · 확률은 같아요</p>
 
         {/*
           * 게임판은 쉴 때도 그린다.
@@ -338,6 +345,14 @@ export default function App() {
           })()}
         </div>
 
+        {/*
+          * 결과 알림. 결과 카드는 연출이 끝난 뒤 새로 생기는 요소라 화면낭독기가
+          * 알아채지 못한다. 늘 있는 빈 영역에 글을 채워야 읽힌다.
+          */}
+        <p className="sr-only" aria-live="polite">
+          {winner && !spinning ? `${winner.name}, 도보 ${winner.walkMin}분이 뽑혔어요` : ''}
+        </p>
+
         {winner ? (
           <div className="card card--result">
             <span
@@ -350,11 +365,11 @@ export default function App() {
             <p className="muted small">도보 {winner.walkMin}분</p>
             {confirmed ? (
               <>
-                <p className="confirmed">오늘 점심으로 정했습니다</p>
+                <p className="confirmed">오늘 점심으로 정했어요</p>
                 <Button block variant="secondary" onClick={spin} disabled={spinning}>
                   그래도 다시 하기
                 </Button>
-                <p className="muted small">다시 해서 다른 곳을 정하면 오늘 기록을 덮어씁니다.</p>
+                <p className="muted small">다시 해서 다른 곳을 고르면 오늘 기록이 바뀌어요.</p>
               </>
             ) : (
               <>
@@ -367,7 +382,7 @@ export default function App() {
                   </Button>
                 </div>
                 <p className="muted small">
-                  눌러야 방문 기록이 남고, 다음 2주 후보에서 빠집니다.
+                  누르면 방문 기록이 남고, 2주 동안 후보에서 빠져요.
                 </p>
               </>
             )}
@@ -395,7 +410,7 @@ export default function App() {
       <Sheet
         open={confirming !== null}
         onClose={() => setConfirming(null)}
-        title="오늘은 이미 정했습니다"
+        title="오늘은 이미 정했어요"
         description={
           decidedPlace && confirming
             ? `${decidedPlace.name}에서 ${withJosa(confirming.name, '으로/로')} 바꿀까요?`

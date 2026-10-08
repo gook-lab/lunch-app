@@ -51,22 +51,22 @@ function troubleOf(error: unknown): Trouble {
   if (error instanceof KakaoLoadError) {
     if (error.kind === 'no-key') {
       return {
-        title: '카카오 JS 키가 없습니다',
+        title: '카카오 JS 키가 없어요',
         detail:
-          '.env.local 의 VITE_KAKAO_JS_KEY 를 채우고 개발 서버를 다시 띄워 주세요. 지도만 막히고 로드맵·목록은 그대로 돕니다.',
+          '.env.local 의 VITE_KAKAO_JS_KEY 를 채우고 개발 서버를 다시 띄워 주세요. 지도만 막히고 로드맵·목록은 그대로 쓸 수 있어요.',
         retryable: false,
       };
     }
     return {
-      title: '지도 SDK 를 받지 못했습니다',
+      title: '지도 SDK 를 받지 못했어요',
       detail:
-        '가장 흔한 원인은 도메인 미등록입니다. 카카오 개발자 콘솔 > 앱 > 플랫폼 > Web 사이트 도메인에 ' +
+        '가장 흔한 원인은 도메인 미등록이에요. 카카오 개발자 콘솔 > 앱 > 플랫폼 > Web 사이트 도메인에 ' +
         `${window.location.origin} 이 있는지 확인해 주세요.`,
       retryable: true,
     };
   }
   return {
-    title: '지도를 그리지 못했습니다',
+    title: '지도를 그리지 못했어요',
     detail: String((error as Error)?.message ?? error),
     retryable: true,
   };
@@ -323,11 +323,11 @@ export default function MapTab({ places, onChanged }: Props) {
             return;
           }
           if (status === maps.services.Status.ZERO_RESULT) {
-            setSearchProblem('회사 주변에서 못 찾았습니다. 지점 이름까지 넣어 보세요.');
+            setSearchProblem('회사 주변에서 못 찾았어요. 지점 이름까지 넣어 보세요.');
             return;
           }
           setSearchProblem(
-            `검색이 실패했습니다. 카카오 콘솔의 사이트 도메인에 ${window.location.origin} 이 등록됐는지 확인해 주세요.`,
+            `검색에 실패했어요. 카카오 콘솔의 사이트 도메인에 ${window.location.origin} 이 등록됐는지 확인해 주세요.`,
           );
         },
         {
@@ -348,7 +348,7 @@ export default function MapTab({ places, onChanged }: Props) {
     const lat = Number(hit.y);
     const lng = Number(hit.x);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-      setSearchProblem('좌표를 읽지 못했습니다. 다른 결과를 골라 주세요.');
+      setSearchProblem('좌표를 읽지 못했어요. 다른 결과를 골라 주세요.');
       return;
     }
     setResults([]);
@@ -382,7 +382,7 @@ export default function MapTab({ places, onChanged }: Props) {
         )}
         {!kakaoJsKey() && (
           <p className="muted small">
-            키가 없어도 로드맵·목록은 정상입니다. 지도만 나중에 붙이면 됩니다.
+            키가 없어도 로드맵·목록은 잘 돌아가요. 지도는 나중에 붙이면 돼요.
           </p>
         )}
       </section>
@@ -424,11 +424,11 @@ export default function MapTab({ places, onChanged }: Props) {
 
       <div className="map__canvas" ref={containerRef} aria-label="우리 도보권 지도" />
 
-      {phase === 'loading' && <p className="muted small">지도를 불러오는 중입니다</p>}
+      {phase === 'loading' && <p className="muted small">지도를 불러오고 있어요</p>}
 
       {phase === 'ready' && !selected && (
         <p className="muted small">
-          원은 도보 {WALK_STEPS.join('·')}분입니다 · 핀을 누르면 정보, 빈 곳을 꾹 누르면 새 가게
+          원은 도보 {WALK_STEPS.join('·')}분이에요 · 핀을 누르면 정보, 빈 곳을 꾹 누르면 새 가게
         </p>
       )}
 
@@ -539,7 +539,7 @@ function PlaceEdit({
 
   const save = async () => {
     const trimmed = name.trim();
-    if (!trimmed) return setProblem('이름은 비울 수 없습니다.');
+    if (!trimmed) return setProblem('이름을 입력해 주세요.');
     if (!category) return setProblem('카테고리를 골라 주세요.');
     setSaving(true);
     setProblem(null);
@@ -625,7 +625,7 @@ function PlaceEdit({
         메모
         <textarea value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={120} rows={2} />
       </label>
-      <p className="muted small">좌표와 도보시간은 목록 탭에서 고칩니다.</p>
+      <p className="muted small">좌표와 도보 시간은 목록 탭에서 고칠 수 있어요.</p>
       {problem && <p className="notice notice--empty">{problem}</p>}
       <div className="row">
         <Button block onClick={() => void save()} loading={saving}>

@@ -57,16 +57,16 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
   const save = async () => {
     const nextLat = Number(lat);
     const nextLng = Number(lng);
-    if (!name.trim()) return setProblem('이름은 비울 수 없습니다.');
+    if (!name.trim()) return setProblem('이름을 입력해 주세요.');
     if (!Number.isFinite(nextLat) || !Number.isFinite(nextLng)) {
-      return setProblem('좌표가 숫자가 아닙니다.');
+      return setProblem('좌표는 숫자로 넣어 주세요.');
     }
 
     // 좌표를 고치면 도보시간을 같이 다시 계산해서 쓴다. 저장 필드라
     // 따로 두면 좌표와 도보시간이 어긋난 채로 남는다.
     const walkMin = walkMinutesBetween(nextLat, nextLng);
     if (walkMin <= 0 || walkMin > 60) {
-      return setProblem(`도보 ${walkMin}분으로 계산됩니다 — 60분을 넘는 곳은 넣을 수 없습니다.`);
+      return setProblem(`도보 ${walkMin}분으로 계산돼요. 60분이 넘는 곳은 넣을 수 없어요.`);
     }
 
     setSaving(true);
@@ -107,7 +107,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
           <input value={lng} onChange={(e) => setLng(e.target.value)} inputMode="decimal" />
         </label>
       </div>
-      <p className="muted small">좌표를 고치면 도보시간이 같이 다시 계산됩니다.</p>
+      <p className="muted small">좌표를 고치면 도보 시간도 다시 계산돼요.</p>
       {problem && <p className="notice notice--empty">{problem}</p>}
       <div className="row">
         <Button block onClick={() => void save()} loading={saving}>
@@ -126,7 +126,7 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent }: P
   const [busy, setBusy] = useState<string | null>(null);
 
   if (places.length === 0) {
-    return <p className="muted">아직 등록된 가게가 없습니다.</p>;
+    return <p className="muted">아직 등록된 가게가 없어요.</p>;
   }
 
   const sorted = [...places].sort((a, b) => {

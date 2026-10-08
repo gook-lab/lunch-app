@@ -85,6 +85,22 @@ describe('연출 한 판', () => {
   });
 });
 
+describe('방식 바꾸기', () => {
+  it('결과가 떠 있을 때 다른 방식을 고르면 판이 처음으로 돌아간다', () => {
+    startWheel();
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
+    expect(card()).toBe('가집');
+
+    fireEvent.click(screen.getByRole('button', { name: '사다리' }));
+
+    expect(card()).toBeNull();
+    expect(screen.queryByRole('button', { name: '여기로 결정' })).toBeNull();
+    const run = screen.getByRole('button', { name: /사다리 타기 \(후보 \d+곳\)/ }) as HTMLButtonElement;
+    expect(run.disabled).toBe(false);
+    expect(document.querySelector('.ladder__label--win')).toBeNull();
+  });
+});
+
 describe('연출 중에 건드리면 잠금이 풀려야 한다 — 영구 고착 회귀', () => {
   it('필터를 바꾸면 연출을 끊고 새 조건으로 돌아온다', () => {
     startWheel();
@@ -102,13 +118,31 @@ describe('연출 중에 건드리면 잠금이 풀려야 한다 — 영구 고�
 
   it('탭을 옮겼다 돌아와도 "진행 중" 에 갇히지 않는다', () => {
     startWheel();
-    fireEvent.click(screen.getByRole('button', { name: '목록' }));
+    fireEvent.click(screen.getByRole('tab', { name: '목록' }));
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 500); });
-    fireEvent.click(screen.getByRole('button', { name: '로드맵' }));
+    fireEvent.click(screen.getByRole('tab', { name: '로드맵' }));
     act(() => { vi.advanceTimersByTime(100); });
 
     expect(runButton().textContent).toMatch(/돌리기/);
     expect(lockedButtons()).toEqual([]);
+  });
+});
+
+describe('접근성', () => {
+  it('탭은 tablist 안의 tab 이고 지금 탭만 selected 다', () => {
+    render(<App />);
+    const tabs = screen.getAllByRole('tab');
+    expect(tabs.map((t) => t.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false']);
+    fireEvent.click(screen.getByRole('tab', { name: '목록' }));
+    expect(screen.getByRole('tab', { name: '목록' }).getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('결과가 나오면 늘 있는 알림 영역에 당첨을 적는다', () => {
+    startWheel();
+    const live = document.querySelector('[aria-live="polite"]');
+    expect(live?.textContent).toBe('');
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
+    expect(live?.textContent).toMatch(/가집, 도보 \d+분이 뽑혔어요/);
   });
 });
 

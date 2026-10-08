@@ -97,9 +97,9 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
     if (!trimmed) return setProblem('이름을 넣어 주세요.');
     if (!category) return setProblem('카테고리를 골라 주세요.');
     if (walk.error) return setProblem(walk.error);
-    if (walk.min === null) return setProblem('도보시간을 계산하지 못했습니다.');
+    if (walk.min === null) return setProblem('도보 시간을 계산하지 못했어요.');
     if (tooFar) {
-      return setProblem(`도보 ${walk.min}분입니다 — ${MAX_WALK_MIN}분을 넘는 곳은 넣을 수 없습니다.`);
+      return setProblem(`도보 ${walk.min}분이에요. ${MAX_WALK_MIN}분이 넘는 곳은 넣을 수 없어요.`);
     }
 
     setSaving(true);
@@ -121,7 +121,7 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
         memo: memo.trim() || undefined,
       });
       if (!result.added) {
-        setProblem('방금 다른 기기에서 같은 가게가 등록됐습니다.');
+        setProblem('방금 다른 기기에서 같은 가게가 등록됐어요.');
         return;
       }
       onSaved();
@@ -138,7 +138,7 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
         <div className="pf__dupe">
           <p className="small">
             <strong>{duplicate.place.name}</strong>
-            {josa(duplicate.place.name, '이/가')} 이미 등록돼 있습니다
+            {josa(duplicate.place.name, '이/가')} 이미 등록돼 있어요
             {duplicate.reason === 'name-and-distance' && duplicate.meters !== null
               ? ` (${Math.round(duplicate.meters)}m 거리)`
               : ''}

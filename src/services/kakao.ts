@@ -65,7 +65,7 @@ export function loadKakaoMaps(): Promise<KakaoMaps> {
   const key = kakaoJsKey();
   if (!key) {
     // 요청을 보내지 않는다. 키 없이 부르면 콘솔만 더럽히고 결과는 같다.
-    failure = new KakaoLoadError('no-key', 'VITE_KAKAO_JS_KEY 가 비어 있습니다.');
+    failure = new KakaoLoadError('no-key', 'VITE_KAKAO_JS_KEY 가 비어 있어요.');
     return Promise.reject(failure);
   }
 
@@ -85,7 +85,7 @@ export function loadKakaoMaps(): Promise<KakaoMaps> {
     };
 
     const timer = window.setTimeout(
-      () => fail('timeout', `SDK 초기화가 ${TIMEOUT_MS / 1000}초 안에 끝나지 않았습니다.`),
+      () => fail('timeout', `SDK 초기화가 ${TIMEOUT_MS / 1000}초 안에 끝나지 않았어요.`),
       TIMEOUT_MS,
     );
 
@@ -95,12 +95,12 @@ export function loadKakaoMaps(): Promise<KakaoMaps> {
       `?appkey=${encodeURIComponent(key)}&libraries=services&autoload=false`;
 
     script.onerror = () =>
-      fail('script', 'SDK 스크립트를 받지 못했습니다. 네트워크나 앱키를 확인해 주세요.');
+      fail('script', 'SDK 스크립트를 받지 못했어요. 네트워크나 앱 키를 확인해 주세요.');
 
     script.onload = () => {
       const maps = window.kakao?.maps;
       if (!maps?.load) {
-        fail('script', 'SDK 를 받았지만 kakao.maps 가 없습니다.');
+        fail('script', 'SDK 를 받았지만 kakao.maps 가 없어요.');
         return;
       }
       maps.load(() => {

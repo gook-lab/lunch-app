@@ -57,7 +57,7 @@ body {
 /* 탭 */
 .tabs {
   display: flex;
-  gap: var(--space-4);
+  gap: var(--space-2);
   border-bottom: 1px solid var(--color-neutral-300);
   margin-top: calc(var(--space-3) * -1);
 }
@@ -65,7 +65,9 @@ body {
 .tabs button {
   background: none;
   border: 0;
-  padding: var(--space-3) 2px;
+  /* 가로 여백을 줘야 "목록"·"지도" 의 누르는 폭이 30px 를 넘는다. */
+  padding: var(--space-3) var(--space-2);
+  min-width: 44px;
   font-size: var(--fs-md);
   color: var(--color-neutral-700);
   cursor: pointer;
@@ -75,8 +77,8 @@ body {
 .tabs button::after {
   content: '';
   position: absolute;
-  left: 0;
-  right: 0;
+  left: var(--space-2);
+  right: var(--space-2);
   bottom: -1px;
   height: 2px;
   background: var(--color-text);
@@ -205,7 +207,30 @@ body {
 .segmented button.on { background: var(--color-text); color: var(--color-bg); font-weight: 600; }
 .segmented button:disabled { opacity: 0.4; cursor: default; }
 
-.chip { cursor: pointer; transition: background 120ms var(--ease-out); }
+.chip { position: relative; cursor: pointer; transition: background 120ms var(--ease-out); }
+
+/*
+ * 터치 영역. 칩·도보 알약·카테고리 라벨은 보이는 크기가 작다(390px 실측:
+ * 칩 21px, 알약 18px, 카테고리 21px 높이). 보이는 모양은 그대로 두고 투명한
+ * 가상 요소로 누르는 영역만 40px 안팎까지 넓힌다. 이웃과 겹치지 않게
+ * 가로는 조금만 넓힌다(칩 사이 간격 8px).
+ */
+.chip::before,
+.rm__pill::before,
+.rm__wedgeLabel::before {
+  content: '';
+  position: absolute;
+  inset: -10px -4px;
+}
+
+/*
+ * 로드맵 위는 촘촘하다. "중식" 라벨 바로 밑에 15분 알약이 붙어 있어서,
+ * 위아래를 많이 넓히면 알약의 투명 영역이 라벨 글자를 덮어 "중식" 을
+ * 눌렀는데 15분이 눌린다. 보이는 글자는 늘 자기 것이 눌리도록 세로는
+ * 조금만, 가로는 넉넉히 넓힌다.
+ */
+.rm__pill::before { inset: -3px -8px; }
+.rm__wedgeLabel::before { inset: -5px -10px; }
 
 /*
  * MODUL 의 outline variant 는 accent 테두리라 꺼진 칩이 켜진 것처럼 보인다.
@@ -699,7 +724,8 @@ footer.muted { text-align: center; }
   display: block;
 }
 
-.pinball__sr {
+/* 화면낭독기 전용. 결과 알림(App.tsx)이 쓴다. */
+.sr-only {
   position: absolute;
   width: 1px;
   height: 1px;
