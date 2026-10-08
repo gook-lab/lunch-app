@@ -110,6 +110,11 @@ export default function App() {
   // 있다" 로 읽힌다. 모드 칩은 연출 중에 잠겨 있으니 여기서 연출을 끊을
   // 일은 없다.
   const pickMode = useCallback((next: GameMode) => {
+    // 연출 중에는 방식 단추가 잠기지만, "다시 하기" 와 같은 순간에 들어온 클릭은
+    // 잠기기 전에 도착한다. 판만 비우고 진행 상태를 두면 새 게임판이
+    // winnerIndex 없이 "진행 중" 에 갇혀 워치독(20초)까지 기다린다(10/8 실측).
+    // 탭 이동(goTab)처럼 연출을 끊는다.
+    setSpinning(false);
     setBoard(null);
     setWinner(null);
     setWinnerIndex(null);

@@ -116,6 +116,22 @@ describe('연출 중에 건드리면 잠금이 풀려야 한다 — 영구 고�
     expect(runButton().textContent).toBe('진행 중');
   });
 
+  it('실행과 같은 순간 들어온 방식 클릭도 "진행 중" 에 가두지 않는다', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '돌림판' }));
+    const ladder = screen.getByRole('button', { name: '사다리' });
+    // 한 act 안에서 두 번 누르면 방식 단추가 잠기기 전에 두 번째 클릭이 닿는다.
+    act(() => {
+      runButton().click();
+      ladder.click();
+    });
+    act(() => { vi.advanceTimersByTime(100); });
+
+    const run = screen.getByRole('button', { name: /사다리 타기 \(후보 \d+곳\)/ }) as HTMLButtonElement;
+    expect(run.disabled).toBe(false);
+    expect(lockedButtons()).toEqual([]);
+  });
+
   it('탭을 옮겼다 돌아와도 "진행 중" 에 갇히지 않는다', () => {
     startWheel();
     fireEvent.click(screen.getByRole('tab', { name: '목록' }));
