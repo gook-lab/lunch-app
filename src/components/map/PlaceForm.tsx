@@ -156,6 +156,7 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={MAX_NAME}
+          aria-required="true"
           placeholder="가게 이름"
           autoFocus={draft.name === ''}
         />
@@ -170,7 +171,7 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
 
       <div className="pf__field">
         <span className="filters__label">카테고리</span>
-        <div className="chips">
+        <div className="chips" role="group" aria-label="카테고리">
           {CATEGORIES.map((c) => (
             <Tag
               key={c}
@@ -188,7 +189,7 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
 
       <div className="pf__field">
         <span className="filters__label">가격대 (선택)</span>
-        <div className="chips">
+        <div className="chips" role="group" aria-label="가격대">
           {PRICE_BANDS.map((b) => (
             <Tag
               key={b}
@@ -244,7 +245,7 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
         />
       </label>
 
-      {problem && <p className="notice notice--empty">{problem}</p>}
+      {problem && <p className="notice notice--empty" role="alert">{problem}</p>}
 
       <div className="row">
         <Button block size="lg" onClick={() => void save()} loading={saving} disabled={tooFar}>

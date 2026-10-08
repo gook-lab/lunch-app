@@ -594,6 +594,10 @@ body {
 .list__actions { display: flex; gap: var(--space-2); flex-shrink: 0; }
 
 .linkish {
+  /* 휴대폰 터치 높이 44px */
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   background: none;
   border: 0;
   padding: var(--space-1) var(--space-2);
@@ -624,6 +628,7 @@ body {
 }
 
 .edit input {
+  min-height: 44px;
   padding: var(--space-2);
   border: 1px solid var(--color-neutral-400);
   border-radius: var(--radius-md);
@@ -1255,11 +1260,5 @@ footer.muted { text-align: center; }
   gap: var(--space-6);
 }
 
-/* 목록 행의 끄기·고치기와 수정 폼 — 휴대폰 터치 높이 44px */
-.linkish {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-}
-.edit input { min-height: 44px; box-sizing: border-box; }
+/* 수정 폼 단추 — 휴대폰 터치 높이 44px */
 .edit .btn { min-height: 44px; }

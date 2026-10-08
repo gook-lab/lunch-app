@@ -539,7 +539,7 @@ function PlaceEdit({
 
   const save = async () => {
     const trimmed = name.trim();
-    if (!trimmed) return setProblem('이름을 입력해 주세요.');
+    if (!trimmed) return setProblem('이름을 넣어 주세요.');
     if (!category) return setProblem('카테고리를 골라 주세요.');
     setSaving(true);
     setProblem(null);
@@ -564,7 +564,7 @@ function PlaceEdit({
     <div className="pf">
       <label className="pf__field">
         이름
-        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} />
+        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} aria-required="true" />
       </label>
       <div className="pf__field">
         <span className="filters__label">카테고리</span>
@@ -626,7 +626,7 @@ function PlaceEdit({
         <textarea value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={120} rows={2} />
       </label>
       <p className="muted small">좌표와 도보 시간은 목록 탭에서 고칠 수 있어요.</p>
-      {problem && <p className="notice notice--empty">{problem}</p>}
+      {problem && <p className="notice notice--empty" role="alert">{problem}</p>}
       <div className="row">
         <Button block onClick={() => void save()} loading={saving}>
           저장

@@ -57,7 +57,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
   const save = async () => {
     const nextLat = Number(lat);
     const nextLng = Number(lng);
-    if (!name.trim()) return setProblem('이름을 입력해 주세요.');
+    if (!name.trim()) return setProblem('이름을 넣어 주세요.');
     if (!Number.isFinite(nextLat) || !Number.isFinite(nextLng)) {
       return setProblem('좌표는 숫자로 넣어 주세요.');
     }
@@ -91,7 +91,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
     <div className="edit">
       <label>
         이름
-        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} />
+        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} aria-required="true" />
       </label>
       <label>
         카테고리
@@ -108,7 +108,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
         </label>
       </div>
       <p className="muted small">좌표를 고치면 도보 시간도 다시 계산돼요.</p>
-      {problem && <p className="notice notice--empty">{problem}</p>}
+      {problem && <p className="notice notice--empty" role="alert">{problem}</p>}
       <div className="row">
         <Button block onClick={() => void save()} loading={saving}>
           저장
