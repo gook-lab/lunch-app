@@ -13,7 +13,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import { decideToday } from './services/lunch';
-import { SPIN_MS } from './components/games/types';
+import { SPIN_MS, setForceMotion } from './components/games/types';
 
 const fx = vi.hoisted(() => {
   const place = (id: string, name: string) => ({
@@ -189,5 +189,48 @@ describe('사다리 — 사용자가 고르는 출발점', () => {
     expect(hidden().some((t) => t === '?')).toBe(false);
     const win = document.querySelector('.ladder__label--win')?.textContent;
     expect(win).toBe(card());
+  });
+});
+
+describe('기기의 "동작 줄이기"', () => {
+  const reduceMotion = () => {
+    window.matchMedia = ((q: string) => ({
+      matches: q.includes('reduced-motion'),
+      addEventListener() {},
+      removeEventListener() {},
+    })) as unknown as typeof window.matchMedia;
+  };
+
+  afterEach(() => {
+    localStorage.clear();
+    setForceMotion(false);
+  });
+
+  it('켜져 있으면 이유를 알리고, 연출 없이 바로 결과를 낸다', () => {
+    reduceMotion();
+    render(<App />);
+    expect(screen.getByRole('note').textContent).toContain('연출 없이 결과만');
+    fireEvent.click(screen.getByRole('button', { name: '돌림판' }));
+    fireEvent.click(runButton());
+    act(() => { vi.advanceTimersByTime(50); });
+    expect(card()).toBe('가집');
+  });
+
+  it('"연출 켜기" 를 누르면 기기 설정과 상관없이 연출을 재생한다', () => {
+    reduceMotion();
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '연출 켜기' }));
+    expect(screen.getByRole('note').textContent).toContain('연출을 보여 드려요');
+    fireEvent.click(screen.getByRole('button', { name: '돌림판' }));
+    fireEvent.click(runButton());
+    act(() => { vi.advanceTimersByTime(50); });
+    expect(card()).toBeNull();
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
+    expect(card()).toBe('가집');
+  });
+
+  it('기기 설정이 꺼져 있으면 안내를 띄우지 않는다', () => {
+    render(<App />);
+    expect(screen.queryByRole('note')).toBeNull();
   });
 });

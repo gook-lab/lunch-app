@@ -8,7 +8,7 @@
  * 누군가 import 한 줄을 늘리는 순간 조용히 깨진다. 청크를 갈라 두면 깨지지 않는다.
  */
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Tag, Sheet } from '@gook-lab/ui';
+import { Button, Sheet } from '@gook-lab/ui';
 import { Wheel } from './components/games/Wheel';
 import { Ladder } from './components/games/Ladder';
 import { Slot } from './components/games/Slot';
@@ -16,7 +16,10 @@ import { Pinball } from './components/games/Pinball';
 import {
   actionLabel,
   GAME_MODES,
+  motionForced,
   prefersReducedMotion,
+  setForceMotion,
+  systemReducesMotion,
   type GameMode,
 } from './components/games/types';
 import { PlaceList } from './components/PlaceList';
@@ -25,7 +28,7 @@ import { useTodayKST } from './hooks/useTodayKST';
 import { useLunchData } from './hooks/useLunchData';
 import { selectCandidates, type Filters, type Place } from './lib/candidates';
 import { categoryHue } from './lib/category';
-import { withJosa } from './lib/josa';
+import { josa, withJosa } from './lib/josa';
 import { emptyMessage, noticeMessage } from './lib/messages';
 import { decideToday } from './services/lunch';
 import './App.css';
@@ -43,6 +46,20 @@ const TAB_TITLE: Record<Tab, string> = {
   list: '가게 목록',
   map: '우리 도보권',
 };
+
+/** 방식 단추 그림. 글자 이름은 그대로 두고 그림은 보조로만 쓴다. */
+const MODE_ICON: Record<GameMode, string> = { wheel: '🎡', ladder: '🪜', slot: '🎰', pinball: '🎱' };
+
+const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
+/** "20261008" 을 "10월 8일 목요일" 로. */
+function formatDay(day: string): string {
+  const y = Number(day.slice(0, 4));
+  const m = Number(day.slice(4, 6));
+  const d = Number(day.slice(6, 8));
+  if (!y || !m || !d) return '';
+  const w = WEEKDAY[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+  return `${m}월 ${d}일 ${w}요일`;
+}
 
 export default function App() {
   const today = useTodayKST();
@@ -70,6 +87,14 @@ export default function App() {
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<Tab>('roadmap');
   const boardRef = useRef<HTMLDivElement>(null);
+  // 기기 설정은 앱이 바꿀 수 없으니 읽기만 한다. 앱 안 스위치는 games/types.ts 가 기억한다.
+  const [reducedBySystem] = useState(systemReducesMotion);
+  const [motionOn, setMotionOn] = useState(motionForced);
+  const toggleMotion = useCallback(() => {
+    const next = !motionOn;
+    setForceMotion(next);
+    setMotionOn(next);
+  }, [motionOn]);
   // 마지막에 고른 게임 방식은 이 브라우저에만 남는다. 공유 상태가 아니다.
   const [mode, setMode] = useState<GameMode>(() => {
     try {
@@ -232,7 +257,10 @@ export default function App() {
   return (
     <main className="app">
       <header className="app__header">
-        <h1>{TAB_TITLE[tab]}</h1>
+        <div>
+          <p className="app__date">{formatDay(today)}</p>
+          <h1>{TAB_TITLE[tab]}</h1>
+        </div>
         <span className="muted small">
           {refreshing ? '새로고침 중' : `${places.filter((p) => p.active).length}곳 등록됨`}
         </span>
@@ -281,12 +309,17 @@ export default function App() {
       <>
 
       {decidedPlace && !winner && (
-        <section className="card card--decided">
-          <p className="muted small">오늘은 이미 정했어요</p>
-          <h2>{decidedPlace.name}</h2>
-          <p className="muted small">
-            {decidedPlace.category} · 도보 {decidedPlace.walkMin}분
-          </p>
+        <section className="decided" aria-label="오늘 정한 곳">
+          <span className="decided__check" aria-hidden="true">✓</span>
+          <div className="decided__body">
+            <p className="decided__title">
+              오늘은 <strong>{decidedPlace.name}</strong>
+              {josa(decidedPlace.name, '으로/로')} 정했어요
+            </p>
+            <p className="muted small">
+              {decidedPlace.category} · 도보 {decidedPlace.walkMin}분 · 다시 돌려서 바꿀 수 있어요
+            </p>
+          </div>
         </section>
       )}
 
@@ -300,24 +333,41 @@ export default function App() {
         onExcludeRecent={() => updateFilters((f) => ({ ...f, excludeRecent: !f.excludeRecent }))}
       />
 
-      <section className="modes">
-        <div className="filters__row">
-          <span className="filters__label">방식</span>
+      <section className={spinning ? 'stage stage--busy' : 'stage'} aria-label="게임">
+        <div className="modebar" role="group" aria-label="방식">
           {GAME_MODES.map((m) => (
-            <Tag
+            <button
               key={m.id}
-              as="button"
-              variant={mode === m.id ? 'accent' : 'outline'}
+              type="button"
               aria-pressed={mode === m.id}
-              className={mode === m.id ? 'chip chip--on' : 'chip'}
+              className={mode === m.id ? 'modebar__item modebar__item--on' : 'modebar__item'}
               onClick={() => pickMode(m.id)}
               disabled={spinning}
             >
+              <span className="modebar__icon" aria-hidden="true">{MODE_ICON[m.id]}</span>
               {m.label}
-            </Tag>
+            </button>
           ))}
         </div>
-        <p className="muted small">방식은 보여주는 것만 달라요 · 확률은 같아요</p>
+        <p className="muted small stage__hint">방식은 보여주는 것만 달라요 · 확률은 같아요</p>
+
+        {/*
+          * 기기의 "동작 줄이기" 가 켜져 있으면 게임이 연출 없이 결과만 띄운다.
+          * 말없이 그러면 "게임이 안 돌아간다" 로 읽힌다. 이유를 알리고, 이 앱에서만
+          * 연출을 다시 켤 수 있게 한다.
+          */}
+        {reducedBySystem && (
+          <div className="motion-note" role="note">
+            <p>
+              {motionOn
+                ? '기기의 \u2018동작 줄이기\u2019가 켜져 있지만 이 앱에서는 연출을 보여 드려요.'
+                : '기기의 \u2018동작 줄이기\u2019가 켜져 있어서 연출 없이 결과만 보여 드려요.'}
+            </p>
+            <button type="button" className="motion-note__toggle" onClick={toggleMotion} disabled={spinning}>
+              {motionOn ? '연출 끄기' : '연출 켜기'}
+            </button>
+          </div>
+        )}
 
         {/*
           * 게임판은 쉴 때도 그린다.
@@ -359,15 +409,19 @@ export default function App() {
         </p>
 
         {winner ? (
-          <div className="card card--result">
-            <span
-              className="card__cat"
-              style={{ '--cat-hue': categoryHue(winner.category) } as React.CSSProperties}
-            >
-              {winner.category}
-            </span>
-            <h2>{winner.name}</h2>
-            <p className="muted small">도보 {winner.walkMin}분</p>
+          <div className="card card--result ticket">
+            <p className="ticket__eyebrow">오늘의 점심</p>
+            <h2 className="ticket__name">{winner.name}</h2>
+            <div className="ticket__meta">
+              <span
+                className="card__cat"
+                style={{ '--cat-hue': categoryHue(winner.category) } as React.CSSProperties}
+              >
+                {winner.category}
+              </span>
+              <span>도보 {winner.walkMin}분</span>
+            </div>
+            <hr className="ticket__perf" aria-hidden="true" />
             {confirmed ? (
               <>
                 <p className="confirmed">오늘 점심으로 정했어요</p>

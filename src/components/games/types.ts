@@ -55,10 +55,45 @@ export const SPIN_MS: Record<Exclude<GameMode, 'pinball'>, number> = {
   slot: 1800,
 };
 
-/** 모션을 줄이는 설정이면 연출을 건너뛴다. */
-export function prefersReducedMotion(): boolean {
+/** 기기(OS) 설정이 "동작 줄이기" 인가. 안내 문구를 띄울지 정하는 데 쓴다. */
+export function systemReducesMotion(): boolean {
   return (
     typeof window !== 'undefined' &&
     window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
   );
+}
+
+/*
+ * 사용자가 앱에서 "연출 켜기" 를 눌렀는가. 기기 설정은 그대로 두고 이 앱의
+ * 게임 연출만 다시 켠다. 동료 Mac 에 "동작 줄이기" 가 켜져 있어 게임이 결과만
+ * 띄우는 걸 "배선이 안 됐다" 로 읽은 일이 있었다(2026-10-08).
+ */
+const FORCE_MOTION_KEY = 'lunch-app:force-motion';
+let forceMotion = readForceMotion();
+
+function readForceMotion(): boolean {
+  try {
+    return typeof localStorage !== 'undefined' && localStorage.getItem(FORCE_MOTION_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function motionForced(): boolean {
+  return forceMotion;
+}
+
+export function setForceMotion(on: boolean): void {
+  forceMotion = on;
+  try {
+    if (on) localStorage.setItem(FORCE_MOTION_KEY, '1');
+    else localStorage.removeItem(FORCE_MOTION_KEY);
+  } catch {
+    // 시크릿 창에서는 저장이 막힌다. 이번 방문 동안만 켜진다.
+  }
+}
+
+/** 연출을 건너뛸까. 기기가 동작을 줄이라 했고, 사용자가 앱에서 다시 켜지 않았으면. */
+export function prefersReducedMotion(): boolean {
+  return systemReducesMotion() && !forceMotion;
 }

@@ -1082,3 +1082,168 @@ footer.muted { text-align: center; }
 .mp__stars { display: flex; gap: 1px; line-height: 1; }
 .mp__star { color: var(--color-neutral-400); font-size: var(--fs-sm); }
 .mp__star--on { color: var(--color-text); }
+
+/* 기기의 "동작 줄이기" 안내 */
+.stage__hint { text-align: center; }
+
+.motion-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-neutral-300);
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-surface);
+  font-size: var(--fs-sm);
+  color: var(--color-text);
+}
+
+.motion-note p { flex: 1; text-align: left; }
+
+.motion-note__toggle {
+  flex: none;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-text);
+  background: var(--color-text);
+  color: var(--color-bg);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.motion-note__toggle:disabled { opacity: 0.4; cursor: default; }
+
+/* ── 화면 정리 (10/8) ───────────────────────────────────────── */
+
+/* 머리말 날짜 */
+.app__date {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--color-neutral-700);
+  letter-spacing: 0.02em;
+  margin-bottom: 2px;
+}
+
+/* 오늘 정한 곳 — 카드 대신 한 줄 배너 */
+.decided {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-neutral-300);
+  border-left: 4px solid var(--color-accent);
+  background: var(--color-surface);
+}
+.decided__check {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  font-weight: 800;
+}
+.decided__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.decided__title { font-size: var(--fs-md); }
+.decided__title strong { font-weight: 800; }
+
+/* 게임 무대 */
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-neutral-300);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 방식 고르기 — 세그먼트 바 */
+.modebar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  padding: 2px;
+  background: var(--color-neutral-300);
+}
+.modebar__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 52px;
+  padding: var(--space-2) var(--space-1);
+  border: 0;
+  background: var(--color-bg);
+  color: var(--color-neutral-800);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms var(--ease-out), color 160ms var(--ease-out);
+}
+.modebar__item:hover:not(:disabled) { background: var(--color-neutral-100); }
+.modebar__item--on,
+.modebar__item--on:hover:not(:disabled) {
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+.modebar__item:disabled { cursor: not-allowed; }
+.modebar__item:disabled:not(.modebar__item--on) { color: var(--color-neutral-700); }
+.modebar__icon { font-size: var(--fs-lg); line-height: 1; }
+
+.stage .stage__board { background: var(--color-bg); }
+
+/* 결과 — 점심 티켓 */
+.ticket {
+  position: relative;
+  padding: var(--space-6) var(--space-4) var(--space-4);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-md);
+  gap: var(--space-2);
+}
+.ticket__eyebrow {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--color-neutral-700);
+}
+.card h2.ticket__name {
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  line-height: 1.15;
+  word-break: keep-all;
+  color: var(--color-text);
+}
+.ticket__meta {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-sm);
+  color: var(--color-neutral-700);
+}
+.ticket__meta .card__cat { align-self: auto; }
+.ticket__perf {
+  width: calc(100% + var(--space-4) * 2);
+  margin: var(--space-2) calc(var(--space-4) * -1);
+  border: 0;
+  border-top: 2px dashed var(--color-neutral-300);
+}
+
+/* 실행 단추 — 휴대폰에서는 화면 아래에 붙어 따라온다 */
+@media (max-width: 600px) {
+  /* 연출 중에는 판을 가리지 않게 붙이지 않는다. */
+  .stage:not(.stage--busy) > .btn-block {
+    position: sticky;
+    bottom: var(--space-3);
+    z-index: 5;
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+.stage > .btn-block { justify-content: center; }
+.ticket .btn { justify-content: center; }
