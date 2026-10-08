@@ -470,7 +470,8 @@ body {
 }
 
 .ladder__label--win {
-  color: var(--color-accent);
+  /* 11px 글자라 accent(3.8:1)로는 모자라다. accent-700 은 바탕 대비 6.4:1. */
+  color: var(--color-accent-700);
   font-weight: 700;
 }
 

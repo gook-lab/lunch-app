@@ -88,7 +88,16 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
   };
 
   return (
-    <div className="edit">
+    <div
+      className="edit"
+      // 취소 단추와 같다. 입력 중 Escape 로 바로 닫는다.
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          onDone();
+        }
+      }}
+    >
       <label>
         이름
         <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} aria-required="true" />
@@ -176,7 +185,9 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent }: P
                   </button>
                   <button
                     type="button"
+                    id={`edit-${place.id}`}
                     className="linkish"
+                    aria-expanded={editing === place.id}
                     onClick={() => setEditing(editing === place.id ? null : place.id)}
                   >
                     고치기
@@ -189,6 +200,8 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent }: P
                   onDone={() => {
                     setEditing(null);
                     onChanged();
+                    // 폼이 사라지면 초점이 <body> 로 떨어진다. 연 단추로 돌려준다.
+                    requestAnimationFrame(() => document.getElementById(`edit-${place.id}`)?.focus());
                   }}
                 />
               )}
