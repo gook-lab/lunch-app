@@ -42,6 +42,7 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
   const [progress, setProgress] = useState<Progress>({ run: -1, t: 0 });
   // 결과가 나온 뒤 판을 고치면 그 결과는 더 이상 이 판의 것이 아니다.
   const [editedAtRun, setEditedAtRun] = useState<number | null>(null);
+  const [hover, setHover] = useState<Rung | null>(null);
 
   const ladder = useMemo(() => ({ columns, rows: ROWS, rungs }), [columns, rungs]);
   const drawn = progress.run === run ? progress.t : 0;
@@ -100,20 +101,37 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
     onRequestSpin?.();
   };
 
-  /** 판을 누른 자리에 가로줄을 놓거나 뗀다. */
-  const onBoardClick = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (spinning || count < 2) return;
-    const svg = e.currentTarget;
-    const box = svg.getBoundingClientRect();
+  /** 누른 자리를 판 칸(row, col)으로 바꾼다. 판 밖이면 null. */
+  const hitCell = (e: React.MouseEvent<SVGSVGElement>): Rung | null => {
+    if (count < 2) return null;
+    const box = e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - box.left) / box.width) * VIEW_W;
     const y = ((e.clientY - box.top) / box.height) * VIEW_H;
     const gap = (VIEW_W - PAD_X * 2) / (count - 1);
     const col = Math.floor((x - PAD_X) / gap);
     const row = Math.round((y - PAD_TOP) / ((VIEW_H - PAD_TOP - PAD_BOTTOM) / ROWS) - 0.5);
-    if (row < 0 || row >= ROWS) return;
-    setRungs((r) => toggleRung(r, row, col, columns));
+    if (row < 0 || row >= ROWS || col < 0 || col >= count - 1) return null;
+    return { row, col };
+  };
+
+  /** 판을 누른 자리에 가로줄을 놓거나 뗀다. */
+  const onBoardClick = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (spinning) return;
+    const cell = hitCell(e);
+    if (!cell) return;
+    setRungs((r) => toggleRung(r, cell.row, cell.col, columns));
     if (winnerIndex !== null) setEditedAtRun(run);
   };
+
+  // 마우스를 올린 자리에 생길(또는 지워질) 가로줄을 점선으로 미리 보여 준다.
+  // 옆 가로줄과 붙어서 놓을 수 없는 자리는 아무것도 안 그린다.
+  const onBoardMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const cell = spinning ? null : hitCell(e);
+    setHover((h) => (h?.row === cell?.row && h?.col === cell?.col ? h : cell));
+  };
+  const ghost =
+    hover && !spinning && toggleRung(rungs, hover.row, hover.col, columns).length !== rungs.length ? hover : null;
+  const ghostRemoves = ghost !== null && rungs.some((r) => r.row === ghost.row && r.col === ghost.col);
 
   const reshuffle = () => {
     if (spinning) return;
@@ -164,6 +182,8 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
           role="img"
           aria-label={`사다리 ${count}줄, 가로줄 ${rungs.length}개`}
           onClick={onBoardClick}
+          onMouseMove={onBoardMove}
+          onMouseLeave={() => setHover(null)}
           className={spinning ? 'ladder__svg' : 'ladder__svg ladder__svg--editable'}
         >
           {/* 세로줄 */}
@@ -188,6 +208,15 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
               className="ladder__rung"
             />
           ))}
+          {ghost && (
+            <line
+              x1={colX(ghost.col)}
+              y1={rowY(ghost.row + 0.5)}
+              x2={colX(ghost.col + 1)}
+              y2={rowY(ghost.row + 0.5)}
+              className={ghostRemoves ? 'ladder__ghost ladder__ghost--remove' : 'ladder__ghost'}
+            />
+          )}
           {/* 지나온 경로 */}
           {showPath && drawnPts.length > 1 && <polyline points={drawnPoints} className="ladder__path" />}
           {showPath && head && <circle cx={head.x} cy={head.y} r={5} className="ladder__head" />}
@@ -225,11 +254,12 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
               key={slot}
               className={cls}
               style={
-                tall
+                tall || !place
                   ? { left: `${(colX(slot) / VIEW_W) * 100}%` }
                   : { left: `${(colX(slot) / VIEW_W) * 100}%`, width: `${100 / count}%` }
               }
               title={place?.name}
+              aria-label={place ? undefined : `${slot + 1}번 칸, 가려져 있어요`}
             >
               {place ? (tall ? shortName(place.name, 8) : place.name) : '?'}
             </span>

@@ -435,6 +435,9 @@ body {
 
 .ladder__rail { stroke: var(--color-neutral-400); stroke-width: 1.5; }
 .ladder__rung { stroke: var(--color-neutral-400); stroke-width: 1.5; }
+/* 누르면 생기거나 지워질 자리 미리보기 */
+.ladder__ghost { stroke: var(--color-accent); stroke-width: 3; stroke-dasharray: 4 3; opacity: 0.6; pointer-events: none; }
+.ladder__ghost--remove { stroke: var(--color-neutral-700); }
 
 .ladder__path {
   fill: none;
@@ -472,7 +475,7 @@ body {
 
 /* 가린 칸 — 경로가 닿을 때까지 뒤집힌 카드처럼 "?" 로 덮어 둔다 */
 .ladder__label--hidden {
-  width: 26px !important;
+  width: 26px;
   height: 22px;
   line-height: 22px;
   background: var(--color-neutral-200);
@@ -481,7 +484,7 @@ body {
   font-weight: 700;
 }
 
-.ladder__labels--tall .ladder__label--hidden { width: 22px !important; height: 26px; line-height: 26px; writing-mode: horizontal-tb; }
+.ladder__labels--tall .ladder__label--hidden { width: 22px; height: 26px; line-height: 26px; writing-mode: horizontal-tb; }
 
 /* 열리는 순간 한꺼번에 뒤집힌다 */
 .ladder__label--open { animation: ladder-open 280ms var(--ease-out) both; }
