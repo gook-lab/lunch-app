@@ -1247,3 +1247,19 @@ footer.muted { text-align: center; }
 .stage__board:focus { outline: none; }
 .ticket__name:focus { outline: none; }
 .ticket__name:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
+
+/* 탭 패널. .app 과 같은 세로 리듬을 그대로 잇는다. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* 목록 행의 끄기·고치기와 수정 폼 — 휴대폰 터치 높이 44px */
+.linkish {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.edit input { min-height: 44px; box-sizing: border-box; }
+.edit .btn { min-height: 44px; }

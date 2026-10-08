@@ -169,6 +169,10 @@ describe('접근성', () => {
     expect(screen.getByRole('tab', { name: '지도' }).getAttribute('aria-selected')).toBe('true');
     fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Home' });
     expect(screen.getByRole('tab', { name: '로드맵' }).getAttribute('aria-selected')).toBe('true');
+
+    // 지금 탭이 가리키는 패널이 실제로 있고, 패널은 그 탭 이름으로 불린다.
+    const panel = screen.getByRole('tabpanel', { name: '로드맵' });
+    expect(screen.getByRole('tab', { name: '로드맵' }).getAttribute('aria-controls')).toBe(panel.id);
   });
 
   it('키보드로 실행하면 초점이 판을 거쳐 결과 이름으로 간다 — <body> 로 떨어지지 않는다', () => {

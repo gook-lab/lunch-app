@@ -319,6 +319,7 @@ export default function App() {
             id={`tab-${t}`}
             role="tab"
             aria-selected={tab === t}
+            aria-controls={`panel-${t}`}
             tabIndex={tab === t ? 0 : -1}
             className={tab === t ? 'on' : ''}
             onClick={() => goTab(t)}
@@ -329,7 +330,7 @@ export default function App() {
       </nav>
 
       {tab === 'list' && (
-        <>
+        <div role="tabpanel" id="panel-list" aria-labelledby="tab-list" className="panel">
           {/*
             * 추가 경로는 지도 하나뿐이다. 여기에도 폼을 두면 가격대·별점이
             * 한쪽에만 있는 채로 갈라진다. 버튼은 지도로 보내기만 한다.
@@ -346,17 +347,19 @@ export default function App() {
             onChanged={reload}
             excludeRecent={filters.excludeRecent}
           />
-        </>
+        </div>
       )}
 
       {tab === 'map' && (
-        <Suspense fallback={<p className="muted small">지도를 준비하고 있어요</p>}>
-          <MapTab places={places} onChanged={reload} />
-        </Suspense>
+        <div role="tabpanel" id="panel-map" aria-labelledby="tab-map" className="panel">
+          <Suspense fallback={<p className="muted small">지도를 준비하고 있어요</p>}>
+            <MapTab places={places} onChanged={reload} />
+          </Suspense>
+        </div>
       )}
 
       {tab === 'roadmap' && (
-      <>
+      <div role="tabpanel" id="panel-roadmap" aria-labelledby="tab-roadmap" className="panel">
 
       {decidedPlace && !winner && (
         <section className="decided" aria-label="오늘 정한 곳">
@@ -511,7 +514,7 @@ export default function App() {
         {notice && <p className="notice">{notice}</p>}
       </section>
 
-      </>
+      </div>
       )}
 
       <footer className="muted small">로그인 없음 · 링크만 있으면 누구나</footer>
