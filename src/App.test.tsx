@@ -273,6 +273,30 @@ describe('사다리 — 사용자가 고르는 출발점', () => {
   });
 });
 
+describe('카드 뒤집기 — 사용자가 고르는 카드', () => {
+  it('고른 카드부터 뒤집히고, 그 카드가 결과 카드와 같다. 다 뒤집히기 전엔 다른 카드는 가려져 있다', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '카드' }));
+    const cards = screen.getAllByRole('button', { name: /번 카드 고르기$/ });
+    expect(cards.length).toBeGreaterThan(1);
+    fireEvent.click(cards[1]);
+
+    // 섞는 중: 아무 카드도 안 열렸다.
+    expect(document.querySelectorAll('.cards__card--open')).toHaveLength(0);
+
+    act(() => { vi.advanceTimersByTime(SPIN_MS.cards * 0.45); });
+    const open = document.querySelectorAll('.cards__card--open');
+    expect(open).toHaveLength(1);
+    expect(open[0].classList.contains('cards__card--mine')).toBe(true);
+
+    act(() => { vi.advanceTimersByTime(SPIN_MS.cards); });
+    const mine = document.querySelector('.cards__card--mine');
+    expect(mine?.classList.contains('cards__card--win')).toBe(true);
+    expect(mine?.getAttribute('aria-label')).toBe(`2번 카드: ${card()}`);
+    expect(document.querySelectorAll('.cards__card--open').length).toBe(cards.length);
+  });
+});
+
 describe('기기의 "동작 줄이기"', () => {
   const reduceMotion = () => {
     window.matchMedia = ((q: string) => ({

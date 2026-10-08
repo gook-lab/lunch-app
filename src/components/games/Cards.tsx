@@ -1,0 +1,119 @@
+/**
+ * 카드 뒤집기 — 엎어 둔 카드 중 하나를 고르면 뒤집힌다.
+ *
+ * 당첨은 카드가 정하지 않는다. App 이 균등 난수로 이미 정했고(winnerIndex),
+ * 여기서는 고른 카드에 그 당첨을 놓고 나머지 카드를 섞어 연다
+ * (lib/ladder.ts revealSlots — 사다리와 같은 논리). 카드는 열릴 때까지 전부
+ * 가려져 있으므로, 미리 섞어 엎어 둔 것과 확률이 같다. 어느 카드를 고르든
+ * 당첨 확률은 그대로다.
+ *
+ * 순서: 섞기(흔들림) → 고른 카드가 뒤집힘 → 나머지가 차례로 뒤집힘.
+ */
+import { useEffect, useState } from 'react';
+import { revealSlots } from '../../lib/ladder';
+import { shortName } from '../../lib/name';
+import { seededRandom } from '../../lib/random';
+import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
+
+type Phase = 'idle' | 'shuffle' | 'picked' | 'all';
+
+interface Shown {
+  run: number;
+  phase: Phase;
+}
+
+/** 단계가 바뀌는 시각(연출 길이 대비). 마지막 단계가 끝나면 onSpinEnd. */
+const PICKED_AT = 0.3;
+const ALL_AT = 0.6;
+
+export function Cards({ candidates, winnerIndex, spinning, run, onSpinEnd, onRequestSpin, expanded = false }: GameProps) {
+  const count = candidates.length;
+  const [picked, setPicked] = useState<number | null>(null);
+  const [shown, setShown] = useState<Shown>({ run: -1, phase: 'idle' });
+
+  // 실행 단추로 시작해 카드를 안 골랐으면 판 번호로 한 장 고른다.
+  const effectivePick =
+    picked ?? (winnerIndex === null ? null : Math.floor(seededRandom(run)() * Math.max(count, 1)));
+  const slots =
+    effectivePick === null || winnerIndex === null
+      ? null
+      : revealSlots(count, effectivePick, winnerIndex, seededRandom(run + 1));
+  const phase: Phase = shown.run === run ? shown.phase : winnerIndex === null ? 'idle' : 'shuffle';
+
+  useEffect(() => {
+    if (!spinning || winnerIndex === null || count === 0) return;
+    if (prefersReducedMotion()) {
+      setShown({ run, phase: 'all' });
+      const t = window.setTimeout(onSpinEnd, 0);
+      return () => window.clearTimeout(t);
+    }
+    setShown({ run, phase: 'shuffle' });
+    const timers = [
+      window.setTimeout(() => setShown({ run, phase: 'picked' }), SPIN_MS.cards * PICKED_AT),
+      window.setTimeout(() => setShown({ run, phase: 'all' }), SPIN_MS.cards * ALL_AT),
+      window.setTimeout(onSpinEnd, SPIN_MS.cards),
+    ];
+    return () => timers.forEach((t) => window.clearTimeout(t));
+  }, [spinning, winnerIndex, count, run, onSpinEnd]);
+
+  if (count === 0) return <div className="cards cards--empty" />;
+
+  const pick = (i: number) => {
+    if (spinning) return;
+    setPicked(i);
+    onRequestSpin?.();
+  };
+
+  const isOpen = (i: number) =>
+    slots !== null && (phase === 'all' || (phase === 'picked' && i === effectivePick));
+
+  return (
+    <div className={expanded ? 'cards cards--big' : 'cards'}>
+      <p className="muted small cards__hint">
+        {winnerIndex === null || phase === 'idle'
+          ? `카드 ${count}장 중 한 장을 골라 주세요. 고른 카드부터 뒤집혀요.`
+          : phase === 'all'
+            ? '모든 카드를 뒤집었어요.'
+            : phase === 'picked'
+              ? '고른 카드를 뒤집었어요. 나머지도 열어 볼게요.'
+              : '카드를 섞고 있어요…'}
+      </p>
+      <ul className={phase === 'shuffle' ? 'cards__grid cards__grid--shuffle' : 'cards__grid'}>
+        {candidates.map((_, i) => {
+          const open = isOpen(i);
+          const place = open && slots ? candidates[slots[i]] : null;
+          const mine = i === effectivePick && winnerIndex !== null;
+          const win = open && slots !== null && slots[i] === winnerIndex;
+          const cls = ['cards__card', open ? 'cards__card--open' : '', mine ? 'cards__card--mine' : '', win ? 'cards__card--win' : '']
+            .filter(Boolean)
+            .join(' ');
+          return (
+            <li key={i} style={{ '--i': i } as React.CSSProperties}>
+              <button
+                type="button"
+                className={cls}
+                onClick={() => pick(i)}
+                disabled={spinning}
+                aria-label={place ? `${i + 1}번 카드: ${place.name}` : `${i + 1}번 카드 고르기`}
+              >
+                <span className="cards__face cards__face--back" aria-hidden="true">
+                  <span className="cards__num">{i + 1}</span>
+                </span>
+                <span className="cards__face cards__face--front" aria-hidden="true">
+                  {place && (
+                    <>
+                      <strong>{shortName(place.name, 10)}</strong>
+                      <span>
+                        {place.category} · {place.walkMin}분
+                      </span>
+                    </>
+                  )}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}

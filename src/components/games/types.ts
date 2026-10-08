@@ -31,7 +31,7 @@ export interface GameProps {
   onRequestSpin?: () => void;
 }
 
-export type GameMode = 'wheel' | 'ladder' | 'slot' | 'pinball';
+export type GameMode = 'wheel' | 'ladder' | 'slot' | 'pinball' | 'cards';
 
 /** label 은 칩에, action 은 실행 버튼에 쓴다. "돌리기" 는 슬롯·핀볼에 안 맞는다. */
 export const GAME_MODES: { id: GameMode; label: string; action: string }[] = [
@@ -39,6 +39,7 @@ export const GAME_MODES: { id: GameMode; label: string; action: string }[] = [
   { id: 'ladder', label: '사다리', action: '사다리 타기' },
   { id: 'slot', label: '슬롯', action: '레버 당기기' },
   { id: 'pinball', label: '핀볼', action: '구슬 굴리기' },
+  { id: 'cards', label: '카드', action: '카드 뒤집기' },
 ];
 
 export function actionLabel(mode: GameMode): string {
@@ -55,6 +56,7 @@ export const SPIN_MS: Record<Exclude<GameMode, 'pinball'>, number> = {
   wheel: 2600,
   ladder: 2200,
   slot: 1800,
+  cards: 2400,
 };
 
 /** 기기(OS) 설정이 "동작 줄이기" 인가. 안내 문구를 띄울지 정하는 데 쓴다. */

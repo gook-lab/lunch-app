@@ -1175,7 +1175,7 @@ footer.muted { text-align: center; }
 /* 방식 고르기 — 세그먼트 바 */
 .modebar {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 2px;
   padding: 2px;
   background: var(--color-neutral-300);
@@ -1560,4 +1560,87 @@ html:has(.stage--full) { overflow: hidden; }
   .map > * { grid-column: 2; }
   .map > .map__main { grid-column: 1; grid-row: 1 / span 20; position: sticky; top: var(--space-6); }
   .map__canvas { height: min(640px, calc(100svh - 200px)); }
+}
+
+/* ── 카드 뒤집기 ─────────────────────────────────────────── */
+.cards { width: min(360px, 90vw); display: flex; flex-direction: column; gap: var(--space-3); }
+.cards--big { width: min(92vw, 820px); }
+.cards--empty { height: 260px; }
+.cards__hint { text-align: center; }
+.cards__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  /* 장수가 적어도 가운데에 모이게, 칸 폭에 상한을 둔다. */
+  grid-template-columns: repeat(auto-fit, minmax(76px, 104px));
+  justify-content: center;
+  gap: var(--space-2);
+}
+.cards--big .cards__grid { grid-template-columns: repeat(auto-fit, minmax(130px, 170px)); gap: var(--space-3); }
+.cards__card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  perspective: 600px;
+  font: inherit;
+}
+.cards__card:disabled { cursor: default; }
+.cards__face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--space-1);
+  backface-visibility: hidden;
+  transition: transform 420ms var(--ease-inout);
+  box-shadow: var(--shadow-sm);
+}
+.cards__face--back {
+  background:
+    repeating-linear-gradient(45deg, transparent 0 6px, color-mix(in srgb, var(--color-bg) 18%, transparent) 6px 8px),
+    var(--color-text);
+  color: var(--color-bg);
+  border: 3px solid var(--color-bg);
+  outline: 1px solid var(--color-text);
+}
+.cards__num { font-family: var(--font-heading); font-size: var(--fs-lg); font-weight: 800; }
+.cards__face--front {
+  transform: rotateY(180deg);
+  background: var(--color-bg);
+  border: 1px solid var(--color-neutral-400);
+  text-align: center;
+  font-size: var(--fs-xs);
+  color: var(--color-neutral-700);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.cards__face--front strong { font-size: var(--fs-sm); color: var(--color-text); line-height: 1.2; }
+.cards--big .cards__face--front strong { font-size: var(--fs-lg); }
+.cards__card--open .cards__face--back { transform: rotateY(-180deg); }
+.cards__card--open .cards__face--front { transform: rotateY(0deg); }
+/* 나머지 카드는 차례로 뒤집힌다 */
+.cards__card--open:not(.cards__card--mine) .cards__face { transition-delay: calc(var(--i) * 45ms); }
+.cards__card:hover:not(:disabled):not(.cards__card--open) .cards__face--back { transform: translateY(-4px); }
+.cards__card--mine .cards__face--back { outline: 3px solid var(--color-accent); }
+.cards__card--win .cards__face--front {
+  border: 2px solid var(--color-accent);
+  background: var(--color-accent-100);
+}
+.cards__card--win .cards__face--front strong { color: var(--color-accent-700); }
+.cards__grid--shuffle li { animation: cards-shuffle 360ms var(--ease-inout) infinite alternate; animation-delay: calc(var(--i) * -70ms); }
+@keyframes cards-shuffle {
+  from { transform: translate(-3px, 2px) rotate(-3deg); }
+  to { transform: translate(3px, -2px) rotate(3deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cards__face { transition: none; }
+  .cards__grid--shuffle li { animation: none; }
 }
