@@ -13,9 +13,9 @@
  * 물리는 조작하지 않는다. 실제로 일어난 여러 경기 중 하나를 고를 뿐이다.
  * 구슬이 벽을 뚫거나 갑자기 빨라지는 일은 없다.
  *
- * 코스는 지그재그 벽 + 핀 무더기다. 균일한 핀밭보다 경로가 갈리는 맛이 있고,
- * 무엇보다 중앙이 구조적으로 유리해지는 편중이 덜하다. 벽은 선분이라
- * 점-선분 최단거리로 충돌을 본다.
+ * 코스는 구간마다 성격이 다르다 — 핀밭, 깔때기, 범퍼, 지붕, 지그재그.
+ * 같은 깔때기 네 줄이던 예전 코스는 "단조롭다" 는 평을 들었다. 벽은
+ * 선분이라 점-선분 최단거리로 충돌을 보고, 구슬끼리도 부딪친다.
  */
 import { seededRandom } from './random';
 
@@ -26,19 +26,32 @@ export const BOARD_H = 372;
 const MARBLE_R = 7;
 const PEG_R = 6;
 const WALL_R = 3;
-const GRAVITY = 0.4;
-const RESTITUTION = 0.58;
-const FRICTION = 0.995;
-const MAX_SPEED = 8.5;
+/*
+ * 속도 감각. 예전 값(중력 0.4, 최고속 8.5)은 1등이 52프레임(0.9초) 만에
+ * 들어와서, 재생을 4초로 늘리면 0.22배 슬로모션이 됐다. 출발 직후 정지
+ * 구간이 0.7초나 늘어나 "초반에 멈춰 있다" 로 보였다. 지금은 코스가 길고
+ * 장애물이 많아 실제 경기 자체가 2~4초이고, 거의 그대로 재생한다.
+ */
+const GRAVITY = 0.16;
+const RESTITUTION = 0.6;
+const FRICTION = 0.997;
+const MAX_SPEED = 5.2;
+/** 출발 때 아래로 미는 속도. 0 이면 처음 몇 프레임이 제자리처럼 보인다. */
+const LAUNCH_VY = 1.6;
 /** 결승선. 그리는 쪽도 이 값을 써야 구슬이 선 위에 멈춘 것으로 보인다. */
 export const FINISH_Y = BOARD_H - 16;
-const MAX_STEPS = 2200;
+const MAX_STEPS = 3000;
 
 export interface Peg {
   x: number;
   y: number;
   r: number;
+  /** 범퍼. 맞으면 튕겨 나온다(반발계수 1 초과). */
+  bumper?: boolean;
 }
+
+/** 범퍼 반발계수. 1 을 넘어서 맞은 구슬이 더 빨라진다(최고속 제한은 받는다). */
+const BUMPER_BOUNCE = 1.15;
 
 /** 지그재그 벽 한 조각. */
 export interface Wall {
@@ -76,31 +89,46 @@ export interface RaceResult {
 export function buildCourse(): { walls: Wall[]; pegs: Peg[] } {
   const walls: Wall[] = [];
   const pegs: Peg[] = [];
+  const C = COURSE_W / 2;
+  /** 가운데 기준 좌우 대칭으로 한 쌍. dx=0 이면 하나만. */
+  const pair = (dx: number, y: number, r: number, bumper = false) => {
+    pegs.push({ x: C - dx, y, r, bumper });
+    if (dx !== 0) pegs.push({ x: C + dx, y, r, bumper });
+  };
+  const wallPair = (x1: number, y1: number, x2: number, y2: number) => {
+    walls.push({ x1, y1, x2, y2 });
+    walls.push({ x1: COURSE_W - x1, y1, x2: COURSE_W - x2, y2 });
+  };
 
-  const top = 52;
-  const rows = 4;
-  const rowH = (FINISH_Y - top - 34) / rows;
+  // 1구간 — 핀밭. 엇갈린 세 줄이라 출발 레인이 금방 섞인다.
+  pair(0, 50, PEG_R);
+  pair(52, 50, PEG_R);
+  pair(26, 72, PEG_R);
+  pair(78, 72, PEG_R);
+  pair(0, 94, PEG_R);
+  pair(52, 94, PEG_R);
 
-  for (let row = 0; row < rows; row += 1) {
-    const y = top + row * rowH;
-    const mid = y + rowH * 0.55;
-    const inset = 26;
+  // 2구간 — 깔때기. 양쪽 벽이 가운데로 모으고, 출구 밑 핀이 다시 가른다.
+  wallPair(0, 116, 68, 146);
+  pair(0, 164, PEG_R + 1);
 
-    // 좌우에서 번갈아 안쪽으로 뻗는 깔때기 벽. 대칭이 되도록 두 개를 같이 깐다.
-    walls.push({ x1: 0, y1: y, x2: inset + 34, y2: mid });
-    walls.push({ x1: COURSE_W, y1: y, x2: COURSE_W - inset - 34, y2: mid });
+  // 3구간 — 범퍼 두 개. 맞으면 옆으로 튕겨 순위가 뒤집힌다.
+  pair(58, 192, 11, true);
+  pair(0, 214, PEG_R - 1);
 
-    // 가운데를 비워 두면 전부 가운데로 몰린다. 중앙에 핀을 둬서 다시 가른다.
-    pegs.push({ x: COURSE_W / 2, y: mid + 6, r: PEG_R + 1 });
+  // 4구간 — 가운데 지붕. 구슬이 좌우로 갈라져 양 벽을 타고 내려간다.
+  walls.push({ x1: C - 26, y1: 248, x2: C, y2: 232 });
+  walls.push({ x1: C + 26, y1: 248, x2: C, y2: 232 });
+  pair(86, 240, PEG_R - 1);
 
-    // 행마다 작은 핀 세 개. 좌우 대칭.
-    const spread = 46;
-    pegs.push({ x: COURSE_W / 2 - spread, y: y + rowH * 0.9, r: PEG_R });
-    pegs.push({ x: COURSE_W / 2 + spread, y: y + rowH * 0.9, r: PEG_R });
-  }
+  // 5구간 — 지그재그. 바깥 벽이 다시 안쪽으로 몰고 작은 핀이 흩는다.
+  wallPair(0, 262, 50, 290);
+  pair(0, 284, PEG_R);
+  pair(34, 306, PEG_R - 1);
+  pair(76, 306, PEG_R - 1);
 
-  // 마지막 구간: 결승선 바로 위에 촘촘한 핀 한 줄. 순위가 여기서 갈린다.
-  const lastY = FINISH_Y - 26;
+  // 마지막 — 결승선 바로 위 촘촘한 한 줄. 막판 순위가 여기서 갈린다.
+  const lastY = FINISH_Y - 24;
   for (let i = 0; i < 5; i += 1) {
     pegs.push({ x: (COURSE_W / 6) * (i + 1), y: lastY, r: PEG_R - 1 });
   }
@@ -144,7 +172,7 @@ export function simulateRace(count: number, seed: number): RaceResult {
     x[i] = lane * (lanes[i] + 1) + (random() - 0.5) * lane * 0.4;
     y[i] = 14 + random() * 12;
     vx[i] = (random() - 0.5) * 1.4;
-    vy[i] = 0;
+    vy[i] = LAUNCH_VY + random() * 0.6;
   }
 
   const frames: MarbleAt[][] = [];
@@ -208,8 +236,17 @@ export function simulateRace(count: number, seed: number): RaceResult {
         x[i] = peg.x + nx * min;
         y[i] = peg.y + ny * min;
         const vn = vx[i] * nx + vy[i] * ny;
-        vx[i] = (vx[i] - 2 * vn * nx) * RESTITUTION;
-        vy[i] = (vy[i] - 2 * vn * ny) * RESTITUTION;
+        const bounce = peg.bumper ? BUMPER_BOUNCE : RESTITUTION;
+        vx[i] = (vx[i] - 2 * vn * nx) * bounce;
+        vy[i] = (vy[i] - 2 * vn * ny) * bounce;
+        if (peg.bumper) {
+          // 범퍼는 최소한 이만큼은 튕긴다. 거의 멈춘 구슬이 범퍼 위에 얹히지 않게.
+          const sp = Math.hypot(vx[i], vy[i]);
+          if (sp < 2.2) {
+            vx[i] += nx * (2.2 - sp);
+            vy[i] += ny * (2.2 - sp);
+          }
+        }
       }
 
       if (y[i] >= FINISH_Y) {

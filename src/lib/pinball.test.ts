@@ -284,3 +284,39 @@ describe('시드 탐색이 매번 같은 경기를 주지 않는다', () => {
     }
   });
 })
+
+describe('경기 길이 — 슬로모션 없이 재생할 수 있어야 한다', () => {
+  // 예전 코스는 1등이 52프레임(0.9초)에 들어와 4초로 늘려 틀었다. 0.22배
+  // 슬로모션이라 출발 직후 구슬이 떠 있는 것처럼 보였다. 재생은 1등 도착을
+  // 2.2~4.2초(132~252프레임)로 맞추므로, 경기 자체가 그 근처여야 배속이 1에 가깝다.
+  it.each([3, 5, 12, 20])('후보 %i곳: 1등 도착이 평균 120~260프레임', (count) => {
+    let sum = 0;
+    for (let s = 1; s <= 30; s += 1) sum += simulateRace(count, s).winnerFrame;
+    const avg = sum / 30;
+    expect(avg).toBeGreaterThan(120);
+    expect(avg).toBeLessThan(260);
+  });
+
+  it('출발하자마자 내려간다 — 3프레임 안에 평균 4px 이상', () => {
+    const { frames } = simulateRace(8, 42);
+    const mean = (f: { y: number }[]) => f.reduce((a, m) => a + m.y, 0) / f.length;
+    expect(mean(frames[3]) - mean(frames[0])).toBeGreaterThan(4);
+  });
+});
+
+describe('코스 — 구간이 달라야 단조롭지 않다', () => {
+  it('범퍼가 있고 좌우 대칭이다', () => {
+    const { pegs } = buildCourse();
+    const bumpers = pegs.filter((p) => p.bumper);
+    expect(bumpers.length).toBeGreaterThanOrEqual(2);
+    for (const b of bumpers) {
+      expect(bumpers.some((o) => Math.abs(o.x - (COURSE_W - b.x)) < 1e-9 && o.y === b.y)).toBe(true);
+    }
+  });
+
+  it('장애물이 위아래로 고르게 퍼져 있다 — 빈 구간이 60px 를 넘지 않는다', () => {
+    const { pegs, walls } = buildCourse();
+    const ys = [...pegs.map((p) => p.y), ...walls.flatMap((w) => [w.y1, w.y2])].sort((a, b) => a - b);
+    for (let i = 1; i < ys.length; i += 1) expect(ys[i] - ys[i - 1]).toBeLessThanOrEqual(60);
+  });
+});

@@ -29,16 +29,38 @@ const COURSE = buildCourse();
 /**
  * 재생은 2단이다.
  *
- * 1등이 결승선을 넘는 데까지가 LEAD_MS, 나머지가 다 들어오는 데까지가 TAIL_MS.
- * 한동안 1등이 들어오는 순간에 끊었는데, 그러면 순위판이 "1 / 5" 에서 멈추고
- * 나머지 구슬은 코스 한복판에 굳은 채로 끝난다. 경기가 안 끝난 것으로 보인다.
+ * 1등이 결승선을 넘는 데까지가 lead, 나머지가 다 들어오는 데까지가 tail.
+ * 1등이 들어오는 순간에 끊으면 순위판이 "1 / 5" 에서 멈추고 나머지 구슬이
+ * 코스 한복판에 굳어 경기가 안 끝난 것으로 보인다.
  *
- * 그렇다고 같은 속도로 끝까지 가면 후보 12곳에서 전체가 1등 도착의 3.3배다
- * (실측: 1등 57프레임 / 전원 완주 189프레임). 뒤는 빠르게 정리한다.
+ * lead 는 실시간(60fps 한 프레임 = 시뮬레이션 한 스텝)에 맞춘다. 예전에는
+ * lead 를 4초로 고정해 0.9초짜리 경기를 0.22배 슬로모션으로 틀었고, 출발
+ * 직후 0.7초 동안 구슬이 제자리에 떠 있는 것처럼 보였다. 경기가 아주 짧거나
+ * 길면 범위 안으로 당긴다. tail 은 뒤 정리라 빠르게 감는다.
  */
-const LEAD_MS = 4000;
-const TAIL_MS = 1500;
-const PLAY_MS = LEAD_MS + TAIL_MS;
+const FRAME_MS = 1000 / 60;
+const LEAD_MIN_MS = 2200;
+const LEAD_MAX_MS = 4200;
+const TAIL_MIN_MS = 700;
+const TAIL_MAX_MS = 1600;
+/** 잔상으로 그릴 지난 프레임 수와 간격. */
+const TRAIL = 5;
+const TRAIL_STEP = 2;
+
+interface Timing {
+  leadMs: number;
+  playMs: number;
+}
+
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
+function timingFor(race: RaceResult): Timing {
+  const lead = Math.max(1, race.winnerFrame);
+  const rest = Math.max(0, race.frames.length - 1 - lead);
+  const leadMs = clamp(lead * FRAME_MS, LEAD_MIN_MS, LEAD_MAX_MS);
+  const tailMs = clamp(rest * FRAME_MS * 0.35, TAIL_MIN_MS, TAIL_MAX_MS);
+  return { leadMs, playMs: leadMs + tailMs };
+}
 
 /** 시드 탐색 한 번에 훑을 개수. 실측으로 무작위 시작 200회 중 실패 0회. */
 const MAX_SEEDS = 600;
@@ -60,7 +82,6 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
   const frameRef = useRef(0);
   const timerRef = useRef(0);
   const [progress, setProgress] = useState(0);
-  const [finished, setFinished] = useState(false);
 
   // 돌릴 때마다 당첨 구슬이 이기는 경기를 찾는다.
   const race: RaceResult | null = useMemo(() => {
@@ -74,13 +95,13 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
     return simulateRace(count, seed);
   }, [count, winnerIndex, run]);
 
+  const timing = useMemo(() => (race ? timingFor(race) : null), [race]);
+
   useEffect(() => {
-    if (!spinning || !race) return;
-    setFinished(false);
+    if (!spinning || !race || !timing) return;
 
     if (prefersReducedMotion()) {
       setProgress(1);
-      setFinished(true);
       onSpinEnd();
       return;
     }
@@ -91,7 +112,7 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
     const tick = (now: number) => {
       // now 는 프레임 시작 시각이라 started 보다 이전일 수 있다. 음수 진행도를
       // 흘리면 인덱스가 -1 이 된다.
-      const t = Math.min(1, Math.max(0, (now - started) / PLAY_MS));
+      const t = Math.min(1, Math.max(0, (now - started) / timing.playMs));
       setProgress(t);
       if (t < 1) frameRef.current = requestAnimationFrame(tick);
     };
@@ -99,34 +120,34 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
 
     timerRef.current = window.setTimeout(() => {
       setProgress(1);
-      setFinished(true);
       onSpinEnd();
-    }, PLAY_MS);
+    }, timing.playMs);
 
     return () => {
       cancelAnimationFrame(frameRef.current);
       window.clearTimeout(timerRef.current);
     };
-  }, [spinning, race, onSpinEnd]);
+  }, [spinning, race, timing, onSpinEnd]);
 
   /**
-   * 지금 그릴 프레임 번호.
+   * 지금 그릴 프레임 위치(소수). 정수부가 프레임 번호이고, 소수부로 다음
+   * 프레임과 섞어 그린다 — 재생 속도와 시뮬레이션 스텝이 딱 맞지 않아도
+   * 구슬이 뚝뚝 끊기지 않는다.
    *
-   * 경과 시간이 LEAD_MS 를 넘기 전까지는 1등이 들어오는 프레임까지를 훑고,
-   * 그 뒤로는 남은 구슬이 다 들어올 때까지를 빠르게 훑는다.
+   * lead 동안은 1등이 들어오는 프레임까지, 그 뒤로는 끝까지를 훑는다.
    */
-  const frameIndex = useMemo(() => {
-    if (!race) return -1;
+  const framePos = useMemo(() => {
+    if (!race || !timing) return -1;
     const lead = Math.max(1, race.winnerFrame);
     const end = race.frames.length - 1;
-    const split = LEAD_MS / PLAY_MS;
+    const split = timing.leadMs / timing.playMs;
 
-    if (progress <= split) {
-      return Math.min(end, Math.floor((progress / split) * lead));
-    }
+    if (progress <= split) return Math.min(end, (progress / split) * lead);
     const after = (progress - split) / (1 - split);
-    return Math.min(end, Math.floor(lead + after * (end - lead)));
-  }, [race, progress]);
+    return Math.min(end, lead + after * (end - lead));
+  }, [race, timing, progress]);
+
+  const frameIndex = framePos < 0 ? -1 : Math.floor(framePos);
 
   /** 순위판이 읽는 값. 아직 안 돌렸으면 후보 순서 그대로. */
   const standing = useMemo(() => {
@@ -180,17 +201,41 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
     }
     ctx.restore();
 
-    // 핀 — 청록 네온
-    ctx.save();
-    ctx.fillStyle = 'oklch(0.82 0.15 195)';
-    ctx.shadowColor = 'oklch(0.82 0.15 195)';
-    ctx.shadowBlur = 8;
+    // 지금 프레임의 구슬 위치. 소수 프레임은 앞뒤를 섞는다.
+    const at = (pos: number) => {
+      if (!race || pos < 0) return null;
+      const end = race.frames.length - 1;
+      const p = Math.min(end, Math.max(0, pos));
+      const a = race.frames[Math.floor(p)];
+      const b = race.frames[Math.min(end, Math.floor(p) + 1)];
+      const f = p - Math.floor(p);
+      return a.map((m, i) => ({ x: m.x + (b[i].x - m.x) * f, y: m.y + (b[i].y - m.y) * f }));
+    };
+    const frame = at(framePos);
+
+    // 핀 — 청록 네온. 구슬이 닿아 있는 핀은 하얗게 번쩍인다.
     for (const peg of COURSE.pegs) {
+      const hit =
+        frame?.some((m) => Math.hypot(m.x - peg.x, m.y - peg.y) <= MARBLE_R + peg.r + 2) ?? false;
+      const color = peg.bumper ? 'oklch(0.72 0.24 350)' : 'oklch(0.82 0.15 195)';
+      ctx.save();
+      ctx.shadowColor = hit ? '#ffffff' : color;
+      ctx.shadowBlur = hit ? 18 : 8;
       ctx.beginPath();
       ctx.arc(peg.x, peg.y, peg.r, 0, Math.PI * 2);
-      ctx.fill();
+      if (peg.bumper) {
+        // 범퍼는 고리 + 속심. 일반 핀과 한눈에 갈려야 "저기 맞으면 튄다" 가 읽힌다.
+        ctx.fillStyle = hit ? '#ffffff' : 'oklch(0.3 0.1 350)';
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = hit ? '#ffffff' : color;
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = hit ? '#ffffff' : color;
+        ctx.fill();
+      }
+      ctx.restore();
     }
-    ctx.restore();
 
     // 결승선
     ctx.strokeStyle = 'oklch(0.7 0.18 145)';
@@ -230,8 +275,22 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
       ctx.restore();
     });
 
+    // 구슬 잔상. 속도감이 여기서 나온다 — 빠른 구슬은 꼬리가 길다.
+    if (frame) {
+      for (let k = TRAIL; k >= 1; k -= 1) {
+        const past = at(framePos - k * TRAIL_STEP);
+        if (!past) continue;
+        past.forEach((m, i) => {
+          if (m.y >= FINISH_Y) return;
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, MARBLE_R * (1 - k / (TRAIL + 2)), 0, Math.PI * 2);
+          ctx.fillStyle = `oklch(0.78 0.19 ${marbleHue(i)} / ${0.28 * (1 - k / (TRAIL + 1))})`;
+          ctx.fill();
+        });
+      }
+    }
+
     // 구슬
-    const frame = race && frameIndex >= 0 ? race.frames[frameIndex] : null;
     const resting = candidates.map((_, i) => ({
       x: (COURSE_W / (count + 1)) * (i + 1),
       y: 16,
@@ -259,11 +318,9 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
       ctx.textBaseline = 'top';
       ctx.fillText(shortName(place.name), m.x, m.y + MARBLE_R + 2);
     });
-  }, [race, frameIndex, standing, arrived, leadIn, candidates, count]);
+  }, [race, framePos, standing, arrived, leadIn, candidates, count]);
 
   if (count === 0) return <div className="pinball pinball--empty" />;
-
-  const champion = finished ? (race?.winner ?? null) : null;
 
   return (
     <div className="pinball">
@@ -273,9 +330,6 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
         role="img"
         aria-label={`구슬 ${count}개 핀볼`}
       />
-      <span className="pinball__sr" aria-live="polite">
-        {champion !== null && candidates[champion] ? `${candidates[champion].name} 당첨` : ''}
-      </span>
     </div>
   );
 }

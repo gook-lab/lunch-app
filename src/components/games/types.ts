@@ -41,7 +41,7 @@ export function actionLabel(mode: GameMode): string {
 /**
  * 모드마다 연출 길이가 다르다. 결과는 같다.
  *
- * 핀볼은 여기 없다 — 재생 길이를 컴포넌트가 직접 들고 있다(PLAY_MS).
+ * 핀볼은 여기 없다 — 재생 길이가 경기마다 달라 컴포넌트가 정한다(timingFor).
  * 여기 적어두면 두 곳이 어긋날 수 있다.
  */
 export const SPIN_MS: Record<Exclude<GameMode, 'pinball'>, number> = {
