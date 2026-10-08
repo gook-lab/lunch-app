@@ -100,7 +100,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
     >
       <label>
         이름
-        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} aria-required="true" />
+        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} aria-required="true" autoFocus />
       </label>
       <label>
         카테고리

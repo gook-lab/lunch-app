@@ -407,7 +407,11 @@ export default function MapTab({ places, onChanged }: Props) {
           찾기
         </Button>
       </div>
-      {searchProblem && <p className="notice notice--empty">{searchProblem}</p>}
+      {searchProblem && <p className="notice notice--empty" role="alert">{searchProblem}</p>}
+      {/* 결과 수는 화면에 따로 안 쓰지만 화면 낭독기에는 알린다. 늘 있어야 바뀐 걸 읽는다. */}
+      <p className="sr-only" role="status">
+        {!searching && results.length > 0 ? `${results.length}곳 찾았어요` : ''}
+      </p>
 
       {results.length > 0 && (
         <ul className="add__results">
@@ -565,7 +569,7 @@ function PlaceEdit({
     <div className="pf">
       <label className="pf__field">
         이름
-        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} aria-required="true" />
+        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} aria-required="true" autoFocus />
       </label>
       <div className="pf__field">
         <span className="filters__label">카테고리</span>
