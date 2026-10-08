@@ -23,6 +23,7 @@ import {
   type Wall,
 } from '../../lib/pinball';
 import { prefersReducedMotion, type GameProps } from './types';
+import { FRAME_MS, SLOW_RATE, frameAtMs, timingFor, type Timing } from '../../lib/pinballTiming';
 
 /** 캔버스 = 코스 창 + 오른쪽 패널(미니맵, 순위판). */
 const PANEL_W = 112;
@@ -38,18 +39,10 @@ const COURSE = buildCourse();
  * 경기 본편은 실시간(60fps 한 프레임 = 시뮬레이션 한 스텝)이다. 예전에는
  * 0.9초짜리 경기를 4초로 늘려 0.22배 슬로모션으로 틀어 "초반 지연" 으로 보였다.
  *
- * 다만 선두가 출구에 다가가는 마지막 SLOW_FRAMES 는 SLOW_RATE 배로 늦춘다.
- * 출구는 구슬 하나 폭이라 여기서 순위가 자주 뒤집힌다(실측 12~47%) —
- * 그 순간을 보여 주는 게 긴박감이다. 1등이 들어온 뒤 나머지는 빠르게 감는다.
+ * 다만 선두가 출구에 다가가면 부드럽게 늦춘다. 출구는 구슬 하나 폭이라 여기서
+ * 순위가 자주 뒤집힌다(실측 12~47%). 1등이 들어온 뒤 나머지는 부드럽게 빨라진다.
+ * 곡선은 lib/pinballTiming.ts 에 있다.
  */
-const FRAME_MS = 1000 / 60;
-const SLOW_FRAMES = 70;
-const SLOW_RATE = 0.45;
-const LEAD_MIN_MS = 3500;
-const LEAD_MAX_MS = 9000;
-const TAIL_RATE = 3;
-const TAIL_MIN_MS = 600;
-const TAIL_MAX_MS = 1400;
 /** 출발 게이트 최소 대기. 시드를 금방 찾아도 게이트가 열리는 걸 보여 준다. */
 const GATE_MS = 450;
 /** 시드 탐색 한 조각에 쓰는 시간. 이보다 길게 붙잡으면 화면이 멈춘다. */
@@ -60,31 +53,7 @@ const MAX_SEEDS = 600;
 const TRAIL = 5;
 const TRAIL_STEP = 2;
 
-interface Timing {
-  /** 본편이 끝나고 막판 슬로모션이 시작되는 시각. */
-  slowAtMs: number;
-  /** 1등이 들어오는 시각. */
-  leadMs: number;
-  playMs: number;
-  /** 슬로모션이 시작되는 프레임. */
-  slowFrom: number;
-}
-
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
-
-function timingFor(race: RaceResult): Timing {
-  const lead = Math.max(1, race.winnerFrame);
-  const slow = Math.min(SLOW_FRAMES, Math.floor(lead * 0.3));
-  const slowFrom = lead - slow;
-  const normalMs = slowFrom * FRAME_MS;
-  const slowMs = (slow * FRAME_MS) / SLOW_RATE;
-  // 너무 짧거나 긴 경기는 두 구간을 같은 비율로 늘이고 줄인다.
-  const scale = clamp(normalMs + slowMs, LEAD_MIN_MS, LEAD_MAX_MS) / (normalMs + slowMs);
-  const rest = Math.max(0, race.frames.length - 1 - lead);
-  const tailMs = clamp((rest * FRAME_MS) / TAIL_RATE, TAIL_MIN_MS, TAIL_MAX_MS);
-  const leadMs = (normalMs + slowMs) * scale;
-  return { slowAtMs: normalMs * scale, leadMs, playMs: leadMs + tailMs, slowFrom };
-}
 
 /** 판 번호를 시드 탐색의 시작점(1 이상)으로 접는다. */
 const startSeedFor = (run: number) => 1 + (Math.abs(Math.floor(run)) % 100_000);
@@ -386,7 +355,7 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
       while (performance.now() < until && seed < limit) {
         if (count === 1 || simulateRace(count, seed, true).winner === winnerIndex) {
           const race = simulateRace(count, seed);
-          const found = { run, race, timing: timingFor(race) };
+          const found = { run, race, timing: timingFor(race.frames.length, race.winnerFrame) };
           const wait = reduced ? 0 : Math.max(0, GATE_MS - (performance.now() - t0));
           timer = window.setTimeout(() => startPlayback(found), wait);
           return;
@@ -425,16 +394,7 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
    */
   const framePos = useMemo(() => {
     if (!race || !timing || t < 0) return -1;
-    const lead = Math.max(1, race.winnerFrame);
-    const end = race.frames.length - 1;
-    const ms = t * timing.playMs;
-    if (ms <= timing.slowAtMs) return (ms / Math.max(1, timing.slowAtMs)) * timing.slowFrom;
-    if (ms <= timing.leadMs) {
-      const k = (ms - timing.slowAtMs) / Math.max(1, timing.leadMs - timing.slowAtMs);
-      return timing.slowFrom + k * (lead - timing.slowFrom);
-    }
-    const k = (ms - timing.leadMs) / Math.max(1, timing.playMs - timing.leadMs);
-    return Math.min(end, lead + k * (end - lead));
+    return frameAtMs(timing, t * timing.playMs);
   }, [race, timing, t]);
 
   const frameIndex = framePos < 0 ? -1 : Math.floor(framePos);
