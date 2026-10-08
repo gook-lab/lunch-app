@@ -153,6 +153,37 @@ describe('접근성', () => {
     expect(screen.getByRole('tab', { name: '목록' }).getAttribute('aria-selected')).toBe('true');
   });
 
+  it('탭 사이는 화살표·Home·End 로 옮기고, 선택된 탭만 Tab 순서에 든다', () => {
+    render(<App />);
+    const roadmap = screen.getByRole('tab', { name: '로드맵' });
+    expect(roadmap.tabIndex).toBe(0);
+    expect(screen.getByRole('tab', { name: '목록' }).tabIndex).toBe(-1);
+
+    roadmap.focus();
+    fireEvent.keyDown(roadmap, { key: 'ArrowRight' });
+    const list = screen.getByRole('tab', { name: '목록' });
+    expect(list.getAttribute('aria-selected')).toBe('true');
+    expect(document.activeElement).toBe(list);
+
+    fireEvent.keyDown(list, { key: 'End' });
+    expect(screen.getByRole('tab', { name: '지도' }).getAttribute('aria-selected')).toBe('true');
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Home' });
+    expect(screen.getByRole('tab', { name: '로드맵' }).getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('키보드로 실행하면 초점이 판을 거쳐 결과 이름으로 간다 — <body> 로 떨어지지 않는다', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '돌림판' }));
+    const run = runButton();
+    run.focus();
+    fireEvent.click(run);
+    expect(document.activeElement?.classList.contains('stage__board')).toBe(true);
+
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
+    expect(document.activeElement?.tagName).toBe('H2');
+    expect(document.activeElement?.textContent).toBe(card());
+  });
+
   it('결과가 나오면 늘 있는 알림 영역에 당첨을 적는다', () => {
     startWheel();
     const live = document.querySelector('[aria-live="polite"]');
@@ -172,6 +203,17 @@ describe('여기로 결정', () => {
 
     expect(decideToday).toHaveBeenCalledTimes(1);
     expect(decideToday).toHaveBeenCalledWith('20261008', 'a');
+  });
+
+  it('같은 순간 두 번 눌러도 기록은 한 번만 쓴다', async () => {
+    startWheel();
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
+    const decide = screen.getByRole('button', { name: '여기로 결정' });
+    await act(async () => {
+      decide.click();
+      decide.click();
+    });
+    expect(vi.mocked(decideToday)).toHaveBeenCalledTimes(1);
   });
 
   it('오늘 이미 다른 곳으로 정해져 있으면 확인 시트를 먼저 열고, 바꾸기를 눌러야 쓴다', async () => {

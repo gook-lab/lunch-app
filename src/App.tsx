@@ -37,6 +37,8 @@ import './App.css';
 const MapTab = lazy(() => import('./components/MapTab'));
 
 type Tab = 'roadmap' | 'list' | 'map';
+const TABS: Tab[] = ['roadmap', 'list', 'map'];
+const TAB_LABEL: Record<Tab, string> = { roadmap: '로드맵', list: '목록', map: '지도' };
 
 /** 연출 잠금 해제 상한. 가장 긴 연출(핀볼 최대 약 10.5초)의 두 배 남짓. */
 const SPIN_TIMEOUT_MS = 20_000;
@@ -87,6 +89,11 @@ export default function App() {
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<Tab>('roadmap');
   const boardRef = useRef<HTMLDivElement>(null);
+  const resultRef = useRef<HTMLHeadingElement>(null);
+  // 키보드로 실행한 판이면 결과가 뜰 때 초점을 결과로 옮긴다. 실행 단추는
+  // 누르는 순간 잠기고, 끝나면 결과 카드로 갈아 끼워져서 초점이 <body> 로
+  // 떨어진다(10/8 실측). 다른 곳에 초점이 있었으면 건드리지 않는다.
+  const focusResult = useRef(false);
   // 기기 설정은 앱이 바꿀 수 없으니 읽기만 한다. 앱 안 스위치는 games/types.ts 가 기억한다.
   const [reducedBySystem] = useState(systemReducesMotion);
   const [motionOn, setMotionOn] = useState(motionForced);
@@ -145,6 +152,9 @@ export default function App() {
 
   const spin = useCallback(() => {
     if (result.candidates.length === 0 || spinning) return;
+    const active = document.activeElement;
+    focusResult.current = active === document.body || (active !== null && !!boardRef.current?.closest('.stage')?.contains(active));
+    if (focusResult.current) boardRef.current?.focus({ preventScroll: true });
     const frozen = result.candidates;
     const index = Math.floor(Math.random() * frozen.length);
     setBoard(frozen);
@@ -163,6 +173,12 @@ export default function App() {
     });
   }, [result.candidates, spinning]);
 
+  useEffect(() => {
+    if (!winner || !focusResult.current) return;
+    focusResult.current = false;
+    resultRef.current?.focus({ preventScroll: true });
+  }, [winner]);
+
   const onSpinEnd = useCallback(() => {
     setSpinning(false);
     setWinner((prev) => (winnerIndex === null ? prev : (board?.[winnerIndex] ?? prev)));
@@ -177,6 +193,25 @@ export default function App() {
     setSpinning(false);
     setTab(next);
   }, []);
+
+  // WAI-ARIA 탭 패턴: 탭 사이는 화살표·Home·End 로 옮기고, Tab 키는 탭 묶음을
+  // 한 번에 지나간다(선택된 탭만 tabIndex 0). 옮기면 바로 그 탭을 연다.
+  const onTabKey = useCallback(
+    (e: React.KeyboardEvent<HTMLElement>) => {
+      const i = TABS.indexOf(tab);
+      const next =
+        e.key === 'ArrowRight' ? TABS[(i + 1) % TABS.length]
+        : e.key === 'ArrowLeft' ? TABS[(i - 1 + TABS.length) % TABS.length]
+        : e.key === 'Home' ? TABS[0]
+        : e.key === 'End' ? TABS[TABS.length - 1]
+        : null;
+      if (!next) return;
+      e.preventDefault();
+      goTab(next);
+      document.getElementById(`tab-${next}`)?.focus();
+    },
+    [tab, goTab],
+  );
 
   /**
    * 연출 잠금의 마지막 방어선.
@@ -212,13 +247,19 @@ export default function App() {
     setFilters(patch);
   }, []);
 
+  // 단추는 saving 으로 잠기지만, 잠기기 전에 같은 순간 들어온 두 번째 클릭은
+  // 막지 못한다. 상태가 아니라 ref 로 즉시 막는다.
+  const savingRef = useRef(false);
   const commit = useCallback(
     async (place: Place) => {
+      if (savingRef.current) return;
+      savingRef.current = true;
       setSaving(true);
       try {
         await decideToday(today, place.id);
         setConfirming(null);
       } finally {
+        savingRef.current = false;
         setSaving(false);
       }
     },
@@ -271,16 +312,20 @@ export default function App() {
         </span>
       </header>
 
-      <nav className="tabs" role="tablist" aria-label="화면">
-        <button role="tab" aria-selected={tab === 'roadmap'} className={tab === 'roadmap' ? 'on' : ''} onClick={() => goTab('roadmap')}>
-          로드맵
-        </button>
-        <button role="tab" aria-selected={tab === 'list'} className={tab === 'list' ? 'on' : ''} onClick={() => goTab('list')}>
-          목록
-        </button>
-        <button role="tab" aria-selected={tab === 'map'} className={tab === 'map' ? 'on' : ''} onClick={() => goTab('map')}>
-          지도
-        </button>
+      <nav className="tabs" role="tablist" aria-label="화면" onKeyDown={onTabKey}>
+        {TABS.map((t) => (
+          <button
+            key={t}
+            id={`tab-${t}`}
+            role="tab"
+            aria-selected={tab === t}
+            tabIndex={tab === t ? 0 : -1}
+            className={tab === t ? 'on' : ''}
+            onClick={() => goTab(t)}
+          >
+            {TAB_LABEL[t]}
+          </button>
+        ))}
       </nav>
 
       {tab === 'list' && (
@@ -384,7 +429,7 @@ export default function App() {
           *
           * 스크롤 한 번보다 그게 더 나쁘다. 칩을 누르면 판이 바로 바뀐다.
           */}
-        <div ref={boardRef} className="stage__board">
+        <div ref={boardRef} className="stage__board" tabIndex={-1}>
           {(() => {
             const game = {
               candidates: board ?? result.candidates,
@@ -416,7 +461,7 @@ export default function App() {
         {winner ? (
           <div className="card card--result ticket">
             <p className="ticket__eyebrow">오늘의 점심</p>
-            <h2 className="ticket__name">{winner.name}</h2>
+            <h2 className="ticket__name" ref={resultRef} tabIndex={-1}>{winner.name}</h2>
             <div className="ticket__meta">
               <span
                 className="card__cat"

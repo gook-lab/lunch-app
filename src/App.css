@@ -1244,3 +1244,6 @@ footer.muted { text-align: center; }
 
 .stage > .btn-block { justify-content: center; }
 .ticket .btn { justify-content: center; }
+.stage__board:focus { outline: none; }
+.ticket__name:focus { outline: none; }
+.ticket__name:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
