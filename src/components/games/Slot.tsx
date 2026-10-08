@@ -80,6 +80,7 @@ export function Slot({ candidates, winnerIndex, spinning, onSpinEnd }: GameProps
     <div className="slot" role="img" aria-label={`후보 ${count}곳`}>
       <div className="slot__window">
         <div
+          aria-hidden="true"
           className="slot__reel"
           style={{
             transform: `translateY(${(1 - idx) * ITEM_H}px)`,

@@ -91,7 +91,7 @@ export function Wheel({ candidates, winnerIndex, spinning, onSpinEnd }: GameProp
           // 지금 원판이 돌아간 만큼까지 넣어서 판단한다 (lib/spin.ts).
           const upsideDown = wheelLabelFlipped(i, count, angle);
           return (
-            <div key={place.id} className="wheel__slice" style={{ transform: `rotate(${mid}deg)` }}>
+            <div key={place.id} className="wheel__slice" style={{ transform: `rotate(${mid}deg)` }} aria-hidden="true">
               <span
                 className={`wheel__label${upsideDown ? ' wheel__label--flip' : ''}`}
                 title={place.name}
