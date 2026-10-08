@@ -1279,3 +1279,23 @@ footer.muted { text-align: center; }
 /* 시트(모달 dialog)가 열려 있으면 뒤 화면이 스크롤되지 않게 막는다.
    네이티브 모달은 포커스·클릭은 막아도 스크롤은 막지 않는다(10/8 실측). */
 html:has(dialog[open]:modal) { overflow: hidden; }
+
+/*
+ * 긴 가게 이름(최대 40자). 띄어쓰기 없는 이름은 keep-all 로는 안 꺾여서
+ * 390px 에서 가로로 넘친다. 큰 제목은 아무 데서나 꺾고, 좁은 칸은 말줄임.
+ */
+.card h2.ticket__name,
+.decided__title { overflow-wrap: anywhere; }
+.decided__title { word-break: keep-all; }
+.slot__item { max-width: 100%; padding-inline: var(--space-2); }
+.slot__item span:first-child {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rm__dotLabel {
+  max-width: 9em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

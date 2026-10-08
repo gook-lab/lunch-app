@@ -66,7 +66,7 @@ export function timingFor(frameCount: number, winnerFrame: number): Timing {
   // 나머지가 길면 꼬리 배속을 올려 TAIL_MAX_MS 안에 끝낸다.
   let tailRate = TAIL_RATE_MIN;
   let at = build(frameCount, lead, slowFrom, tailRate);
-  while (tailRate < TAIL_RATE_MAX && at[at.length - 1] - at[lead] > TAIL_MAX_MS) {
+  while (tailRate < TAIL_RATE_MAX && lead < at.length && at[at.length - 1] - at[lead] > TAIL_MAX_MS) {
     tailRate += 0.5;
     at = build(frameCount, lead, slowFrom, tailRate);
   }
