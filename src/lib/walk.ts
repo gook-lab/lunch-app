@@ -13,11 +13,32 @@ const DETOUR_FACTOR = 1.3;
 const METERS_PER_MINUTE = 67;
 const EARTH_RADIUS_M = 6_371_000;
 
+export interface Coord {
+  lat: number;
+  lng: number;
+}
+
 /**
- * 회사 좌표. 상수이되 코드에 지어내 박지 않는다 — 설정하지 않으면 던진다.
- * 사무실이 옮기면 이 값만 바꾼다 (설계 Open Question 3).
+ * 화면에서 정한 회사 위치(Firestore settings/office). 앱이 데이터를 읽을 때
+ * 넣어 준다. 있으면 .env 값보다 먼저 쓴다.
  */
-export function officeCoord(): { lat: number; lng: number } {
+let officeOverride: Coord | null = null;
+
+export function setOfficeOverride(coord: Coord | null): void {
+  officeOverride = coord;
+}
+
+/** 회사 좌표를 어디서 가져오는지. 'env' 는 설정 파일의 임시값이다. */
+export function officeSource(): 'saved' | 'env' {
+  return officeOverride ? 'saved' : 'env';
+}
+
+/**
+ * 회사 좌표. 화면에서 정한 값이 있으면 그것, 없으면 .env 값.
+ * 둘 다 없으면 지어내지 않고 던진다 (설계 Open Question 3).
+ */
+export function officeCoord(): Coord {
+  if (officeOverride) return officeOverride;
   const lat = Number(import.meta.env.VITE_OFFICE_LAT);
   const lng = Number(import.meta.env.VITE_OFFICE_LNG);
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {

@@ -23,7 +23,7 @@ export function emptyMessage(result: CandidateResult): string | null {
     case 'walk':
       return reason.countAtWiderWalk > 0
         ? `도보 ${reason.widerWalkMin}분으로 넓히면 ${reason.countAtWiderWalk}곳이에요.`
-        : `도보 ${reason.widerWalkMin}분으로 넓혀도 갈 만한 곳이 없어요.`;
+        : `도보 ${reason.widerWalkMin}분으로 넓혀도 갈 만한 곳이 없어요. 회사 위치가 맞는지 확인해 보세요.`;
     case 'category':
       return `고른 카테고리에 맞는 곳이 없어요. 카테고리를 풀면 ${reason.countWithoutCategory}곳이에요.`;
   }

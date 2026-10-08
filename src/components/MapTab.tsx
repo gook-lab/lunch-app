@@ -14,7 +14,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Sheet, Tag } from '@gook-lab/ui';
 import { PRICE_BANDS, WALK_STEPS, type Place, type PriceBand, type Rating } from '../lib/candidates';
 import { CATEGORIES, type Category } from '../lib/category';
-import { metersForWalkMinutes, officeCoord } from '../lib/walk';
+import { metersForWalkMinutes, officeCoord, type Coord } from '../lib/walk';
+import { OfficeCard } from './map/OfficeCard';
 import {
   clearKakaoLoadFailure,
   KakaoLoadError,
@@ -37,6 +38,8 @@ const RATINGS: Rating[] = [1, 2, 3, 4, 5];
 interface Props {
   places: Place[];
   onChanged: () => void;
+  /** 회사 위치를 바꾼 뒤. 데이터를 다시 읽고 지도를 새 기준으로 다시 만든다. */
+  onOfficeChanged: () => void;
 }
 
 type Phase = 'loading' | 'ready' | 'error';
@@ -85,7 +88,7 @@ function Stars({ value }: { value: Rating }) {
   );
 }
 
-export default function MapTab({ places, onChanged }: Props) {
+export default function MapTab({ places, onChanged, onOfficeChanged }: Props) {
   const [phase, setPhase] = useState<Phase>('loading');
   const [trouble, setTrouble] = useState<Trouble | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -101,6 +104,10 @@ export default function MapTab({ places, onChanged }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapsRef = useRef<KakaoMaps | null>(null);
   const mapRef = useRef<KakaoMap | null>(null);
+  // 회사 위치를 지도에서 찍는 중이면, 짧게 누른 자리를 이 함수로 넘긴다.
+  const pickRef = useRef<((coord: Coord) => void) | null>(null);
+  const officePinRef = useRef<{ setMap: (map: KakaoMap | null) => void } | null>(null);
+  const [picking, setPicking] = useState(false);
   const markersRef = useRef<Map<string, KakaoMarker>>(new Map());
   const tempMarkerRef = useRef<KakaoMarker | null>(null);
   const fittedRef = useRef(false);
@@ -249,6 +256,8 @@ export default function MapTab({ places, onChanged }: Props) {
       const rect = el.getBoundingClientRect();
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
+      // 회사 위치를 찍는 중에는 길게 눌러 가게 넣기를 끈다. 짧은 탭은 onUp 이 받는다.
+      if (pickRef.current) return;
 
       timer = window.setTimeout(() => {
         const coords = map.getProjection().coordsFromContainerPoint(new maps.Point(px, py));
@@ -277,7 +286,32 @@ export default function MapTab({ places, onChanged }: Props) {
     // 캡처로 받는다. 카카오가 안쪽에서 전파를 끊어도 여기는 먼저 지난다.
     el.addEventListener('pointerdown', onDown, { capture: true });
     el.addEventListener('pointermove', onMove, { capture: true });
-    el.addEventListener('pointerup', clear, { capture: true });
+    // 회사 위치 찍기: 끌지 않고 눌렀다 뗀 자리. 끌었으면 onMove 가 start 를 지웠다.
+    const onUp = (e: PointerEvent) => {
+      const maps = mapsRef.current;
+      const map = mapRef.current;
+      const pick = pickRef.current;
+      if (pick && start && maps && map) {
+        const rect = el.getBoundingClientRect();
+        const coords = map
+          .getProjection()
+          .coordsFromContainerPoint(new maps.Point(e.clientX - rect.left, e.clientY - rect.top));
+        officePinRef.current?.setMap(null);
+        officePinRef.current = new maps.CustomOverlay({
+          position: coords,
+          content: '<div class="map__office map__office--new">새 회사</div>',
+          map,
+          yAnchor: 0.5,
+          zIndex: 8,
+        });
+        pickRef.current = null;
+        setPicking(false);
+        pick({ lat: coords.getLat(), lng: coords.getLng() });
+      }
+      clear();
+    };
+
+    el.addEventListener('pointerup', onUp, { capture: true });
     el.addEventListener('pointercancel', clear, { capture: true });
     el.addEventListener('pointerleave', clear, { capture: true });
 
@@ -285,7 +319,7 @@ export default function MapTab({ places, onChanged }: Props) {
       clear();
       el.removeEventListener('pointerdown', onDown, { capture: true });
       el.removeEventListener('pointermove', onMove, { capture: true });
-      el.removeEventListener('pointerup', clear, { capture: true });
+      el.removeEventListener('pointerup', onUp, { capture: true });
       el.removeEventListener('pointercancel', clear, { capture: true });
       el.removeEventListener('pointerleave', clear, { capture: true });
     };
@@ -371,9 +405,27 @@ export default function MapTab({ places, onChanged }: Props) {
     });
   }, []);
 
+  const startPick = (onPick: (coord: Coord) => void) => {
+    pickRef.current = onPick;
+    setPicking(true);
+  };
+  const cancelPick = () => {
+    pickRef.current = null;
+    setPicking(false);
+    officePinRef.current?.setMap(null);
+    officePinRef.current = null;
+  };
+
+  const getMapCenter = (): Coord | null => {
+    const c = mapRef.current?.getCenter();
+    return c ? { lat: c.getLat(), lng: c.getLng() } : null;
+  };
+
   if (phase === 'error' && trouble) {
     return (
       <section className="map map--trouble">
+        {/* 지도가 없어도 GPS 로는 회사 위치를 정할 수 있다. */}
+        <OfficeCard onSaved={onOfficeChanged} />
         <p className="notice notice--empty">{trouble.title}</p>
         <p className="muted small">{trouble.detail}</p>
         {trouble.retryable && (
@@ -392,6 +444,13 @@ export default function MapTab({ places, onChanged }: Props) {
 
   return (
     <section className="map">
+      <OfficeCard
+        getMapCenter={phase === 'ready' ? getMapCenter : undefined}
+        onStartPick={phase === 'ready' ? startPick : undefined}
+        onCancelPick={cancelPick}
+        picking={picking}
+        onSaved={onOfficeChanged}
+      />
       <div className="add__search">
         <input
           value={keyword}
@@ -427,7 +486,11 @@ export default function MapTab({ places, onChanged }: Props) {
         </ul>
       )}
 
-      <div className="map__canvas" ref={containerRef} aria-label="우리 도보권 지도" />
+      <div className={picking ? 'map__frame map__frame--picking' : 'map__frame'}>
+        <div className="map__canvas" ref={containerRef} aria-label="우리 도보권 지도" />
+        {/* "지도 가운데로" 의 가운데가 어디인지 보여 주는 십자. 지도 조작은 막지 않는다. */}
+        <span className="map__crosshair" aria-hidden="true" />
+      </div>
 
       {phase === 'loading' && <p className="muted small">지도를 불러오고 있어요</p>}
 

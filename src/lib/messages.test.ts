@@ -102,7 +102,7 @@ describe('emptyMessage — 원인을 짚되 칩을 대신 풀지 않는다', () 
 
   it('넓혀도 없으면 그렇게 말한다', () => {
     const r = selectCandidates(pool(3, () => ({ walkMin: 30 })), [], filters({ maxWalkMin: 5 }), TODAY);
-    expect(emptyMessage(r)).toBe('도보 10분으로 넓혀도 갈 만한 곳이 없어요.');
+    expect(emptyMessage(r)).toBe('도보 10분으로 넓혀도 갈 만한 곳이 없어요. 회사 위치가 맞는지 확인해 보세요.');
   });
 
   it('카테고리가 원인이면 풀었을 때의 수를 말한다', () => {

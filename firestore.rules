@@ -119,6 +119,18 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // 회사 위치. 문서는 office 하나뿐이다. 링크를 아는 누구나 바꿀 수 있다는 점은
+    // places 와 같다 — 대신 좌표 범위와 필드를 못 박고, 삭제는 막는다.
+    match /settings/office {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.keys().hasOnly(['lat', 'lng', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['lat', 'lng', 'updatedAt'])
+        && validCoord(request.resource.data.lat, request.resource.data.lng)
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+
     // 그 외에는 전부 막는다.
     match /{document=**} {
       allow read, write: if false;

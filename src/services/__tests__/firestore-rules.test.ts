@@ -193,6 +193,33 @@ d('firestore.rules', () => {
     });
   });
 
+  describe('settings/office — 회사 위치', () => {
+    const office = { lat: 37.5, lng: 127.0, updatedAt: serverTimestamp() };
+
+    it('O1 — 로그인한 누구나 회사 위치를 정하고 바꿀 수 있다', async () => {
+      await assertSucceeds(setDoc(doc(db(ALICE), 'settings/office'), office));
+      await assertSucceeds(setDoc(doc(db(BOB), 'settings/office'), { ...office, lat: 37.51 }));
+    });
+
+    it('O2 — 인증 없이는 읽기·쓰기 모두 거부', async () => {
+      await assertFails(setDoc(doc(anon(), 'settings/office'), office));
+      await assertFails(getDoc(doc(anon(), 'settings/office')));
+      await assertSucceeds(getDoc(doc(db(ALICE), 'settings/office')));
+    });
+
+    it('O3 — 한국 밖 좌표·허용 외 필드·서버 시각 아닌 updatedAt 은 거부', async () => {
+      await assertFails(setDoc(doc(db(ALICE), 'settings/office'), { ...office, lat: 10 }));
+      await assertFails(setDoc(doc(db(ALICE), 'settings/office'), { ...office, label: '본사' }));
+      await assertFails(setDoc(doc(db(ALICE), 'settings/office'), { ...office, updatedAt: new Date('2020-01-01') }));
+    });
+
+    it('O4 — 삭제와 settings 의 다른 문서는 거부', async () => {
+      await assertSucceeds(setDoc(doc(db(ALICE), 'settings/office'), office));
+      await assertFails(deleteDoc(doc(db(ALICE), 'settings/office')));
+      await assertFails(setDoc(doc(db(ALICE), 'settings/other'), office));
+    });
+  });
+
   describe('visits', () => {
     const decision = { placeId: 'seed', decidedAt: serverTimestamp() };
 

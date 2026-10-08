@@ -28,6 +28,7 @@ import { dayIdBefore, type DayId } from '../lib/date';
 import { RECENT_WINDOW_DAYS, type Place, type Visit } from '../lib/candidates';
 
 const places = () => collection(db, 'places');
+const officeDoc = () => doc(db, 'settings', 'office');
 const visits = () => collection(db, 'visits');
 
 /** 가게 목록 1회 읽기. */
@@ -35,6 +36,24 @@ export async function fetchPlaces(): Promise<Place[]> {
   await authReady;
   const snap = await getDocs(places());
   return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Place, 'id'>) }));
+}
+
+/**
+ * 회사 위치. 모두가 같은 기준으로 도보 시간을 봐야 하므로 기기가 아니라
+ * Firestore 문서 하나에 둔다. 아직 아무도 안 정했으면 null.
+ */
+export async function fetchOffice(): Promise<{ lat: number; lng: number } | null> {
+  await authReady;
+  const snap = await getDoc(officeDoc());
+  if (!snap.exists()) return null;
+  const { lat, lng } = snap.data() as { lat: unknown; lng: unknown };
+  return typeof lat === 'number' && typeof lng === 'number' ? { lat, lng } : null;
+}
+
+/** 회사 위치를 바꾼다. 규칙이 한국 안 좌표인지, 시각이 서버 시각인지 검사한다. */
+export async function saveOffice(coord: { lat: number; lng: number }): Promise<void> {
+  await authReady;
+  await setDoc(officeDoc(), { lat: coord.lat, lng: coord.lng, updatedAt: serverTimestamp() });
 }
 
 /** 최근 14일 결정 기록. 문서 id 가 YYYYMMDD 라 documentId() 범위 쿼리로 읽는다. */

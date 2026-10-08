@@ -15,7 +15,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { DayId } from '../lib/date';
 import type { Place, Visit } from '../lib/candidates';
+import { setOfficeOverride, walkMinutesBetween } from '../lib/walk';
 import {
+  fetchOffice,
   fetchPlaces,
   fetchRecentVisits,
   subscribeToday,
@@ -34,6 +36,21 @@ export interface LunchData {
   /** 이미 화면이 떠 있는 상태에서 데이터를 다시 읽는 중. 화면을 가리지 않는다. */
   refreshing: boolean;
   reload: () => void;
+  /** 회사 위치가 바뀌면 달라지는 값. 지도처럼 회사 좌표로 그린 것을 새로 만들 때 쓴다. */
+  officeKey: string;
+}
+
+/**
+ * 도보 시간은 가게 문서에 저장돼 있지만, 그건 저장한 날의 회사 기준이다.
+ * 회사 위치를 옮기면 전부 틀어지므로 읽을 때 지금 회사 기준으로 다시 잰다.
+ * 회사 좌표가 아예 없으면(설정 전) 저장된 값을 그대로 쓴다.
+ */
+function withCurrentWalk(place: Place): Place {
+  try {
+    return { ...place, walkMin: walkMinutesBetween(place.lat, place.lng) };
+  } catch {
+    return place;
+  }
 }
 
 export function useLunchData(day: DayId): LunchData {
@@ -44,6 +61,7 @@ export function useLunchData(day: DayId): LunchData {
   const [today, setToday] = useState<TodayDecision | null>(null);
   const [nonce, setNonce] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [officeKey, setOfficeKey] = useState('env');
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
 
@@ -54,10 +72,13 @@ export function useLunchData(day: DayId): LunchData {
     setRefreshing(true);
     setError(null);
 
-    Promise.all([fetchPlaces(), fetchRecentVisits(day)])
-      .then(([p, v]) => {
+    // 회사 위치를 못 읽어도 가게·기록은 보여야 한다. 그때는 .env 값으로 간다.
+    Promise.all([fetchPlaces(), fetchRecentVisits(day), fetchOffice().catch(() => null)])
+      .then(([p, v, office]) => {
         if (!alive) return;
-        setPlaces(p);
+        setOfficeOverride(office);
+        setOfficeKey(office ? `${office.lat},${office.lng}` : 'env');
+        setPlaces(p.map(withCurrentWalk));
         setHistory(v);
         setState('ready');
       })
@@ -90,5 +111,5 @@ export function useLunchData(day: DayId): LunchData {
     return today ? [...withoutToday, { id: day, placeId: today.placeId }] : withoutToday;
   }, [history, today, day]);
 
-  return { state, error, places, visits, today, refreshing, reload };
+  return { state, error, places, visits, today, refreshing, reload, officeKey };
 }

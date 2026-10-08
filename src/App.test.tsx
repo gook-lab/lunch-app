@@ -136,7 +136,7 @@ describe('연출 중에 건드리면 잠금이 풀려야 한다 — 영구 고�
     startWheel();
     fireEvent.click(screen.getByRole('tab', { name: '목록' }));
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 500); });
-    fireEvent.click(screen.getByRole('tab', { name: '로드맵' }));
+    fireEvent.click(screen.getByRole('tab', { name: '오늘' }));
     act(() => { vi.advanceTimersByTime(100); });
 
     expect(runButton().textContent).toMatch(/돌리기/);
@@ -155,7 +155,7 @@ describe('접근성', () => {
 
   it('탭 사이는 화살표·Home·End 로 옮기고, 선택된 탭만 Tab 순서에 든다', () => {
     render(<App />);
-    const roadmap = screen.getByRole('tab', { name: '로드맵' });
+    const roadmap = screen.getByRole('tab', { name: '오늘' });
     expect(roadmap.tabIndex).toBe(0);
     expect(screen.getByRole('tab', { name: '목록' }).tabIndex).toBe(-1);
 
@@ -168,11 +168,11 @@ describe('접근성', () => {
     fireEvent.keyDown(list, { key: 'End' });
     expect(screen.getByRole('tab', { name: '지도' }).getAttribute('aria-selected')).toBe('true');
     fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Home' });
-    expect(screen.getByRole('tab', { name: '로드맵' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tab', { name: '오늘' }).getAttribute('aria-selected')).toBe('true');
 
     // 지금 탭이 가리키는 패널이 실제로 있고, 패널은 그 탭 이름으로 불린다.
-    const panel = screen.getByRole('tabpanel', { name: '로드맵' });
-    expect(screen.getByRole('tab', { name: '로드맵' }).getAttribute('aria-controls')).toBe(panel.id);
+    const panel = screen.getByRole('tabpanel', { name: '오늘' });
+    expect(screen.getByRole('tab', { name: '오늘' }).getAttribute('aria-controls')).toBe(panel.id);
   });
 
   it('키보드로 실행하면 초점이 판을 거쳐 결과 이름으로 간다 — <body> 로 떨어지지 않는다', () => {

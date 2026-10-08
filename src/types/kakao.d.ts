@@ -37,6 +37,7 @@ export interface KakaoProjection {
 
 export interface KakaoMap {
   setCenter: (latlng: KakaoLatLng) => void;
+  getCenter: () => KakaoLatLng;
   panTo: (latlng: KakaoLatLng) => void;
   setLevel: (level: number) => void;
   getLevel: () => number;

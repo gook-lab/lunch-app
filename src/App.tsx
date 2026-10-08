@@ -29,6 +29,7 @@ import { useLunchData } from './hooks/useLunchData';
 import { selectCandidates, type Filters, type Place } from './lib/candidates';
 import { categoryHue } from './lib/category';
 import { josa, withJosa } from './lib/josa';
+import { officeSource } from './lib/walk';
 import { emptyMessage, noticeMessage } from './lib/messages';
 import { decideToday } from './services/lunch';
 import './App.css';
@@ -38,7 +39,8 @@ const MapTab = lazy(() => import('./components/MapTab'));
 
 type Tab = 'roadmap' | 'list' | 'map';
 const TABS: Tab[] = ['roadmap', 'list', 'map'];
-const TAB_LABEL: Record<Tab, string> = { roadmap: '로드맵', list: '목록', map: '지도' };
+const TAB_LABEL: Record<Tab, string> = { roadmap: '오늘', list: '목록', map: '지도' };
+const TAB_ICON: Record<Tab, string> = { roadmap: '🍱', list: '📋', map: '🗺️' };
 
 /** 연출 잠금 해제 상한. 가장 긴 연출(핀볼 최대 약 10.5초)의 두 배 남짓. */
 const SPIN_TIMEOUT_MS = 20_000;
@@ -65,7 +67,7 @@ function formatDay(day: string): string {
 
 export default function App() {
   const today = useTodayKST();
-  const { state, error, places, visits, today: decision, refreshing, reload } = useLunchData(today);
+  const { state, error, places, visits, today: decision, refreshing, reload, officeKey } = useLunchData(today);
 
   const [filters, setFilters] = useState<Filters>({
     maxWalkMin: 10,
@@ -302,6 +304,7 @@ export default function App() {
 
   return (
     <main className="app">
+      <div className="topbar">
       <header className="app__header">
         <div>
           <p className="app__date">{formatDay(today)}</p>
@@ -324,10 +327,12 @@ export default function App() {
             className={tab === t ? 'on' : ''}
             onClick={() => goTab(t)}
           >
+            <span className="tabs__icon" aria-hidden="true">{TAB_ICON[t]}</span>
             {TAB_LABEL[t]}
           </button>
         ))}
       </nav>
+      </div>
 
       {tab === 'list' && (
         <div role="tabpanel" id="panel-list" aria-labelledby="tab-list" className="panel">
@@ -353,7 +358,7 @@ export default function App() {
       {tab === 'map' && (
         <div role="tabpanel" id="panel-map" aria-labelledby="tab-map" className="panel">
           <Suspense fallback={<p className="muted small">지도를 준비하고 있어요</p>}>
-            <MapTab places={places} onChanged={reload} />
+            <MapTab key={officeKey} places={places} onChanged={reload} onOfficeChanged={reload} />
           </Suspense>
         </div>
       )}
@@ -376,16 +381,7 @@ export default function App() {
         </section>
       )}
 
-      <Roadmap
-        places={places}
-        filters={filters}
-        result={result}
-        winnerId={winner?.id ?? null}
-        onWalk={(walkMin) => updateFilters((f) => ({ ...f, maxWalkMin: walkMin }))}
-        onCategory={toggleCategory}
-        onExcludeRecent={() => updateFilters((f) => ({ ...f, excludeRecent: !f.excludeRecent }))}
-      />
-
+      <div className="today">
       <section className={spinning ? 'stage stage--busy' : 'stage'} aria-label="게임">
         <div className="modebar" role="group" aria-label="방식">
           {GAME_MODES.map((m) => (
@@ -513,6 +509,30 @@ export default function App() {
         {empty && <p className="notice notice--empty">{empty}</p>}
         {notice && <p className="notice">{notice}</p>}
       </section>
+
+      {/* 조건은 게임 옆(데스크톱)·아래(휴대폰)에 둔다. 첫 화면은 게임이 차지한다. */}
+      <aside className="today__filters" aria-labelledby="filters-title">
+        <h2 id="filters-title" className="today__title">조건</h2>
+        <Roadmap
+          places={places}
+          filters={filters}
+          result={result}
+          winnerId={winner?.id ?? null}
+          onWalk={(walkMin) => updateFilters((f) => ({ ...f, maxWalkMin: walkMin }))}
+          onCategory={toggleCategory}
+          onExcludeRecent={() => updateFilters((f) => ({ ...f, excludeRecent: !f.excludeRecent }))}
+        />
+        {/* officeKey 가 바뀌면 다시 그려진다(회사 위치 저장 → 다시 읽기). */}
+        <div className={officeSource() === 'saved' ? 'today__office' : 'today__office today__office--temp'} data-office={officeKey}>
+          <span>
+            🏢 {officeSource() === 'saved' ? '정해 둔 회사 위치에서 잰 도보 시간이에요' : '회사 위치가 아직 임시값이에요'}
+          </span>
+          <button type="button" className="linkish" onClick={() => goTab('map')}>
+            {officeSource() === 'saved' ? '바꾸기' : '정하기'}
+          </button>
+        </div>
+      </aside>
+      </div>
 
       </div>
       )}
