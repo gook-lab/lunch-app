@@ -172,3 +172,22 @@ describe('여기로 결정', () => {
     expect(decideToday).toHaveBeenCalledWith('20261008', 'a');
   });
 });
+
+describe('사다리 — 사용자가 고르는 출발점', () => {
+  it('번호를 누르면 바로 내려가고, 닿는 순간 가린 칸이 열리며 당첨 칸이 카드와 같다', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '사다리' }));
+    const hidden = () => [...document.querySelectorAll('.ladder__label')].map((l) => l.textContent);
+    expect(hidden().every((t) => t === '?')).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: '2번 줄에서 출발' }));
+    expect(screen.getByRole('button', { name: '진행 중' })).toBeTruthy();
+    act(() => { vi.advanceTimersByTime(SPIN_MS.ladder / 2); });
+    expect(hidden().every((t) => t === '?')).toBe(true);
+
+    act(() => { vi.advanceTimersByTime(SPIN_MS.ladder); });
+    expect(hidden().some((t) => t === '?')).toBe(false);
+    const win = document.querySelector('.ladder__label--win')?.textContent;
+    expect(win).toBe(card());
+  });
+});

@@ -95,3 +95,43 @@ export function ladderPath(ladder: Ladder, start: number): { row: number; col: n
   path.push({ row: ladder.rows, col });
   return path;
 }
+
+/**
+ * 사용자가 누른 자리에 가로줄을 놓거나 뗀다.
+ *
+ * 같은 층에서 바로 옆 칸 가로줄과 붙으면 경로가 모호해진다(한 점에서 좌우로
+ * 동시에 갈 수 있다). 그 자리에는 놓지 않고 그대로 돌려준다.
+ */
+export function toggleRung(rungs: readonly Rung[], row: number, col: number, columns: number): Rung[] {
+  if (col < 0 || col >= columns - 1) return [...rungs];
+  const here = rungs.findIndex((r) => r.row === row && r.col === col);
+  if (here >= 0) return rungs.filter((_, i) => i !== here);
+  const blocked = rungs.some((r) => r.row === row && Math.abs(r.col - col) === 1);
+  if (blocked) return [...rungs];
+  return [...rungs, { row, col }];
+}
+
+/**
+ * 가려 둔 바닥 칸에 후보를 놓는다. slots[칸] = 후보 번호.
+ *
+ * 당첨(winner)은 App 이 균등 난수로 이미 정했다. 경로가 닿은 칸(dest)에
+ * 당첨을 놓고, 나머지 칸은 random 으로 섞는다. 바닥은 경로가 닿을 때까지
+ * 가려져 있으므로, 미리 섞어 숨겨 둔 것과 확률이 같다 — 사용자가 고른
+ * 출발점이나 그은 가로줄이 누가 당첨될지를 바꾸지 못한다.
+ */
+export function revealSlots(
+  count: number,
+  dest: number,
+  winner: number,
+  random: () => number,
+): number[] {
+  const others = Array.from({ length: count }, (_, i) => i).filter((i) => i !== winner);
+  for (let i = others.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [others[i], others[j]] = [others[j], others[i]];
+  }
+  const slots: number[] = [];
+  let k = 0;
+  for (let c = 0; c < count; c += 1) slots.push(c === dest ? winner : others[k++]);
+  return slots;
+}

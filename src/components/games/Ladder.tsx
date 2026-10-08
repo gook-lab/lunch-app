@@ -1,12 +1,15 @@
 /**
- * 사다리타기.
+ * 사다리타기 — 사용자가 출발점을 고르고, 가로줄을 직접 긋는다.
  *
- * 사다리가 결과를 정하지 않는다. 당첨 칸은 이미 정해져 있고, 여기서는
- * 그 칸에 도착하는 출발점을 역으로 찾아 그 경로를 그린다 (lib/ladder.ts).
- * 경로는 순열이라 목표로 가는 출발점은 항상 정확히 하나다.
+ * 바닥 칸은 가려 둔다. 경로가 바닥에 닿는 순간 한꺼번에 열린다.
+ *
+ * 당첨은 사다리가 정하지 않는다. App 이 균등 난수로 이미 정했고(winnerIndex),
+ * 여기서는 경로가 닿은 칸에 그 당첨을 놓고 나머지 칸을 섞어 연다
+ * (lib/ladder.ts revealSlots). 바닥이 끝까지 가려져 있으므로 미리 섞어 숨겨
+ * 둔 것과 확률이 같다. 출발점이나 가로줄을 어떻게 고르든 당첨 확률은 그대로다.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { buildLadder, ladderPath, startForTarget } from '../../lib/ladder';
+import { useEffect, useMemo, useState } from 'react';
+import { buildLadder, ladderPath, revealSlots, toggleRung, walkLadder, type Rung } from '../../lib/ladder';
 import { shortName } from '../../lib/name';
 import { seededRandom } from '../../lib/random';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
@@ -15,38 +18,53 @@ const ROWS = 9;
 const VIEW_W = 320;
 const VIEW_H = 260;
 const PAD_X = 18;
-const PAD_Y = 26;
+/** 위쪽은 출발 번호 단추 자리라 넉넉히 둔다. */
+const PAD_TOP = 34;
+const PAD_BOTTOM = 14;
 /** 이 수를 넘는 후보 수부터 라벨을 세로쓰기로 바꾼다. */
 export const TALL_LABELS_FROM = 6;
 
-export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd }: GameProps) {
+interface Progress {
+  run: number;
+  t: number;
+}
+
+export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRequestSpin }: GameProps) {
   const count = candidates.length;
-  const [drawn, setDrawn] = useState(0);
-  const pathRef = useRef<SVGPolylineElement>(null);
+  const columns = Math.max(count, 1);
 
-  // 돌릴 때마다 새 사다리를 만든다. run(판 번호)이 바뀌는 순간이 그때다.
-  // spinning 을 넣으면 멈추는 순간(true -> false)에도 다시 만들어져
-  // 사용자가 보고 있던 경로와 최종 경로가 달라진다. run 을 시드로 쓰므로
-  // 같은 판은 다시 렌더돼도 같은 사다리다.
-  const ladder = useMemo(
-    () => buildLadder(Math.max(count, 1), ROWS, seededRandom(run)),
-    [count, run],
-  );
+  // 판. 처음엔 무작위로 깔고, 사용자가 누르는 대로 놓고 뗀다. 후보 구성이
+  // 바뀌면 App 이 key 로 새로 마운트하므로 여기서 count 를 따라갈 일은 없다.
+  const [rungs, setRungs] = useState<Rung[]>(() => buildLadder(columns, ROWS).rungs);
+  const [start, setStart] = useState<number | null>(null);
+  // 진행도는 판 번호와 같이 들고 있다. 새 판이 시작된 첫 렌더에 지난 판의
+  // "다 그렸음(1)" 이 남아 있으면 가린 칸이 한 프레임 열려 버린다.
+  const [progress, setProgress] = useState<Progress>({ run: -1, t: 0 });
+  // 결과가 나온 뒤 판을 고치면 그 결과는 더 이상 이 판의 것이 아니다.
+  const [editedAtRun, setEditedAtRun] = useState<number | null>(null);
 
-  const start = winnerIndex === null ? null : startForTarget(ladder, winnerIndex);
-  const path = start === null ? [] : ladderPath(ladder, start);
+  const ladder = useMemo(() => ({ columns, rows: ROWS, rungs }), [columns, rungs]);
+  const drawn = progress.run === run ? progress.t : 0;
+  const stale = winnerIndex !== null && editedAtRun === run;
+
+  // 출발점을 안 고르고 실행 버튼을 누른 판은 판 번호로 하나 고른다.
+  const effectiveStart =
+    start ?? (winnerIndex === null ? null : Math.floor(seededRandom(run)() * columns));
+  const dest = effectiveStart === null ? null : walkLadder(ladder, effectiveStart);
+  const path = effectiveStart === null || winnerIndex === null || stale ? [] : ladderPath(ladder, effectiveStart);
+  const slots =
+    dest === null || winnerIndex === null ? null : revealSlots(count, dest, winnerIndex, seededRandom(run + 1));
+  const revealed = slots !== null && !stale && drawn >= 1;
 
   const colX = (col: number) =>
     count <= 1 ? VIEW_W / 2 : PAD_X + (col * (VIEW_W - PAD_X * 2)) / (count - 1);
-  const rowY = (row: number) => PAD_Y + (row * (VIEW_H - PAD_Y * 2)) / ROWS;
+  const rowY = (row: number) => PAD_TOP + (row * (VIEW_H - PAD_TOP - PAD_BOTTOM)) / ROWS;
 
   useEffect(() => {
     if (!spinning || winnerIndex === null || count === 0) return;
     const reduced = prefersReducedMotion();
-    setDrawn(reduced ? 1 : 0);
-
     const finish = () => {
-      setDrawn(1);
+      setProgress({ run, t: 1 });
       onSpinEnd();
     };
     const timer = window.setTimeout(finish, reduced ? 0 : SPIN_MS.ladder);
@@ -58,7 +76,7 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd }: Ga
       // now 는 프레임 시작 시각이라 started 보다 이전일 수 있다. 음수 진행도를
       // 그대로 흘리면 인덱스가 -1 이 된다 (Pinball.tsx 에서 실제로 터졌다).
       const t = Math.min(1, Math.max(0, (now - started) / SPIN_MS.ladder));
-      setDrawn(t);
+      setProgress({ run, t });
       if (t < 1) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -67,13 +85,41 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd }: Ga
       window.clearTimeout(timer);
       cancelAnimationFrame(frame);
     };
-  }, [spinning, winnerIndex, count, onSpinEnd]);
+  }, [spinning, winnerIndex, count, run, onSpinEnd]);
 
   if (count === 0) return <div className="ladder ladder--empty" />;
 
   // 열이 7개를 넘으면 한 열이 320px 기준 40px 아래라 가로 라벨이 전부
   // "샘플…" 로 잘린다(11곳에서 실측). 그때는 세로로 쓴다.
   const tall = count > TALL_LABELS_FROM;
+
+  /** 출발 번호를 누르면 그 줄에서 바로 내려간다. */
+  const pickStart = (i: number) => {
+    if (spinning) return;
+    setStart(i);
+    onRequestSpin?.();
+  };
+
+  /** 판을 누른 자리에 가로줄을 놓거나 뗀다. */
+  const onBoardClick = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (spinning || count < 2) return;
+    const svg = e.currentTarget;
+    const box = svg.getBoundingClientRect();
+    const x = ((e.clientX - box.left) / box.width) * VIEW_W;
+    const y = ((e.clientY - box.top) / box.height) * VIEW_H;
+    const gap = (VIEW_W - PAD_X * 2) / (count - 1);
+    const col = Math.floor((x - PAD_X) / gap);
+    const row = Math.round((y - PAD_TOP) / ((VIEW_H - PAD_TOP - PAD_BOTTOM) / ROWS) - 0.5);
+    if (row < 0 || row >= ROWS) return;
+    setRungs((r) => toggleRung(r, row, col, columns));
+    if (winnerIndex !== null) setEditedAtRun(run);
+  };
+
+  const reshuffle = () => {
+    if (spinning) return;
+    setRungs(buildLadder(columns, ROWS).rungs);
+    if (winnerIndex !== null) setEditedAtRun(run);
+  };
 
   // 경로를 화면 좌표로 바꾸고, 지나온 만큼만 잘라서 그린다.
   // 점 개수가 아니라 실제 길이로 나눠야 내려가는 속도가 일정해 보인다.
@@ -101,61 +147,94 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd }: Ga
 
   const drawnPoints = drawnPts.map((p) => `${p.x},${p.y}`).join(' ');
   const head = drawnPts[drawnPts.length - 1];
+  const showPath = drawn > 0 && !stale;
 
   return (
     <div className="ladder">
-      <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} role="img" aria-label={`사다리 ${count}칸`}>
-        {/* 세로줄 */}
+      <div className="ladder__bar">
+        <p className="muted small">번호를 누르면 출발해요. 판을 누르면 가로줄이 생겨요.</p>
+        <button type="button" className="ladder__shuffle" onClick={reshuffle} disabled={spinning}>
+          새 사다리
+        </button>
+      </div>
+
+      <div className="ladder__board">
+        <svg
+          viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+          role="img"
+          aria-label={`사다리 ${count}줄, 가로줄 ${rungs.length}개`}
+          onClick={onBoardClick}
+          className={spinning ? 'ladder__svg' : 'ladder__svg ladder__svg--editable'}
+        >
+          {/* 세로줄 */}
+          {candidates.map((place, i) => (
+            <line
+              key={place.id}
+              x1={colX(i)}
+              y1={rowY(0)}
+              x2={colX(i)}
+              y2={rowY(ROWS)}
+              className="ladder__rail"
+            />
+          ))}
+          {/* 가로줄 */}
+          {rungs.map((r) => (
+            <line
+              key={`${r.row}-${r.col}`}
+              x1={colX(r.col)}
+              y1={rowY(r.row + 0.5)}
+              x2={colX(r.col + 1)}
+              y2={rowY(r.row + 0.5)}
+              className="ladder__rung"
+            />
+          ))}
+          {/* 지나온 경로 */}
+          {showPath && drawnPts.length > 1 && <polyline points={drawnPoints} className="ladder__path" />}
+          {showPath && head && <circle cx={head.x} cy={head.y} r={5} className="ladder__head" />}
+        </svg>
+
+        {/* 출발 번호. 세로줄 꼭대기에 붙인다. */}
         {candidates.map((place, i) => (
-          <line
+          <button
             key={place.id}
-            x1={colX(i)}
-            y1={rowY(0)}
-            x2={colX(i)}
-            y2={rowY(ROWS)}
-            className="ladder__rail"
-          />
+            type="button"
+            className={effectiveStart === i && winnerIndex !== null && !stale ? 'ladder__start ladder__start--on' : 'ladder__start'}
+            style={{ left: `${(colX(i) / VIEW_W) * 100}%` }}
+            onClick={() => pickStart(i)}
+            disabled={spinning}
+            aria-label={`${i + 1}번 줄에서 출발`}
+          >
+            {i + 1}
+          </button>
         ))}
-        {/* 가로줄 */}
-        {ladder.rungs.map((r, i) => (
-          <line
-            key={i}
-            x1={colX(r.col)}
-            y1={rowY(r.row + 0.5)}
-            x2={colX(r.col + 1)}
-            y2={rowY(r.row + 0.5)}
-            className="ladder__rung"
-          />
-        ))}
-        {/* 지나온 경로 */}
-        {drawn > 0 && drawnPts.length > 1 && (
-          <polyline ref={pathRef} points={drawnPoints} className="ladder__path" />
-        )}
-        {drawn > 0 && head && <circle cx={head.x} cy={head.y} r={5} className="ladder__head" />}
-      </svg>
+      </div>
 
       {/*
-        * 라벨은 세로줄 바로 밑에 둔다. 균등 grid 로 나누면 줄이 PAD_X 안쪽에
-        * 있어 양 끝 라벨이 줄과 최대 14px 어긋난다 — 당첨 강조가 옆 줄
-        * 밑에 뜬 것처럼 보인다. 줄과 같은 colX 로 자리를 잡는다.
+        * 바닥 칸. 경로가 닿을 때까지 "?" 로 덮어 둔다. 줄과 같은 colX 로
+        * 자리를 잡아야 당첨 강조가 옆 줄 밑에 뜬 것처럼 보이지 않는다.
         */}
       <div className={tall ? 'ladder__labels ladder__labels--tall' : 'ladder__labels'}>
-        {candidates.map((place, i) => (
-          <span
-            key={place.id}
-            className={
-              winnerIndex === i && drawn >= 1 ? 'ladder__label ladder__label--win' : 'ladder__label'
-            }
-            style={
-              tall
-                ? { left: `${(colX(i) / VIEW_W) * 100}%` }
-                : { left: `${(colX(i) / VIEW_W) * 100}%`, width: `${100 / count}%` }
-            }
-            title={place.name}
-          >
-            {tall ? shortName(place.name, 8) : place.name}
-          </span>
-        ))}
+        {candidates.map((_, slot) => {
+          const place = revealed && slots ? candidates[slots[slot]] : null;
+          const win = revealed && slot === dest;
+          const cls = ['ladder__label', place ? 'ladder__label--open' : 'ladder__label--hidden', win ? 'ladder__label--win' : '']
+            .filter(Boolean)
+            .join(' ');
+          return (
+            <span
+              key={slot}
+              className={cls}
+              style={
+                tall
+                  ? { left: `${(colX(slot) / VIEW_W) * 100}%` }
+                  : { left: `${(colX(slot) / VIEW_W) * 100}%`, width: `${100 / count}%` }
+              }
+              title={place?.name}
+            >
+              {place ? (tall ? shortName(place.name, 8) : place.name) : '?'}
+            </span>
+          );
+        })}
       </div>
     </div>
   );

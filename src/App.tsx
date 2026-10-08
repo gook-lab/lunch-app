@@ -338,7 +338,12 @@ export default function App() {
               run,
               onSpinEnd,
             };
-            if (mode === 'ladder') return <Ladder {...game} />;
+            // 사다리는 사용자가 판을 고친다. 후보 구성이 바뀌면 새 판이어야 하므로
+            // 후보 id 를 key 로 준다. 돌린 순간 얼리는 board 는 같은 id 라 판이 유지된다.
+            if (mode === 'ladder') {
+              const key = game.candidates.map((p) => p.id).join(',');
+              return <Ladder key={key} {...game} onRequestSpin={spin} />;
+            }
             if (mode === 'slot') return <Slot {...game} />;
             if (mode === 'pinball') return <Pinball {...game} />;
             return <Wheel {...game} />;
