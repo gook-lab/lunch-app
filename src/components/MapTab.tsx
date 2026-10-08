@@ -486,19 +486,22 @@ export default function MapTab({ places, onChanged, onOfficeChanged }: Props) {
         </ul>
       )}
 
-      <div className={picking ? 'map__frame map__frame--picking' : 'map__frame'}>
-        <div className="map__canvas" ref={containerRef} aria-label="우리 도보권 지도" />
-        {/* "지도 가운데로" 의 가운데가 어디인지 보여 주는 십자. 지도 조작은 막지 않는다. */}
-        <span className="map__crosshair" aria-hidden="true" />
+      {/* 데스크톱에서는 지도가 왼쪽 큰 칸을 차지하고, 나머지는 오른쪽에 쌓인다. */}
+      <div className="map__main">
+        <div className={picking ? 'map__frame map__frame--picking' : 'map__frame'}>
+          <div className="map__canvas" ref={containerRef} aria-label="우리 도보권 지도" />
+          {/* "지도 가운데로" 의 가운데가 어디인지 보여 주는 십자. 지도 조작은 막지 않는다. */}
+          <span className="map__crosshair" aria-hidden="true" />
+        </div>
+
+        {phase === 'loading' && <p className="muted small">지도를 불러오고 있어요</p>}
+
+        {phase === 'ready' && (
+          <p className="muted small">
+            원은 도보 {WALK_STEPS.join('·')}분이에요 · 핀을 누르면 정보, 빈 곳을 꾹 누르면 새 가게
+          </p>
+        )}
       </div>
-
-      {phase === 'loading' && <p className="muted small">지도를 불러오고 있어요</p>}
-
-      {phase === 'ready' && !selected && (
-        <p className="muted small">
-          원은 도보 {WALK_STEPS.join('·')}분이에요 · 핀을 누르면 정보, 빈 곳을 꾹 누르면 새 가게
-        </p>
-      )}
 
       {selected && (
         <div className="mp__card">

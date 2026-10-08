@@ -59,6 +59,9 @@ export function OfficeCard({ getMapCenter, onStartPick, onCancelPick, picking = 
   const [saving, setSaving] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const saved = officeSource() === 'saved';
+  // 이미 정해 두었으면 한 줄로 접는다. 지도를 가리지 않게. 임시값이면 펼쳐 둔다.
+  const [open, setOpen] = useState(!saved);
+  const expanded = open || pending !== null || picking || problem !== null;
 
   const propose = (coord: Coord, note = '') => {
     if (!inKorea(coord)) {
@@ -101,6 +104,7 @@ export function OfficeCard({ getMapCenter, onStartPick, onCancelPick, picking = 
   const cancel = () => {
     setPending(null);
     onCancelPick?.();
+    if (saved) setOpen(false);
   };
 
   const fromMap = () => {
@@ -123,6 +127,19 @@ export function OfficeCard({ getMapCenter, onStartPick, onCancelPick, picking = 
       setSaving(false);
     }
   };
+
+  if (!expanded) {
+    return (
+      <section className="office office--folded" aria-labelledby="office-title">
+        <h2 id="office-title" className="office__title">
+          🏢 회사 위치 <span className="office__badge">정해 둠</span>
+        </h2>
+        <button type="button" className="linkish" aria-expanded={false} onClick={() => setOpen(true)}>
+          바꾸기
+        </button>
+      </section>
+    );
+  }
 
   return (
     <section className="office" aria-labelledby="office-title">

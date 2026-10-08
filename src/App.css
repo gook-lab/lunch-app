@@ -597,7 +597,7 @@ body {
   font-weight: 600;
 }
 
-.list__off { opacity: 0.5; }
+.list__off .list__name strong { color: var(--color-neutral-700); }
 
 .list__actions { display: flex; gap: var(--space-2); flex-shrink: 0; }
 
@@ -1499,3 +1499,65 @@ html:has(.stage--full) { overflow: hidden; }
   .stage--full { animation: none; }
 }
 .stage--full .slot__frame { top: 84px; height: 84px; }
+
+/* ── 목록·지도·머리말 정리 (10/8 저녁) ─────────────────────── */
+.app__header { flex-direction: column; align-items: flex-start; gap: 2px; }
+.app__titleRow { display: flex; align-items: center; gap: var(--space-2); }
+.app__count {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  padding: 2px var(--space-2);
+  background: var(--color-neutral-200);
+  color: var(--color-neutral-800);
+}
+
+/* 목록: 켜진 가게 / 꺼 둔 가게 */
+.list__group { display: flex; flex-direction: column; gap: var(--space-2); }
+.list__heading {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--fs-md);
+  font-weight: 800;
+}
+.list__count { font-size: var(--fs-sm); font-weight: 600; color: var(--color-neutral-700); }
+.list__group--off > summary { cursor: pointer; padding: var(--space-2) 0; list-style-position: inside; }
+
+/* 회사 위치 접힌 한 줄 */
+.office--folded {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-4);
+}
+.office--folded .office__title { display: flex; align-items: center; gap: var(--space-2); }
+
+.map__main { display: flex; flex-direction: column; gap: var(--space-2); }
+/* 휴대폰: 머리말·회사 줄·검색·하단 탭바를 뺀 높이만큼 지도를 키운다. */
+.map__canvas { height: max(360px, calc(100svh - 400px)); }
+
+@media (min-width: 960px) {
+  /* 목록: 카드 두 칸 */
+  .list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+  .list .list__item {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-neutral-300);
+    background: var(--color-bg);
+  }
+  .list__group--off .list__item { background: transparent; }
+
+  /* 지도: 왼쪽 큰 지도 | 오른쪽 회사 위치·검색·정보 */
+  .map {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-auto-flow: row dense;
+    align-items: start;
+    gap: var(--space-3) var(--space-6);
+  }
+  .map > * { grid-column: 2; }
+  .map > .map__main { grid-column: 1; grid-row: 1 / span 20; position: sticky; top: var(--space-6); }
+  .map__canvas { height: min(640px, calc(100svh - 200px)); }
+}

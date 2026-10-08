@@ -319,13 +319,13 @@ export default function App() {
     <main className="app">
       <div className="topbar">
       <header className="app__header">
-        <div>
-          <p className="app__date">{formatDay(today)}</p>
+        <p className="app__date">{formatDay(today)}</p>
+        <div className="app__titleRow">
           <h1>{TAB_TITLE[tab]}</h1>
+          <span className="app__count">
+            {refreshing ? '새로고침 중' : `가게 ${places.filter((p) => p.active).length}곳`}
+          </span>
         </div>
-        <span className="muted small">
-          {refreshing ? '새로고침 중' : `${places.filter((p) => p.active).length}곳 등록됨`}
-        </span>
       </header>
 
       <nav className="tabs" role="tablist" aria-label="화면" onKeyDown={onTabKey}>

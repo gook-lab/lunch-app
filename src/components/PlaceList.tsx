@@ -155,60 +155,82 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent }: P
     }
   };
 
+  const renderRow = (place: Place) => {
+    const visit = lastVisit(place, visits, today);
+    return (
+      <li key={place.id} className={place.active ? 'list__item' : 'list__item list__off'}>
+        <div className="list__main">
+          <div>
+            <div className="list__name">
+              <strong>{place.name}</strong>
+              {!place.active && <span className="badge">꺼짐</span>}
+            </div>
+            <div className="list__meta">
+              {place.category} · 도보 {place.walkMin}분 ·{' '}
+              <span className={visit.recent ? 'list__recent' : undefined}>{visit.label}</span>
+            </div>
+          </div>
+          <div className="list__actions">
+            <button
+              type="button"
+              className="linkish"
+              disabled={busy === place.id}
+              onClick={() => void toggle(place)}
+            >
+              {place.active ? '끄기' : '켜기'}
+            </button>
+            <button
+              type="button"
+              id={`edit-${place.id}`}
+              className="linkish"
+              aria-expanded={editing === place.id}
+              onClick={() => setEditing(editing === place.id ? null : place.id)}
+            >
+              고치기
+            </button>
+          </div>
+        </div>
+        {editing === place.id && (
+          <EditRow
+            place={place}
+            onDone={() => {
+              setEditing(null);
+              onChanged();
+              // 폼이 사라지면 초점이 <body> 로 떨어진다. 연 단추로 돌려준다.
+              requestAnimationFrame(() => document.getElementById(`edit-${place.id}`)?.focus());
+            }}
+          />
+        )}
+      </li>
+    );
+  };
+
+  const on = sorted.filter((p) => p.active);
+  const off = sorted.filter((p) => !p.active);
+
+  // 켜진 가게와 꺼진 가게를 나눈다. 꺼진 가게는 후보에 안 들어가니 접어 두되,
+  // 켜진 가게가 하나도 없으면 다시 켤 곳을 찾아야 하므로 펼쳐 둔다.
   return (
     <>
       <p className="muted small">도보 가까운 순 · {recentNote(recentCount, excludeRecent)}</p>
-      <ul className="list">
-        {sorted.map((place) => {
-          const visit = lastVisit(place, visits, today);
-          return (
-            <li key={place.id} className={place.active ? '' : 'list__off'}>
-              <div className="list__main">
-                <div>
-                  <div className="list__name">
-                    <strong>{place.name}</strong>
-                    {!place.active && <span className="badge">꺼짐</span>}
-                  </div>
-                  <div className="list__meta">
-                    {place.category} · 도보 {place.walkMin}분 ·{' '}
-                    <span className={visit.recent ? 'list__recent' : undefined}>{visit.label}</span>
-                  </div>
-                </div>
-                <div className="list__actions">
-                  <button
-                    type="button"
-                    className="linkish"
-                    disabled={busy === place.id}
-                    onClick={() => void toggle(place)}
-                  >
-                    {place.active ? '끄기' : '켜기'}
-                  </button>
-                  <button
-                    type="button"
-                    id={`edit-${place.id}`}
-                    className="linkish"
-                    aria-expanded={editing === place.id}
-                    onClick={() => setEditing(editing === place.id ? null : place.id)}
-                  >
-                    고치기
-                  </button>
-                </div>
-              </div>
-              {editing === place.id && (
-                <EditRow
-                  place={place}
-                  onDone={() => {
-                    setEditing(null);
-                    onChanged();
-                    // 폼이 사라지면 초점이 <body> 로 떨어진다. 연 단추로 돌려준다.
-                    requestAnimationFrame(() => document.getElementById(`edit-${place.id}`)?.focus());
-                  }}
-                />
-              )}
-            </li>
-          );
-        })}
-      </ul>
+      <section className="list__group" aria-labelledby="list-on">
+        <h2 id="list-on" className="list__heading">
+          후보에 들어가는 가게 <span className="list__count">{on.length}곳</span>
+        </h2>
+        {on.length > 0 ? (
+          <ul className="list">{on.map(renderRow)}</ul>
+        ) : (
+          <p className="muted small">켜진 가게가 없어요. 아래에서 다시 켜거나 지도에서 새로 넣어 주세요.</p>
+        )}
+      </section>
+      {off.length > 0 && (
+        <details className="list__group list__group--off" open={on.length === 0}>
+          <summary className="list__heading">
+            꺼 둔 가게 <span className="list__count">{off.length}곳</span>
+          </summary>
+          <ul className="list">{off.map(renderRow)}</ul>
+        </details>
+      )}
     </>
   );
 }
