@@ -41,6 +41,11 @@ export function noticeMessage(result: CandidateResult): string | null {
   const { afterCategoryCount, recentlyVisitedCount, releasedCount, shortOfMinimum } = result;
 
   if (shortOfMinimum) {
+    // 모자란 까닭이 사용자가 좁힌 도보·카테고리면 그걸 짚는다. 이때 "가게가
+    // 20곳은 돼야" 는 엉뚱한 처방이다 — 양식 1곳만 골라도 그 문구가 떴다(10/8).
+    if (afterCategoryCount < result.activeCount) {
+      return `조건에 맞는 곳이 ${result.candidates.length}곳뿐이에요. 도보 시간이나 카테고리를 넓히면 더 많아져요.`;
+    }
     return `후보가 ${result.candidates.length}곳뿐이에요. 가게가 ${HEALTHY_POOL_SIZE}곳은 돼야 최근 방문 제외가 제대로 돌아가요.`;
   }
 
@@ -67,7 +72,7 @@ export function noticeMessage(result: CandidateResult): string | null {
  * 말하면 안 된다 — 같은 거짓말을 noticeMessage 에서 한 번 고쳤다.
  */
 export function recentNote(recentCount: number, excludeRecent: boolean): string {
-  if (recentCount === 0) return '최근 2주에 간 곳 없음';
+  if (recentCount === 0) return '최근 2주에 간 곳이 없어요';
   if (!excludeRecent) return `최근 2주 제외를 꺼 둬서 최근에 간 ${recentCount}곳도 오늘 후보예요`;
   return `최근 2주에 간 ${recentCount}곳은 오늘 후보에서 빠져요`;
 }

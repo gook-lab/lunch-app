@@ -10,7 +10,7 @@ describe('recentNote — 목록 머리말', () => {
     expect(recentNote(7, false)).toContain('7곳도 오늘 후보예요');
   });
   it('최근 방문이 없으면 "0곳은 빠집니다" 대신 없음이라고 한다', () => {
-    expect(recentNote(0, true)).toBe('최근 2주에 간 곳 없음');
-    expect(recentNote(0, false)).toBe('최근 2주에 간 곳 없음');
+    expect(recentNote(0, true)).toBe('최근 2주에 간 곳이 없어요');
+    expect(recentNote(0, false)).toBe('최근 2주에 간 곳이 없어요');
   });
 });

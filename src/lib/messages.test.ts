@@ -70,6 +70,19 @@ describe('noticeMessage — 공개 숫자가 실제와 일치한다', () => {
     expect(noticeMessage(r)).toContain('20곳');
   });
 
+  it('카테고리로 좁혀서 모자라면 가게 수가 아니라 조건을 넓히라고 말한다', () => {
+    const places = pool(12, (i) => ({ category: i === 0 ? '양식' : '한식' }));
+    const r = selectCandidates(places, [], filters({ categories: ['양식'] }), TODAY);
+    expect(noticeMessage(r)).toBe('조건에 맞는 곳이 1곳뿐이에요. 도보 시간이나 카테고리를 넓히면 더 많아져요.');
+  });
+
+  it('도보로 좁혀서 모자라도 조건을 넓히라고 말한다', () => {
+    const places = pool(12, (i) => ({ walkMin: i < 2 ? 4 : 12 }));
+    const r = selectCandidates(places, [], filters({ maxWalkMin: 5 }), TODAY);
+    expect(noticeMessage(r)).toContain('조건에 맞는 곳이 2곳뿐이에요');
+    expect(noticeMessage(r)).not.toContain('20곳');
+  });
+
   it('후보가 0곳이면 안내는 emptyMessage 쪽이 맡는다', () => {
     const r = selectCandidates([], [], filters(), TODAY);
     expect(noticeMessage(r)).toBeNull();
