@@ -4,7 +4,7 @@
  *
  * 게임 컴포넌트가 onSpinEnd 를 영영 안 부르면 spinning 이 true 로 박혀
  * 버튼이 전부 잠긴다. 돌림판을 아무것도 안 하는 가짜로 바꿔 그 상황을
- * 만들고, 상한(12초)이 지나면 잠금만 풀리고 결과는 안 생기는지 본다.
+ * 만들고, 상한(20초)이 지나면 잠금만 풀리고 결과는 안 생기는지 본다.
  */
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
@@ -35,14 +35,14 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks(); });
 
-it('onSpinEnd 가 영영 안 와도 12초 뒤에는 잠금이 풀리고 결과는 생기지 않는다', () => {
+it('onSpinEnd 가 영영 안 와도 20초 뒤에는 잠금이 풀리고 결과는 생기지 않는다', () => {
   render(<App />);
   fireEvent.click(screen.getByRole('button', { name: '돌림판' }));
   const run = () => screen.getByRole('button', { name: /돌리기 \(후보 \d+곳\)|진행 중/ });
   fireEvent.click(run());
   expect(run().textContent).toBe('진행 중');
 
-  act(() => { vi.advanceTimersByTime(11_000); });
+  act(() => { vi.advanceTimersByTime(19_000); });
   expect(run().textContent).toBe('진행 중');           // 아직은 기다린다
 
   act(() => { vi.advanceTimersByTime(1_500); });
