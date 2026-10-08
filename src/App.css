@@ -389,6 +389,7 @@ body {
   min-height: 32px;
 }
 
+.ladder__shuffle:hover:not(:disabled) { border-color: var(--color-neutral-700); color: var(--color-text); }
 .ladder__shuffle:disabled { opacity: 0.4; cursor: default; }
 
 .ladder__board { position: relative; }
@@ -418,6 +419,12 @@ body {
 
 .ladder__start:hover:not(:disabled) { transform: scale(1.08); }
 .ladder__start:disabled { cursor: default; }
+/* 연출 중 잠긴 번호는 흐리게. 투명도 대신 색을 바꿔 글자 대비(neutral-700)를 지킨다.
+   고른 출발점(--on)은 그대로 강조한다. */
+.ladder__start:disabled:not(.ladder__start--on) {
+  border-color: var(--color-neutral-400);
+  color: var(--color-neutral-700);
+}
 
 .ladder__start--on {
   background: var(--color-accent);
@@ -1262,3 +1269,7 @@ footer.muted { text-align: center; }
 
 /* 수정 폼 단추 — 휴대폰 터치 높이 44px */
 .edit .btn { min-height: 44px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ladder__start:hover:not(:disabled) { transform: none; }
+}

@@ -67,7 +67,8 @@ function troubleOf(error: unknown): Trouble {
   }
   return {
     title: '지도를 그리지 못했어요',
-    detail: String((error as Error)?.message ?? error),
+    // 원인 문구는 개발자용 영어일 수 있다. 안내를 앞에 두고 원문은 괄호로 남긴다.
+    detail: `잠시 뒤 다시 시도해 주세요. (${String((error as Error)?.message ?? error)})`,
     retryable: true,
   };
 }
@@ -338,7 +339,7 @@ export default function MapTab({ places, onChanged }: Props) {
       );
     } catch (error) {
       setSearching(false);
-      setSearchProblem(String((error as Error)?.message ?? error));
+      setSearchProblem(`검색하지 못했어요. 잠시 뒤 다시 해 주세요. (${String((error as Error)?.message ?? error)})`);
     }
   }, [keyword]);
 
