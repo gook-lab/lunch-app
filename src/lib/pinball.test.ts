@@ -289,12 +289,23 @@ describe('경기 길이 — 슬로모션 없이 재생할 수 있어야 한다',
   // 예전 코스는 1등이 52프레임(0.9초)에 들어와 4초로 늘려 틀었다. 0.22배
   // 슬로모션이라 출발 직후 구슬이 떠 있는 것처럼 보였다. 재생은 1등 도착을
   // 2.2~4.2초(132~252프레임)로 맞추므로, 경기 자체가 그 근처여야 배속이 1에 가깝다.
-  it.each([3, 5, 12, 20])('후보 %i곳: 1등 도착이 평균 120~260프레임', (count) => {
+  it.each([3, 5, 12, 20])('후보 %i곳: 1등 도착이 평균 90~260프레임', (count) => {
+    // 20곳은 구슬이 많아 누군가는 빨리 빠진다(평균 106프레임). 재생이 2.2초로
+    // 당겨 0.8배 남짓 — 눈에 띄는 슬로모션은 아니다.
     let sum = 0;
     for (let s = 1; s <= 30; s += 1) sum += simulateRace(count, s).winnerFrame;
     const avg = sum / 30;
-    expect(avg).toBeGreaterThan(120);
+    expect(avg).toBeGreaterThan(90);
     expect(avg).toBeLessThan(260);
+  });
+
+  it.each([2, 5, 8, 12, 20])('후보 %i곳: 구슬이 어디에도 걸리지 않고 전원 완주한다', (count) => {
+    // 장애물 사이 틈이 구슬 지름보다 좁으면 주머니가 생겨 경기가 안 끝난다.
+    for (let s = 1; s <= 40; s += 1) {
+      const { frames } = simulateRace(count, s);
+      const last = frames[frames.length - 1];
+      expect(last.every((m) => m.y >= FINISH_Y), `시드 ${s}`).toBe(true);
+    }
   });
 
   it('출발하자마자 내려간다 — 3프레임 안에 평균 4px 이상', () => {

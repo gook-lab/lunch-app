@@ -13,9 +13,10 @@
  * 물리는 조작하지 않는다. 실제로 일어난 여러 경기 중 하나를 고를 뿐이다.
  * 구슬이 벽을 뚫거나 갑자기 빨라지는 일은 없다.
  *
- * 코스는 구간마다 성격이 다르다 — 핀밭, 깔때기, 범퍼, 지붕, 지그재그.
- * 같은 깔때기 네 줄이던 예전 코스는 "단조롭다" 는 평을 들었다. 벽은
- * 선분이라 점-선분 최단거리로 충돌을 보고, 구슬끼리도 부딪친다.
+ * 코스는 위에서 내려다본 핀볼대다 — 롤오버 레인, 팝 범퍼, 오르빗 레인,
+ * 슬링샷, 인레인과 드레인. 핀을 줄지어 박은 예전 판은 두 번이나
+ * "단조롭다" 는 평을 들었다. 벽은 선분이라 점-선분 최단거리로 충돌을 보고,
+ * 구슬끼리도 부딪친다.
  */
 import { seededRandom } from './random';
 
@@ -59,7 +60,16 @@ export interface Wall {
   y1: number;
   x2: number;
   y2: number;
+  /**
+   * rail = 금속 가이드(그냥 튕김), sling = 슬링샷 고무(차낸다),
+   * post = 레인 칸막이(짧은 기둥).
+   */
+  kind?: 'rail' | 'sling' | 'post';
 }
+
+/** 슬링샷 반발계수와 최소 차내기 속도. */
+const SLING_BOUNCE = 1.1;
+const SLING_KICK = 2.6;
 
 export interface MarbleAt {
   x: number;
@@ -91,47 +101,45 @@ export function buildCourse(): { walls: Wall[]; pegs: Peg[] } {
   const pegs: Peg[] = [];
   const C = COURSE_W / 2;
   /** 가운데 기준 좌우 대칭으로 한 쌍. dx=0 이면 하나만. */
+  /*
+   * 틈 규칙: 두 장애물 사이(반지름 빼고) 틈은 구슬 지름 14px 보다 넉넉해야
+   * 한다. 좁으면 구슬이 그 주머니에 얹혀 경기가 안 끝난다 — 첫 탑다운 판에서
+   * 다섯 군데가 그랬다(pinball.test.ts "전원 완주").
+   */
   const pair = (dx: number, y: number, r: number, bumper = false) => {
     pegs.push({ x: C - dx, y, r, bumper });
     if (dx !== 0) pegs.push({ x: C + dx, y, r, bumper });
   };
-  const wallPair = (x1: number, y1: number, x2: number, y2: number) => {
-    walls.push({ x1, y1, x2, y2 });
-    walls.push({ x1: COURSE_W - x1, y1, x2: COURSE_W - x2, y2 });
+  const wallPair = (x1: number, y1: number, x2: number, y2: number, kind: Wall['kind'] = 'rail') => {
+    walls.push({ x1, y1, x2, y2, kind });
+    walls.push({ x1: COURSE_W - x1, y1, x2: COURSE_W - x2, y2, kind });
   };
 
-  // 1구간 — 핀밭. 엇갈린 세 줄이라 출발 레인이 금방 섞인다.
-  pair(0, 50, PEG_R);
-  pair(52, 50, PEG_R);
-  pair(26, 72, PEG_R);
-  pair(78, 72, PEG_R);
-  pair(0, 94, PEG_R);
-  pair(52, 94, PEG_R);
+  // 롤오버 레인 — 맨 위 칸막이 넷이 다섯 레인을 만든다. 출발 줄이 여기서 갈린다.
+  for (const x of [28, 78]) wallPair(x, 36, x, 54, 'post');
 
-  // 2구간 — 깔때기. 양쪽 벽이 가운데로 모으고, 출구 밑 핀이 다시 가른다.
-  wallPair(0, 116, 68, 146);
-  pair(0, 164, PEG_R + 1);
+  // 오르빗 레인 — 양쪽 벽을 따라 내려가는 좁은 길. 들어가면 빠르게 떨어진다.
+  wallPair(24, 78, 24, 168);
 
-  // 3구간 — 범퍼 두 개. 맞으면 옆으로 튕겨 순위가 뒤집힌다.
-  pair(58, 192, 11, true);
-  pair(0, 214, PEG_R - 1);
+  // 팝 범퍼 — 삼각 배치. 맞으면 튕겨 순위가 뒤집힌다.
+  pair(32, 104, 12, true);
+  pair(0, 136, 12, true);
 
-  // 4구간 — 가운데 지붕. 구슬이 좌우로 갈라져 양 벽을 타고 내려간다.
-  walls.push({ x1: C - 26, y1: 248, x2: C, y2: 232 });
-  walls.push({ x1: C + 26, y1: 248, x2: C, y2: 232 });
-  pair(86, 240, PEG_R - 1);
+  // 범퍼 밑 기둥과 램프 입구 가이드
+  pair(52, 150, PEG_R - 1);
+  wallPair(44, 182, 70, 196);
 
-  // 5구간 — 지그재그. 바깥 벽이 다시 안쪽으로 몰고 작은 핀이 흩는다.
-  wallPair(0, 262, 50, 290);
-  pair(0, 284, PEG_R);
-  pair(34, 306, PEG_R - 1);
-  pair(76, 306, PEG_R - 1);
+  // 스탠드업 타깃 — 가운데 작은 기둥 둘. 셋을 붙여 두면 사이(6px)에 구슬이 얹혀 멈췄다.
+  pair(16, 214, PEG_R - 2);
 
-  // 마지막 — 결승선 바로 위 촘촘한 한 줄. 막판 순위가 여기서 갈린다.
-  const lastY = FINISH_Y - 24;
-  for (let i = 0; i < 5; i += 1) {
-    pegs.push({ x: (COURSE_W / 6) * (i + 1), y: lastY, r: PEG_R - 1 });
-  }
+  // 슬링샷 — 인레인 옆 삼각형. 빗변 고무가 구슬을 가운데로 차낸다.
+  wallPair(30, 238, 30, 280);
+  wallPair(30, 280, 58, 292);
+  wallPair(30, 238, 58, 292, 'sling');
+
+  // 인레인과 드레인 — 양쪽 가이드가 가운데 배수구로 모은다(플리퍼 자리).
+  wallPair(0, 300, 72, 334);
+  pair(0, 318, PEG_R - 2);
 
   return { walls, pegs };
 }
@@ -205,7 +213,7 @@ export function simulateRace(count: number, seed: number): RaceResult {
         vx[i] = -Math.abs(vx[i]) * RESTITUTION;
       }
 
-      // 지그재그 벽 (선분)
+      // 벽 (선분)
       for (const wall of COURSE.walls) {
         const near = closestOnSegment(x[i], y[i], wall);
         const dx = x[i] - near.x;
@@ -219,8 +227,17 @@ export function simulateRace(count: number, seed: number): RaceResult {
         x[i] = near.x + nx * min;
         y[i] = near.y + ny * min;
         const vn = vx[i] * nx + vy[i] * ny;
-        vx[i] = (vx[i] - 2 * vn * nx) * RESTITUTION;
-        vy[i] = (vy[i] - 2 * vn * ny) * RESTITUTION;
+        const sling = wall.kind === 'sling';
+        const bounce = sling ? SLING_BOUNCE : RESTITUTION;
+        vx[i] = (vx[i] - 2 * vn * nx) * bounce;
+        vy[i] = (vy[i] - 2 * vn * ny) * bounce;
+        if (sling) {
+          const out = vx[i] * nx + vy[i] * ny;
+          if (out < SLING_KICK) {
+            vx[i] += nx * (SLING_KICK - out);
+            vy[i] += ny * (SLING_KICK - out);
+          }
+        }
       }
 
       // 핀

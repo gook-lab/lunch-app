@@ -17,6 +17,7 @@ import {
   seedForWinner,
   simulateRace,
   type RaceResult,
+  type Wall,
 } from '../../lib/pinball';
 import { prefersReducedMotion, type GameProps } from './types';
 
@@ -75,6 +76,157 @@ function marbleHue(i: number): number {
 }
 const marbleColor = (i: number) => `oklch(0.78 0.19 ${marbleHue(i)})`;
 const marbleGlow = (i: number) => `oklch(0.78 0.19 ${marbleHue(i)} / 0.45)`;
+
+/*
+ * 탑다운 핀볼대 그리기. 물리와 무관한 모양만 여기 있다.
+ * 빛은 왼쪽 위에서 온다고 보고 그림자를 오른쪽 아래로 떨어뜨린다.
+ */
+const SHADOW_DX = 2;
+const SHADOW_DY = 3;
+
+function drawTable(ctx: CanvasRenderingContext2D) {
+  // 바닥 — 가운데가 밝은 보랏빛 플레이필드
+  const g = ctx.createRadialGradient(COURSE_W / 2, BOARD_H * 0.42, 20, COURSE_W / 2, BOARD_H * 0.42, BOARD_H * 0.7);
+  g.addColorStop(0, 'oklch(0.32 0.09 285)');
+  g.addColorStop(1, 'oklch(0.16 0.05 285)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, COURSE_W, BOARD_H);
+
+  // 순위판 쪽은 어두운 백박스
+  ctx.fillStyle = 'oklch(0.13 0.02 280)';
+  ctx.fillRect(COURSE_W, 0, CANVAS_W - COURSE_W, BOARD_H);
+
+  // 플레이필드 무늬 — 가운데 세로 화살표 인서트 셋, 레인 위 조명
+  ctx.save();
+  ctx.fillStyle = 'oklch(0.55 0.16 60 / 0.35)';
+  for (const y of [178, 196, 258]) {
+    ctx.beginPath();
+    ctx.moveTo(COURSE_W / 2, y - 8);
+    ctx.lineTo(COURSE_W / 2 + 8, y + 4);
+    ctx.lineTo(COURSE_W / 2 - 8, y + 4);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.fillStyle = 'oklch(0.8 0.15 90 / 0.5)';
+  for (const x of [14, 53, 104, 155, 194]) {
+    ctx.beginPath();
+    ctx.arc(x, 62, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // 바깥 벽 — 테이블 테두리 금속 레일
+  ctx.save();
+  ctx.strokeStyle = 'oklch(0.7 0.02 260)';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(1.5, -2, COURSE_W - 3, BOARD_H + 4);
+  ctx.restore();
+}
+
+function drawWall(ctx: CanvasRenderingContext2D, w: Wall, frame: { x: number; y: number }[] | null) {
+  ctx.save();
+  ctx.lineCap = 'round';
+  if (w.kind === 'sling') {
+    // 슬링샷 고무 — 구슬이 닿으면 불이 들어온다
+    const dx = w.x2 - w.x1;
+    const dy = w.y2 - w.y1;
+    const len = Math.hypot(dx, dy) || 1;
+    const hit =
+      frame?.some((m) => {
+        const t = Math.max(0, Math.min(1, ((m.x - w.x1) * dx + (m.y - w.y1) * dy) / (len * len)));
+        return Math.hypot(m.x - (w.x1 + t * dx), m.y - (w.y1 + t * dy)) <= MARBLE_R + 5;
+      }) ?? false;
+    ctx.strokeStyle = hit ? '#ffffff' : 'oklch(0.72 0.2 25)';
+    ctx.shadowColor = hit ? '#ffffff' : 'oklch(0.72 0.2 25)';
+    ctx.shadowBlur = hit ? 16 : 6;
+    ctx.lineWidth = 5;
+  } else if (w.kind === 'post') {
+    ctx.strokeStyle = 'oklch(0.85 0.03 260)';
+    ctx.lineWidth = 4;
+  } else {
+    // 금속 레일 — 어두운 그림자 + 밝은 몸통 + 하이라이트
+    ctx.strokeStyle = 'oklch(0.1 0.02 280 / 0.6)';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(w.x1 + SHADOW_DX, w.y1 + SHADOW_DY);
+    ctx.lineTo(w.x2 + SHADOW_DX, w.y2 + SHADOW_DY);
+    ctx.stroke();
+    ctx.strokeStyle = 'oklch(0.72 0.02 260)';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(w.x1, w.y1);
+    ctx.lineTo(w.x2, w.y2);
+    ctx.stroke();
+    ctx.strokeStyle = 'oklch(0.95 0.01 260)';
+    ctx.lineWidth = 1.5;
+  }
+  ctx.beginPath();
+  ctx.moveTo(w.x1, w.y1);
+  ctx.lineTo(w.x2, w.y2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawBumper(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, hit: boolean) {
+  ctx.save();
+  // 그림자
+  ctx.fillStyle = 'oklch(0.08 0.02 280 / 0.55)';
+  ctx.beginPath();
+  ctx.arc(x + SHADOW_DX, y + SHADOW_DY, r + 1, 0, Math.PI * 2);
+  ctx.fill();
+  // 고무 테두리
+  ctx.shadowColor = hit ? '#ffffff' : 'oklch(0.7 0.25 350)';
+  ctx.shadowBlur = hit ? 22 : 8;
+  ctx.fillStyle = hit ? '#ffffff' : 'oklch(0.62 0.24 350)';
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  // 캡 — 위에서 본 버섯 머리
+  const cap = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, 1, x, y, r * 0.75);
+  cap.addColorStop(0, hit ? '#ffffff' : 'oklch(0.97 0.03 90)');
+  cap.addColorStop(1, hit ? 'oklch(0.9 0.1 90)' : 'oklch(0.75 0.15 80)');
+  ctx.fillStyle = cap;
+  ctx.beginPath();
+  ctx.arc(x, y, r * 0.68, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawPost(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, hit: boolean) {
+  ctx.save();
+  ctx.fillStyle = 'oklch(0.08 0.02 280 / 0.5)';
+  ctx.beginPath();
+  ctx.arc(x + SHADOW_DX * 0.7, y + SHADOW_DY * 0.7, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowColor = hit ? '#ffffff' : 'oklch(0.82 0.15 195)';
+  ctx.shadowBlur = hit ? 16 : 5;
+  ctx.fillStyle = hit ? '#ffffff' : 'oklch(0.82 0.13 195)';
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+/** 쇠구슬. 색 띠로 누구 구슬인지 구분하고, 하이라이트와 그림자로 입체감을 낸다. */
+function drawMarble(ctx: CanvasRenderingContext2D, x: number, y: number, i: number) {
+  ctx.save();
+  ctx.fillStyle = 'oklch(0.06 0.02 280 / 0.5)';
+  ctx.beginPath();
+  ctx.ellipse(x + SHADOW_DX, y + SHADOW_DY, MARBLE_R, MARBLE_R * 0.85, 0, 0, Math.PI * 2);
+  ctx.fill();
+  const body = ctx.createRadialGradient(x - 2.5, y - 2.5, 0.5, x, y, MARBLE_R);
+  body.addColorStop(0, '#ffffff');
+  body.addColorStop(0.35, marbleColor(i));
+  body.addColorStop(1, `oklch(0.45 0.15 ${marbleHue(i)})`);
+  ctx.fillStyle = body;
+  ctx.shadowColor = marbleGlow(i);
+  ctx.shadowBlur = 8;
+  ctx.beginPath();
+  ctx.arc(x, y, MARBLE_R, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
 
 export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: GameProps) {
   const count = candidates.length;
@@ -175,31 +327,7 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
     canvas.height = BOARD_H * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    ctx.fillStyle = '#08070c';
-    ctx.fillRect(0, 0, CANVAS_W, BOARD_H);
-
-    // 코스와 순위판 경계
-    ctx.strokeStyle = 'oklch(0.45 0.02 260)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(COURSE_W + 0.5, 0);
-    ctx.lineTo(COURSE_W + 0.5, BOARD_H);
-    ctx.stroke();
-
-    // 지그재그 벽 — 흰 네온
-    ctx.save();
-    ctx.strokeStyle = '#ffffff';
-    ctx.shadowColor = 'oklch(0.9 0.12 200)';
-    ctx.shadowBlur = 8;
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    for (const w of COURSE.walls) {
-      ctx.beginPath();
-      ctx.moveTo(w.x1, w.y1);
-      ctx.lineTo(w.x2, w.y2);
-      ctx.stroke();
-    }
-    ctx.restore();
+    drawTable(ctx);
 
     // 지금 프레임의 구슬 위치. 소수 프레임은 앞뒤를 섞는다.
     const at = (pos: number) => {
@@ -212,40 +340,31 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
       return a.map((m, i) => ({ x: m.x + (b[i].x - m.x) * f, y: m.y + (b[i].y - m.y) * f }));
     };
     const frame = at(framePos);
+    const touching = (x: number, y: number, r: number) =>
+      frame?.some((m) => Math.hypot(m.x - x, m.y - y) <= MARBLE_R + r + 2) ?? false;
 
-    // 핀 — 청록 네온. 구슬이 닿아 있는 핀은 하얗게 번쩍인다.
+    // 레일·슬링샷·칸막이
+    for (const w of COURSE.walls) drawWall(ctx, w, frame);
+
+    // 기둥과 팝 범퍼. 구슬이 닿아 있으면 불이 들어온다.
     for (const peg of COURSE.pegs) {
-      const hit =
-        frame?.some((m) => Math.hypot(m.x - peg.x, m.y - peg.y) <= MARBLE_R + peg.r + 2) ?? false;
-      const color = peg.bumper ? 'oklch(0.72 0.24 350)' : 'oklch(0.82 0.15 195)';
-      ctx.save();
-      ctx.shadowColor = hit ? '#ffffff' : color;
-      ctx.shadowBlur = hit ? 18 : 8;
-      ctx.beginPath();
-      ctx.arc(peg.x, peg.y, peg.r, 0, Math.PI * 2);
-      if (peg.bumper) {
-        // 범퍼는 고리 + 속심. 일반 핀과 한눈에 갈려야 "저기 맞으면 튄다" 가 읽힌다.
-        ctx.fillStyle = hit ? '#ffffff' : 'oklch(0.3 0.1 350)';
-        ctx.fill();
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = hit ? '#ffffff' : color;
-        ctx.stroke();
-      } else {
-        ctx.fillStyle = hit ? '#ffffff' : color;
-        ctx.fill();
-      }
-      ctx.restore();
+      const hit = touching(peg.x, peg.y, peg.r);
+      if (peg.bumper) drawBumper(ctx, peg.x, peg.y, peg.r, hit);
+      else drawPost(ctx, peg.x, peg.y, peg.r, hit);
     }
 
-    // 결승선
-    ctx.strokeStyle = 'oklch(0.7 0.18 145)';
+    // 배수구 — 결승선. 플리퍼 자리 밑의 어두운 홈.
+    ctx.save();
+    ctx.fillStyle = 'oklch(0.12 0.02 280)';
+    ctx.fillRect(0, FINISH_Y, COURSE_W, BOARD_H - FINISH_Y);
+    ctx.strokeStyle = 'oklch(0.75 0.17 145)';
     ctx.setLineDash([5, 4]);
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(0, FINISH_Y);
     ctx.lineTo(COURSE_W, FINISH_Y);
     ctx.stroke();
-    ctx.setLineDash([]);
+    ctx.restore();
 
     // 순위판
     ctx.textAlign = 'right';
@@ -297,26 +416,25 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
     }));
     const positions = frame ?? resting;
 
-    positions.forEach((m, i) => {
-      ctx.save();
-      ctx.shadowColor = marbleGlow(i);
-      ctx.shadowBlur = 10;
-      ctx.beginPath();
-      ctx.arc(m.x, m.y, MARBLE_R, 0, Math.PI * 2);
-      ctx.fillStyle = marbleColor(i);
-      ctx.fill();
-      ctx.restore();
+    positions.forEach((m, i) => drawMarble(ctx, m.x, m.y, i));
 
+    // 이름표는 구슬을 다 그린 뒤에 얹는다. 먼저 그리면 뒤 구슬이 글자를 덮는다.
+    positions.forEach((m, i) => {
       const place = candidates[i];
       if (!place) return;
       // 들어온 구슬은 결승선에 뭉쳐서 이름표가 서로 덮인다. 순위판이 이미
       // 이름을 들고 있으니 코스 위에서는 뗀다.
       if (frame && m.y >= FINISH_Y) return;
-      ctx.fillStyle = marbleColor(i);
+      ctx.save();
       ctx.font = '600 9px system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'oklch(0.14 0.03 280 / 0.85)';
+      ctx.strokeText(shortName(place.name), m.x, m.y + MARBLE_R + 2);
+      ctx.fillStyle = marbleColor(i);
       ctx.fillText(shortName(place.name), m.x, m.y + MARBLE_R + 2);
+      ctx.restore();
     });
   }, [race, framePos, standing, arrived, leadIn, candidates, count]);
 
