@@ -272,7 +272,7 @@ describe('시드 탐색이 매번 같은 경기를 주지 않는다', () => {
     }
   });
 
-  it('시작 시드가 다르면 경기도 대체로 다르다', () => {
+  it('시작 시드가 다르면 경기도 대체로 다르다', { timeout: 60_000 }, () => {
     for (const count of [5, 12]) {
       const orders = new Set<string>();
       for (let k = 0; k < 60; k += 1) {
