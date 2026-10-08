@@ -85,6 +85,25 @@ describe('연출 한 판', () => {
   });
 });
 
+describe('크게 보기', () => {
+  it('누르면 게임 무대가 화면 전체로 펼쳐지고, 연출은 그대로 돌며, Escape 로 돌아온다', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '돌림판' }));
+    const toggle = screen.getByRole('button', { name: /크게 보기/ });
+    fireEvent.click(toggle);
+    const stage = document.querySelector('.stage');
+    expect(stage?.classList.contains('stage--full')).toBe(true);
+    expect(screen.getByRole('button', { name: /작게 보기/ }).getAttribute('aria-pressed')).toBe('true');
+
+    fireEvent.click(runButton());
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
+    expect(card()).toBe('가집');
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(document.querySelector('.stage')?.classList.contains('stage--full')).toBe(false);
+  });
+});
+
 describe('방식 바꾸기', () => {
   it('결과가 떠 있을 때 다른 방식을 고르면 판이 처음으로 돌아간다', () => {
     startWheel();

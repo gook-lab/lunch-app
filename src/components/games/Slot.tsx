@@ -11,9 +11,12 @@ import { slotReelCopies, slotStops } from '../../lib/spin';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
 
 const ITEM_H = 56;
+/** 크게 보기에서 한 줄 높이. 창은 늘 세 줄이라 창 높이도 같이 바뀐다. */
+const ITEM_H_BIG = 84;
 const LOOPS = 6;
 
-export function Slot({ candidates, winnerIndex, spinning, onSpinEnd }: GameProps) {
+export function Slot({ candidates, winnerIndex, spinning, onSpinEnd, expanded = false }: GameProps) {
+  const itemH = expanded ? ITEM_H_BIG : ITEM_H;
   const count = candidates.length;
   /** 가운데 칸에 보이는, 이어 붙인 목록에서의 인덱스. */
   const [idx, setIdx] = useState(0);
@@ -78,12 +81,12 @@ export function Slot({ candidates, winnerIndex, spinning, onSpinEnd }: GameProps
 
   return (
     <div className="slot" role="img" aria-label={`후보 ${count}곳`}>
-      <div className="slot__window">
+      <div className="slot__window" style={{ height: itemH * 3 }}>
         <div
           aria-hidden="true"
           className="slot__reel"
           style={{
-            transform: `translateY(${(1 - idx) * ITEM_H}px)`,
+            transform: `translateY(${(1 - idx) * itemH}px)`,
             transitionDuration: animating ? `${SPIN_MS.slot}ms` : '0ms',
           }}
         >
@@ -91,7 +94,7 @@ export function Slot({ candidates, winnerIndex, spinning, onSpinEnd }: GameProps
             <div
               key={`${place.id}-${i}`}
               className={i === landed ? 'slot__item slot__item--win' : 'slot__item'}
-              style={{ height: ITEM_H }}
+              style={{ height: itemH }}
             >
               <span>{place.name}</span>
               <span className="slot__meta">도보 {place.walkMin}분</span>

@@ -30,6 +30,8 @@ const PANEL_W = 112;
 const CANVAS_W = COURSE_W + PANEL_W;
 /** 화면에 보이는 코스 높이. 판(BOARD_H)은 이보다 길어서 카메라가 따라 내려간다. */
 const VIEW_H = 440;
+/** 크게 보기에서는 코스를 한 화면에 더 길게 보여 준다. */
+const VIEW_H_BIG = 480;
 const MARBLE_R = 7;
 const COURSE = buildCourse();
 
@@ -83,12 +85,12 @@ function leaderY(race: RaceResult, f: number): number {
  * 카메라 위치(보이는 창의 위쪽 y). 선두를 창의 60% 높이에 두되, 지난 몇
  * 프레임을 평균내서 선두가 바뀔 때 화면이 튀지 않게 한다.
  */
-function cameraY(race: RaceResult | null, framePos: number): number {
+function cameraY(race: RaceResult | null, framePos: number, viewH: number): number {
   if (!race || framePos < 0) return 0;
   let sum = 0;
   const N = 12;
   for (let k = 0; k < N; k += 1) sum += leaderY(race, framePos - k * 3);
-  return clamp(sum / N - VIEW_H * 0.6, 0, BOARD_H - VIEW_H);
+  return clamp(sum / N - viewH * 0.6, 0, BOARD_H - viewH);
 }
 
 /*
@@ -296,7 +298,8 @@ interface Play {
   timing: Timing;
 }
 
-export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: GameProps) {
+export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
+  const viewH = expanded ? VIEW_H_BIG : VIEW_H;
   const count = candidates.length;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   /** 이 판에서 찾은 경기. 판 번호와 같이 들고 있어 지난 판 경기가 새 판에 비치지 않는다. */
@@ -423,7 +426,7 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = CANVAS_W * dpr;
-    canvas.height = VIEW_H * dpr;
+    canvas.height = viewH * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     // 지금 프레임의 구슬 위치. 소수 프레임은 앞뒤를 섞는다.
@@ -449,12 +452,12 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
       return { x: spot.x + wob, y: spot.y + Math.abs(wob) * 0.5 };
     });
     const positions = frame ?? resting;
-    const cam = frame ? cameraY(race, framePos) : 0;
+    const cam = frame ? cameraY(race, framePos, viewH) : 0;
 
     // 코스 창
     ctx.save();
     ctx.beginPath();
-    ctx.rect(0, 0, COURSE_W, VIEW_H);
+    ctx.rect(0, 0, COURSE_W, viewH);
     ctx.clip();
     ctx.translate(0, -cam);
 
@@ -523,7 +526,7 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
       ctx.save();
       ctx.strokeStyle = `oklch(0.65 0.24 25 / ${pulse})`;
       ctx.lineWidth = 6;
-      ctx.strokeRect(3, 3, COURSE_W - 6, VIEW_H - 6);
+      ctx.strokeRect(3, 3, COURSE_W - 6, viewH - 6);
       ctx.fillStyle = 'oklch(0.95 0.05 25)';
       ctx.shadowColor = 'oklch(0.65 0.24 25)';
       ctx.shadowBlur = 12;
@@ -536,19 +539,19 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
 
     // 오른쪽 패널
     ctx.fillStyle = 'oklch(0.13 0.02 280)';
-    ctx.fillRect(COURSE_W, 0, PANEL_W, VIEW_H);
+    ctx.fillRect(COURSE_W, 0, PANEL_W, viewH);
     ctx.strokeStyle = 'oklch(0.45 0.02 260)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(COURSE_W + 0.5, 0);
-    ctx.lineTo(COURSE_W + 0.5, VIEW_H);
+    ctx.lineTo(COURSE_W + 0.5, viewH);
     ctx.stroke();
 
     // 미니맵 — 판 전체와 지금 보이는 창, 구슬 위치
     const mapX = COURSE_W + 6;
     const mapW = 14;
     const mapTop = 8;
-    const mapH = VIEW_H - 16;
+    const mapH = viewH - 16;
     const sx = mapW / COURSE_W;
     const sy = mapH / BOARD_H;
     ctx.fillStyle = 'oklch(0.22 0.05 285)';
@@ -556,7 +559,7 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
     ctx.fillStyle = 'oklch(0.4 0.12 25 / 0.6)';
     ctx.fillRect(mapX, mapTop + FUNNEL_Y * sy, mapW, (FINISH_Y - FUNNEL_Y) * sy);
     ctx.strokeStyle = 'oklch(0.85 0.02 260 / 0.8)';
-    ctx.strokeRect(mapX - 0.5, mapTop + cam * sy, mapW + 1, VIEW_H * sy);
+    ctx.strokeRect(mapX - 0.5, mapTop + cam * sy, mapW + 1, viewH * sy);
     positions.forEach((m, i) => {
       ctx.fillStyle = marbleColor(i);
       ctx.fillRect(mapX + m.x * sx - 1, mapTop + m.y * sy - 1, 2.5, 2.5);
@@ -573,7 +576,7 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
       const place = candidates[marble];
       if (!place) return;
       const y = 34 + rank * 15;
-      if (y > VIEW_H - 8) return;
+      if (y > viewH - 8) return;
       const champion = leadIn && rank === 0;
       ctx.save();
       if (champion || (slowMo && rank < 2)) {
@@ -585,7 +588,7 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
       ctx.fillText(`${shortName(place.name)} ${champion ? '✓' : `#${rank + 1}`}`, CANVAS_W - 6, y);
       ctx.restore();
     });
-  }, [race, framePos, standing, arrived, leadIn, slowMo, atGate, gateMs, candidates, count]);
+  }, [race, framePos, standing, arrived, leadIn, slowMo, atGate, gateMs, candidates, count, viewH]);
 
   if (count === 0) return <div className="pinball pinball--empty" />;
 
@@ -593,7 +596,7 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd }: G
     <div className="pinball">
       <canvas
         ref={canvasRef}
-        style={{ width: CANVAS_W, height: VIEW_H }}
+        style={{ aspectRatio: `${CANVAS_W} / ${viewH}` }}
         role="img"
         aria-label={`구슬 ${count}개 핀볼`}
       />

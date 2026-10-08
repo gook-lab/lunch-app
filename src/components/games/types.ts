@@ -22,6 +22,8 @@ export interface GameProps {
    */
   run: number;
   onSpinEnd: () => void;
+  /** 크게 보기 중인지. 핀볼은 이때 코스를 더 길게 보여 준다. */
+  expanded?: boolean;
   /**
    * 게임 안에서 판을 시작하고 싶을 때(사다리의 출발 번호). App 의 실행
    * 버튼과 같은 spin 이다 — 당첨은 여전히 App 이 균등 난수로 정한다.

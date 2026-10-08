@@ -42,8 +42,11 @@ const TABS: Tab[] = ['roadmap', 'list', 'map'];
 const TAB_LABEL: Record<Tab, string> = { roadmap: '오늘', list: '목록', map: '지도' };
 const TAB_ICON: Record<Tab, string> = { roadmap: '🍱', list: '📋', map: '🗺️' };
 
-/** 연출 잠금 해제 상한. 가장 긴 연출(핀볼 최대 약 10.5초)의 두 배 남짓. */
-const SPIN_TIMEOUT_MS = 20_000;
+/**
+ * 연출 잠금 해제 상한. 판을 늘린 뒤 핀볼이 가장 길다 — 1등 도착 평균 8~10초,
+ * 긴 경기 13초 남짓에 막판 슬로·꼬리·출발 게이트를 더해 17초 안팎. 넉넉히 30초.
+ */
+const SPIN_TIMEOUT_MS = 30_000;
 
 const TAB_TITLE: Record<Tab, string> = {
   roadmap: '오늘 점심',
@@ -75,6 +78,16 @@ export default function App() {
     excludeRecent: true,
   });
   const [spinning, setSpinning] = useState(false);
+  // 크게 보기. 게임 무대를 화면 전체로 펼친다. 연출·당첨에는 영향이 없다.
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => {
+    if (!expanded) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setExpanded(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [expanded]);
   const [winner, setWinner] = useState<Place | null>(null);
   const [winnerIndex, setWinnerIndex] = useState<number | null>(null);
   /**
@@ -382,7 +395,21 @@ export default function App() {
       )}
 
       <div className="today">
-      <section className={spinning ? 'stage stage--busy' : 'stage'} aria-label="게임">
+      <section
+        className={['stage', spinning ? 'stage--busy' : '', expanded ? 'stage--full' : ''].filter(Boolean).join(' ')}
+        aria-label="게임"
+      >
+        <div className="stage__top">
+          <span className="stage__label">{expanded ? '크게 보는 중' : ''}</span>
+          <button
+            type="button"
+            className="stage__expand"
+            aria-pressed={expanded}
+            onClick={() => setExpanded((v) => !v)}
+          >
+            {expanded ? '✕ 작게 보기' : '⤢ 크게 보기'}
+          </button>
+        </div>
         <div className="modebar" role="group" aria-label="방식">
           {GAME_MODES.map((m) => (
             <button
@@ -436,6 +463,7 @@ export default function App() {
               spinning,
               run,
               onSpinEnd,
+              expanded,
             };
             // 사다리는 사용자가 판을 고친다. 후보 구성이 바뀌면 새 판이어야 하므로
             // 후보 id 를 key 로 준다. 돌린 순간 얼리는 board 는 같은 id 라 판이 유지된다.

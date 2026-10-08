@@ -42,7 +42,7 @@ it('onSpinEnd 가 영영 안 와도 20초 뒤에는 잠금이 풀리고 결과�
   fireEvent.click(run());
   expect(run().textContent).toBe('진행 중');
 
-  act(() => { vi.advanceTimersByTime(19_000); });
+  act(() => { vi.advanceTimersByTime(29_000); });
   expect(run().textContent).toBe('진행 중');           // 아직은 기다린다
 
   act(() => { vi.advanceTimersByTime(1_500); });

@@ -1453,3 +1453,49 @@ html:has(dialog[open]:modal) { overflow: hidden; }
 .map__frame--picking .map__canvas { cursor: crosshair; }
 .map__frame--picking .map__crosshair { display: none; }
 .map__office--new { background: var(--color-accent); }
+
+/* ── 크게 보기 ───────────────────────────────────────────── */
+.stage__top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.stage__label { font-size: var(--fs-sm); font-weight: 700; color: var(--color-neutral-700); }
+.stage__expand {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-neutral-400);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.stage__expand::before { content: ''; position: absolute; inset: -4px; }
+.stage__expand { position: relative; }
+.stage__expand:hover { border-color: var(--color-text); }
+
+/* 펼친 무대: 화면 전체를 덮고, 안에서 스크롤한다. 하단 탭바보다 위. */
+.stage--full {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow: auto;
+  padding: var(--space-4) max(var(--space-4), calc((100vw - 1080px) / 2));
+  background: var(--color-surface);
+  border: 0;
+  box-shadow: none;
+  animation: rise 220ms var(--ease-decel) both;
+}
+html:has(.stage--full) { overflow: hidden; }
+.stage--full .stage__board { min-height: calc(100svh - 260px); background: var(--color-bg); }
+
+/* 게임마다 화면에 맞춰 키운다. 폭과 높이 중 작은 쪽에 맞춘다. */
+.stage--full .wheel { width: min(86vw, calc(100svh - 300px), 640px); }
+.stage--full .ladder,
+.stage--full .slot { width: min(92vw, 760px); }
+.stage--full .slot__item { font-size: var(--fs-xl); }
+/* 핀볼 캔버스는 크게 볼 때 320:480 이다. 높이가 무대를 넘지 않게 폭을 정한다. */
+.stage--full .pinball { width: min(92vw, calc((100svh - 280px) * 320 / 480), 720px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .stage--full { animation: none; }
+}
+.stage--full .slot__frame { top: 84px; height: 84px; }
