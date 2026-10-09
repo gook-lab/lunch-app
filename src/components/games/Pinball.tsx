@@ -31,8 +31,13 @@ const PANEL_W = 112;
 const CANVAS_W = COURSE_W + PANEL_W;
 /** 화면에 보이는 코스 높이. 판(BOARD_H)은 이보다 길어서 카메라가 따라 내려간다. */
 const VIEW_H = 440;
-/** 크게 보기에서는 코스를 한 화면에 더 길게 보여 준다. */
-const VIEW_H_BIG = 480;
+/**
+ * 크게 보기에서는 코스를 가까이 당겨 보여 준다. 보이는 높이를 줄이면 캔버스가
+ * 가로로 넓어져 같은 화면 높이에서 구슬이 커진다. 예전엔 480 으로 더 길게
+ * 보여 줬는데, 높이에 맞추느라 폭이 320 → 413px 로만 커져 "크게 보기가 없다"
+ * 는 말을 들었다(10/9).
+ */
+const VIEW_H_BIG = 340;
 const MARBLE_R = 7;
 const COURSE = buildCourse();
 
@@ -82,13 +87,28 @@ function leaderY(race: RaceResult, f: number): number {
  * 카메라 위치(보이는 창의 위쪽 y). 선두를 창의 60% 높이에 두되, 지난 몇
  * 프레임을 평균내서 선두가 바뀔 때 화면이 튀지 않게 한다.
  */
-function cameraY(race: RaceResult | null, framePos: number, viewH: number): number {
+function cameraY(race: RaceResult | null, framePos: number, viewH: number, follow: number | null = null): number {
   if (!race || framePos < 0) return 0;
+  // 따라가는 구슬이 아직 달리는 중이면 그 구슬을, 들어왔으면 다시 선두를.
+  const followY = (f: number) => {
+    if (follow === null) return null;
+    const frame = race.frames[clamp(Math.floor(f), 0, race.frames.length - 1)];
+    const m = frame[follow];
+    return m && m.y < FINISH_Y ? m.y : null;
+  };
   let sum = 0;
   const N = 12;
-  for (let k = 0; k < N; k += 1) sum += leaderY(race, framePos - k * 3);
-  return clamp(sum / N - viewH * 0.6, 0, BOARD_H - viewH);
+  for (let k = 0; k < N; k += 1) {
+    const f = framePos - k * 3;
+    sum += followY(f) ?? leaderY(race, f);
+  }
+  return clamp(sum / N - viewH * (follow === null ? 0.6 : 0.5), 0, BOARD_H - viewH);
 }
+
+/** 카메라가 목표로 옮겨 가는 비율(그릴 때마다). 따라갈 공을 바꿔도 화면이 튀지 않는다. */
+const CAMERA_EASE = 0.18;
+/** 공을 누른 것으로 치는 거리. 구슬 반지름보다 넉넉하게 — 손가락은 굵다. */
+const HIT_R = 16;
 
 /*
  * 탑다운 판 그리기. 물리와 무관한 모양만 여기 있다.
@@ -308,6 +328,12 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
   const [progress, setProgress] = useState<{ run: number; t: number }>({ run: -1, t: -1 });
   /** 게이트에서 기다린 시간. 구슬이 들썩이는 데 쓴다. */
   const [gateMs, setGateMs] = useState(0);
+  /** 사용자가 고른 구슬. 카메라가 이 구슬을 따라간다. null 이면 선두. 판이 바뀌어도 유지한다. */
+  const [followPick, setFollow] = useState<number | null>(null);
+  const follow = followPick !== null && followPick < count ? followPick : null;
+  // 그리기가 남긴 값. 클릭이 어느 구슬을 눌렀는지 계산하는 데 쓴다.
+  const drawnRef = useRef<{ cam: number; positions: { x: number; y: number }[] }>({ cam: 0, positions: [] });
+  const camRef = useRef<{ run: number; y: number } | null>(null);
 
   // 판 하나: 게이트 → 경기 만들기 → 재생 → 끝.
   useEffect(() => {
@@ -415,9 +441,11 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = CANVAS_W * dpr;
-    canvas.height = viewH * dpr;
+    // 크게 보기면 캔버스가 화면에서 두 배 넘게 늘어난다. 그만큼 해상도를 올려야 흐리지 않다.
+    const shown = canvas.clientWidth || CANVAS_W;
+    const dpr = Math.min((window.devicePixelRatio || 1) * Math.max(1, shown / CANVAS_W), 4);
+    canvas.width = Math.round(CANVAS_W * dpr);
+    canvas.height = Math.round(viewH * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     // 지금 프레임의 구슬 위치. 소수 프레임은 앞뒤를 섞는다.
@@ -443,7 +471,12 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
       return { x: spot.x + wob, y: spot.y + Math.abs(wob) * 0.5 };
     });
     const positions = frame ?? resting;
-    const cam = frame ? cameraY(race, framePos, viewH) : 0;
+    // 목표 위치로 부드럽게 옮겨 간다. 새 판의 첫 프레임은 바로 맞춘다.
+    const target = frame ? cameraY(race, framePos, viewH, follow) : 0;
+    const prev = camRef.current;
+    const cam = frame && prev && prev.run === run ? prev.y + (target - prev.y) * CAMERA_EASE : target;
+    camRef.current = { run, y: cam };
+    drawnRef.current = { cam, positions };
 
     // 코스 창
     ctx.save();
@@ -492,6 +525,19 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
     }
 
     positions.forEach((m, i) => drawMarble(ctx, m.x, m.y, i));
+
+    // 따라가는 구슬에 고리
+    if (follow !== null && positions[follow] && !(frame && positions[follow].y >= FINISH_Y)) {
+      const m = positions[follow];
+      ctx.save();
+      ctx.strokeStyle = 'oklch(0.98 0 0)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, MARBLE_R + 5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
 
     // 이름표는 구슬을 다 그린 뒤에 얹는다. 먼저 그리면 뒤 구슬이 글자를 덮는다.
     positions.forEach((m, i) => {
@@ -576,21 +622,74 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
       }
       ctx.fillStyle = marbleColor(marble);
       ctx.font = `${rank === 0 ? '700' : '500'} 10px system-ui, sans-serif`;
-      ctx.fillText(`${shortName(place.name)} ${champion ? '✓' : `#${rank + 1}`}`, CANVAS_W - 6, y);
+      const mark = marble === follow ? '◉ ' : '';
+      ctx.fillText(`${mark}${shortName(place.name)} ${champion ? '✓' : `#${rank + 1}`}`, CANVAS_W - 6, y);
       ctx.restore();
     });
-  }, [race, framePos, standing, arrived, leadIn, slowMo, atGate, gateMs, candidates, count, viewH]);
+  }, [race, framePos, standing, arrived, leadIn, slowMo, atGate, gateMs, candidates, count, viewH, follow, run]);
+
+  /*
+   * 공을 누르면 그 공을 따라간다. 같은 공을 다시 누르면 선두로 돌아간다.
+   * 오른쪽 순위판의 이름을 눌러도 된다(작은 구슬을 손가락으로 맞히기 어렵다).
+   */
+  const onCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (rect.width === 0) return;
+    const k = CANVAS_W / rect.width;
+    const x = (e.clientX - rect.left) * k;
+    const y = (e.clientY - rect.top) * k;
+    let hit: number | null = null;
+    if (x < COURSE_W) {
+      const { cam, positions } = drawnRef.current;
+      let best = HIT_R;
+      positions.forEach((m, i) => {
+        const d = Math.hypot(m.x - x, m.y - (y + cam));
+        if (d <= best) {
+          best = d;
+          hit = i;
+        }
+      });
+    } else {
+      const rank = Math.round((y - 34) / 15);
+      if (rank >= 0 && rank < standing.length && Math.abs(y - (34 + rank * 15)) <= 7) hit = standing[rank];
+    }
+    if (hit === null) return;
+    setFollow(hit === follow ? null : hit);
+  };
 
   if (count === 0) return <div className="pinball pinball--empty" />;
 
   return (
-    <div className="pinball">
+    <div className={expanded ? 'pinball pinball--big' : 'pinball'}>
       <canvas
         ref={canvasRef}
         style={{ aspectRatio: `${CANVAS_W} / ${viewH}` }}
         role="img"
-        aria-label={`구슬 ${count}개 핀볼`}
+        aria-label={
+          follow === null
+            ? `구슬 ${count}개 핀볼`
+            : `구슬 ${count}개 핀볼, ${candidates[follow].name} 구슬을 따라가는 중`
+        }
+        onClick={onCanvasClick}
       />
+      {/* 키보드·화면낭독기로도 고를 수 있게. 캔버스 클릭과 같은 상태를 쓴다. */}
+      <label className="pinball__follow">
+        <span>카메라</span>
+        <select
+          value={follow === null ? '' : String(follow)}
+          onChange={(e) => setFollow(e.target.value === '' ? null : Number(e.target.value))}
+        >
+          <option value="">선두 따라가기</option>
+          {candidates.map((p, i) => (
+            <option key={p.id} value={i}>
+              {p.name} 따라가기
+            </option>
+          ))}
+        </select>
+        <span className="pinball__tip" aria-hidden="true">
+          공을 누르면 그 공을 따라가요
+        </span>
+      </label>
     </div>
   );
 }

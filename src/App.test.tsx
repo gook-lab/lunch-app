@@ -50,7 +50,9 @@ beforeEach(() => {
   vi.stubGlobal('cancelAnimationFrame', (id: number) => clearTimeout(id));
   window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} }) as unknown as MediaQueryList;
   Element.prototype.scrollIntoView = () => {};
-  HTMLCanvasElement.prototype.getContext = (() => new Proxy({}, { get: () => () => ({}) })) as never;
+  // 어떤 메서드를 불러도, 그 결과(그라디언트 등)의 메서드를 불러도 되는 빈 캔버스.
+  const stub: object = new Proxy(function () {}, { get: () => stub, apply: () => stub, set: () => true });
+  HTMLCanvasElement.prototype.getContext = (() => stub) as never;
   HTMLDialogElement.prototype.showModal = function () { this.open = true; };
   HTMLDialogElement.prototype.close = function () { this.open = false; };
   vi.spyOn(Math, 'random').mockReturnValue(0);
@@ -312,6 +314,19 @@ describe('카드 뒤집기 — 사용자가 고르는 카드', () => {
     expect(mine?.classList.contains('cards__card--win')).toBe(true);
     expect(mine?.getAttribute('aria-label')).toBe(`2번 카드: ${card()}`);
     expect(document.querySelectorAll('.cards__card--open').length).toBe(cards.length);
+  });
+});
+
+describe('핀볼 — 고른 공 따라가기', () => {
+  it('카메라에서 가게를 고르면 그 구슬을 따라가고, 선두로 되돌릴 수 있다', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '핀볼' }));
+    const camera = screen.getByRole('combobox', { name: /카메라/ }) as HTMLSelectElement;
+    expect(camera.value).toBe('');
+    fireEvent.change(camera, { target: { value: '1' } });
+    expect(screen.getByRole('img', { name: /따라가는 중/ }).getAttribute('aria-label')).toContain('나집');
+    fireEvent.change(camera, { target: { value: '' } });
+    expect(screen.getByRole('img', { name: '구슬 5개 핀볼' })).toBeTruthy();
   });
 });
 

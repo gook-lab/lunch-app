@@ -870,7 +870,31 @@ footer.muted { text-align: center; }
   width: 100%;
   height: auto;
   display: block;
+  cursor: pointer;
+  touch-action: manipulation;
 }
+
+/* 카메라 고르기 — 캔버스 아래 검은 띠 */
+.pinball__follow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  line-height: 1.4;
+  font-size: var(--fs-xs);
+  color: var(--color-neutral-300);
+}
+.pinball__follow select {
+  min-height: 32px;
+  max-width: 60%;
+  font: inherit;
+  font-size: var(--fs-sm);
+  color: var(--color-text);
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+}
+.pinball__tip { margin-left: auto; }
 
 /* 화면낭독기 전용. 결과 알림(App.tsx)이 쓴다. */
 .sr-only {
@@ -1541,8 +1565,8 @@ html:has(.stage--full) { overflow: hidden; }
 .stage--full .ladder,
 .stage--full .slot { width: min(92vw, 760px); }
 .stage--full .slot__item { font-size: var(--fs-xl); }
-/* 핀볼 캔버스는 크게 볼 때 320:480 이다. 높이가 무대를 넘지 않게 폭을 정한다. */
-.stage--full .pinball { width: min(92vw, calc((100svh - 280px) * 320 / 480), 720px); }
+/* 핀볼 캔버스는 크게 볼 때 320:340 이다(가까이 당겨 보기). 높이가 무대를 넘지 않게 폭을 정한다. */
+.stage--full .pinball { width: min(92vw, calc((100svh - 300px) * 320 / 340), 900px); }
 
 @media (prefers-reduced-motion: reduce) {
   .stage--full { animation: none; }
