@@ -550,7 +550,8 @@ body {
 
 .slot__reel {
   transition-property: transform;
-  transition-timing-function: cubic-bezier(0.12, 0.8, 0.15, 1);
+  /* 꼬리를 길게. 마지막 두세 칸을 한 칸씩 기어가듯 넘겨 "설까 말까" 를 보여 준다. */
+  transition-timing-function: cubic-bezier(0.08, 0.7, 0.05, 1);
 }
 
 .slot__item {
@@ -1976,3 +1977,16 @@ input:focus-visible,
 textarea:focus-visible,
 select:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
 input[aria-invalid='true'] { border-color: var(--color-accent); }
+
+/* 토너먼트 — 경기 승자가 튀어나오고 진 쪽은 천천히 꺼진다. 결과가 한꺼번에 바뀌어 나열식으로 보였다(10/9 손맛 리뷰). */
+.tour__side--win { animation: tour-win 320ms var(--ease-decel) both; }
+.tour__side--lose { transition: opacity 400ms var(--ease-out); }
+@keyframes tour-win {
+  0% { scale: 0.92; }
+  60% { scale: 1.06; }
+  100% { scale: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tour__side--win { animation: none; }
+  .tour__side--lose { transition: none; }
+}

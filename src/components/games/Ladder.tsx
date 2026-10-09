@@ -9,7 +9,7 @@
  * 둔 것과 확률이 같다. 출발점이나 가로줄을 어떻게 고르든 당첨 확률은 그대로다.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { buildLadder, ladderPath, revealSlots, toggleRung, walkLadder, type Rung } from '../../lib/ladder';
+import { buildLadder, ladderPace, ladderPath, revealSlots, toggleRung, walkLadder, type Rung } from '../../lib/ladder';
 import { shortName } from '../../lib/name';
 import { seededRandom } from '../../lib/random';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
@@ -77,7 +77,7 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
       // now 는 프레임 시작 시각이라 started 보다 이전일 수 있다. 음수 진행도를
       // 그대로 흘리면 인덱스가 -1 이 된다 (Pinball.tsx 에서 실제로 터졌다).
       const t = Math.min(1, Math.max(0, (now - started) / SPIN_MS.ladder));
-      setProgress({ run, t });
+      setProgress({ run, t: ladderPace(t) });
       if (t < 1) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);

@@ -55,8 +55,9 @@ export function actionLabel(mode: GameMode): string {
  */
 export const SPIN_MS: Record<Exclude<GameMode, 'pinball'>, number> = {
   wheel: 2600,
-  ladder: 2200,
-  slot: 1800,
+  // 사다리·슬롯은 핀볼에 비해 너무 빨리 끝나 긴장이 쌓일 틈이 없었다(10/9 손맛 리뷰 5·4점).
+  ladder: 2800,
+  slot: 2800,
   cards: 2400,
   // 판 수와 상관없이 이 시간 안에 끝난다. 20곳이면 5판이라 판마다 약 0.8초.
   tournament: 4200,

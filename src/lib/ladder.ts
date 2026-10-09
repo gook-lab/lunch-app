@@ -135,3 +135,12 @@ export function revealSlots(
   for (let c = 0; c < count; c += 1) slots.push(c === dest ? winner : others[k++]);
   return slots;
 }
+
+/**
+ * 시간 → 경로 진행도. 앞 65% 시간에 경로 80% 를 가고, 남은 20% 를 35% 시간 동안
+ * 천천히 내려간다. 도착 직전에 느려져야 "어디로 가나" 를 지켜볼 틈이 생긴다.
+ * 끝(1)은 1 이라 도착 칸은 그대로다.
+ */
+export function ladderPace(t: number): number {
+  return t < 0.65 ? (t / 0.65) * 0.8 : 0.8 + ((t - 0.65) / 0.35) * 0.2;
+}
