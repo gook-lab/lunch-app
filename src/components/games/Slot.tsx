@@ -6,17 +6,29 @@
  *
  * 여기서도 결과는 winnerIndex 가 정한다 — 멈추는 위치를 계산할 뿐이다.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { slotReelCopies, slotStops } from '../../lib/spin';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
 
 const ITEM_H = 56;
 /** 크게 보기에서 한 줄 높이. 창은 늘 세 줄이라 창 높이도 같이 바뀐다. */
 const ITEM_H_BIG = 84;
+/** 데스크톱(960px~) 한 줄 높이. 56px 세 줄이면 600×420 판의 절반이 비었다(10/9 손맛 리뷰). */
+const ITEM_H_WIDE = 80;
 const LOOPS = 6;
 
+const WIDE = '(min-width: 960px)';
+const isWide = () => typeof window !== 'undefined' && window.matchMedia?.(WIDE).matches === true;
+/** 창 폭이 960px 을 넘나들면(회전·창 크기) 다시 그린다. */
+const subscribeWide = (cb: () => void) => {
+  const mq = typeof window !== 'undefined' ? window.matchMedia?.(WIDE) : undefined;
+  mq?.addEventListener('change', cb);
+  return () => mq?.removeEventListener('change', cb);
+};
+
 export function Slot({ candidates, winnerIndex, spinning, onSpinEnd, expanded = false }: GameProps) {
-  const itemH = expanded ? ITEM_H_BIG : ITEM_H;
+  const wide = useSyncExternalStore(subscribeWide, isWide, () => false);
+  const itemH = expanded ? ITEM_H_BIG : wide ? ITEM_H_WIDE : ITEM_H;
   const count = candidates.length;
   /** 가운데 칸에 보이는, 이어 붙인 목록에서의 인덱스. */
   const [idx, setIdx] = useState(0);
@@ -80,7 +92,7 @@ export function Slot({ candidates, winnerIndex, spinning, onSpinEnd, expanded = 
   const landed = !animating && !spinning ? idx : -1;
 
   return (
-    <div className="slot" role="img" aria-label={`후보 ${count}곳`}>
+    <div className={wide && !expanded ? 'slot slot--wide' : 'slot'} role="img" aria-label={`후보 ${count}곳`}>
       <div className="slot__window" style={{ height: itemH * 3 }}>
         <div
           aria-hidden="true"
