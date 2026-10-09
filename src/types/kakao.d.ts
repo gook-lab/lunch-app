@@ -63,6 +63,7 @@ export interface KakaoMarker {
 
 export interface KakaoCustomOverlay {
   setMap: (map: KakaoMap | null) => void;
+  setZIndex: (zIndex: number) => void;
 }
 
 export interface KakaoMaps {

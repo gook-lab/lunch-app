@@ -15,6 +15,20 @@ export const CATEGORIES = ['한식', '면', '고기', '분식', '양식', '중�
 
 export type Category = (typeof CATEGORIES)[number];
 
+/** 지도 핀·목록에 붙이는 그림. 칩 6종 밖의 카테고리는 포크 하나로 둔다. */
+export const CATEGORY_ICON: Record<Category, string> = {
+  한식: '🍚',
+  면: '🍜',
+  고기: '🥩',
+  분식: '🍢',
+  양식: '🍝',
+  중식: '🥟',
+};
+
+export function categoryIcon(category: string): string {
+  return (CATEGORY_ICON as Record<string, string>)[category] ?? '🍴';
+}
+
 /** 구체적인 것부터. 첫 일치가 이긴다. */
 const RULES: { category: Category; tokens: string[] }[] = [
   { category: '면', tokens: ['국수', '냉면', '칼국수', '라면', '우동', '소바', '막국수', '쌀국수'] },

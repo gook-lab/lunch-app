@@ -27,7 +27,7 @@ import { seededRandom } from './random';
 /** 구슬이 굴러가는 코스 폭. 캔버스는 이보다 넓고, 남는 오른쪽이 순위판이다. */
 export const COURSE_W = 208;
 /** 판 전체 높이. 화면(그리는 쪽 VIEW_H)보다 길어서 카메라가 따라 내려간다. */
-export const BOARD_H = 1352;
+export const BOARD_H = 1840;
 
 const MARBLE_R = 7;
 const PEG_R = 6;
@@ -200,15 +200,40 @@ export function buildCourse(): Course {
   for (const y of [978, 1034]) for (const dx of [18, 54]) pair(dx, y, PEG_R - 2);
   notch(1056);
 
-  // 9 — 풍차 두 개. 서로 반대로 돌아 좌우 어느 쪽도 유리하지 않다.
-  spinners.push({ x: C - 46, y: 1112, half: 22, omega: 0.055, phase: 0 });
-  spinners.push({ x: C + 46, y: 1112, half: 22, omega: -0.055, phase: Math.PI });
+  // 판을 488px 더 늘렸다(10/9, "핀볼은 재미있는데 좀 더 길게"). 9~12 구간이 새로 들어갔다.
+  // 9 — 범퍼 다이아몬드. 세 범퍼가 마름모로 서서 한가운데로 온 구슬을 연달아 튕긴다.
+  pair(40, 1110, 12, true);
+  pair(0, 1146, 12, true);
+  pair(40, 1182, 12, true);
+  pair(80, 1146, PEG_R);
+  notch(1206);
 
-  // 10 — 깔때기와 출구. 출구 폭 24px(구슬 14px)라 한 줄로만 빠진다.
+  // 10 — 풍차 세 개가 한 줄. 이웃끼리 반대로 돈다.
+  spinners.push({ x: C - 60, y: 1250, half: 18, omega: 0.07, phase: 0 });
+  spinners.push({ x: C, y: 1250, half: 18, omega: -0.07, phase: Math.PI / 2 });
+  spinners.push({ x: C + 60, y: 1250, half: 18, omega: 0.07, phase: Math.PI });
+  notch(1290);
+
+  // 11 — 세 번째 엇갈린 핀밭
+  for (const y of [1330, 1386]) for (const dx of [0, 36, 72]) pair(dx, y, PEG_R - 2);
+  for (const y of [1358, 1414]) for (const dx of [18, 54]) pair(dx, y, PEG_R - 2);
+  notch(1440);
+
+  // 12 — 마지막 Λ 사선 막대
+  wallPair(16, 1500, 40, 1472);
+  wallPair(64, 1472, 86, 1496);
+  pair(0, 1520, PEG_R);
+  notch(1546);
+
+  // 13 — 풍차 두 개. 서로 반대로 돌아 좌우 어느 쪽도 유리하지 않다.
+  spinners.push({ x: C - 46, y: 1600, half: 22, omega: 0.055, phase: 0 });
+  spinners.push({ x: C + 46, y: 1600, half: 22, omega: -0.055, phase: Math.PI });
+
+  // 14 — 깔때기와 출구. 출구 폭 24px(구슬 14px)라 한 줄로만 빠진다.
   //      출구 위 회전 막대가 줄 선 구슬을 흔들어 막판 순위가 뒤집힌다.
-  wallPair(0, 1150, C - 15, 1284);
-  wallPair(C - 15, 1284, C - 15, 1326);
-  spinners.push({ x: C, y: 1236, half: 17, omega: 0.15, phase: Math.PI / 2 });
+  wallPair(0, 1638, C - 15, 1772);
+  wallPair(C - 15, 1772, C - 15, 1814);
+  spinners.push({ x: C, y: 1724, half: 17, omega: 0.15, phase: Math.PI / 2 });
 
   return { walls, pegs, spinners };
 }

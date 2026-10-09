@@ -16,6 +16,7 @@ import { PRICE_BANDS, WALK_STEPS, type Place, type PriceBand, type Rating } from
 import { CATEGORIES, type Category } from '../lib/category';
 import { metersForWalkMinutes, officeCoord, type Coord } from '../lib/walk';
 import { OfficeCard } from './map/OfficeCard';
+import { pinElement } from './map/pin';
 import {
   clearKakaoLoadFailure,
   KakaoLoadError,
@@ -23,7 +24,7 @@ import {
   loadKakaoMaps,
 } from '../services/kakao';
 import { updatePlace } from '../services/lunch';
-import type { KakaoMap, KakaoMaps, KakaoMarker, KakaoPlace } from '../types/kakao';
+import type { KakaoCustomOverlay, KakaoMap, KakaoMaps, KakaoMarker, KakaoPlace } from '../types/kakao';
 import { PlaceForm, type PlaceDraft } from './map/PlaceForm';
 
 /** 이만큼 누르고 있으면 핀을 꽂는다. */
@@ -40,6 +41,17 @@ interface Props {
   onChanged: () => void;
   /** 회사 위치를 바꾼 뒤. 데이터를 다시 읽고 지도를 새 기준으로 다시 만든다. */
   onOfficeChanged: () => void;
+  /** 오늘 정한 가게. 지도 핀에 "오늘" 표시를 단다. */
+  todayId?: string | null;
+}
+
+/** 이 배율보다 멀리 보면 핀에서 이름을 빼고 그림만 남긴다. 이름끼리 겹친다. */
+const LABEL_MAX_LEVEL = 5;
+
+interface Pin {
+  overlay: KakaoCustomOverlay;
+  el: HTMLButtonElement;
+  zIndex: number;
 }
 
 type Phase = 'loading' | 'ready' | 'error';
@@ -88,11 +100,16 @@ function Stars({ value }: { value: Rating }) {
   );
 }
 
-export default function MapTab({ places, onChanged, onOfficeChanged }: Props) {
+export default function MapTab({ places, onChanged, onOfficeChanged, todayId = null }: Props) {
   const [phase, setPhase] = useState<Phase>('loading');
   const [trouble, setTrouble] = useState<Trouble | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // 꺼 둔 가게 핀을 보일지. 기본은 숨긴다 — 꺼 둔 샘플 가게가 시청 근처에
+  // 몰려 진짜 후보 핀을 가리고 화면 맞춤까지 넓혔다(10/9 실측). 켜진 가게가
+  // 하나도 없으면 다시 켤 가게를 찾아야 하니 보인다.
+  const [showOff, setShowOff] = useState(() => !places.some((p) => p.active));
+  const [far, setFar] = useState(false);
   const [draft, setDraft] = useState<PlaceDraft | null>(null);
   const [editing, setEditing] = useState(false);
 
@@ -108,7 +125,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged }: Props) {
   const pickRef = useRef<((coord: Coord) => void) | null>(null);
   const officePinRef = useRef<{ setMap: (map: KakaoMap | null) => void } | null>(null);
   const [picking, setPicking] = useState(false);
-  const markersRef = useRef<Map<string, KakaoMarker>>(new Map());
+  const markersRef = useRef<Map<string, Pin>>(new Map());
   const tempMarkerRef = useRef<KakaoMarker | null>(null);
   const fittedRef = useRef(false);
   const resizeRef = useRef<ResizeObserver | null>(null);
@@ -150,7 +167,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged }: Props) {
 
         new maps.CustomOverlay({
           position: center,
-          content: '<div class="map__office">회사</div>',
+          content: '<div class="map__office">🏢 회사</div>',
           map,
           yAnchor: 0.5,
           zIndex: 5,
@@ -163,7 +180,10 @@ export default function MapTab({ places, onChanged, onOfficeChanged }: Props) {
             radius: metersForWalkMinutes(step),
             // 1px·0.35 로는 카카오 지도 위에서 안 보인다. 실제로 안 보였다.
             strokeWeight: 2,
-            strokeColor: '#18181b',
+            // 카카오는 CSS 변수를 못 읽는다. 토큰 값을 꺼내 넘긴다.
+            strokeColor:
+              getComputedStyle(document.documentElement).getPropertyValue('--color-text').trim() ||
+              'black',
             strokeOpacity: 0.6,
             strokeStyle: 'shortdash',
             fillOpacity: 0,
@@ -177,6 +197,10 @@ export default function MapTab({ places, onChanged, onOfficeChanged }: Props) {
          * 검색 결과가 위에 붙고 빠질 때마다 높이가 바뀌므로 한 번 부르고 마는
          * 걸로는 부족하다. 컨테이너를 계속 지켜본다.
          */
+        // 멀리 보면 이름이 서로 덮는다. 배율을 지켜보고 이름을 접는다.
+        setFar(map.getLevel() > LABEL_MAX_LEVEL);
+        maps.event.addListener(map, 'zoom_changed', () => setFar(map.getLevel() > LABEL_MAX_LEVEL));
+
         const observer = new ResizeObserver(() => map.relayout());
         observer.observe(el);
         resizeRef.current = observer;
@@ -203,7 +227,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged }: Props) {
     const map = mapRef.current;
     if (phase !== 'ready' || !maps || !map) return;
 
-    for (const marker of markersRef.current.values()) marker.setMap(null);
+    for (const pin of markersRef.current.values()) pin.overlay.setMap(null);
     markersRef.current.clear();
 
     const bounds = new maps.LatLngBounds();
@@ -212,19 +236,23 @@ export default function MapTab({ places, onChanged, onOfficeChanged }: Props) {
 
     for (const place of places) {
       const position = new maps.LatLng(place.lat, place.lng);
-      bounds.extend(position);
-      const marker = new maps.Marker({
-        position,
-        title: place.name,
-        map,
-        // 꺼진 가게는 흐리게. 지우지는 않는다 — visits 가 참조한다.
-        opacity: place.active ? 1 : 0.35,
-      });
-      maps.event.addListener(marker, 'click', () => {
+      if (place.active || showOff) bounds.extend(position);
+      const today = place.id === todayId;
+      const el = pinElement(place, today);
+      el.addEventListener('click', () => {
         setSelectedId(place.id);
         setEditing(false);
       });
-      markersRef.current.set(place.id, marker);
+      // 켜진 가게가 꺼진 가게를 덮고, 오늘 정한 곳이 맨 위.
+      const zIndex = today ? 4 : place.active ? 3 : 2;
+      const overlay = new maps.CustomOverlay({
+        position,
+        content: el,
+        map: place.active || showOff ? map : undefined,
+        yAnchor: 1,
+        zIndex,
+      });
+      markersRef.current.set(place.id, { overlay, el, zIndex });
     }
 
     // 처음 한 번만 맞춘다. 매번 맞추면 가게를 넣을 때마다 화면이 튄다.
@@ -232,7 +260,17 @@ export default function MapTab({ places, onChanged, onOfficeChanged }: Props) {
       fittedRef.current = true;
       map.setBounds(bounds, 48, 32, 48, 32);
     }
-  }, [places, phase]);
+  }, [places, phase, todayId, showOff]);
+
+  /* 고른 가게 핀을 강조하고 맨 위로 올린다. */
+  useEffect(() => {
+    for (const [id, pin] of markersRef.current) {
+      const on = id === selectedId;
+      pin.el.classList.toggle('map__pin--on', on);
+      pin.el.setAttribute('aria-pressed', String(on));
+      pin.overlay.setZIndex(on ? 6 : pin.zIndex);
+    }
+  }, [selectedId, places, phase, todayId, showOff]);
 
   /* 3. 길게 눌러 핀 꽂기. */
   useEffect(() => {
@@ -252,6 +290,8 @@ export default function MapTab({ places, onChanged, onOfficeChanged }: Props) {
       const maps = mapsRef.current;
       const map = mapRef.current;
       if (!maps || !map) return;
+      // 핀을 누른 건 가게 고르기다. 길게 눌러도 새 가게를 꽂지 않는다.
+      if (e.target instanceof Element && e.target.closest('.map__pin')) return;
       start = { x: e.clientX, y: e.clientY };
       const rect = el.getBoundingClientRect();
       const px = e.clientX - rect.left;
@@ -488,7 +528,21 @@ export default function MapTab({ places, onChanged, onOfficeChanged }: Props) {
 
       {/* 데스크톱에서는 지도가 왼쪽 큰 칸을 차지하고, 나머지는 오른쪽에 쌓인다. */}
       <div className="map__main">
-        <div className={picking ? 'map__frame map__frame--picking' : 'map__frame'}>
+        {phase === 'ready' && places.some((p) => !p.active) && (
+          <label className="map__toggle">
+            <input type="checkbox" checked={showOff} onChange={(e) => setShowOff(e.target.checked)} />
+            꺼 둔 가게도 보기
+          </label>
+        )}
+        <div
+          className={[
+            'map__frame',
+            picking && 'map__frame--picking',
+            far && 'map__frame--far',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
           <div className="map__canvas" ref={containerRef} aria-label="우리 도보권 지도" />
           {/* "지도 가운데로" 의 가운데가 어디인지 보여 주는 십자. 지도 조작은 막지 않는다. */}
           <span className="map__crosshair" aria-hidden="true" />

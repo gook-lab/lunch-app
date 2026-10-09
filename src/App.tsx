@@ -372,7 +372,13 @@ export default function App() {
       {tab === 'map' && (
         <div role="tabpanel" id="panel-map" aria-labelledby="tab-map" className="panel">
           <Suspense fallback={<p className="muted small">지도를 준비하고 있어요</p>}>
-            <MapTab key={officeKey} places={places} onChanged={reload} onOfficeChanged={reload} />
+            <MapTab
+              key={officeKey}
+              places={places}
+              onChanged={reload}
+              onOfficeChanged={reload}
+              todayId={decidedPlace?.id ?? null}
+            />
           </Suspense>
         </div>
       )}

@@ -100,7 +100,7 @@ function cameraY(race: RaceResult | null, framePos: number, viewH: number): numb
 const SHADOW_DX = 2;
 const SHADOW_DY = 3;
 /** 깔때기가 시작되는 높이. 여기서부터 바닥을 붉게 물들인다. */
-const FUNNEL_Y = 790;
+const FUNNEL_Y = 1638;
 
 function drawTable(ctx: CanvasRenderingContext2D) {
   const g = ctx.createLinearGradient(0, 0, 0, BOARD_H);
@@ -114,7 +114,7 @@ function drawTable(ctx: CanvasRenderingContext2D) {
   // 깔때기 — 아래를 가리키는 경고 화살표
   ctx.save();
   ctx.fillStyle = 'oklch(0.65 0.2 30 / 0.22)';
-  for (const y of [812, 846, 880, 914]) {
+  for (const y of [1646, 1678]) {
     ctx.beginPath();
     ctx.moveTo(COURSE_W / 2 - 22, y);
     ctx.lineTo(COURSE_W / 2, y + 14);
@@ -133,7 +133,10 @@ function drawTable(ctx: CanvasRenderingContext2D) {
   ctx.font = '700 22px ui-monospace, monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  for (const [label, y] of [['1', 150], ['2', 262], ['3', 370], ['4', 560], ['5', 710]] as const) {
+  for (const [label, y] of [
+    ['1', 150], ['2', 262], ['3', 370], ['4', 560], ['5', 710], ['6', 830], ['7', 932],
+    ['8', 1075], ['9', 1222], ['10', 1310], ['11', 1458], ['12', 1562],
+  ] as const) {
     ctx.fillText(label, COURSE_W / 2, y);
   }
   ctx.restore();
