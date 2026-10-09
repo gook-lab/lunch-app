@@ -13,6 +13,7 @@ import { recentNote } from '../lib/messages';
 import { useState } from 'react';
 import { Button } from '@gook-lab/ui';
 import type { Place, Visit } from '../lib/candidates';
+import { withJosa } from '../lib/josa';
 import { RECENT_WINDOW_DAYS } from '../lib/candidates';
 import { daysBetween, type DayId } from '../lib/date';
 import { walkMinutesBetween } from '../lib/walk';
@@ -124,6 +125,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
     const nextLat = Number(lat);
     const nextLng = Number(lng);
     if (!name.trim()) return setProblem('이름을 넣어 주세요.');
+    if (!category.trim()) return setProblem('카테고리를 넣어 주세요.');
     if (!Number.isFinite(nextLat) || !Number.isFinite(nextLng)) {
       return setProblem('좌표는 숫자로 넣어 주세요.');
     }
@@ -199,6 +201,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
 export function PlaceList({ places, visits, today, onChanged, excludeRecent, onShowOnMap }: Props) {
   const [editing, setEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [toggleProblem, setToggleProblem] = useState<string | null>(null);
 
   if (places.length === 0) {
     return <p className="muted">아직 등록된 가게가 없어요.</p>;
@@ -213,9 +216,13 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
 
   const toggle = async (place: Place) => {
     setBusy(place.id);
+    setToggleProblem(null);
     try {
       await updatePlace(place.id, { active: !place.active });
       onChanged();
+    } catch {
+      // 실패하면 단추만 다시 살아나고 아무 말이 없었다. 바뀐 줄 알고 넘어간다.
+      setToggleProblem(`${withJosa(place.name, '을/를')} ${place.active ? '끄지' : '켜지'} 못했어요. 잠시 뒤 다시 해 주세요.`);
     } finally {
       setBusy(null);
     }
@@ -288,6 +295,11 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
   // 켜진 가게가 하나도 없으면 다시 켤 곳을 찾아야 하므로 펼쳐 둔다.
   return (
     <>
+      {toggleProblem && (
+        <p className="notice notice--empty" role="alert">
+          {toggleProblem}
+        </p>
+      )}
       <History places={places} visits={visits} today={today} onShowOnMap={onShowOnMap} />
       <p className="muted small">도보 가까운 순 · {recentNote(recentCount, excludeRecent)}</p>
       <section className="list__group" aria-labelledby="list-on">

@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 afterEach(cleanup);
 import { PlaceList } from './PlaceList';
 import type { Place } from '../lib/candidates';
+import { updatePlace } from '../services/lunch';
 
 vi.mock('../services/lunch', () => ({ updatePlace: vi.fn(async () => {}) }));
 
@@ -35,5 +36,16 @@ describe('최근 다녀온 곳', () => {
   it('방문이 없으면 보이지 않는다', () => {
     render(<PlaceList places={[place('a', '가집')]} visits={[]} today="20261009" onChanged={() => {}} excludeRecent />);
     expect(screen.queryByRole('region', { name: /최근 다녀온 곳/ })).toBeNull();
+  });
+});
+
+describe('끄기 실패', () => {
+  it('저장이 실패하면 알려 주고 목록을 다시 읽지 않는다', async () => {
+    vi.mocked(updatePlace).mockRejectedValueOnce(new Error('denied'));
+    const onChanged = vi.fn();
+    render(<PlaceList places={[place('a', '가집')]} visits={[]} today="20261009" onChanged={onChanged} excludeRecent />);
+    fireEvent.click(screen.getByRole('button', { name: '끄기' }));
+    expect((await screen.findByRole('alert')).textContent).toBe('가집을 끄지 못했어요. 잠시 뒤 다시 해 주세요.');
+    expect(onChanged).not.toHaveBeenCalled();
   });
 });

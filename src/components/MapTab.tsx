@@ -115,6 +115,8 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
     () => !places.some((p) => p.active) || places.some((p) => p.id === focusId && !p.active),
   );
   const [far, setFar] = useState(false);
+  // 끄기·켜기 실패. 어느 가게 것인지 같이 들고 있어야 다른 핀을 골랐을 때 안 남는다.
+  const [toggleProblem, setToggleProblem] = useState<string | null>(null);
   const [draft, setDraft] = useState<PlaceDraft | null>(null);
   const [editing, setEditing] = useState(false);
 
@@ -618,6 +620,11 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
               {selected.review && <p className="small">{selected.review}</p>}
               {selected.memo && <p className="muted small">{selected.memo}</p>}
               {!selected.active && <span className="badge">꺼짐</span>}
+              {toggleProblem === selected.id && (
+                <p className="notice notice--empty" role="alert">
+                  바꾸지 못했어요. 잠시 뒤 다시 해 주세요.
+                </p>
+              )}
               <div className="row">
                 <Button block size="sm" variant="secondary" onClick={() => setEditing(true)}>
                   고치기
@@ -627,7 +634,10 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
                   size="sm"
                   variant="secondary"
                   onClick={() => {
-                    void updatePlace(selected.id, { active: !selected.active }).then(onChanged);
+                    setToggleProblem(null);
+                    updatePlace(selected.id, { active: !selected.active })
+                      .then(onChanged)
+                      .catch(() => setToggleProblem(selected.id));
                   }}
                 >
                   {selected.active ? '끄기' : '켜기'}
