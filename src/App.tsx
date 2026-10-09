@@ -513,17 +513,6 @@ export default function App() {
         className={['stage', spinning ? 'stage--busy' : '', expanded ? 'stage--full' : ''].filter(Boolean).join(' ')}
         aria-label="게임"
       >
-        <div className="stage__top">
-          <span className="stage__label">{expanded ? '크게 보는 중' : ''}</span>
-          <button
-            type="button"
-            className="stage__expand"
-            aria-pressed={expanded}
-            onClick={() => setExpanded((v) => !v)}
-          >
-            {expanded ? '✕ 작게 보기' : '⤢ 크게 보기'}
-          </button>
-        </div>
         <div className="modebar" role="group" aria-label="방식">
           {GAME_MODES.map((m) => (
             <button
@@ -539,7 +528,22 @@ export default function App() {
             </button>
           ))}
         </div>
-        <p className="muted small stage__hint">방식은 보여주는 것만 달라요 · 확률은 같아요</p>
+        <div className="stage__top">
+          {/* 안내 한 줄과 크게 보기를 한 줄에 둔다. 크게 보기 혼자 한 줄을 먹어 게임판이 밀렸다(10/9 UI 점검). */}
+          {expanded ? (
+            <span className="stage__label">크게 보는 중</span>
+          ) : (
+            <p className="muted small stage__hint">방식은 보여주는 것만 달라요 · 확률은 같아요</p>
+          )}
+          <button
+            type="button"
+            className="stage__expand"
+            aria-pressed={expanded}
+            onClick={() => setExpanded((v) => !v)}
+          >
+            {expanded ? '✕ 작게 보기' : '⤢ 크게 보기'}
+          </button>
+        </div>
 
         {/*
           * 기기의 "동작 줄이기" 가 켜져 있으면 게임이 연출 없이 결과만 띄운다.
