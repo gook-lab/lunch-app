@@ -85,6 +85,7 @@ describe('결과 모달', () => {
     const dialog = screen.getByRole('dialog', { name: '오늘의 점심 결과' }) as HTMLDialogElement;
     expect(dialog.open).toBe(true);
     expect(dialog.querySelector('.ticket__name')?.textContent).toBe('가집');
+    expect(dialog.querySelector('.ticket__eyebrow')?.textContent).toBe('🎡 돌림판으로 뽑은 오늘의 점심');
 
     fireEvent.click(screen.getByRole('button', { name: '닫고 게임 보기' }));
     expect(screen.queryByRole('dialog', { name: '오늘의 점심 결과' })).toBeNull();

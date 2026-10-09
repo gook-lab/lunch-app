@@ -336,7 +336,11 @@ export default function App() {
   // 결과 카드. 끝난 순간엔 모달 안에, 닫으면 게임 아래에 같은 카드가 놓인다.
   const ticket = winner ? (
     <div className="card card--result ticket">
-      <p className="ticket__eyebrow">오늘의 점심</p>
+      {/* 어떤 게임으로 뽑았는지 남긴다. 결과 모달이 게임판을 가리므로 여기서 이어 준다. */}
+      <p className="ticket__eyebrow">
+        <span aria-hidden="true">{MODE_ICON[mode]} </span>
+        {withJosa(GAME_MODES.find((m) => m.id === mode)?.label ?? '게임', '으로/로')} 뽑은 오늘의 점심
+      </p>
       <h2 className="ticket__name" ref={resultRef} tabIndex={-1}>{winner.name}</h2>
       <div className="ticket__meta">
         <span

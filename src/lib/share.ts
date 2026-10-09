@@ -33,18 +33,19 @@ export async function sharePlace(text: string): Promise<ShareResult> {
 }
 
 function legacyCopy(text: string): boolean {
+  const area = document.createElement('textarea');
+  area.value = text;
+  area.setAttribute('readonly', '');
+  area.style.position = 'fixed';
+  area.style.opacity = '0';
+  document.body.append(area);
   try {
-    const area = document.createElement('textarea');
-    area.value = text;
-    area.setAttribute('readonly', '');
-    area.style.position = 'fixed';
-    area.style.opacity = '0';
-    document.body.append(area);
     area.select();
-    const ok = document.execCommand?.('copy') ?? false;
-    area.remove();
-    return ok;
+    return document.execCommand?.('copy') ?? false;
   } catch {
     return false;
+  } finally {
+    // 던져도 숨긴 입력칸이 남지 않게.
+    area.remove();
   }
 }
