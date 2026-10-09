@@ -2033,3 +2033,20 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .mp__nearList li:last-child .mp__near { border-bottom: 0; }
 .mp__near:hover { background: var(--color-neutral-200); }
 .mp__nearName { display: inline-flex; align-items: center; gap: var(--space-1); font-weight: 600; }
+
+/* 카드 뜸 들이기 — 고른 카드가 떠올라 점점 세게 떨린다. 고른 카드는 천천히(640ms) 뒤집는다. */
+.cards__card--lift { z-index: 1; }
+.cards__card--lift .cards__face--back { animation: cards-lift 750ms var(--ease-inout) both; }
+.cards__card--mine .cards__face { transition-duration: 640ms; }
+@keyframes cards-lift {
+  0% { transform: translateY(0) rotate(0); }
+  30% { transform: translateY(-10px) rotate(-1deg); }
+  50% { transform: translateY(-12px) rotate(2deg); }
+  65% { transform: translateY(-12px) rotate(-3deg); }
+  80% { transform: translateY(-13px) rotate(4deg); }
+  90% { transform: translateY(-13px) rotate(-4deg); }
+  100% { transform: translateY(-12px) rotate(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cards__card--lift .cards__face--back { animation: none; }
+}

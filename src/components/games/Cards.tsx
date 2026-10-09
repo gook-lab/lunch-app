@@ -15,16 +15,21 @@ import { shortName } from '../../lib/name';
 import { seededRandom } from '../../lib/random';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
 
-type Phase = 'idle' | 'shuffle' | 'picked' | 'all';
+type Phase = 'idle' | 'shuffle' | 'lift' | 'picked' | 'all';
 
 interface Shown {
   run: number;
   phase: Phase;
 }
 
-/** 단계가 바뀌는 시각(연출 길이 대비). 마지막 단계가 끝나면 onSpinEnd. */
-const PICKED_AT = 0.3;
-const ALL_AT = 0.6;
+/**
+ * 단계가 바뀌는 시각(연출 길이 대비). 마지막 단계가 끝나면 onSpinEnd.
+ * 섞기 → 고른 카드가 들썩이며 뜸 들이기(lift) → 고른 카드 뒤집기 → 나머지.
+ * 예전엔 0.7초 만에 고른 카드가 바로 열려 결과가 너무 일찍 나왔다(10/9 손맛 리뷰 6점).
+ */
+const LIFT_AT = 0.25;
+const PICKED_AT = 0.5;
+const ALL_AT = 0.75;
 
 export function Cards({ candidates, winnerIndex, spinning, run, onSpinEnd, onRequestSpin, expanded = false }: GameProps) {
   const count = candidates.length;
@@ -49,6 +54,7 @@ export function Cards({ candidates, winnerIndex, spinning, run, onSpinEnd, onReq
     }
     setShown({ run, phase: 'shuffle' });
     const timers = [
+      window.setTimeout(() => setShown({ run, phase: 'lift' }), SPIN_MS.cards * LIFT_AT),
       window.setTimeout(() => setShown({ run, phase: 'picked' }), SPIN_MS.cards * PICKED_AT),
       window.setTimeout(() => setShown({ run, phase: 'all' }), SPIN_MS.cards * ALL_AT),
       window.setTimeout(onSpinEnd, SPIN_MS.cards),
@@ -76,6 +82,8 @@ export function Cards({ candidates, winnerIndex, spinning, run, onSpinEnd, onReq
             ? '모든 카드를 뒤집었어요.'
             : phase === 'picked'
               ? '고른 카드를 뒤집었어요. 나머지도 열어 볼게요.'
+              : phase === 'lift'
+                ? '고른 카드를 뒤집을게요…'
               : '카드를 섞고 있어요…'}
       </p>
       <ul
@@ -92,7 +100,8 @@ export function Cards({ candidates, winnerIndex, spinning, run, onSpinEnd, onReq
           const place = open && slots ? candidates[slots[i]] : null;
           const mine = i === effectivePick && winnerIndex !== null;
           const win = open && slots !== null && slots[i] === winnerIndex;
-          const cls = ['cards__card', open ? 'cards__card--open' : '', mine ? 'cards__card--mine' : '', win ? 'cards__card--win' : '']
+          const lift = mine && phase === 'lift';
+          const cls = ['cards__card', open ? 'cards__card--open' : '', mine ? 'cards__card--mine' : '', lift ? 'cards__card--lift' : '', win ? 'cards__card--win' : '']
             .filter(Boolean)
             .join(' ');
           return (

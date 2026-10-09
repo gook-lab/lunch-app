@@ -348,7 +348,12 @@ describe('카드 뒤집기 — 사용자가 고르는 카드', () => {
     // 섞는 중: 아무 카드도 안 열렸다.
     expect(document.querySelectorAll('.cards__card--open')).toHaveLength(0);
 
-    act(() => { vi.advanceTimersByTime(SPIN_MS.cards * 0.45); });
+    // 뜸 들이기: 고른 카드만 들썩이고 아직 안 열렸다.
+    act(() => { vi.advanceTimersByTime(SPIN_MS.cards * 0.35); });
+    expect(document.querySelector('.cards__card--lift')?.classList.contains('cards__card--mine')).toBe(true);
+    expect(document.querySelectorAll('.cards__card--open')).toHaveLength(0);
+
+    act(() => { vi.advanceTimersByTime(SPIN_MS.cards * 0.25); });
     const open = document.querySelectorAll('.cards__card--open');
     expect(open).toHaveLength(1);
     expect(open[0].classList.contains('cards__card--mine')).toBe(true);
