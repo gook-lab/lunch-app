@@ -259,6 +259,16 @@ describe('목록에서 지도로', () => {
   });
 });
 
+describe('결정 저장 실패', () => {
+  it('저장이 실패하면 알려 준다 — 스피너만 멈추고 조용하지 않다', async () => {
+    vi.mocked(decideToday).mockRejectedValueOnce(new Error('offline'));
+    startWheel();
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '여기로 결정' })); });
+    expect(screen.getByRole('alert').textContent).toBe('저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.');
+  });
+});
+
 describe('여기로 결정', () => {
   it('화면에 뜬 당첨의 id 로 오늘 기록을 쓴다', async () => {
     startWheel();

@@ -107,6 +107,8 @@ export default function App() {
   const [confirming, setConfirming] = useState<Place | null>(null);
   // 게임이 끝나면 결과를 모달로 띄운다. 닫으면 같은 결과 카드가 게임 아래에 남는다.
   const [resultOpen, setResultOpen] = useState(false);
+  // "여기로 결정" 저장 실패. 다시 돌리면 지운다.
+  const [saveProblem, setSaveProblem] = useState(false);
   const resultTimer = useRef(0);
   const closeResult = useCallback(() => {
     window.clearTimeout(resultTimer.current);
@@ -186,6 +188,7 @@ export default function App() {
     const frozen = result.candidates;
     const index = Math.floor(Math.random() * frozen.length);
     closeResult();
+    setSaveProblem(false);
     setBoard(frozen);
     setWinnerIndex(index);
     setWinner(null);
@@ -309,9 +312,13 @@ export default function App() {
       if (savingRef.current) return;
       savingRef.current = true;
       setSaving(true);
+      setSaveProblem(false);
       try {
         await decideToday(today, place.id);
         setConfirming(null);
+      } catch {
+        // 실패하면 스피너만 멈추고 아무 말이 없었다. 결정된 줄 알고 밥 먹으러 간다.
+        setSaveProblem(true);
       } finally {
         savingRef.current = false;
         setSaving(false);
@@ -398,6 +405,11 @@ export default function App() {
           <p className="muted small">
             누르면 방문 기록이 남고, 2주 동안 후보에서 빠져요.
           </p>
+          {saveProblem && (
+            <p className="notice notice--empty" role="alert">
+              저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.
+            </p>
+          )}
         </>
       )}
     </div>
@@ -668,6 +680,11 @@ export default function App() {
             그대로 두기
           </Button>
         </div>
+        {saveProblem && (
+          <p className="notice notice--empty" role="alert">
+            바꾸지 못했어요. 잠시 뒤 다시 눌러 주세요.
+          </p>
+        )}
       </Sheet>
     </main>
   );

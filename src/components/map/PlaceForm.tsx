@@ -126,7 +126,8 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
       }
       onSaved();
     } catch (error) {
-      setProblem(String((error as Error)?.message ?? error));
+      // 원인은 영어 개발자 문구일 수 있다. 안내를 앞에 두고 원문은 괄호로.
+      setProblem(`저장하지 못했어요. 잠시 뒤 다시 해 주세요. (${String((error as Error)?.message ?? error)})`);
     } finally {
       setSaving(false);
     }
