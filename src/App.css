@@ -1834,3 +1834,28 @@ html:has(.stage--full) { overflow: hidden; }
 .result-modal { width: min(420px, calc(100vw - 32px)); padding: var(--space-3); }
 .result-modal .ticket { margin: 0; box-shadow: none; }
 .result-modal__close { display: block; margin: var(--space-2) auto 0; }
+
+/* 최근 다녀온 곳 — 한 줄씩 촘촘하게. 아래 가게 목록을 밀어내지 않게. */
+.history { display: grid; gap: var(--space-1); margin-bottom: var(--space-4); }
+.history__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.history__item {
+  display: grid;
+  grid-template-columns: 3.6em minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  border-bottom: 1px solid var(--color-neutral-200);
+}
+.history__item:last-child { border-bottom: 0; }
+.history__when { font-size: var(--fs-xs); font-weight: 700; color: var(--color-neutral-700); }
+.history__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); }
+@media (max-width: 480px) {
+  .history__item > .muted { display: none; }
+}

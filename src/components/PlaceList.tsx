@@ -48,6 +48,70 @@ function lastVisit(place: Place, visits: Visit[], today: DayId): LastVisit {
   return { label: `${Math.floor(days / 7)}주 전`, recent };
 }
 
+function ago(day: DayId, today: DayId): string {
+  const days = daysBetween(day, today);
+  if (days === 0) return '오늘';
+  if (days === 1) return '어제';
+  return `${days}일 전`;
+}
+
+/** 이 화면에 보이는 최근 방문 수. 결정은 하루 한 건이라 한 주쯤이다. 더 길면 목록이 밀린다. */
+const HISTORY_MAX = 5;
+
+/**
+ * 최근 다녀온 곳. 방문 기록은 이미 받아 오고 있었는데(최근 제외 계산용)
+ * 화면 어디에도 안 보였다. "지난주에 어디 갔더라" 를 여기서 바로 본다.
+ * 읽기만 한다 — 규칙·데이터 모델은 그대로다.
+ */
+function History({
+  places,
+  visits,
+  today,
+  onShowOnMap,
+}: {
+  places: Place[];
+  visits: Visit[];
+  today: DayId;
+  onShowOnMap?: (placeId: string) => void;
+}) {
+  const byId = new Map(places.map((p) => [p.id, p]));
+  const rows = [...visits]
+    .sort((a, b) => (a.id < b.id ? 1 : -1))
+    .slice(0, HISTORY_MAX)
+    .map((v) => ({ visit: v, place: byId.get(v.placeId) }))
+    .filter((r): r is { visit: Visit; place: Place } => r.place !== undefined);
+  if (rows.length === 0) return null;
+
+  return (
+    <section className="history" aria-labelledby="history-title">
+      <h2 id="history-title" className="list__heading">
+        최근 다녀온 곳 <span className="list__count">{rows.length}번</span>
+      </h2>
+      <ol className="history__list">
+        {rows.map(({ visit, place }) => (
+          <li key={visit.id} className="history__item">
+            <span className="history__when">{ago(visit.id, today)}</span>
+            <strong className="history__name">{place.name}</strong>
+            <span className="muted small">
+              {place.category} · 도보 {place.walkMin}분
+            </span>
+            {onShowOnMap && (
+              <button
+                type="button"
+                className="linkish"
+                aria-label={`${place.name} 지도에서 보기`}
+                onClick={() => onShowOnMap(place.id)}
+              >
+                지도
+              </button>
+            )}
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
   const [name, setName] = useState(place.name);
   const [category, setCategory] = useState(place.category);
@@ -224,6 +288,7 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
   // 켜진 가게가 하나도 없으면 다시 켤 곳을 찾아야 하므로 펼쳐 둔다.
   return (
     <>
+      <History places={places} visits={visits} today={today} onShowOnMap={onShowOnMap} />
       <p className="muted small">도보 가까운 순 · {recentNote(recentCount, excludeRecent)}</p>
       <section className="list__group" aria-labelledby="list-on">
         <h2 id="list-on" className="list__heading">
