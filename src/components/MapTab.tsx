@@ -13,7 +13,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Tag } from '@gook-lab/ui';
 import { PRICE_BANDS, WALK_STEPS, type Place, type PriceBand, type Rating } from '../lib/candidates';
-import { CATEGORIES, type Category } from '../lib/category';
+import { CATEGORIES, categoryIcon, type Category } from '../lib/category';
 import { metersForWalkMinutes, officeCoord, type Coord } from '../lib/walk';
 import { OfficeCard } from './map/OfficeCard';
 import { pinElement } from './map/pin';
@@ -111,6 +111,8 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
   // 몰려 진짜 후보 핀을 가리고 화면 맞춤까지 넓혔다(10/9 실측). 켜진 가게가
   // 하나도 없으면 다시 켤 가게를 찾아야 하니 보인다.
   // 목록에서 꺼 둔 가게를 보러 왔으면 그 핀이 보여야 한다.
+  // 지도에서만 쓰는 카테고리 거르기. 오늘 탭 조건과는 따로다(보기만 바꾼다).
+  const [mapCategory, setMapCategory] = useState<string | null>(null);
   const [showOff, setShowOff] = useState(
     () => !places.some((p) => p.active) || places.some((p) => p.id === focusId && !p.active),
   );
@@ -136,6 +138,12 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
   const tempMarkerRef = useRef<KakaoMarker | null>(null);
   const fittedRef = useRef(false);
   const resizeRef = useRef<ResizeObserver | null>(null);
+
+  // 지금 지도에 그릴 수 있는 가게들의 카테고리. 없는 카테고리 칩은 안 만든다.
+  const mapCategories = useMemo(
+    () => [...new Set(places.filter((p) => p.active || showOff).map((p) => p.category))],
+    [places, showOff],
+  );
 
   const selected = useMemo(
     () => places.find((p) => p.id === selectedId) ?? null,
@@ -196,6 +204,15 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
             strokeStyle: 'shortdash',
             fillOpacity: 0,
             map,
+          });
+          // 원 위쪽 끝에 몇 분짜리 원인지 쓴다. 지도 아래 안내 한 줄로는 어느 원이
+          // 어느 것인지 안 읽혔다(15회차 리뷰). 위도 1도 ≈ 111.32km.
+          new maps.CustomOverlay({
+            position: new maps.LatLng(office.lat + metersForWalkMinutes(step) / 111_320, office.lng),
+            content: `<span class="map__ring">도보 ${step}분</span>`,
+            map,
+            yAnchor: 0.5,
+            zIndex: 1,
           });
         }
 
@@ -259,7 +276,10 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       const overlay = new maps.CustomOverlay({
         position,
         content: el,
-        map: place.active || showOff ? map : undefined,
+        map:
+          (place.active || showOff) && (mapCategory === null || place.category === mapCategory)
+            ? map
+            : undefined,
         // 핀 위에서 누른 것은 지도로 넘기지 않는다. 안 그러면 핀을 누르다 지도가 끌린다.
         clickable: true,
         yAnchor: 1,
@@ -283,7 +303,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       fittedRef.current = true;
       map.setBounds(bounds, 48, 32, 48, 32);
     }
-  }, [places, phase, todayId, showOff, focusId]);
+  }, [places, phase, todayId, showOff, focusId, mapCategory]);
 
   /* 고른 가게 핀을 강조하고 맨 위로 올린다. */
   useEffect(() => {
@@ -293,7 +313,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       pin.el.setAttribute('aria-pressed', String(on));
       pin.overlay.setZIndex(on ? 6 : pin.zIndex);
     }
-  }, [selectedId, places, phase, todayId, showOff]);
+  }, [selectedId, places, phase, todayId, showOff, mapCategory]);
 
   /* 3. 길게 눌러 핀 꽂기. */
   useEffect(() => {
@@ -562,6 +582,35 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
 
       {/* 데스크톱에서는 지도가 왼쪽 큰 칸을 차지하고, 나머지는 오른쪽에 쌓인다. */}
       <div className="map__main">
+        {phase === 'ready' && mapCategories.length > 1 && (
+          <div className="map__cats" role="group" aria-label="지도에 보일 카테고리">
+            <button
+              type="button"
+              className="map__cat"
+              aria-pressed={mapCategory === null}
+              onClick={() => setMapCategory(null)}
+            >
+              전체
+            </button>
+            {mapCategories.map((c) => (
+              <button
+                key={c}
+                type="button"
+                className="map__cat"
+                aria-pressed={mapCategory === c}
+                onClick={() => {
+                  const next = mapCategory === c ? null : c;
+                  setMapCategory(next);
+                  // 고른 가게 핀이 숨으면 정보 카드만 덩그러니 남는다.
+                  if (next && selected && selected.category !== next) setSelectedId(null);
+                }}
+              >
+                <span aria-hidden="true">{categoryIcon(c)} </span>
+                {c}
+              </button>
+            ))}
+          </div>
+        )}
         {phase === 'ready' && places.some((p) => !p.active) && (
           <label className="map__toggle">
             <input type="checkbox" checked={showOff} onChange={(e) => setShowOff(e.target.checked)} />
