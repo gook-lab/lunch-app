@@ -118,7 +118,7 @@ export function Roadmap({
           .map((d) => (
             <span
               key={d.place.id}
-              className={`rm__dotLabel rm__dotLabel--${d.status}${d.labelAbove ? ' rm__dotLabel--above' : ''}`}
+              className={`rm__dotLabel rm__dotLabel--${d.status} rm__dotLabel--${d.labelSide}`}
               style={{ left: d.left, top: d.top }}
             >
               {d.label}

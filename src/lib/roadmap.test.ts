@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { selectCandidates, WALK_STEPS, type Filters, type Place } from './candidates';
 import { CATEGORIES } from './category';
-import { VIEW, buildRoadmap, degreeOf, labelBox, radiusForWalk } from './roadmap';
+import { VIEW, buildRoadmap, degreeOf, fixedBoxes, labelBox, radiusForWalk } from './roadmap';
 
 const TODAY = '20260916';
 const WEDGE = 360 / CATEGORIES.length;
@@ -65,10 +65,10 @@ describe('buildRoadmap — 기하', () => {
   });
 
   it('아주 가까운 곳도 사무실 표시를 덮지 않는다', () => {
-    // 1분과 3분이 같은 반지름이 되는 건 감수한다. 각도가 달라 점은 안 겹치고,
-    // 대신 사무실 네모와 "사무실" 글자가 가려지지 않는다.
+    // 바닥이 R_MIN 이라 1분짜리도 사무실 네모 밖에 있다. 1분과 3분은 반지름이 다르다.
+    // 사무실 네모와 "사무실" 글자는 라벨 자리 찾기가 피한다.
     expect(radiusForWalk(1)).toBeGreaterThanOrEqual(30);
-    expect(radiusForWalk(1)).toBeLessThan(50);
+    expect(radiusForWalk(1)).toBeLessThan(radiusForWalk(3));
   });
 
   it('도보 상한을 한참 넘는 곳도 화면 안에 붙는다', () => {
@@ -168,19 +168,83 @@ describe('buildRoadmap — 라벨 충돌 회피', () => {
     expect(overlapping(dots)).toBe(0);
   });
 
-  it('한 조각에 다섯 곳이 몰려도 보이는 라벨끼리는 겹치지 않는다', () => {
-    const crowd = [4, 5, 5, 6, 7].map((w, i) => place(`k${i}`, CATEGORIES[0], w, { name: `샘플 김치찌개 ${i}` }));
+  it('한 조각에 일곱 곳이 몰려도 보이는 라벨끼리는 겹치지 않는다', () => {
+    const crowd = [4, 4, 5, 5, 5, 6, 6].map((w, i) => place(`k${i}`, CATEGORIES[0], w, { name: `샘플 김치찌개 ${i}` }));
     const dots = model([...PLACES, ...crowd]).dots;
     expect(overlapping(dots)).toBe(0);
     // 전부 숨기는 식으로 때우지 않는다 — 그 조각에서 가장 가까운 곳은 보인다.
     const wedge = dots.filter((d) => d.place.category === CATEGORIES[0] && d.status !== 'out');
     expect(wedge[0].labelled).toBe(true);
     expect(wedge.filter((d) => d.labelled).length).toBeGreaterThanOrEqual(2);
-    expect(dots.some((d) => d.labelAbove)).toBe(true);
+    expect(dots.some((d) => d.labelled && d.labelSide !== 'below')).toBe(true);
+  });
+
+  it('5분 안에 몰린 가게 이름이 "사무실"·링 알약을 덮지 않는다', () => {
+    // 10/9 실데이터: 네 곳이 전부 3~5분이라 이름이 "사무실" 위에 얹혔다.
+    const near = [
+      place('a', '면', 3, { name: '천수냉면 이대점' }),
+      place('b', '한식', 4, { name: '불밥' }),
+      place('c', '중식', 5, { name: '소오' }),
+      place('d', '양식', 5, { name: '박가네' }),
+    ];
+    const m = model(near);
+    const fixed = fixedBoxes(m.rings);
+    for (const d of m.dots.filter((x) => x.labelled)) {
+      const b = labelBox(d);
+      for (const f of fixed) expect(b.x1 < f.x2 && f.x1 < b.x2 && b.y1 < f.y2 && f.y1 < b.y2).toBe(false);
+    }
+    expect(m.dots.every((d) => d.labelled)).toBe(true);
+  });
+
+  it('가까운 쪽을 넓게 편다 — 5분 링이 15분 링 반지름의 절반을 넘는다', () => {
+    expect(radiusForWalk(5)).toBeGreaterThan(radiusForWalk(15) / 2);
+    expect(radiusForWalk(3)).toBeLessThan(radiusForWalk(5));
+  });
+
+  it('10/9 실데이터 — 한식 여섯 곳 중 켜진 셋(1·1·3분)도 이름이 다 보이고 점이 안 겹친다', () => {
+    const real = [
+      place('bulbap', '한식', 1, { name: '불밥' }),
+      place('soo', '한식', 1, { name: '소오' }),
+      place('park', '한식', 3, { name: '박가네' }),
+      place('h1', '한식', 4, { active: false }),
+      place('h2', '한식', 6, { active: false }),
+      place('h3', '한식', 9, { active: false }),
+      place('cs', '면', 3, { name: '천수냉면 이대점' }),
+    ];
+    const dots = model(real).dots;
+    const on = dots.filter((d) => d.place.active);
+    expect(on.every((d) => d.labelled)).toBe(true);
+    expect(overlapping(dots)).toBe(0);
+    for (let a = 0; a < on.length; a += 1)
+      for (let b = a + 1; b < on.length; b += 1)
+        expect(Math.hypot(on[a].x - on[b].x, on[a].y - on[b].y)).toBeGreaterThan(on[a].r + on[b].r);
+  });
+
+  it('링 알약 밑에 깔리는 점이 없다', () => {
+    const crowd = [4, 4, 5, 5, 5, 6, 6].flatMap((w, i) => [
+      place(`k${i}`, CATEGORIES[0], w),
+      place(`z${i}`, CATEGORIES[CATEGORIES.length - 1], w),
+    ]);
+    const m = model([...PLACES, ...crowd]);
+    const pills = fixedBoxes(m.rings).slice(2); // 앞 둘은 사무실 네모·글자
+    for (const d of m.dots)
+      for (const p of pills)
+        expect(d.x + d.r > p.x1 && d.x - d.r < p.x2 && d.y + d.r > p.y1 && d.y - d.r < p.y2).toBe(false);
+  });
+
+  it('좌우 라벨은 점 옆에 붙는다', () => {
+    const crowd = [4, 4, 5, 5, 5, 6, 6].map((w, i) => place(`k${i}`, CATEGORIES[0], w));
+    const dots = model([...PLACES, ...crowd]).dots;
+    for (const d of dots.filter((x) => x.labelled && (x.labelSide === 'right' || x.labelSide === 'left'))) {
+      const b = labelBox(d);
+      expect(b.y1).toBeLessThan(d.y);
+      expect(b.y2).toBeGreaterThan(d.y);
+      expect(parseFloat(d.top)).toBeCloseTo(d.y / 4);
+    }
   });
 
   it('위로 올린 라벨은 top 이 점보다 위다', () => {
-    const crowd = [4, 5, 5, 6, 7].map((w, i) => place(`k${i}`, CATEGORIES[0], w));
+    const crowd = [4, 4, 5, 5, 5, 6, 6].map((w, i) => place(`k${i}`, CATEGORIES[0], w));
     const dots = model([...PLACES, ...crowd]).dots;
     for (const d of dots.filter((x) => x.labelAbove)) {
       expect(parseFloat(d.top)).toBeLessThan(d.y / 4);
