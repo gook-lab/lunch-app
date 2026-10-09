@@ -74,5 +74,7 @@ describe('고치기 — 목록에 없는 옛 카테고리', () => {
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
     expect(screen.getByRole('alert').textContent).toBe('카테고리를 골라 주세요.');
     expect(updatePlace).not.toHaveBeenCalled();
+    // 막힌 칸(첫 카테고리 칩)으로 초점이 간다.
+    expect(document.activeElement).toBe(within(group).getAllByRole('button')[0]);
   });
 });

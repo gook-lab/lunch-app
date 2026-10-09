@@ -10,7 +10,7 @@
  * 이유라서, 표시하지 않으면 목록과 돌림판이 어긋나 보인다.
  */
 import { recentNote } from '../lib/messages';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@gook-lab/ui';
 import { ChipPicker } from './ChipPicker';
 import { CATEGORIES, type Category } from '../lib/category';
@@ -126,13 +126,25 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
   const [lng, setLng] = useState(String(place.lng));
   const [saving, setSaving] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const catRef = useRef<HTMLDivElement>(null);
+  const latRef = useRef<HTMLInputElement>(null);
+  const lngRef = useRef<HTMLInputElement>(null);
 
   const save = async () => {
     const nextLat = Number(lat);
     const nextLng = Number(lng);
-    if (!name.trim()) return setProblem('이름을 넣어 주세요.');
-    if (!category) return setProblem('카테고리를 골라 주세요.');
+    // 막힌 칸으로 초점을 옮긴다(지도 탭 새 가게 폼과 같다).
+    if (!name.trim()) {
+      nameRef.current?.focus();
+      return setProblem('이름을 넣어 주세요.');
+    }
+    if (!category) {
+      catRef.current?.querySelector('button')?.focus();
+      return setProblem('카테고리를 골라 주세요.');
+    }
     if (!Number.isFinite(nextLat) || !Number.isFinite(nextLng)) {
+      (Number.isFinite(nextLat) ? lngRef : latRef).current?.focus();
       return setProblem('좌표는 숫자로 넣어 주세요.');
     }
 
@@ -174,22 +186,30 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
     >
       <label>
         이름
-        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} aria-required="true" autoFocus />
+        <input
+          ref={nameRef}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          maxLength={40}
+          aria-required="true"
+          aria-invalid={problem === '이름을 넣어 주세요.' || undefined}
+          autoFocus
+        />
       </label>
       {/* 지도에서 넣을 때와 같은 칩. 글자로 받으면 목록에 없는 카테고리("국밥")가
           들어가 로드맵 조각·그림·카테고리 필터에서 길을 잃었다(20회차). */}
-      <div>
+      <div ref={catRef}>
         <span className="filters__label">카테고리</span>
         <ChipPicker label="카테고리" options={CATEGORIES} value={category} onPick={setCategory} />
       </div>
       <div className="edit__coords">
         <label>
           위도
-          <input value={lat} onChange={(e) => setLat(e.target.value)} inputMode="decimal" />
+          <input ref={latRef} value={lat} onChange={(e) => setLat(e.target.value)} inputMode="decimal" aria-invalid={!Number.isFinite(Number(lat)) || undefined} />
         </label>
         <label>
           경도
-          <input value={lng} onChange={(e) => setLng(e.target.value)} inputMode="decimal" />
+          <input ref={lngRef} value={lng} onChange={(e) => setLng(e.target.value)} inputMode="decimal" aria-invalid={!Number.isFinite(Number(lng)) || undefined} />
         </label>
       </div>
       <p className="muted small">좌표를 고치면 도보 시간도 다시 계산돼요.</p>

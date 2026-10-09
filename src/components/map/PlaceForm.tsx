@@ -10,7 +10,7 @@
  * 후보에서 빠진 이유를 아무도 설명하지 못한다.
  */
 import { ChipPicker } from '../ChipPicker';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@gook-lab/ui';
 import { PRICE_BANDS, type Place, type PriceBand, type Rating } from '../../lib/candidates';
 import { CATEGORIES, categoryFromKakao, type Category } from '../../lib/category';
@@ -93,10 +93,20 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
 
   const tooFar = walk.min !== null && walk.min > MAX_WALK_MIN;
 
+  const nameRef = useRef<HTMLInputElement>(null);
+  const catRef = useRef<HTMLDivElement>(null);
+
   const save = async () => {
     const trimmed = name.trim();
-    if (!trimmed) return setProblem('이름을 넣어 주세요.');
-    if (!category) return setProblem('카테고리를 골라 주세요.');
+    // 막힌 칸으로 초점을 옮긴다. 메시지만 뜨면 키보드로는 그 칸을 다시 찾아가야 했다.
+    if (!trimmed) {
+      nameRef.current?.focus();
+      return setProblem('이름을 넣어 주세요.');
+    }
+    if (!category) {
+      catRef.current?.querySelector('button')?.focus();
+      return setProblem('카테고리를 골라 주세요.');
+    }
     if (walk.error) return setProblem(walk.error);
     if (walk.min === null) return setProblem('도보 시간을 계산하지 못했어요.');
     if (tooFar) {
@@ -155,10 +165,12 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
       <label className="pf__field">
         이름
         <input
+          ref={nameRef}
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={MAX_NAME}
           aria-required="true"
+          aria-invalid={problem === '이름을 넣어 주세요.' || undefined}
           placeholder="가게 이름"
           autoFocus={draft.name === ''}
         />
@@ -171,7 +183,7 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
           : `회사에서 도보 ${walk.min}분 (추정값 · 직선거리 기준)`}
       </p>
 
-      <div className="pf__field">
+      <div className="pf__field" ref={catRef}>
         <span className="filters__label">카테고리</span>
         <ChipPicker label="카테고리" options={CATEGORIES} value={category} onPick={setCategory} />
       </div>
