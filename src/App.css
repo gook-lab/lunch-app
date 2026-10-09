@@ -1951,3 +1951,10 @@ html:has(.stage--full) { overflow: hidden; }
 /* 오늘 정한 곳 배너의 알리기 버튼은 글자 폭만. 반쯤 늘어난 테두리 상자가 어색했다(10/9 UI 점검). */
 .decided .share { justify-items: start; }
 .decided .share button { width: auto; }
+
+/*
+ * 핀볼은 판이 어두워서 밝은 게임판 상자 안에 떠 있으면 레터박스처럼 보였다(10/9 3회차 리뷰).
+ * 핀볼일 때만 게임판 바닥을 어둡게 깔아 오락기 화면처럼 한 덩어리로 읽히게 한다.
+ */
+.stage .stage__board:has(> .pinball),
+.stage--full .stage__board:has(> .pinball) { background: var(--color-text); }

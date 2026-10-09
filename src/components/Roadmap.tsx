@@ -148,7 +148,8 @@ export function Roadmap({
           className={filters.excludeRecent ? 'chip chip--on' : 'chip'}
           onClick={onExcludeRecent}
         >
-          최근 2주 제외
+          {/* 켜짐을 색만으로 알리면 늘 켜져 있는 화면에선 상태로 안 읽혔다(10/9 3회차 리뷰). */}
+          {filters.excludeRecent ? '✓ 최근 2주 제외' : '최근 2주 제외'}
         </Tag>
       </div>
 
