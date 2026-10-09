@@ -1917,7 +1917,6 @@ html:has(.stage--full) { overflow: hidden; }
   font-size: var(--fs-xs);
   font-weight: 700;
   white-space: nowrap;
-  opacity: 0.85;
 }
 
 /* 지도 카테고리 칩 — 보기만 거른다 */

@@ -213,8 +213,12 @@ export default function App() {
 
   // 모달이 열리면 카드가 게임 아래에서 모달 안으로 옮겨 간다. 초점도 따라가게
   // 모달 안 당첨 이름에 둔다(dialog 기본은 첫 단추 "여기로 결정" 이다).
+  // 닫으면 카드가 게임 아래로 돌아온다. 초점도 그 카드로 — dialog 기본 복귀처는
+  // 모달이 열리기 전 초점(대개 body)이라 키보드 사용자가 길을 잃었다(16회차).
+  const wasResultOpen = useRef(false);
   useEffect(() => {
-    if (resultOpen) resultRef.current?.focus({ preventScroll: true });
+    if (resultOpen || wasResultOpen.current) resultRef.current?.focus({ preventScroll: resultOpen });
+    wasResultOpen.current = resultOpen;
   }, [resultOpen]);
 
   const onSpinEnd = useCallback(() => {
