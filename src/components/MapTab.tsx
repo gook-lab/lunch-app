@@ -10,8 +10,9 @@
  * 실패는 이 탭에서 끝난다. 좌표 env 누락까지 전부 잡아 화면 상태로 바꾼다.
  * 여기서 던지면 로드맵까지 같이 죽는다.
  */
+import { ChipPicker } from './ChipPicker';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Tag } from '@gook-lab/ui';
+import { Button } from '@gook-lab/ui';
 import { PRICE_BANDS, WALK_STEPS, type Place, type PriceBand, type Rating } from '../lib/candidates';
 import { CATEGORIES, categoryIcon, type Category } from '../lib/category';
 import { metersForWalkMinutes, officeCoord, type Coord } from '../lib/walk';
@@ -792,37 +793,11 @@ function PlaceEdit({
       </label>
       <div className="pf__field">
         <span className="filters__label">카테고리</span>
-        <div className="chips" role="group" aria-label="카테고리">
-          {CATEGORIES.map((c) => (
-            <Tag
-              key={c}
-              as="button"
-              variant={category === c ? 'accent' : 'outline'}
-              aria-pressed={category === c}
-              className={category === c ? 'chip chip--on' : 'chip'}
-              onClick={() => setCategory(c)}
-            >
-              {c}
-            </Tag>
-          ))}
-        </div>
+        <ChipPicker label="카테고리" options={CATEGORIES} value={category} onPick={setCategory} />
       </div>
       <div className="pf__field">
         <span className="filters__label">가격대</span>
-        <div className="chips" role="group" aria-label="가격대">
-          {PRICE_BANDS.map((b) => (
-            <Tag
-              key={b}
-              as="button"
-              variant={price === b ? 'accent' : 'outline'}
-              aria-pressed={price === b}
-              className={price === b ? 'chip chip--on' : 'chip'}
-              onClick={() => setPrice(price === b ? null : b)}
-            >
-              {b}
-            </Tag>
-          ))}
-        </div>
+        <ChipPicker label="가격대" options={PRICE_BANDS} value={price} onPick={setPrice} allowNone />
       </div>
       <div className="pf__field">
         <span className="filters__label">별점</span>

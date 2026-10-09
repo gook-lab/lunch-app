@@ -9,8 +9,9 @@
  * 직선거리 × 1.3 ÷ 67m/분이라 실제와 다를 수 있고, 숨기면 나중에
  * 후보에서 빠진 이유를 아무도 설명하지 못한다.
  */
+import { ChipPicker } from '../ChipPicker';
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Tag } from '@gook-lab/ui';
+import { Button } from '@gook-lab/ui';
 import { PRICE_BANDS, type Place, type PriceBand, type Rating } from '../../lib/candidates';
 import { CATEGORIES, categoryFromKakao, type Category } from '../../lib/category';
 import { findDuplicate } from '../../lib/duplicate';
@@ -172,38 +173,12 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
 
       <div className="pf__field">
         <span className="filters__label">카테고리</span>
-        <div className="chips" role="group" aria-label="카테고리">
-          {CATEGORIES.map((c) => (
-            <Tag
-              key={c}
-              as="button"
-              variant={category === c ? 'accent' : 'outline'}
-              aria-pressed={category === c}
-              className={category === c ? 'chip chip--on' : 'chip'}
-              onClick={() => setCategory(c)}
-            >
-              {c}
-            </Tag>
-          ))}
-        </div>
+        <ChipPicker label="카테고리" options={CATEGORIES} value={category} onPick={setCategory} />
       </div>
 
       <div className="pf__field">
         <span className="filters__label">가격대 (선택)</span>
-        <div className="chips" role="group" aria-label="가격대">
-          {PRICE_BANDS.map((b) => (
-            <Tag
-              key={b}
-              as="button"
-              variant={price === b ? 'accent' : 'outline'}
-              aria-pressed={price === b}
-              className={price === b ? 'chip chip--on' : 'chip'}
-              onClick={() => setPrice(price === b ? null : b)}
-            >
-              {b}
-            </Tag>
-          ))}
-        </div>
+        <ChipPicker label="가격대" options={PRICE_BANDS} value={price} onPick={setPrice} allowNone />
       </div>
 
       <div className="pf__field">

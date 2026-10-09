@@ -11,7 +11,8 @@
  */
 import { recentNote } from '../lib/messages';
 import { useState } from 'react';
-import { Button, Tag } from '@gook-lab/ui';
+import { Button } from '@gook-lab/ui';
+import { ChipPicker } from './ChipPicker';
 import { CATEGORIES, type Category } from '../lib/category';
 import type { Place, Visit } from '../lib/candidates';
 import { withJosa } from '../lib/josa';
@@ -177,23 +178,9 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
       </label>
       {/* 지도에서 넣을 때와 같은 칩. 글자로 받으면 목록에 없는 카테고리("국밥")가
           들어가 로드맵 조각·그림·카테고리 필터에서 길을 잃었다(20회차). */}
-      <div role="group" aria-label="카테고리">
+      <div>
         <span className="filters__label">카테고리</span>
-        <div className="chips">
-          {CATEGORIES.map((c) => (
-            <Tag
-              key={c}
-              as="button"
-              type="button"
-              variant={category === c ? 'accent' : 'outline'}
-              aria-pressed={category === c}
-              className={category === c ? 'chip chip--on' : 'chip'}
-              onClick={() => setCategory(c)}
-            >
-              {c}
-            </Tag>
-          ))}
-        </div>
+        <ChipPicker label="카테고리" options={CATEGORIES} value={category} onPick={setCategory} />
       </div>
       <div className="edit__coords">
         <label>
