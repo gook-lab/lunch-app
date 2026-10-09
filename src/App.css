@@ -1958,3 +1958,15 @@ html:has(.stage--full) { overflow: hidden; }
  */
 .stage .stage__board:has(> .pinball),
 .stage--full .stage__board:has(> .pinball) { background: var(--color-text); }
+
+/* 데스크톱 배너는 넓은데 알리기 버튼이 글자 아래에 있어 오른쪽이 텅 비었다. 버튼을 오른쪽 끝으로. */
+@media (min-width: 960px) {
+  .decided__body {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: var(--space-4);
+    align-items: center;
+  }
+  .decided__body > .share { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; justify-items: end; }
+}
