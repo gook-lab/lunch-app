@@ -31,7 +31,12 @@ beforeEach(() => {
   window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} }) as unknown as MediaQueryList;
   Element.prototype.scrollIntoView = () => {};
   // 어떤 메서드를 불러도, 그 결과(그라디언트 등)의 메서드를 불러도 되는 빈 캔버스.
-  const stub: object = new Proxy(function () {}, { get: () => stub, apply: () => stub, set: () => true });
+  const stub: object = new Proxy(function () {}, {
+    // 숫자로 쓰이면(measureText().width 등) 0.
+    get: (_t, key) => (key === Symbol.toPrimitive ? () => 0 : stub),
+    apply: () => stub,
+    set: () => true,
+  });
   HTMLCanvasElement.prototype.getContext = (() => stub) as never;
   vi.spyOn(Math, 'random').mockReturnValue(0);
 });

@@ -109,6 +109,8 @@ function cameraY(race: RaceResult | null, framePos: number, viewH: number, follo
 const CAMERA_EASE = 0.18;
 /** 공을 누른 것으로 치는 거리. 구슬 반지름보다 넉넉하게 — 손가락은 굵다. */
 const HIT_R = 16;
+/** 따라가는 동안 나머지 구슬의 불투명도. */
+const FOLLOW_DIM = 0.4;
 
 /*
  * 탑다운 판 그리기. 물리와 무관한 모양만 여기 있다.
@@ -532,24 +534,72 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
           if (m.y >= FINISH_Y) return;
           ctx.beginPath();
           ctx.arc(m.x, m.y, MARBLE_R * (1 - k / (TRAIL + 2)), 0, Math.PI * 2);
-          ctx.fillStyle = `oklch(0.78 0.19 ${marbleHue(i)} / ${0.28 * (1 - k / (TRAIL + 1))})`;
+          const dim = follow !== null && i !== follow ? FOLLOW_DIM : 1;
+          ctx.fillStyle = `oklch(0.78 0.19 ${marbleHue(i)} / ${0.28 * dim * (1 - k / (TRAIL + 1))})`;
           ctx.fill();
         });
       }
     }
 
-    positions.forEach((m, i) => drawMarble(ctx, m.x, m.y, i));
-
-    // 따라가는 구슬에 고리
-    if (follow !== null && positions[follow] && !(frame && positions[follow].y >= FINISH_Y)) {
-      const m = positions[follow];
+    /*
+     * 따라가는 구슬이 있으면 나머지는 흐리게 깔고 그 구슬만 또렷하게 맨 위에.
+     * 점선 고리 하나로는 구슬 여럿 사이에서 잘 안 보였다(10/9 사용자).
+     */
+    const followed = follow !== null && positions[follow] && !(frame && positions[follow].y >= FINISH_Y);
+    const dimOthers = followed ? FOLLOW_DIM : 1;
+    positions.forEach((m, i) => {
+      if (followed && i === follow) return;
       ctx.save();
-      ctx.strokeStyle = 'oklch(0.98 0 0)';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([4, 3]);
+      ctx.globalAlpha = dimOthers;
+      drawMarble(ctx, m.x, m.y, i);
+      ctx.restore();
+    });
+    if (followed && follow !== null) {
+      const m = positions[follow];
+      const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 180);
+      ctx.save();
+      // 스포트라이트
+      const halo = ctx.createRadialGradient(m.x, m.y, MARBLE_R, m.x, m.y, MARBLE_R + 22);
+      halo.addColorStop(0, `oklch(0.95 0.08 ${marbleHue(follow)} / ${0.55 + 0.25 * pulse})`);
+      halo.addColorStop(1, `oklch(0.95 0.08 ${marbleHue(follow)} / 0)`);
+      ctx.fillStyle = halo;
       ctx.beginPath();
-      ctx.arc(m.x, m.y, MARBLE_R + 5, 0, Math.PI * 2);
+      ctx.arc(m.x, m.y, MARBLE_R + 22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      drawMarble(ctx, m.x, m.y, follow);
+      ctx.save();
+      // 고리 두 겹 — 바깥 흰색, 안쪽 구슬 색. 맥박 치며 커졌다 작아진다.
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'oklch(0.99 0 0)';
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, MARBLE_R + 5 + pulse * 3, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = marbleColor(follow);
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, MARBLE_R + 2.5, 0, Math.PI * 2);
+      ctx.stroke();
+      // 머리 위 이름표와 화살표. 통통 튄다.
+      const tagY = m.y - MARBLE_R - 16 - pulse * 3;
+      const label = shortName(candidates[follow]?.name ?? '', 8);
+      ctx.font = '800 11px system-ui, sans-serif';
+      const w = ctx.measureText(label).width + 12;
+      const tx = clamp(m.x, w / 2 + 2, COURSE_W - w / 2 - 2);
+      ctx.fillStyle = marbleColor(follow);
+      ctx.beginPath();
+      ctx.roundRect(tx - w / 2, tagY - 15, w, 16, 8);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(m.x - 5, tagY + 1);
+      ctx.lineTo(m.x + 5, tagY + 1);
+      ctx.lineTo(m.x, tagY + 7);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = 'oklch(0.15 0.03 280)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, tx, tagY - 7);
       ctx.restore();
     }
 
@@ -558,7 +608,9 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
       const place = candidates[i];
       if (!place) return;
       if (frame && m.y >= FINISH_Y) return;
+      if (followed && i === follow) return;
       ctx.save();
+      ctx.globalAlpha = dimOthers;
       ctx.font = '600 9px system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
@@ -570,6 +622,37 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
       ctx.restore();
     });
     ctx.restore();
+
+    // 화면 위 따라가기 배지 — 지금 몇 등인지 실시간으로.
+    if (follow !== null && candidates[follow]) {
+      const rank = standing.indexOf(follow) + 1;
+      const done = frame !== null && positions[follow] && positions[follow].y >= FINISH_Y;
+      const text = `📍 ${shortName(candidates[follow].name, 8)} ${frame ? (done ? `${rank}등 도착` : `${rank}등`) : '응원 중'}`;
+      ctx.save();
+      ctx.font = '800 12px system-ui, sans-serif';
+      const w = ctx.measureText(text).width + 16;
+      ctx.fillStyle = 'oklch(0.14 0.03 280 / 0.85)';
+      ctx.strokeStyle = marbleColor(follow);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(6, viewH - 30, w, 22, 11);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = marbleColor(follow);
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 14, viewH - 19);
+      ctx.restore();
+    } else if (!frame && count > 1) {
+      // 고를 수 있다는 걸 알려 준다. 게이트 앞에서만.
+      ctx.save();
+      ctx.font = '700 11px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = `oklch(0.92 0.05 285 / ${0.65 + 0.35 * Math.sin(performance.now() / 300)})`;
+      ctx.fillText('👆 공을 눌러 내 공을 골라 보세요', COURSE_W / 2, 52);
+      ctx.restore();
+    }
 
     // 막판 슬로모션 — 붉은 테두리가 맥박 치고 "결승 직전"
     if (slowMo) {
@@ -615,6 +698,18 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
       ctx.fillStyle = marbleColor(i);
       ctx.fillRect(mapX + m.x * sx - 1, mapTop + m.y * sy - 1, 2.5, 2.5);
     });
+    if (follow !== null && positions[follow]) {
+      const m = positions[follow];
+      ctx.save();
+      ctx.fillStyle = marbleColor(follow);
+      ctx.strokeStyle = 'oklch(0.99 0 0)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(mapX + m.x * sx, mapTop + m.y * sy, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
 
     // 순위판
     ctx.textAlign = 'right';
@@ -630,6 +725,10 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
       if (y > viewH - 8) return;
       const champion = leadIn && rank === 0;
       ctx.save();
+      if (marble === follow) {
+        ctx.fillStyle = `oklch(0.78 0.19 ${marbleHue(marble)} / 0.22)`;
+        ctx.fillRect(COURSE_W + 24, y - 7, PANEL_W - 26, 14);
+      }
       if (champion || (slowMo && rank < 2)) {
         ctx.shadowColor = marbleGlow(marble);
         ctx.shadowBlur = 8;
