@@ -99,6 +99,7 @@ export function Roadmap({
             key={w.category}
             type="button"
             aria-pressed={w.on}
+            aria-label={`${w.category} 카테고리`}
             className={
               'rm__wedgeLabel' +
               (w.on ? ' rm__wedgeLabel--on' : '') +
@@ -128,6 +129,8 @@ export function Roadmap({
             key={r.walkMin}
             type="button"
             aria-pressed={r.on}
+            // 보이는 글자는 "10분" 뿐이라 낭독기에선 무엇의 10분인지 몰랐다.
+            aria-label={`도보 ${r.walkMin}분 안`}
             className={r.on ? 'rm__pill rm__pill--on' : 'rm__pill'}
             style={{ left: r.left, top: r.top }}
             onClick={() => onWalk(r.walkMin)}
@@ -153,10 +156,10 @@ export function Roadmap({
         </Tag>
       </div>
 
-      <div className="rm__legend">
+      <div className="rm__legend" role="group" aria-label="점 모양 뜻">
         {LEGEND.map((l) => (
           <span key={l.status}>
-            <i className={`rm__key rm__key--${l.status}`} />
+            <i className={`rm__key rm__key--${l.status}`} aria-hidden="true" />
             {l.label}
           </span>
         ))}
