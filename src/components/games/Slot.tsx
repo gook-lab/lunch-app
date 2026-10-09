@@ -13,8 +13,12 @@ import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
 const ITEM_H = 56;
 /** 크게 보기에서 한 줄 높이. 창은 늘 세 줄이라 창 높이도 같이 바뀐다. */
 const ITEM_H_BIG = 84;
-/** 데스크톱(960px~) 한 줄 높이. 56px 세 줄이면 600×420 판의 절반이 비었다(10/9 손맛 리뷰). */
-const ITEM_H_WIDE = 80;
+/**
+ * 데스크톱(960px~)은 다섯 줄을 72px 로 보여 준다. 56px 세 줄은 600×420 판의 절반이 비었고,
+ * 80px 세 줄로 키워도 "너무 작다" 였다(10/9 사용자). 줄이 많아야 릴이 도는 게 보인다.
+ */
+const ITEM_H_WIDE = 72;
+const ROWS_WIDE = 5;
 const LOOPS = 6;
 
 const WIDE = '(min-width: 960px)';
@@ -28,7 +32,11 @@ const subscribeWide = (cb: () => void) => {
 
 export function Slot({ candidates, winnerIndex, spinning, onSpinEnd, expanded = false }: GameProps) {
   const wide = useSyncExternalStore(subscribeWide, isWide, () => false);
-  const itemH = expanded ? ITEM_H_BIG : wide ? ITEM_H_WIDE : ITEM_H;
+  const big = wide && !expanded;
+  const itemH = expanded ? ITEM_H_BIG : big ? ITEM_H_WIDE : ITEM_H;
+  const rows = big ? ROWS_WIDE : 3;
+  /** 가운데 줄 번호. 위로 이만큼 줄이 더 보인다. */
+  const center = (rows - 1) / 2;
   const count = candidates.length;
   /** 가운데 칸에 보이는, 이어 붙인 목록에서의 인덱스. */
   const [idx, setIdx] = useState(0);
@@ -88,17 +96,20 @@ export function Slot({ candidates, winnerIndex, spinning, onSpinEnd, expanded = 
   if (count === 0) return <div className="slot slot--empty" />;
 
   // 반복 목록. 되감기 덕분에 최대 인덱스는 (LOOPS + 2) * count 를 넘지 않는다.
-  const reel = Array.from({ length: slotReelCopies(LOOPS) }, () => candidates).flat();
-  const landed = !animating && !spinning ? idx : -1;
+  // 맨 위에 한 벌을 더 붙인다(pad). 다섯 줄 창은 가운데 위로 두 줄이 보여, 되감은
+  // 자리(0~count-1)에서 위가 비지 않게 한다.
+  const pad = count;
+  const reel = Array.from({ length: slotReelCopies(LOOPS) + 1 }, () => candidates).flat();
+  const landed = !animating && !spinning ? idx + pad : -1;
 
   return (
-    <div className={wide && !expanded ? 'slot slot--wide' : 'slot'} role="img" aria-label={`후보 ${count}곳`}>
-      <div className="slot__window" style={{ height: itemH * 3 }}>
+    <div className={big ? 'slot slot--wide' : 'slot'} role="img" aria-label={`후보 ${count}곳`}>
+      <div className="slot__window" style={{ height: itemH * rows }}>
         <div
           aria-hidden="true"
           className="slot__reel"
           style={{
-            transform: `translateY(${(1 - idx) * itemH}px)`,
+            transform: `translateY(${(center - idx - pad) * itemH}px)`,
             transitionDuration: animating ? `${SPIN_MS.slot}ms` : '0ms',
           }}
         >
@@ -114,7 +125,7 @@ export function Slot({ candidates, winnerIndex, spinning, onSpinEnd, expanded = 
           ))}
         </div>
       </div>
-      <div className="slot__frame" aria-hidden="true" />
+      <div className="slot__frame" aria-hidden="true" style={{ top: center * itemH, height: itemH }} />
     </div>
   );
 }

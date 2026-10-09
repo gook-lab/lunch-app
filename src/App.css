@@ -2003,10 +2003,9 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .list__add { position: relative; }
 .list__add::before { content: ''; position: absolute; inset: -5px 0; }
 
-/* 데스크톱 슬롯 — 줄 높이 80px(Slot.tsx ITEM_H_WIDE)에 맞춰 폭과 글자를 키운다. */
-.slot--wide { width: min(420px, 84vw); }
+/* 데스크톱 슬롯 — 다섯 줄 × 72px(Slot.tsx ITEM_H_WIDE·ROWS_WIDE)에 맞춰 폭과 글자를 키운다. 당첨 줄 테두리 위치는 Slot.tsx 가 정한다. */
+.slot--wide { width: min(480px, 84vw); }
 .slot--wide .slot__item { font-size: var(--fs-xl); }
-.slot--wide .slot__frame { top: 80px; height: 80px; }
 
 /* 지도에 있는 가게 — 데스크톱 오른쪽 칸 전용(휴대폰은 목록 탭이 같은 일을 한다). */
 .mp__nearby { display: none; }
