@@ -295,6 +295,18 @@ function drawPost(ctx: CanvasRenderingContext2D, x: number, y: number, r: number
 }
 
 /** 쇠구슬. 색으로 누구 구슬인지 구분하고, 하이라이트와 그림자로 입체감을 낸다. */
+/** 양 끝이 둥근 알약 모양 경로. ctx.roundRect 는 사파리 16 미만에 없다. */
+function pillPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  const r = h / 2;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arc(x + w - r, y + r, r, -Math.PI / 2, Math.PI / 2);
+  ctx.lineTo(x + r, y + h);
+  ctx.arc(x + r, y + r, r, Math.PI / 2, (Math.PI * 3) / 2);
+  ctx.closePath();
+}
+
 function drawMarble(ctx: CanvasRenderingContext2D, x: number, y: number, i: number) {
   ctx.save();
   ctx.fillStyle = 'oklch(0.06 0.02 280 / 0.5)';
@@ -451,6 +463,8 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // 동작 줄이기면 맥박·깜빡임 없이 고정값으로 그린다.
+    const reducedNow = prefersReducedMotion();
     // 크게 보기면 캔버스가 화면에서 두 배 넘게 늘어난다. 그만큼 해상도를 올려야 흐리지 않다.
     const shown = canvas.clientWidth || CANVAS_W;
     const dpr = Math.min((window.devicePixelRatio || 1) * Math.max(1, shown / CANVAS_W), 4);
@@ -556,7 +570,7 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
     });
     if (followed && follow !== null) {
       const m = positions[follow];
-      const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 180);
+      const pulse = reducedNow ? 0.5 : 0.5 + 0.5 * Math.sin(performance.now() / 180);
       ctx.save();
       // 스포트라이트
       const halo = ctx.createRadialGradient(m.x, m.y, MARBLE_R, m.x, m.y, MARBLE_R + 22);
@@ -588,7 +602,7 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
       const tx = clamp(m.x, w / 2 + 2, COURSE_W - w / 2 - 2);
       ctx.fillStyle = marbleColor(follow);
       ctx.beginPath();
-      ctx.roundRect(tx - w / 2, tagY - 15, w, 16, 8);
+      pillPath(ctx, tx - w / 2, tagY - 15, w, 16);
       ctx.fill();
       ctx.beginPath();
       ctx.moveTo(m.x - 5, tagY + 1);
@@ -635,7 +649,7 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
       ctx.strokeStyle = marbleColor(follow);
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.roundRect(6, viewH - 30, w, 22, 11);
+      pillPath(ctx, 6, viewH - 30, w, 22);
       ctx.fill();
       ctx.stroke();
       ctx.fillStyle = marbleColor(follow);
@@ -649,7 +663,7 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
       ctx.font = '700 11px system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillStyle = `oklch(0.92 0.05 285 / ${0.65 + 0.35 * Math.sin(performance.now() / 300)})`;
+      ctx.fillStyle = `oklch(0.92 0.05 285 / ${reducedNow ? 0.9 : 0.65 + 0.35 * Math.sin(performance.now() / 300)})`;
       ctx.fillText('👆 공을 눌러 내 공을 골라 보세요', COURSE_W / 2, 52);
       ctx.restore();
     }
