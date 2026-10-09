@@ -78,6 +78,20 @@ function startWheel() {
   fireEvent.click(runButton());
 }
 
+describe('결과 모달', () => {
+  it('끝나면 결과가 모달로 뜨고, 닫으면 같은 카드가 게임 아래에 남는다', () => {
+    startWheel();
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
+    const dialog = screen.getByRole('dialog', { name: '오늘의 점심 결과' }) as HTMLDialogElement;
+    expect(dialog.open).toBe(true);
+    expect(dialog.querySelector('.ticket__name')?.textContent).toBe('가집');
+
+    fireEvent.click(screen.getByRole('button', { name: '닫고 게임 보기' }));
+    expect(screen.queryByRole('dialog', { name: '오늘의 점심 결과' })).toBeNull();
+    expect(document.querySelector('.stage .ticket__name')?.textContent).toBe('가집');
+  });
+});
+
 describe('연출 한 판', () => {
   it('돌리면 잠겼다가 연출 길이만큼 지나면 결과 카드가 뜬다', () => {
     startWheel();

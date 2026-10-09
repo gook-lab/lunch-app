@@ -1829,3 +1829,8 @@ html:has(.stage--full) { overflow: hidden; }
 /* 동료에게 알리기 */
 .share { display: grid; gap: var(--space-1); margin-top: var(--space-2); }
 .share__note { margin: 0; color: var(--color-neutral-700); }
+
+/* 결과 모달 — 티켓 카드를 그대로 띄운다 */
+.result-modal { width: min(420px, calc(100vw - 32px)); padding: var(--space-3); }
+.result-modal .ticket { margin: 0; box-shadow: none; }
+.result-modal__close { display: block; margin: var(--space-2) auto 0; }

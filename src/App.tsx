@@ -8,7 +8,7 @@
  * 누군가 import 한 줄을 늘리는 순간 조용히 깨진다. 청크를 갈라 두면 깨지지 않는다.
  */
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Sheet } from '@gook-lab/ui';
+import { Button, Modal, Sheet } from '@gook-lab/ui';
 import { Wheel } from './components/games/Wheel';
 import { Ladder } from './components/games/Ladder';
 import { Slot } from './components/games/Slot';
@@ -104,6 +104,8 @@ export default function App() {
   // 판 번호. 돌릴 때마다 증가 + 난수. 게임이 새 판을 만드는 키이자 핀볼 시드 시작점.
   const [run, setRun] = useState(0);
   const [confirming, setConfirming] = useState<Place | null>(null);
+  // 게임이 끝나면 결과를 모달로 띄운다. 닫으면 같은 결과 카드가 게임 아래에 남는다.
+  const [resultOpen, setResultOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<Tab>('roadmap');
   const boardRef = useRef<HTMLDivElement>(null);
@@ -140,6 +142,7 @@ export default function App() {
     // winnerIndex 없이 "진행 중" 에 갇혀 워치독(20초)까지 기다린다(10/8 실측).
     // 탭 이동(goTab)처럼 연출을 끊는다.
     setSpinning(false);
+    setResultOpen(false);
     setBoard(null);
     setWinner(null);
     setWinnerIndex(null);
@@ -175,6 +178,7 @@ export default function App() {
     if (focusResult.current) boardRef.current?.focus({ preventScroll: true });
     const frozen = result.candidates;
     const index = Math.floor(Math.random() * frozen.length);
+    setResultOpen(false);
     setBoard(frozen);
     setWinnerIndex(index);
     setWinner(null);
@@ -200,6 +204,8 @@ export default function App() {
   const onSpinEnd = useCallback(() => {
     setSpinning(false);
     setWinner((prev) => (winnerIndex === null ? prev : (board?.[winnerIndex] ?? prev)));
+    // 결과는 모달로. 게임 아래 카드는 스크롤해야 보였고, 끝난 순간이 밋밋했다(10/9 사용자).
+    if (winnerIndex !== null) setResultOpen(true);
   }, [winnerIndex, board]);
 
   // 탭을 옮기면 연출을 끊는다. 게임판은 로드맵 탭에만 렌더되므로
@@ -211,6 +217,7 @@ export default function App() {
   const [mapFocus, setMapFocus] = useState<string | null>(null);
   const goTab = useCallback((next: Tab) => {
     setSpinning(false);
+    setResultOpen(false);
     setMapFocus(null);
     setTab(next);
   }, []);
@@ -325,6 +332,48 @@ export default function App() {
 
   const empty = emptyMessage(result);
   const notice = noticeMessage(result);
+
+  // 결과 카드. 끝난 순간엔 모달 안에, 닫으면 게임 아래에 같은 카드가 놓인다.
+  const ticket = winner ? (
+    <div className="card card--result ticket">
+      <p className="ticket__eyebrow">오늘의 점심</p>
+      <h2 className="ticket__name" ref={resultRef} tabIndex={-1}>{winner.name}</h2>
+      <div className="ticket__meta">
+        <span
+          className="card__cat"
+          style={{ '--cat-hue': categoryHue(winner.category) } as React.CSSProperties}
+        >
+          {winner.category}
+        </span>
+        <span>도보 {winner.walkMin}분</span>
+      </div>
+      <hr className="ticket__perf" aria-hidden="true" />
+      {confirmed ? (
+        <>
+          <p className="confirmed">오늘 점심으로 정했어요</p>
+          <ShareButton place={winner} />
+          <Button block variant="secondary" onClick={spin} disabled={spinning}>
+            그래도 다시 하기
+          </Button>
+          <p className="muted small">다시 해서 다른 곳을 고르면 오늘 기록이 바뀌어요.</p>
+        </>
+      ) : (
+        <>
+          <div className="card__actions">
+            <Button block size="lg" onClick={() => onDecide(winner)} loading={saving}>
+              여기로 결정
+            </Button>
+            <Button block variant="secondary" onClick={spin} disabled={spinning}>
+              다시 하기
+            </Button>
+          </div>
+          <p className="muted small">
+            누르면 방문 기록이 남고, 2주 동안 후보에서 빠져요.
+          </p>
+        </>
+      )}
+    </div>
+  ) : null;
 
   return (
     <main className="app">
@@ -514,45 +563,8 @@ export default function App() {
           {winner && !spinning ? `${winner.name}, 도보 ${winner.walkMin}분이 뽑혔어요` : ''}
         </p>
 
-        {winner ? (
-          <div className="card card--result ticket">
-            <p className="ticket__eyebrow">오늘의 점심</p>
-            <h2 className="ticket__name" ref={resultRef} tabIndex={-1}>{winner.name}</h2>
-            <div className="ticket__meta">
-              <span
-                className="card__cat"
-                style={{ '--cat-hue': categoryHue(winner.category) } as React.CSSProperties}
-              >
-                {winner.category}
-              </span>
-              <span>도보 {winner.walkMin}분</span>
-            </div>
-            <hr className="ticket__perf" aria-hidden="true" />
-            {confirmed ? (
-              <>
-                <p className="confirmed">오늘 점심으로 정했어요</p>
-                <ShareButton place={winner} />
-                <Button block variant="secondary" onClick={spin} disabled={spinning}>
-                  그래도 다시 하기
-                </Button>
-                <p className="muted small">다시 해서 다른 곳을 고르면 오늘 기록이 바뀌어요.</p>
-              </>
-            ) : (
-              <>
-                <div className="card__actions">
-                  <Button block size="lg" onClick={() => onDecide(winner)} loading={saving}>
-                    여기로 결정
-                  </Button>
-                  <Button block variant="secondary" onClick={spin} disabled={spinning}>
-                    다시 하기
-                  </Button>
-                </div>
-                <p className="muted small">
-                  누르면 방문 기록이 남고, 2주 동안 후보에서 빠져요.
-                </p>
-              </>
-            )}
-          </div>
+        {winner && !resultOpen ? (
+          ticket
         ) : (
           <Button
             block
@@ -596,6 +608,18 @@ export default function App() {
       )}
 
       <footer className="muted small">로그인 없음 · 링크만 있으면 누구나</footer>
+
+      <Modal
+        open={resultOpen && winner !== null}
+        onClose={() => setResultOpen(false)}
+        className="result-modal"
+        aria-label="오늘의 점심 결과"
+      >
+        {ticket}
+        <button type="button" className="linkish result-modal__close" onClick={() => setResultOpen(false)}>
+          닫고 게임 보기
+        </button>
+      </Modal>
 
       <Sheet
         open={confirming !== null}
