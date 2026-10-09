@@ -9,12 +9,13 @@
  * 끝난 뒤 그 가게가 어디까지 갔는지 알려 줄 뿐이다.
  *
  * 순서: 판마다 대진을 보여 주고(match) → 승패를 가른다(result). 마지막에 우승.
+ * 뒤 판일수록 오래 보여 준다(stepStarts) — 결승에서 긴장이 쌓이게.
  */
 import { useEffect, useMemo, useState } from 'react';
 import { withJosa } from '../../lib/josa';
 import { shortName } from '../../lib/name';
 import { seededRandom } from '../../lib/random';
-import { buildBracket, reachedRound, roundName, type Entry } from '../../lib/tournament';
+import { buildBracket, reachedRound, roundName, stepStarts, type Entry } from '../../lib/tournament';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
 
 interface Shown {
@@ -46,10 +47,10 @@ export function Tournament({ candidates, winnerIndex, spinning, run, onSpinEnd, 
       return () => window.clearTimeout(t);
     }
     setShown({ run, step: 0 });
-    const tick = SPIN_MS.tournament / (lastStep + 1);
+    const starts = stepStarts(matchRounds, SPIN_MS.tournament);
     const timers: number[] = [];
     for (let s = 1; s <= lastStep; s += 1) {
-      timers.push(window.setTimeout(() => setShown({ run, step: s }), tick * s));
+      timers.push(window.setTimeout(() => setShown({ run, step: s }), starts[s]));
     }
     timers.push(window.setTimeout(onSpinEnd, SPIN_MS.tournament));
     return () => timers.forEach((t) => window.clearTimeout(t));

@@ -1,5 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { simulateRace, seedForWinner, buildCourse, COURSE_W, BOARD_H, FINISH_Y } from './pinball';
+import { describe, it, expect, vi } from 'vitest';
+
+// 판이 1840px 로 길어져 경기 한 번이 길다. 병렬 실행에선 기본 5초를 넘긴다.
+vi.setConfig({ testTimeout: 60_000 });
+import { simulateRace, seedForWinner, raceForWinner, buildCourse, COURSE_W, BOARD_H, FINISH_Y } from './pinball';
 
 describe('simulateRace — 물리가 판을 벗어나지 않는다', () => {
   it('구슬이 항상 판 안에 있다', () => {
@@ -357,5 +360,34 @@ describe('코스 — 구간이 달라야 단조롭지 않다', () => {
       expect(top - reach, `${reach} 에서 ${top} 까지 비어 있습니다`).toBeLessThanOrEqual(60);
       reach = Math.max(reach, bottom);
     }
+  });
+});
+
+describe('raceForWinner — 경기 한 번으로 당첨이 1등', () => {
+  it('모든 후보 수와 목표에서 목표가 1등이고, 순위와 위치가 맞물린다', () => {
+    for (const count of [1, 2, 3, 5, 12, 20]) {
+      for (let target = 0; target < count; target += 1) {
+        const race = raceForWinner(count, target, 100 + target)!;
+        expect(race.winner).toBe(target);
+        expect(race.order[0]).toBe(target);
+        expect(race.standings.at(-1)).toEqual(race.order);
+        // 1등 도착 프레임에 목표 구슬이 결승선에 있다.
+        expect(race.frames[race.winnerFrame][target].y).toBeGreaterThanOrEqual(FINISH_Y);
+        expect([...race.order].sort((x, y) => x - y)).toEqual(Array.from({ length: count }, (_, i) => i));
+      }
+    }
+  });
+
+  it('바꾼 경기는 원래 경기의 이름표만 바꾼 것이다', () => {
+    const plain = simulateRace(5, 77);
+    const target = (plain.winner + 2) % 5;
+    const race = raceForWinner(5, target, 77)!;
+    expect(race.frames[50][target]).toEqual(plain.frames[50][plain.winner]);
+    expect(race.frames[50][plain.winner]).toEqual(plain.frames[50][target]);
+    expect(race.frames.length).toBe(plain.frames.length);
+  });
+
+  it('범위를 벗어난 목표는 null', () => {
+    expect(raceForWinner(3, 3, 1)).toBeNull();
   });
 });

@@ -69,3 +69,24 @@ export function reachedRound(bracket: Bracket, entry: number): number {
   });
   return last;
 }
+
+/**
+ * 단계마다 시작 시각(ms). 반환값[k] = k 번째 단계가 열리는 시각, [0] 은 0.
+ *
+ * 똑같이 나누면 20곳(5판)에서 단계당 0.38초라 결승까지 긴장이 안 쌓였다
+ * (10/9 기획 리뷰). 뒤 판일수록 길게 — 판 r 의 무게는 r+1, 결승은 한 번 더
+ * 1.5배. 마지막 단계(우승)는 결승 결과가 보일 시간을 남긴다.
+ */
+export function stepStarts(matchRounds: number, total: number): number[] {
+  const steps = matchRounds * 2;
+  if (steps === 0) return [0];
+  const weights: number[] = [];
+  for (let k = 0; k <= steps; k += 1) {
+    const r = Math.min(Math.floor(k / 2), matchRounds - 1);
+    weights.push((r + 1) * (r === matchRounds - 1 ? 1.5 : 1));
+  }
+  const sum = weights.reduce((a, b) => a + b, 0);
+  const starts = [0];
+  for (let k = 0; k < steps; k += 1) starts.push(starts[k] + (weights[k] / sum) * total);
+  return starts;
+}

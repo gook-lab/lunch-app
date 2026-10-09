@@ -475,3 +475,34 @@ export function seedForWinner(
   }
   return null;
 }
+
+/**
+ * 당첨 구슬이 1등 하는 경기를 한 번에 만든다.
+ *
+ * 경기를 한 번 돌리고, 1등한 구슬과 당첨 구슬의 이름표를 맞바꾼다. 구슬끼리는
+ * 이름 말고 다른 점이 없으므로 맞바꾼 궤적도 그대로 물리적으로 맞는 경기다.
+ * 출발 자리만 바뀌는데, 어느 자리가 누구인지는 화면에서 아무도 모른다.
+ *
+ * seedForWinner 는 이기는 시드를 찾을 때까지 경기를 수백 번 돌렸다. 판을
+ * 1840px 로 늘린 뒤 후보 20곳에서 최악 7.9초가 걸려 출발 게이트가 그만큼
+ * 멈춰 있었다(10/9 실측). 이건 늘 경기 한 번이다.
+ */
+export function raceForWinner(count: number, target: number, seed: number): RaceResult | null {
+  if (count <= 0 || target < 0 || target >= count) return null;
+  const race = simulateRace(count, seed);
+  const a = race.winner;
+  if (a === target) return race;
+  const swap = (i: number) => (i === a ? target : i === target ? a : i);
+  return {
+    frames: race.frames.map((f) => {
+      const next = f.slice();
+      next[a] = f[target];
+      next[target] = f[a];
+      return next;
+    }),
+    standings: race.standings.map((s) => s.map(swap)),
+    order: race.order.map(swap),
+    winner: target,
+    winnerFrame: race.winnerFrame,
+  };
+}

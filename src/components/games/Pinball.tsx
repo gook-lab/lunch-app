@@ -1,10 +1,11 @@
 /**
  * 핀볼 — 이름 붙은 구슬들이 긴 판을 굴러 내려가고, 카메라가 선두를 따라간다.
  *
- * 당첨은 이미 정해져 있고(winnerIndex), 여기서는 그 구슬이 1등으로 들어오는
- * 시드를 찾아 그 경기를 재생한다. 물리는 조작하지 않는다 — lib/pinball.ts 참고.
+ * 당첨은 이미 정해져 있고(winnerIndex), 여기서는 경기를 한 번 돌려 1등 구슬과
+ * 당첨 구슬의 이름표를 맞바꾼 경기를 재생한다(raceForWinner). 물리는 조작하지
+ * 않는다 — lib/pinball.ts 참고.
  *
- * 흐름: 출발 게이트(시드를 찾는 동안 구슬이 들썩인다) → 경기(카메라가 선두를
+ * 흐름: 출발 게이트(구슬이 들썩인다) → 경기(카메라가 선두를
  * 따라 내려간다) → 막판 슬로모션(선두가 출구에 다가가면 0.45배) → 나머지 정리.
  *
  * 캔버스로 그린다. 구슬·막대가 매 프레임 움직이는데 DOM 으로 하면 노드가
@@ -17,7 +18,7 @@ import {
   COURSE_W,
   FINISH_Y,
   buildCourse,
-  simulateRace,
+  raceForWinner,
   spinnerEnds,
   type RaceResult,
   type Wall,
@@ -45,19 +46,15 @@ const COURSE = buildCourse();
  * 순위가 자주 뒤집힌다(실측 12~47%). 1등이 들어온 뒤 나머지는 부드럽게 빨라진다.
  * 곡선은 lib/pinballTiming.ts 에 있다.
  */
-/** 출발 게이트 최소 대기. 시드를 금방 찾아도 게이트가 열리는 걸 보여 준다. */
+/** 출발 게이트 최소 대기. 경기는 바로 만들어지지만 게이트가 열리는 걸 보여 준다. */
 const GATE_MS = 450;
-/** 시드 탐색 한 조각에 쓰는 시간. 이보다 길게 붙잡으면 화면이 멈춘다. */
-const SEARCH_SLICE_MS = 8;
-/** 시드 탐색 상한. 실측으로 2~20곳 각 40회 중 실패 0회. */
-const MAX_SEEDS = 600;
 /** 잔상으로 그릴 지난 프레임 수와 간격. */
 const TRAIL = 5;
 const TRAIL_STEP = 2;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
-/** 판 번호를 시드 탐색의 시작점(1 이상)으로 접는다. */
+/** 판 번호를 경기 시드(1 이상)로 접는다. 판마다 다른 경기가 나온다. */
 const startSeedFor = (run: number) => 1 + (Math.abs(Math.floor(run)) % 100_000);
 
 /** 구슬 색. 토큰이 아니라 구분용 팔레트라 여기서만 쓴다. */
@@ -312,7 +309,7 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
   /** 게이트에서 기다린 시간. 구슬이 들썩이는 데 쓴다. */
   const [gateMs, setGateMs] = useState(0);
 
-  // 판 하나: 게이트 → 시드 탐색(조각내서) → 재생 → 끝.
+  // 판 하나: 게이트 → 경기 만들기 → 재생 → 끝.
   useEffect(() => {
     if (!spinning || winnerIndex === null || count === 0) return;
     let cancelled = false;
@@ -323,8 +320,7 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
     const t0 = performance.now();
 
     // 시작 시드를 판마다 흔든다. 고정하면 (후보 수, 당첨) 마다 늘 같은 경기다.
-    let seed = startSeedFor(run);
-    const limit = seed + MAX_SEEDS;
+    const seed = startSeedFor(run);
 
     const gate = (now: number) => {
       if (cancelled) return;
@@ -355,30 +351,22 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
       }, found.timing.playMs);
     };
 
-    const search = () => {
+    // 당첨 구슬이 1등 하는 경기 하나(raceForWinner). 경기 한 번이라 바로 끝난다.
+    const prepare = () => {
       if (cancelled) return;
-      const until = performance.now() + SEARCH_SLICE_MS;
-      while (performance.now() < until && seed < limit) {
-        if (count === 1 || simulateRace(count, seed, true).winner === winnerIndex) {
-          const race = simulateRace(count, seed);
-          const found = { run, race, timing: timingFor(race.frames.length, race.winnerFrame) };
-          const wait = reduced ? 0 : Math.max(0, GATE_MS - (performance.now() - t0));
-          timer = window.setTimeout(() => startPlayback(found), wait);
-          return;
-        }
-        seed += 1;
-      }
-      // 실측으로는 일어난 적 없다. 그래도 잠긴 채 두지 않고 끝낸다.
-      if (seed >= limit) {
+      const race = raceForWinner(count, winnerIndex, seed);
+      if (!race) {
         cancelAnimationFrame(raf);
         onSpinEnd();
         return;
       }
-      timer = window.setTimeout(search, 0);
+      const found = { run, race, timing: timingFor(race.frames.length, race.winnerFrame) };
+      const wait = reduced ? 0 : Math.max(0, GATE_MS - (performance.now() - t0));
+      timer = window.setTimeout(() => startPlayback(found), wait);
     };
 
     if (!reduced) raf = requestAnimationFrame(gate);
-    timer = window.setTimeout(search, 0);
+    timer = window.setTimeout(prepare, 0);
 
     return () => {
       cancelled = true;
@@ -473,7 +461,7 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
       else drawPost(ctx, peg.x, peg.y, peg.r, hit);
     }
 
-    // 출발 게이트 — 탐색이 끝나기 전까지 닫혀 있다
+    // 출발 게이트 — 경기가 준비되기 전까지 닫혀 있다
     if (!frame) {
       ctx.save();
       ctx.strokeStyle = atGate ? 'oklch(0.75 0.2 30)' : 'oklch(0.6 0.02 260)';

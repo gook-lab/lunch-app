@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildBracket, reachedRound, roundName } from './tournament';
+import { buildBracket, reachedRound, roundName, stepStarts } from './tournament';
 import { seededRandom } from './random';
 
 describe('buildBracket — 정해진 우승이 모든 경기를 이긴다', () => {
@@ -61,5 +61,22 @@ describe('roundName · reachedRound', () => {
     const b = buildBracket(4, 2, seededRandom(3));
     expect(reachedRound(b, 2)).toBe(b.rounds.length - 1);
     for (const e of [0, 1, 3]) expect(reachedRound(b, e)).toBeLessThan(b.rounds.length - 1);
+  });
+});
+
+describe('stepStarts — 뒤 판일수록 길게', () => {
+  it.each([1, 2, 5])('%i판: 0 에서 시작해 늘어나고 total 안에서 끝난다', (rounds) => {
+    const s = stepStarts(rounds, 4200);
+    expect(s).toHaveLength(rounds * 2 + 1);
+    expect(s[0]).toBe(0);
+    for (let k = 1; k < s.length; k += 1) expect(s[k]).toBeGreaterThan(s[k - 1]);
+    expect(s.at(-1)!).toBeLessThan(4200);
+  });
+
+  it('5판이면 결승 단계가 첫 판 단계보다 길다', () => {
+    const s = stepStarts(5, 4200);
+    const first = s[1] - s[0];
+    const final = s[10] - s[9];
+    expect(final).toBeGreaterThan(first * 5);
   });
 });
