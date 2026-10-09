@@ -1743,6 +1743,10 @@ html:has(.stage--full) { overflow: hidden; }
   background: var(--color-accent-100);
 }
 .cards__card--win .cards__face--front strong { color: var(--color-accent-700); }
+/* 다 뒤집힌 뒤: 나머지는 물러나고 당첨 카드가 앞으로. 뒤집힘이 끝난 다음에 온다. */
+.cards__grid--done .cards__card { transition: opacity 260ms ease-out, translate 260ms var(--ease-decel), scale 260ms var(--ease-decel); transition-delay: 520ms; }
+.cards__grid--done .cards__card:not(.cards__card--win) { opacity: 0.5; }
+.cards__grid--done .cards__card--win { translate: 0 -6px; scale: 1.06; filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.18)); }
 .cards__grid--shuffle li { animation: cards-shuffle 360ms var(--ease-inout) infinite alternate; animation-delay: calc(var(--i) * -70ms); }
 @keyframes cards-shuffle {
   from { transform: translate(-3px, 2px) rotate(-3deg); }
@@ -1847,13 +1851,23 @@ html:has(.stage--full) { overflow: hidden; }
   background: var(--color-surface);
   animation: tour-in 0.35s ease-out both;
 }
-.tour__champion > span:first-child { font-size: 40px; line-height: 1; }
+.tour__champion > span:first-child {
+  font-size: 40px;
+  line-height: 1;
+  animation: trophy-drop 520ms var(--ease-decel) both;
+}
+@keyframes trophy-drop {
+  0% { translate: 0 -24px; scale: 0.6; opacity: 0; }
+  60% { translate: 0 4px; scale: 1.15; opacity: 1; }
+  100% { translate: 0 0; scale: 1; }
+}
 .tour__champion strong { font-size: var(--fs-lg); text-align: center; }
 .tour--big .tour__matches { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 .tour--big .tour__side { font-size: var(--fs-md); }
 @keyframes tour-in { from { opacity: 0; translate: 0 6px; } }
 @media (prefers-reduced-motion: reduce) {
-  .tour__match, .tour__champion { animation: none; }
+  .tour__match, .tour__champion, .tour__champion > span:first-child { animation: none; }
+  .cards__grid--done .cards__card { transition: none; }
 }
 
 /* 새 가게 폼 — 지도를 덮지 않게 오른쪽 칸(휴대폰은 지도 아래)에 붙는다. */

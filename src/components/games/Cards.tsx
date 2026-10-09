@@ -78,7 +78,15 @@ export function Cards({ candidates, winnerIndex, spinning, run, onSpinEnd, onReq
               ? '고른 카드를 뒤집었어요. 나머지도 열어 볼게요.'
               : '카드를 섞고 있어요…'}
       </p>
-      <ul className={phase === 'shuffle' ? 'cards__grid cards__grid--shuffle' : 'cards__grid'}>
+      <ul
+        className={
+          phase === 'shuffle'
+            ? 'cards__grid cards__grid--shuffle'
+            : phase === 'all' && slots !== null
+              ? 'cards__grid cards__grid--done'
+              : 'cards__grid'
+        }
+      >
         {candidates.map((_, i) => {
           const open = isOpen(i);
           const place = open && slots ? candidates[slots[i]] : null;
