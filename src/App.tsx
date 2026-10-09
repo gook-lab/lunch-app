@@ -459,7 +459,7 @@ export default function App() {
             * 한쪽에만 있는 채로 갈라진다. 버튼은 지도로 보내기만 한다.
             */}
           <div className="row row--end">
-            <Button size="sm" onClick={() => goTab('map')}>
+            <Button className="list__add" onClick={() => goTab('map')}>
               지도에서 가게 추가
             </Button>
           </div>
