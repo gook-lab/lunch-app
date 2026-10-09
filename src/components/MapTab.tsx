@@ -792,7 +792,7 @@ function PlaceEdit({
       </label>
       <div className="pf__field">
         <span className="filters__label">카테고리</span>
-        <div className="chips">
+        <div className="chips" role="group" aria-label="카테고리">
           {CATEGORIES.map((c) => (
             <Tag
               key={c}
@@ -809,7 +809,7 @@ function PlaceEdit({
       </div>
       <div className="pf__field">
         <span className="filters__label">가격대</span>
-        <div className="chips">
+        <div className="chips" role="group" aria-label="가격대">
           {PRICE_BANDS.map((b) => (
             <Tag
               key={b}

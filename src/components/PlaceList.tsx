@@ -12,7 +12,7 @@
 import { recentNote } from '../lib/messages';
 import { useState } from 'react';
 import { Button, Tag } from '@gook-lab/ui';
-import { CATEGORIES } from '../lib/category';
+import { CATEGORIES, type Category } from '../lib/category';
 import type { Place, Visit } from '../lib/candidates';
 import { withJosa } from '../lib/josa';
 import { RECENT_WINDOW_DAYS } from '../lib/candidates';
@@ -116,7 +116,11 @@ function History({
 
 function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
   const [name, setName] = useState(place.name);
-  const [category, setCategory] = useState(place.category);
+  // 목록에 없는 옛 카테고리는 고르지 않은 것으로 시작한다. 그대로 두면 칩은 하나도
+  // 안 켜졌는데 저장은 옛 값으로 되어 칩으로 바꾼 의미가 없다.
+  const [category, setCategory] = useState<Category | null>(
+    (CATEGORIES as readonly string[]).includes(place.category) ? (place.category as Category) : null,
+  );
   const [lat, setLat] = useState(String(place.lat));
   const [lng, setLng] = useState(String(place.lng));
   const [saving, setSaving] = useState(false);

@@ -63,3 +63,16 @@ describe('고치기 — 카테고리', () => {
     await vi.waitFor(() => expect(updatePlace).toHaveBeenCalledWith('a', expect.objectContaining({ category: '면' })));
   });
 });
+
+describe('고치기 — 목록에 없는 옛 카테고리', () => {
+  it('아무 칩도 켜지지 않은 채로 시작하고, 고르지 않으면 저장하지 않는다', () => {
+    vi.mocked(updatePlace).mockClear();
+    render(<PlaceList places={[{ ...place('a', '가집'), category: '국밥' }]} visits={[]} today="20261009" onChanged={() => {}} excludeRecent />);
+    fireEvent.click(screen.getByRole('button', { name: /고치기/ }));
+    const group = screen.getByRole('group', { name: '카테고리' });
+    expect(within(group).queryAllByRole('button', { pressed: true })).toHaveLength(0);
+    fireEvent.click(screen.getByRole('button', { name: '저장' }));
+    expect(screen.getByRole('alert').textContent).toBe('카테고리를 골라 주세요.');
+    expect(updatePlace).not.toHaveBeenCalled();
+  });
+});
