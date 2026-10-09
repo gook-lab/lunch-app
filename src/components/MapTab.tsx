@@ -11,7 +11,7 @@
  * 여기서 던지면 로드맵까지 같이 죽는다.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Sheet, Tag } from '@gook-lab/ui';
+import { Button, Tag } from '@gook-lab/ui';
 import { PRICE_BANDS, WALK_STEPS, type Place, type PriceBand, type Rating } from '../lib/candidates';
 import { CATEGORIES, type Category } from '../lib/category';
 import { metersForWalkMinutes, officeCoord, type Coord } from '../lib/walk';
@@ -391,6 +391,17 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
     tempMarkerRef.current = null;
   }, []);
 
+  const closeDraft = useCallback(() => {
+    setDraft(null);
+    dropTempPin();
+  }, [dropTempPin]);
+
+  // 폼이 열리면 화면 안으로. 휴대폰에선 지도 아래라 안 보일 수 있다.
+  const draftRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (draft) draftRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+  }, [draft]);
+
   const goTo = useCallback((place: Place) => {
     const maps = mapsRef.current;
     const map = mapRef.current;
@@ -578,7 +589,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
         )}
       </div>
 
-      {selected && (
+      {selected && !draft && (
         <div className="mp__card">
           {editing ? (
             <PlaceEdit
@@ -627,31 +638,39 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
         </div>
       )}
 
-      <Sheet
-        open={draft !== null}
-        onClose={() => {
-          setDraft(null);
-          dropTempPin();
-        }}
-        title="여기 저장할까요?"
-      >
-        {draft && (
+      {/*
+        * 새 가게 폼. 예전엔 모달 시트였는데 지도를 덮어 방금 찍은 자리를 볼 수
+        * 없었다(10/9 사용자). 데스크톱은 오른쪽 검색 아래, 휴대폰은 지도 아래에
+        * 붙는다. 지도는 그대로 보이고 임시 핀도 남는다.
+        */}
+      {draft && (
+        <section
+          ref={draftRef}
+          className="mp__card mp__card--form"
+          aria-labelledby="draft-title"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') closeDraft();
+          }}
+        >
+          <div className="mp__head">
+            <h3 id="draft-title" className="mp__title">여기 저장할까요?</h3>
+            <button type="button" className="linkish" onClick={closeDraft}>
+              닫기
+            </button>
+          </div>
           <PlaceForm
+            key={`${draft.lat},${draft.lng},${draft.name}`}
             draft={draft}
             places={places}
             onSaved={() => {
-              setDraft(null);
-              dropTempPin();
+              closeDraft();
               onChanged();
             }}
-            onCancel={() => {
-              setDraft(null);
-              dropTempPin();
-            }}
+            onCancel={closeDraft}
             onGoTo={goTo}
           />
-        )}
-      </Sheet>
+        </section>
+      )}
     </section>
   );
 }
