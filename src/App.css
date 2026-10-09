@@ -1825,3 +1825,7 @@ html:has(.stage--full) { overflow: hidden; }
 /* 새 가게 폼 — 지도를 덮지 않게 오른쪽 칸(휴대폰은 지도 아래)에 붙는다. */
 .mp__card--form { border-color: var(--color-accent); border-width: 2px; }
 .mp__title { margin: 0; font-size: var(--fs-lg); }
+
+/* 동료에게 알리기 */
+.share { display: grid; gap: var(--space-1); margin-top: var(--space-2); }
+.share__note { margin: 0; color: var(--color-neutral-700); }

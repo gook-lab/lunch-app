@@ -15,6 +15,7 @@ import { Slot } from './components/games/Slot';
 import { Pinball } from './components/games/Pinball';
 import { Cards } from './components/games/Cards';
 import { Tournament } from './components/games/Tournament';
+import { ShareButton } from './components/ShareButton';
 import {
   actionLabel,
   GAME_MODES,
@@ -408,6 +409,7 @@ export default function App() {
             <p className="muted small">
               {decidedPlace.category} · 도보 {decidedPlace.walkMin}분 · 다시 돌려서 바꿀 수 있어요
             </p>
+            <ShareButton place={decidedPlace} />
           </div>
         </section>
       )}
@@ -529,6 +531,7 @@ export default function App() {
             {confirmed ? (
               <>
                 <p className="confirmed">오늘 점심으로 정했어요</p>
+                <ShareButton place={winner} />
                 <Button block variant="secondary" onClick={spin} disabled={spinning}>
                   그래도 다시 하기
                 </Button>
