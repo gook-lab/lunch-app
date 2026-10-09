@@ -611,13 +611,18 @@ export default function App() {
         {winner && !resultOpen ? (
           ticket
         ) : (
+          // 오늘 이미 정했으면 다시 하기는 보조 동작이다. 위 배너가 "정했어요" 라고 하는데
+          // 가장 큰 빨간 버튼이 또 돌리라고 하면 화면이 두 말을 한다(10/9 UI 점검).
           <Button
             block
-            size="lg"
+            size={decidedPlace ? 'md' : 'lg'}
+            variant={decidedPlace ? 'secondary' : 'primary'}
             onClick={spin}
             disabled={result.candidates.length === 0 || spinning}
           >
-            {spinning ? '진행 중' : `${actionLabel(mode)} (후보 ${result.candidates.length}곳)`}
+            {spinning
+              ? '진행 중'
+              : `${decidedPlace ? '다시 ' : ''}${actionLabel(mode)} (후보 ${result.candidates.length}곳)`}
           </Button>
         )}
 
