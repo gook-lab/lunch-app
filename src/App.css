@@ -1670,7 +1670,7 @@ html:has(.stage--full) { overflow: hidden; }
   .list .list__item {
     padding: var(--space-3) var(--space-4);
     border: 1px solid var(--color-neutral-300);
-    background: var(--color-bg);
+    background: var(--color-neutral-100);
   }
   .list__group--off .list__item { background: transparent; }
 
@@ -2049,3 +2049,4 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 @media (prefers-reduced-motion: reduce) {
   .cards__card--lift .cards__face--back { animation: none; }
 }
+.list__headRow { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }

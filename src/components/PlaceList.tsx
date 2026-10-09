@@ -30,6 +30,8 @@ interface Props {
   excludeRecent: boolean;
   /** 지도 탭을 열고 이 가게 핀을 고른다. */
   onShowOnMap?: (placeId: string) => void;
+  /** 지도 탭으로 가서 새 가게를 넣는다. 추가 경로는 지도 하나뿐이다. */
+  onAdd?: () => void;
 }
 
 interface LastVisit {
@@ -226,7 +228,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
   );
 }
 
-export function PlaceList({ places, visits, today, onChanged, excludeRecent, onShowOnMap }: Props) {
+export function PlaceList({ places, visits, today, onChanged, excludeRecent, onShowOnMap, onAdd }: Props) {
   const [editing, setEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [toggleProblem, setToggleProblem] = useState<string | null>(null);
@@ -329,11 +331,19 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
         </p>
       )}
       <History places={places} visits={visits} today={today} onShowOnMap={onShowOnMap} />
-      <p className="muted small">도보 가까운 순 · {recentNote(recentCount, excludeRecent)}</p>
       <section className="list__group" aria-labelledby="list-on">
-        <h2 id="list-on" className="list__heading">
-          후보에 들어가는 가게 <span className="list__count">{on.length}곳</span>
-        </h2>
+        {/* 추가 단추는 후보 제목 줄 끝에. 혼자 한 줄을 먹으면 맨 위가 비어 보였다(10/9 리뷰). */}
+        <div className="list__headRow">
+          <h2 id="list-on" className="list__heading">
+            후보에 들어가는 가게 <span className="list__count">{on.length}곳</span>
+          </h2>
+          {onAdd && (
+            <Button size="sm" className="list__add" onClick={onAdd}>
+              지도에서 가게 추가
+            </Button>
+          )}
+        </div>
+        <p className="muted small">도보 가까운 순 · {recentNote(recentCount, excludeRecent)}</p>
         {on.length > 0 ? (
           <ul className="list">{on.map(renderRow)}</ul>
         ) : (

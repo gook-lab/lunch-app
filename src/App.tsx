@@ -454,15 +454,6 @@ export default function App() {
 
       {tab === 'list' && (
         <div role="tabpanel" id="panel-list" aria-labelledby="tab-list" className="panel">
-          {/*
-            * 추가 경로는 지도 하나뿐이다. 여기에도 폼을 두면 가격대·별점이
-            * 한쪽에만 있는 채로 갈라진다. 버튼은 지도로 보내기만 한다.
-            */}
-          <div className="row row--end">
-            <Button className="list__add" onClick={() => goTab('map')}>
-              지도에서 가게 추가
-            </Button>
-          </div>
           <PlaceList
             places={places}
             visits={visits}
@@ -470,6 +461,7 @@ export default function App() {
             onChanged={reload}
             excludeRecent={filters.excludeRecent}
             onShowOnMap={showOnMap}
+            onAdd={() => goTab('map')}
           />
         </div>
       )}
