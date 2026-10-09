@@ -65,7 +65,12 @@ export function Wheel({ candidates, winnerIndex, spinning, onSpinEnd }: GameProp
 
   return (
     <div className={radial ? 'wheel wheel--radial' : 'wheel'}>
-      <div className="wheel__needle" aria-hidden="true" />
+      {/* 멈추는 순간 바늘이 칸 끝에 걸렸다 풀리듯 흔들린다. key 로 판마다 다시 튼다. */}
+      <div
+        key={landed === null ? 'idle' : `landed-${angle}`}
+        className={landed === null ? 'wheel__needle' : 'wheel__needle wheel__needle--landed'}
+        aria-hidden="true"
+      />
 
       <div
         className="wheel__disc"

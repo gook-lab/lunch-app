@@ -62,6 +62,9 @@ export const SPIN_MS: Record<Exclude<GameMode, 'pinball'>, number> = {
   tournament: 4200,
 };
 
+/** 게임이 끝나고 결과 모달을 열기까지. 마지막 장면(바늘이 걸리는 순간, 응원한 공 등수)을 볼 틈. */
+export const RESULT_DELAY_MS = 700;
+
 /** 기기(OS) 설정이 "동작 줄이기" 인가. 안내 문구를 띄울지 정하는 데 쓴다. */
 export function systemReducesMotion(): boolean {
   return (

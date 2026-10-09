@@ -13,7 +13,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import { decideToday } from './services/lunch';
-import { SPIN_MS, setForceMotion } from './components/games/types';
+import { RESULT_DELAY_MS, SPIN_MS, setForceMotion } from './components/games/types';
 
 const fx = vi.hoisted(() => {
   const place = (id: string, name: string) => ({
@@ -82,6 +82,9 @@ describe('결과 모달', () => {
   it('끝나면 결과가 모달로 뜨고, 닫으면 같은 카드가 게임 아래에 남는다', () => {
     startWheel();
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
+    // 마지막 장면을 잠깐 보여 준 뒤에 연다.
+    expect(screen.queryByRole('dialog', { name: '오늘의 점심 결과' })).toBeNull();
+    act(() => { vi.advanceTimersByTime(RESULT_DELAY_MS); });
     const dialog = screen.getByRole('dialog', { name: '오늘의 점심 결과' }) as HTMLDialogElement;
     expect(dialog.open).toBe(true);
     expect(dialog.querySelector('.ticket__name')?.textContent).toBe('가집');

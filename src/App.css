@@ -268,6 +268,22 @@ body {
   filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.25));
 }
 
+/* 바늘이 끝 칸에 걸렸다 풀리는 흔들림. 위쪽 끝을 축으로. */
+.wheel__needle--landed {
+  transform-origin: 50% 0;
+  animation: needle-settle 520ms var(--ease-decel) both;
+}
+@keyframes needle-settle {
+  0% { rotate: 0deg; }
+  20% { rotate: -14deg; }
+  45% { rotate: 8deg; }
+  70% { rotate: -4deg; }
+  100% { rotate: 0deg; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wheel__needle--landed { animation: none; }
+}
+
 .wheel__disc {
   width: 100%;
   height: 100%;

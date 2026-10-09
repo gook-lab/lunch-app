@@ -18,6 +18,7 @@ import { Tournament } from './components/games/Tournament';
 import { ShareButton } from './components/ShareButton';
 import {
   actionLabel,
+  RESULT_DELAY_MS,
   GAME_MODES,
   motionForced,
   prefersReducedMotion,
@@ -106,6 +107,12 @@ export default function App() {
   const [confirming, setConfirming] = useState<Place | null>(null);
   // 게임이 끝나면 결과를 모달로 띄운다. 닫으면 같은 결과 카드가 게임 아래에 남는다.
   const [resultOpen, setResultOpen] = useState(false);
+  const resultTimer = useRef(0);
+  const closeResult = useCallback(() => {
+    window.clearTimeout(resultTimer.current);
+    setResultOpen(false);
+  }, []);
+  useEffect(() => () => window.clearTimeout(resultTimer.current), []);
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<Tab>('roadmap');
   const boardRef = useRef<HTMLDivElement>(null);
@@ -142,7 +149,7 @@ export default function App() {
     // winnerIndex 없이 "진행 중" 에 갇혀 워치독(20초)까지 기다린다(10/8 실측).
     // 탭 이동(goTab)처럼 연출을 끊는다.
     setSpinning(false);
-    setResultOpen(false);
+    closeResult();
     setBoard(null);
     setWinner(null);
     setWinnerIndex(null);
@@ -152,7 +159,7 @@ export default function App() {
     } catch {
       // 시크릿 창에서는 저장이 막힌다. 동작에는 영향 없다.
     }
-  }, []);
+  }, [closeResult]);
 
   const result = useMemo(
     () => selectCandidates(places, visits, filters, today),
@@ -178,7 +185,7 @@ export default function App() {
     if (focusResult.current) boardRef.current?.focus({ preventScroll: true });
     const frozen = result.candidates;
     const index = Math.floor(Math.random() * frozen.length);
-    setResultOpen(false);
+    closeResult();
     setBoard(frozen);
     setWinnerIndex(index);
     setWinner(null);
@@ -193,7 +200,7 @@ export default function App() {
         block: 'center',
       });
     });
-  }, [result.candidates, spinning]);
+  }, [result.candidates, spinning, closeResult]);
 
   useEffect(() => {
     if (!winner || !focusResult.current) return;
@@ -201,11 +208,25 @@ export default function App() {
     resultRef.current?.focus({ preventScroll: true });
   }, [winner]);
 
+  // 모달이 열리면 카드가 게임 아래에서 모달 안으로 옮겨 간다. 초점도 따라가게
+  // 모달 안 당첨 이름에 둔다(dialog 기본은 첫 단추 "여기로 결정" 이다).
+  useEffect(() => {
+    if (resultOpen) resultRef.current?.focus({ preventScroll: true });
+  }, [resultOpen]);
+
   const onSpinEnd = useCallback(() => {
     setSpinning(false);
     setWinner((prev) => (winnerIndex === null ? prev : (board?.[winnerIndex] ?? prev)));
     // 결과는 모달로. 게임 아래 카드는 스크롤해야 보였고, 끝난 순간이 밋밋했다(10/9 사용자).
-    if (winnerIndex !== null) setResultOpen(true);
+    // 바로 띄우면 게임의 마지막 장면(바늘이 걸리는 순간, 응원한 공의 등수)을 모달이
+    // 덮는다. 잠깐 보여 주고 연다.
+    if (winnerIndex !== null) {
+      window.clearTimeout(resultTimer.current);
+      resultTimer.current = window.setTimeout(
+        () => setResultOpen(true),
+        prefersReducedMotion() ? 0 : RESULT_DELAY_MS,
+      );
+    }
   }, [winnerIndex, board]);
 
   // 탭을 옮기면 연출을 끊는다. 게임판은 로드맵 탭에만 렌더되므로
@@ -217,10 +238,10 @@ export default function App() {
   const [mapFocus, setMapFocus] = useState<string | null>(null);
   const goTab = useCallback((next: Tab) => {
     setSpinning(false);
-    setResultOpen(false);
+    closeResult();
     setMapFocus(null);
     setTab(next);
-  }, []);
+  }, [closeResult]);
   const showOnMap = useCallback((placeId: string) => {
     setSpinning(false);
     setMapFocus(placeId);
@@ -615,12 +636,13 @@ export default function App() {
 
       <Modal
         open={resultOpen && winner !== null}
-        onClose={() => setResultOpen(false)}
+        onClose={closeResult}
         className="result-modal"
         aria-label="오늘의 점심 결과"
       >
-        {ticket}
-        <button type="button" className="linkish result-modal__close" onClick={() => setResultOpen(false)}>
+        {/* 닫힌 dialog 도 자식을 그린다. 그러면 카드가 두 벌이 되어 초점·ref 가 닫힌 쪽으로 간다. */}
+        {resultOpen && ticket}
+        <button type="button" className="linkish result-modal__close" onClick={closeResult}>
           닫고 게임 보기
         </button>
       </Modal>
