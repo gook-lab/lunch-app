@@ -23,16 +23,14 @@ interface Props {
 }
 
 /*
- * 짧게 쓴다. 다섯 줄이 두 줄로 접히면 그만큼 실행 버튼이 아래로 밀린다.
+ * 범례는 이름이 붙는 세 처지만. "조건 밖"·"꺼짐" 은 흐린 작은 점이라 설명 없이도
+ * 빠진 곳으로 읽히고, 다섯 줄 범례가 그림보다 먼저 읽혔다(10/9 처음 쓰는 사람 시점 리뷰).
  * "다시 넣음" 이 무슨 뜻인지는 아래 안내 문구가 숫자까지 넣어 풀어 준다.
  */
 const LEGEND: { status: string; label: string }[] = [
   { status: 'candidate', label: '후보' },
   { status: 'released', label: '다시 넣음' },
   { status: 'recent', label: '최근 제외' },
-  // "범위 밖" 은 무슨 범위인지 안 읽혔다(10/9 첫 사용자 시점 리뷰). 도보·카테고리 조건이다.
-  { status: 'out', label: '조건 밖' },
-  { status: 'off', label: '꺼짐' },
 ];
 
 export function Roadmap({
@@ -45,10 +43,10 @@ export function Roadmap({
   winnerId,
 }: Props) {
   const model = buildRoadmap(places, filters, result);
+  // 후보 수가 먼저다. 조건은 그 뒤에 붙인다. "→" 는 상태 변화로 읽혀 뺐다.
   const summary =
-    `도보 ${filters.maxWalkMin}분 · ` +
-    `${filters.categories.length > 0 ? filters.categories.join('·') : '카테고리 전체'}` +
-    ` → 후보 ${result.candidates.length}곳`;
+    `후보 ${result.candidates.length}곳 · 도보 ${filters.maxWalkMin}분 · ` +
+    `${filters.categories.length > 0 ? filters.categories.join('·') : '카테고리 전체'}`;
 
   return (
     <section className="rm">
@@ -141,15 +139,6 @@ export function Roadmap({
         <span className="rm__here">사무실</span>
       </div>
 
-      <div className="rm__legend">
-        {LEGEND.map((l) => (
-          <span key={l.status}>
-            <i className={`rm__key rm__key--${l.status}`} />
-            {l.label}
-          </span>
-        ))}
-      </div>
-
       <div className="rm__summary">
         <span className="small">{summary}</span>
         <Tag
@@ -161,6 +150,15 @@ export function Roadmap({
         >
           최근 2주 제외
         </Tag>
+      </div>
+
+      <div className="rm__legend">
+        {LEGEND.map((l) => (
+          <span key={l.status}>
+            <i className={`rm__key rm__key--${l.status}`} />
+            {l.label}
+          </span>
+        ))}
       </div>
     </section>
   );

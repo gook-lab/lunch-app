@@ -250,10 +250,12 @@ body {
 /* 돌림판 */
 .wheel {
   position: relative;
-  width: min(272px, 70vw);
+  /* 데스크톱 게임판(약 600×420)에서 272px 은 주변이 텅 비었다(10/9 UI 점검). */
+  width: min(340px, 80vw);
   aspect-ratio: 1;
-  --wheel-a: var(--color-bg);
-  --wheel-b: var(--color-neutral-200);
+  /* 칸 색이 바닥색과 거의 같아 칸 경계가 안 보였다. 밝은 칸과 옅은 강조색 칸을 번갈아. */
+  --wheel-a: var(--color-neutral-100);
+  --wheel-b: var(--color-accent-200);
 }
 
 .wheel__needle {
