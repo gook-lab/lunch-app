@@ -206,9 +206,17 @@ export default function App() {
   // 타이머를 지워 onSpinEnd 가 영영 안 불린다. 돌아오면 "진행 중" 에
   // 갇혀 있다. 어차피 딴 탭에서는 연출이 안 보이니 끊는 게 맞다.
   // 탭 이동은 전부 이 함수를 거친다 — setTab 을 직접 부르면 이 방어가 빠진다.
+  // 목록의 "지도에서 보기" 로 지도를 열면 그 가게 핀을 고른 채로 연다.
+  const [mapFocus, setMapFocus] = useState<string | null>(null);
   const goTab = useCallback((next: Tab) => {
     setSpinning(false);
+    setMapFocus(null);
     setTab(next);
+  }, []);
+  const showOnMap = useCallback((placeId: string) => {
+    setSpinning(false);
+    setMapFocus(placeId);
+    setTab('map');
   }, []);
 
   // WAI-ARIA 탭 패턴: 탭 사이는 화살표·Home·End 로 옮기고, Tab 키는 탭 묶음을
@@ -366,6 +374,7 @@ export default function App() {
             today={today}
             onChanged={reload}
             excludeRecent={filters.excludeRecent}
+            onShowOnMap={showOnMap}
           />
         </div>
       )}
@@ -379,6 +388,7 @@ export default function App() {
               onChanged={reload}
               onOfficeChanged={reload}
               todayId={decidedPlace?.id ?? null}
+              focusId={mapFocus}
             />
           </Suspense>
         </div>

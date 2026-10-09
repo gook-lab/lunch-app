@@ -93,6 +93,7 @@ export interface KakaoMaps {
     position: KakaoLatLng;
     content: string | HTMLElement;
     map?: KakaoMap;
+    clickable?: boolean;
     yAnchor?: number;
     zIndex?: number;
   }) => KakaoCustomOverlay;

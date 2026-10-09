@@ -25,6 +25,8 @@ interface Props {
   onChanged: () => void;
   /** 로드맵의 "최근 2주 제외" 칩 상태. 꺼져 있으면 "빠집니다" 가 거짓이 된다. */
   excludeRecent: boolean;
+  /** 지도 탭을 열고 이 가게 핀을 고른다. */
+  onShowOnMap?: (placeId: string) => void;
 }
 
 interface LastVisit {
@@ -130,7 +132,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
   );
 }
 
-export function PlaceList({ places, visits, today, onChanged, excludeRecent }: Props) {
+export function PlaceList({ places, visits, today, onChanged, excludeRecent, onShowOnMap }: Props) {
   const [editing, setEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -171,6 +173,16 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent }: P
             </div>
           </div>
           <div className="list__actions">
+            {onShowOnMap && (
+              <button
+                type="button"
+                className="linkish"
+                aria-label={`${place.name} 지도에서 보기`}
+                onClick={() => onShowOnMap(place.id)}
+              >
+                지도
+              </button>
+            )}
             <button
               type="button"
               className="linkish"

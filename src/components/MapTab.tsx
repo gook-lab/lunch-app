@@ -43,6 +43,8 @@ interface Props {
   onOfficeChanged: () => void;
   /** 오늘 정한 가게. 지도 핀에 "오늘" 표시를 단다. */
   todayId?: string | null;
+  /** 목록에서 "지도" 를 눌러 들어왔으면 그 가게. 처음 한 번 그 핀으로 간다. */
+  focusId?: string | null;
 }
 
 /** 이 배율보다 멀리 보면 핀에서 이름을 빼고 그림만 남긴다. 이름끼리 겹친다. */
@@ -100,15 +102,18 @@ function Stars({ value }: { value: Rating }) {
   );
 }
 
-export default function MapTab({ places, onChanged, onOfficeChanged, todayId = null }: Props) {
+export default function MapTab({ places, onChanged, onOfficeChanged, todayId = null, focusId = null }: Props) {
   const [phase, setPhase] = useState<Phase>('loading');
   const [trouble, setTrouble] = useState<Trouble | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(focusId);
   // 꺼 둔 가게 핀을 보일지. 기본은 숨긴다 — 꺼 둔 샘플 가게가 시청 근처에
   // 몰려 진짜 후보 핀을 가리고 화면 맞춤까지 넓혔다(10/9 실측). 켜진 가게가
   // 하나도 없으면 다시 켤 가게를 찾아야 하니 보인다.
-  const [showOff, setShowOff] = useState(() => !places.some((p) => p.active));
+  // 목록에서 꺼 둔 가게를 보러 왔으면 그 핀이 보여야 한다.
+  const [showOff, setShowOff] = useState(
+    () => !places.some((p) => p.active) || places.some((p) => p.id === focusId && !p.active),
+  );
   const [far, setFar] = useState(false);
   const [draft, setDraft] = useState<PlaceDraft | null>(null);
   const [editing, setEditing] = useState(false);
@@ -144,6 +149,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
   /* 1. SDK 를 받아 지도를 한 번 만든다. */
   useEffect(() => {
     let cancelled = false;
+    let unlistenZoom = () => {};
     setPhase('loading');
     setTrouble(null);
     fittedRef.current = false;
@@ -199,7 +205,9 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
          */
         // 멀리 보면 이름이 서로 덮는다. 배율을 지켜보고 이름을 접는다.
         setFar(map.getLevel() > LABEL_MAX_LEVEL);
-        maps.event.addListener(map, 'zoom_changed', () => setFar(map.getLevel() > LABEL_MAX_LEVEL));
+        const onZoom = () => setFar(map.getLevel() > LABEL_MAX_LEVEL);
+        maps.event.addListener(map, 'zoom_changed', onZoom);
+        unlistenZoom = () => maps.event.removeListener(map, 'zoom_changed', onZoom);
 
         const observer = new ResizeObserver(() => map.relayout());
         observer.observe(el);
@@ -216,6 +224,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
 
     return () => {
       cancelled = true;
+      unlistenZoom();
       resizeRef.current?.disconnect();
       resizeRef.current = null;
     };
@@ -249,10 +258,22 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
         position,
         content: el,
         map: place.active || showOff ? map : undefined,
+        // 핀 위에서 누른 것은 지도로 넘기지 않는다. 안 그러면 핀을 누르다 지도가 끌린다.
+        clickable: true,
         yAnchor: 1,
         zIndex,
       });
       markersRef.current.set(place.id, { overlay, el, zIndex });
+    }
+
+    // 목록에서 골라 들어왔으면 화면 맞춤 대신 그 가게로 가까이 간다. 처음 한 번만.
+    const focus = places.find((p) => p.id === focusId);
+    if (!fittedRef.current && focus) {
+      fittedRef.current = true;
+      map.setLevel(3);
+      map.panTo(new maps.LatLng(focus.lat, focus.lng));
+      // 휴대폰에선 지도가 회사 카드·검색 아래에 있다. 고른 핀이 화면에 들어오게.
+      containerRef.current?.scrollIntoView?.({ block: 'center' });
     }
 
     // 처음 한 번만 맞춘다. 매번 맞추면 가게를 넣을 때마다 화면이 튄다.
@@ -260,7 +281,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       fittedRef.current = true;
       map.setBounds(bounds, 48, 32, 48, 32);
     }
-  }, [places, phase, todayId, showOff]);
+  }, [places, phase, todayId, showOff, focusId]);
 
   /* 고른 가게 핀을 강조하고 맨 위로 올린다. */
   useEffect(() => {

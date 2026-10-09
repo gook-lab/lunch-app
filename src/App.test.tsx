@@ -34,7 +34,9 @@ vi.mock('./hooks/useLunchData', () => ({
   }),
 }));
 vi.mock('./services/lunch', () => ({ decideToday: vi.fn(async () => {}) }));
-vi.mock('./components/MapTab', () => ({ default: () => null }));
+vi.mock('./components/MapTab', () => ({
+  default: ({ focusId }: { focusId?: string | null }) => <p data-testid="map-focus">{focusId ?? 'none'}</p>,
+}));
 
 const runButton = () => screen.getByRole('button', { name: /돌리기 \(후보 \d+곳\)|진행 중/ });
 const card = () => document.querySelector('.card--result h2')?.textContent?.trim() ?? null;
@@ -213,6 +215,22 @@ describe('접근성', () => {
     expect(live?.textContent).toBe('');
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
     expect(live?.textContent).toMatch(/가집, 도보 \d+분이 뽑혔어요/);
+  });
+});
+
+describe('목록에서 지도로', () => {
+  it('목록의 "지도" 는 지도 탭을 그 가게를 고른 채로 연다. 탭 바로 다시 열면 고른 것이 없다', async () => {
+    // 지도 탭은 lazy 라 Suspense 가 풀릴 때까지 기다린다. findBy 의 대기는 진짜 타이머가 필요하다.
+    vi.useRealTimers();
+    render(<App />);
+    fireEvent.click(screen.getByRole('tab', { name: '목록' }));
+    fireEvent.click(screen.getByRole('button', { name: '나집 지도에서 보기' }));
+    expect(screen.getByRole('tab', { name: '지도' }).getAttribute('aria-selected')).toBe('true');
+    expect((await screen.findByTestId('map-focus')).textContent).toBe('b');
+
+    fireEvent.click(screen.getByRole('tab', { name: '오늘' }));
+    fireEvent.click(screen.getByRole('tab', { name: '지도' }));
+    expect((await screen.findByTestId('map-focus')).textContent).toBe('none');
   });
 });
 
