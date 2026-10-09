@@ -126,6 +126,12 @@ export default function App() {
   // 기기 설정은 앱이 바꿀 수 없으니 읽기만 한다. 앱 안 스위치는 games/types.ts 가 기억한다.
   const [reducedBySystem] = useState(systemReducesMotion);
   const [motionOn, setMotionOn] = useState(motionForced);
+  // CSS 연출도 이 값을 따른다. @media (prefers-reduced-motion) 로 끄면 "연출 켜기" 를 눌러도
+  // 바늘 착지·카드 들썩임·토너먼트 튀어나옴 같은 CSS 애니메이션은 꺼진 채였다(10/9 접근성 리뷰).
+  useEffect(() => {
+    document.documentElement.dataset.motion = reducedBySystem && !motionOn ? 'reduced' : 'full';
+  }, [reducedBySystem, motionOn]);
+
   const toggleMotion = useCallback(() => {
     const next = !motionOn;
     setForceMotion(next);

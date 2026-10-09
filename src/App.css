@@ -284,7 +284,7 @@ body {
   70% { rotate: -4deg; }
   100% { rotate: 0deg; }
 }
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .wheel__needle--landed { animation: none; }
 }
 
@@ -522,7 +522,7 @@ body {
   40% { text-shadow: 0 0 10px color-mix(in srgb, var(--color-accent) 60%, transparent); }
 }
 
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .ladder__label--open, .ladder__label--win { animation: none; }
 }
 
@@ -583,7 +583,7 @@ body {
   0% { border-width: 4px; background: var(--color-accent-100); }
   100% { border-width: 2px; background: transparent; }
 }
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .slot__item--win, .slot:has(.slot__item--win) .slot__frame { animation: none; }
 }
 
@@ -693,7 +693,7 @@ body {
 
 footer.muted { text-align: center; }
 
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .wheel__disc,
   .slot__reel,
   .tabs button::after,
@@ -723,7 +723,7 @@ footer.muted { text-align: center; }
   animation: rise 260ms var(--ease-decel) both;
 }
 
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .confirmed { animation: none; }
 }
 
@@ -1109,7 +1109,7 @@ footer.muted { text-align: center; }
   flex-wrap: wrap;
 }
 
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .rm__halo { animation: none; opacity: 0.6; }
   .rm__dot { transition: none; }
 }
@@ -1381,7 +1381,7 @@ footer.muted { text-align: center; }
 /* 수정 폼 단추 — 휴대폰 터치 높이 44px */
 .edit .btn { min-height: 44px; }
 
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .ladder__start:hover:not(:disabled) { transform: none; }
 }
 
@@ -1620,7 +1620,7 @@ html:has(.stage--full) { overflow: hidden; }
 /* 핀볼 캔버스는 크게 볼 때 320:340 이다(가까이 당겨 보기). 높이가 무대를 넘지 않게 폭을 정한다. */
 .stage--full .pinball { width: min(92vw, calc((100svh - 300px) * 320 / 340), 900px); }
 
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .stage--full { animation: none; }
 }
 .stage--full .slot__frame { top: 84px; height: 84px; }
@@ -1769,7 +1769,7 @@ html:has(.stage--full) { overflow: hidden; }
   from { transform: translate(-3px, 2px) rotate(-3deg); }
   to { transform: translate(3px, -2px) rotate(3deg); }
 }
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .cards__face { transition: none; }
   .cards__grid--shuffle li { animation: none; }
 }
@@ -1882,7 +1882,7 @@ html:has(.stage--full) { overflow: hidden; }
 .tour--big .tour__matches { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 .tour--big .tour__side { font-size: var(--fs-md); }
 @keyframes tour-in { from { opacity: 0; translate: 0 6px; } }
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .tour__match, .tour__champion, .tour__champion > span:first-child { animation: none; }
   .cards__grid--done .cards__card { transition: none; }
 }
@@ -1992,7 +1992,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   60% { scale: 1.06; }
   100% { scale: 1; }
 }
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .tour__side--win { animation: none; }
   .tour__side--lose { transition: none; }
 }
@@ -2046,7 +2046,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   90% { transform: translateY(-13px) rotate(-4deg); }
   100% { transform: translateY(-12px) rotate(0); }
 }
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .cards__card--lift .cards__face--back { animation: none; }
 }
 .list__headRow { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }

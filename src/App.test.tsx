@@ -417,6 +417,8 @@ describe('기기의 "동작 줄이기"', () => {
     reduceMotion();
     render(<App />);
     expect(screen.getByRole('note').textContent).toContain('연출 없이 결과만');
+    // CSS 연출도 끈다.
+    expect(document.documentElement.dataset.motion).toBe('reduced');
     fireEvent.click(screen.getByRole('button', { name: '돌림판' }));
     fireEvent.click(runButton());
     act(() => { vi.advanceTimersByTime(50); });
@@ -428,6 +430,8 @@ describe('기기의 "동작 줄이기"', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: '연출 켜기' }));
     expect(screen.getByRole('note').textContent).toContain('연출을 보여 드려요');
+    // CSS 연출(바늘 착지·카드 들썩임 등)도 다시 켠다.
+    expect(document.documentElement.dataset.motion).toBe('full');
     fireEvent.click(screen.getByRole('button', { name: '돌림판' }));
     fireEvent.click(runButton());
     act(() => { vi.advanceTimersByTime(50); });
