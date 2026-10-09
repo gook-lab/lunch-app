@@ -563,6 +563,24 @@ body {
 
 /* 멈춘 칸 강조 — 프레임만으로는 어느 줄이 결과인지 덜 읽힌다 */
 .slot__item--win span:first-child { color: var(--color-accent); }
+/*
+ * 멈추는 순간 "철컥". 릴 전체를 튕기면(overshoot 곡선) 몇 칸을 넘어갔다 돌아와
+ * 잠깐 다른 가게가 창에 보인다. 당첨 줄만 살짝 튀고 창 테두리가 한 번 번쩍인다.
+ */
+.slot__item--win { animation: slot-clunk 380ms var(--ease-decel) both; }
+.slot:has(.slot__item--win) .slot__frame { animation: slot-flash 520ms ease-out both; }
+@keyframes slot-clunk {
+  0% { translate: 0 -6px; scale: 1.04; }
+  45% { translate: 0 3px; scale: 1.06; }
+  100% { translate: 0 0; scale: 1; }
+}
+@keyframes slot-flash {
+  0% { border-width: 4px; background: var(--color-accent-100); }
+  100% { border-width: 2px; background: transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .slot__item--win, .slot:has(.slot__item--win) .slot__frame { animation: none; }
+}
 
 .slot__meta {
   font-size: var(--fs-xs);

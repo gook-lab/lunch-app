@@ -322,6 +322,9 @@ export default function App() {
 
   const onDecide = useCallback(
     (place: Place) => {
+      // 모달이 뜨기 전 0.7초 사이에 게임 아래 카드로 결정했으면 모달은 띄우지 않는다.
+      // 띄우면 확인 시트 위에 결과 모달이 덮인다.
+      window.clearTimeout(resultTimer.current);
       // 오늘 이미 다른 곳으로 정해져 있으면 덮어쓰기 전에 물어본다.
       if (decision && decision.placeId !== place.id) setConfirming(place);
       else void commit(place);
