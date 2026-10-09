@@ -49,3 +49,17 @@ describe('끄기 실패', () => {
     expect(onChanged).not.toHaveBeenCalled();
   });
 });
+
+describe('고치기 — 카테고리', () => {
+  it('카테고리는 글자 대신 칩으로 고르고, 고른 값 그대로 저장한다', async () => {
+    vi.mocked(updatePlace).mockClear();
+    render(<PlaceList places={[place('a', '가집')]} visits={[]} today="20261009" onChanged={() => {}} excludeRecent />);
+    fireEvent.click(screen.getByRole('button', { name: /고치기/ }));
+    const group = screen.getByRole('group', { name: '카테고리' });
+    expect(within(group).getByRole('button', { name: '한식' }).getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(within(group).getByRole('button', { name: '면' }));
+    expect(within(group).getByRole('button', { name: '면' }).getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: '저장' }));
+    await vi.waitFor(() => expect(updatePlace).toHaveBeenCalledWith('a', expect.objectContaining({ category: '면' })));
+  });
+});

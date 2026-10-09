@@ -147,8 +147,24 @@ export function OfficeCard({ getMapCenter, onStartPick, onCancelPick, picking = 
         <h2 id="office-title" className="office__title">
           🏢 회사 위치
         </h2>
-        <span className={saved ? 'office__badge' : 'office__badge office__badge--temp'}>
-          {saved ? '정해 둠' : '임시 위치'}
+        <span className="office__tail">
+          <span className={saved ? 'office__badge' : 'office__badge office__badge--temp'}>
+            {saved ? '정해 둠' : '임시 위치'}
+          </span>
+          {/* 바꾸기로 펼쳤다가 안 바꾸고 접을 길이 없었다(20회차). 고르는 중엔 취소가 그 길이다. */}
+          {saved && !pending && !picking && (
+            <button
+              type="button"
+              className="linkish"
+              aria-expanded={true}
+              onClick={() => {
+                setProblem(null);
+                setOpen(false);
+              }}
+            >
+              접기
+            </button>
+          )}
         </span>
       </div>
       <p className="muted small">

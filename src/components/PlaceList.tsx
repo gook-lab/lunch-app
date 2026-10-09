@@ -11,7 +11,8 @@
  */
 import { recentNote } from '../lib/messages';
 import { useState } from 'react';
-import { Button } from '@gook-lab/ui';
+import { Button, Tag } from '@gook-lab/ui';
+import { CATEGORIES } from '../lib/category';
 import type { Place, Visit } from '../lib/candidates';
 import { withJosa } from '../lib/josa';
 import { RECENT_WINDOW_DAYS } from '../lib/candidates';
@@ -125,7 +126,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
     const nextLat = Number(lat);
     const nextLng = Number(lng);
     if (!name.trim()) return setProblem('이름을 넣어 주세요.');
-    if (!category.trim()) return setProblem('카테고리를 넣어 주세요.');
+    if (!category) return setProblem('카테고리를 골라 주세요.');
     if (!Number.isFinite(nextLat) || !Number.isFinite(nextLng)) {
       return setProblem('좌표는 숫자로 넣어 주세요.');
     }
@@ -142,7 +143,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
     try {
       await updatePlace(place.id, {
         name: name.trim(),
-        category: category.trim(),
+        category,
         lat: nextLat,
         lng: nextLng,
         walkMin,
@@ -170,10 +171,26 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
         이름
         <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} aria-required="true" autoFocus />
       </label>
-      <label>
-        카테고리
-        <input value={category} onChange={(e) => setCategory(e.target.value)} maxLength={20} />
-      </label>
+      {/* 지도에서 넣을 때와 같은 칩. 글자로 받으면 목록에 없는 카테고리("국밥")가
+          들어가 로드맵 조각·그림·카테고리 필터에서 길을 잃었다(20회차). */}
+      <div role="group" aria-label="카테고리">
+        <span className="filters__label">카테고리</span>
+        <div className="chips">
+          {CATEGORIES.map((c) => (
+            <Tag
+              key={c}
+              as="button"
+              type="button"
+              variant={category === c ? 'accent' : 'outline'}
+              aria-pressed={category === c}
+              className={category === c ? 'chip chip--on' : 'chip'}
+              onClick={() => setCategory(c)}
+            >
+              {c}
+            </Tag>
+          ))}
+        </div>
+      </div>
       <div className="edit__coords">
         <label>
           위도

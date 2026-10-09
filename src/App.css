@@ -1511,6 +1511,7 @@ html:has(dialog[open]:modal) { overflow: hidden; }
   background: var(--color-bg);
 }
 .office__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.office__tail { display: inline-flex; align-items: center; gap: var(--space-3); }
 .office__title { margin: 0; font-family: var(--font-heading); font-size: var(--fs-md); font-weight: 800; }
 .office__badge {
   font-size: var(--fs-xs);
