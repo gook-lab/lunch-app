@@ -66,7 +66,7 @@ describe('noticeMessage — 공개 숫자가 실제와 일치한다', () => {
 
   it('보정해도 5곳이 안 되면 풀이 얇다고 말한다', () => {
     const r = selectCandidates(pool(3), [], filters(), TODAY);
-    expect(noticeMessage(r)).toContain('후보가 3곳뿐이에요');
+    expect(noticeMessage(r)).toContain('후보 3곳에서 골라요');
     expect(noticeMessage(r)).toContain('20곳');
   });
 

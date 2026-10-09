@@ -46,7 +46,9 @@ export function noticeMessage(result: CandidateResult): string | null {
     if (afterCategoryCount < result.activeCount) {
       return `조건에 맞는 곳이 ${result.candidates.length}곳뿐이에요. 도보 시간이나 카테고리를 넓히면 더 많아져요.`;
     }
-    return `후보가 ${result.candidates.length}곳뿐이에요. 가게가 ${HEALTHY_POOL_SIZE}곳은 돼야 최근 방문 제외가 제대로 돌아가요.`;
+    // "최근 방문 제외가 제대로 돌아가요" 는 처음 온 사람에게 고장 안내처럼 읽혔다(10/9).
+    // 숫자(20곳)는 실측 근거가 있어 남기고, 할 일(가게 더 넣기)과 이득으로 바꿔 말한다.
+    return `후보 ${result.candidates.length}곳에서 골라요. 가게를 ${HEALTHY_POOL_SIZE}곳쯤 넣어 두면 같은 곳이 덜 겹쳐요.`;
   }
 
   // 제외를 껐으면 최근에 간 곳도 그대로 후보다. "빠졌습니다" 는 거짓이 된다.

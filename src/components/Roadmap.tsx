@@ -30,7 +30,8 @@ const LEGEND: { status: string; label: string }[] = [
   { status: 'candidate', label: '후보' },
   { status: 'released', label: '다시 넣음' },
   { status: 'recent', label: '최근 제외' },
-  { status: 'out', label: '범위 밖' },
+  // "범위 밖" 은 무슨 범위인지 안 읽혔다(10/9 첫 사용자 시점 리뷰). 도보·카테고리 조건이다.
+  { status: 'out', label: '조건 밖' },
   { status: 'off', label: '꺼짐' },
 ];
 
