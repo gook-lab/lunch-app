@@ -89,10 +89,21 @@ describe('결과 모달', () => {
     expect(dialog.open).toBe(true);
     expect(dialog.querySelector('.ticket__name')?.textContent).toBe('가집');
     expect(dialog.querySelector('.ticket__eyebrow')?.textContent).toBe('🎡 돌림판으로 뽑은 오늘의 점심');
+    expect(dialog.querySelector('.ticket__name')).toBe(document.activeElement);
 
     fireEvent.click(screen.getByRole('button', { name: '닫고 게임 보기' }));
     expect(screen.queryByRole('dialog', { name: '오늘의 점심 결과' })).toBeNull();
     expect(document.querySelector('.stage .ticket__name')?.textContent).toBe('가집');
+    // 닫으면 초점이 <body> 가 아니라 게임 아래 같은 카드로 간다.
+    expect(document.querySelector('.stage .ticket__name')).toBe(document.activeElement);
+  });
+
+  it('모달이 뜨기 전에 게임 아래 카드에서 결정하면 모달은 뜨지 않는다', async () => {
+    startWheel();
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '여기로 결정' })); });
+    act(() => { vi.advanceTimersByTime(RESULT_DELAY_MS * 2); });
+    expect(screen.queryByRole('dialog', { name: '오늘의 점심 결과' })).toBeNull();
   });
 });
 
