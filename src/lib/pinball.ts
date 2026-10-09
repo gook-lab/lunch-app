@@ -232,10 +232,12 @@ export function buildCourse(): Course {
   spinners.push({ x: C + 46, y: 1600, half: 22, omega: -0.055, phase: Math.PI });
 
   // 14 — 깔때기와 출구. 출구 폭 24px(구슬 14px)라 한 줄로만 빠진다.
-  //      출구 위 회전 막대가 줄 선 구슬을 흔들어 막판 순위가 뒤집힌다.
+  //      출구 위 회전 막대가 줄 선 구슬을 흔들어 막판 순위가 뒤집힌다. 막대는 깔때기 폭의
+  //      절반을 넘게(반지름 34) 길게 둬서 길목을 잠깐씩 막는다(10/9, "긴박감"). 깔때기 넓은
+  //      쪽(y 1692)에 둬야 막대 끝과 벽 사이로 구슬이 빠진다 — 1724 에 반지름 28 은 구슬이 끼었다.
   wallPair(0, 1638, C - 15, 1772);
   wallPair(C - 15, 1772, C - 15, 1814);
-  spinners.push({ x: C, y: 1724, half: 17, omega: 0.15, phase: Math.PI / 2 });
+  spinners.push({ x: C, y: 1692, half: 34, omega: 0.12, phase: Math.PI / 2 });
 
   return { walls, pegs, spinners };
 }
