@@ -14,6 +14,7 @@ import { Ladder } from './components/games/Ladder';
 import { Slot } from './components/games/Slot';
 import { Pinball } from './components/games/Pinball';
 import { Cards } from './components/games/Cards';
+import { Tournament } from './components/games/Tournament';
 import {
   actionLabel,
   GAME_MODES,
@@ -56,7 +57,7 @@ const TAB_TITLE: Record<Tab, string> = {
 };
 
 /** 방식 단추 그림. 글자 이름은 그대로 두고 그림은 보조로만 쓴다. */
-const MODE_ICON: Record<GameMode, string> = { wheel: '🎡', ladder: '🪜', slot: '🎰', pinball: '🎱', cards: '🃏' };
+const MODE_ICON: Record<GameMode, string> = { wheel: '🎡', ladder: '🪜', slot: '🎰', pinball: '🎱', cards: '🃏', tournament: '🏆' };
 
 const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
 /** "20261008" 을 "10월 8일 목요일" 로. */
@@ -481,6 +482,11 @@ export default function App() {
             if (mode === 'cards') {
               const key = game.candidates.map((p) => p.id).join(',');
               return <Cards key={key} {...game} onRequestSpin={spin} />;
+            }
+            if (mode === 'tournament') {
+              // 응원 고른 것은 같은 후보 구성 안에서만 유지한다.
+              const key = game.candidates.map((p) => p.id).join(',');
+              return <Tournament key={key} {...game} />;
             }
             if (mode === 'slot') return <Slot {...game} />;
             if (mode === 'pinball') return <Pinball {...game} />;

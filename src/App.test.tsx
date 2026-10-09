@@ -297,6 +297,26 @@ describe('카드 뒤집기 — 사용자가 고르는 카드', () => {
   });
 });
 
+describe('토너먼트 — 정해진 당첨이 전승한다', () => {
+  it('응원을 골라도 결과는 그대로이고, 우승이 결과 카드와 같다', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '토너먼트' }));
+    const entries = screen.getAllByRole('button', { pressed: false }).filter((b) => b.classList.contains('tour__entry'));
+    expect(entries.length).toBeGreaterThan(1);
+    fireEvent.click(entries[0]);
+    expect(entries[0].getAttribute('aria-pressed')).toBe('true');
+
+    fireEvent.click(screen.getByRole('button', { name: /^대진 시작/ }));
+    // 첫 판 대진이 보이고 아직 승패가 없다.
+    expect(document.querySelectorAll('.tour__match').length).toBeGreaterThan(0);
+    expect(document.querySelectorAll('.tour__side--win')).toHaveLength(0);
+
+    act(() => { vi.advanceTimersByTime(SPIN_MS.tournament + 50); });
+    expect(document.querySelector('.tour__champion strong')?.textContent).toBe(card());
+    expect(document.querySelector('.tour__hint')?.textContent).toContain('📣 응원한');
+  });
+});
+
 describe('기기의 "동작 줄이기"', () => {
   const reduceMotion = () => {
     window.matchMedia = ((q: string) => ({
