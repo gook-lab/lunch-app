@@ -405,7 +405,8 @@ export default function App() {
           <p className="muted small">
             누르면 방문 기록이 남고, 2주 동안 후보에서 빠져요.
           </p>
-          {saveProblem && (
+          {/* 확인 시트가 떠 있으면 시트 쪽에만 띄운다. 두 곳에서 읽히면 두 번 들린다. */}
+          {saveProblem && !confirming && (
             <p className="notice notice--empty" role="alert">
               저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.
             </p>
@@ -664,7 +665,10 @@ export default function App() {
 
       <Sheet
         open={confirming !== null}
-        onClose={() => setConfirming(null)}
+        onClose={() => {
+          setConfirming(null);
+          setSaveProblem(false);
+        }}
         title="오늘은 이미 정했어요"
         description={
           decidedPlace && confirming
@@ -676,7 +680,14 @@ export default function App() {
           <Button block onClick={() => confirming && void commit(confirming)} loading={saving}>
             바꾸기
           </Button>
-          <Button block variant="ghost" onClick={() => setConfirming(null)}>
+          <Button
+            block
+            variant="ghost"
+            onClick={() => {
+              setConfirming(null);
+              setSaveProblem(false);
+            }}
+          >
             그대로 두기
           </Button>
         </div>
