@@ -140,6 +140,15 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
   const fittedRef = useRef(false);
   const resizeRef = useRef<ResizeObserver | null>(null);
 
+  // 지도에 그려진 가게(꺼짐·카테고리 거르기 반영), 가까운 순.
+  const nearby = useMemo(
+    () =>
+      places
+        .filter((p) => (p.active || showOff) && (mapCategory === null || p.category === mapCategory))
+        .sort((a, b) => a.walkMin - b.walkMin || a.name.localeCompare(b.name, 'ko')),
+    [places, showOff, mapCategory],
+  );
+
   // 지금 지도에 그릴 수 있는 가게들의 카테고리. 없는 카테고리 칩은 안 만든다.
   const mapCategories = useMemo(
     () => [...new Set(places.filter((p) => p.active || showOff).map((p) => p.category))],
@@ -696,6 +705,31 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
             </>
           )}
         </div>
+      )}
+
+      {/*
+        * 아무 핀도 안 고르면 데스크톱 오른쪽 칸이 회사 카드·검색창만 남아 텅 비었다(10/9 리뷰).
+        * 지금 지도에 그려진 가게를 가까운 순으로 보여 주고, 누르면 그 핀으로 간다.
+        * 휴대폰에선 목록 탭과 겹치므로 CSS 로 숨긴다.
+        */}
+      {phase === 'ready' && !selected && !draft && results.length === 0 && nearby.length > 0 && (
+        <section className="mp__card mp__nearby" aria-labelledby="nearby-title">
+          <h3 id="nearby-title" className="mp__title">지도에 있는 가게 {nearby.length}곳</h3>
+          <ul className="mp__nearList">
+            {nearby.map((p) => (
+              <li key={p.id}>
+                <button type="button" className="mp__near" onClick={() => goTo(p)}>
+                  <span className="mp__nearName">
+                    <span aria-hidden="true">{categoryIcon(p.category)} </span>
+                    {p.name}
+                    {p.id === todayId && <span className="badge">오늘</span>}
+                  </span>
+                  <span className="muted small">도보 {p.walkMin}분</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {/*

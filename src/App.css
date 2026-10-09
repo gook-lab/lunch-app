@@ -1191,7 +1191,7 @@ footer.muted { text-align: center; }
   flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-3);
-  background: var(--color-surface);
+  background: var(--color-neutral-100);
   border: 1px solid var(--color-neutral-300);
   border-radius: var(--radius-md);
 }
@@ -2007,3 +2007,29 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .slot--wide { width: min(420px, 84vw); }
 .slot--wide .slot__item { font-size: var(--fs-xl); }
 .slot--wide .slot__frame { top: 80px; height: 80px; }
+
+/* 지도에 있는 가게 — 데스크톱 오른쪽 칸 전용(휴대폰은 목록 탭이 같은 일을 한다). */
+.mp__nearby { display: none; }
+@media (min-width: 960px) {
+  .mp__nearby { display: flex; }
+}
+.mp__nearList { list-style: none; margin: 0; padding: 0; display: grid; }
+.mp__near {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-1);
+  border: 0;
+  border-bottom: 1px solid var(--color-neutral-200);
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mp__nearList li:last-child .mp__near { border-bottom: 0; }
+.mp__near:hover { background: var(--color-neutral-200); }
+.mp__nearName { display: inline-flex; align-items: center; gap: var(--space-1); font-weight: 600; }
