@@ -431,6 +431,14 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
     return race.frames[frameIndex].filter((m) => m.y >= FINISH_Y).length;
   }, [race, frameIndex]);
 
+  /** 따라가는 구슬이 들어왔으면 몇 등인지. 응원한 구슬의 결과를 알려 준다. */
+  const followRank = useMemo(() => {
+    if (!race || frameIndex < 0 || follow === null) return null;
+    const m = race.frames[frameIndex][follow];
+    if (!m || m.y < FINISH_Y) return null;
+    return race.order.indexOf(follow) + 1;
+  }, [race, frameIndex, follow]);
+
   /** 1등이 이미 들어왔는가. 순위판 1위를 그때부터 강조한다. */
   const leadIn = race !== null && frameIndex >= race.winnerFrame;
 
@@ -444,9 +452,13 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
     // 크게 보기면 캔버스가 화면에서 두 배 넘게 늘어난다. 그만큼 해상도를 올려야 흐리지 않다.
     const shown = canvas.clientWidth || CANVAS_W;
     const dpr = Math.min((window.devicePixelRatio || 1) * Math.max(1, shown / CANVAS_W), 4);
-    canvas.width = Math.round(CANVAS_W * dpr);
-    canvas.height = Math.round(viewH * dpr);
+    // 크기가 같으면 다시 넣지 않는다. 넣을 때마다 캔버스가 통째로 다시 잡힌다.
+    const w = Math.round(CANVAS_W * dpr);
+    const h = Math.round(viewH * dpr);
+    if (canvas.width !== w) canvas.width = w;
+    if (canvas.height !== h) canvas.height = h;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, CANVAS_W, viewH);
 
     // 지금 프레임의 구슬 위치. 소수 프레임은 앞뒤를 섞는다.
     const at = (pos: number) => {
@@ -474,7 +486,9 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
     // 목표 위치로 부드럽게 옮겨 간다. 새 판의 첫 프레임은 바로 맞춘다.
     const target = frame ? cameraY(race, framePos, viewH, follow) : 0;
     const prev = camRef.current;
-    const cam = frame && prev && prev.run === run ? prev.y + (target - prev.y) * CAMERA_EASE : target;
+    // 부드럽게 옮기는 건 재생 중일 때만. 끝난 뒤엔 다시 그릴 일이 없어 중간에 멈춘다.
+    const playing = frame !== null && t < 1;
+    const cam = playing && prev && prev.run === run ? prev.y + (target - prev.y) * CAMERA_EASE : target;
     camRef.current = { run, y: cam };
     drawnRef.current = { cam, positions };
 
@@ -626,7 +640,7 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
       ctx.fillText(`${mark}${shortName(place.name)} ${champion ? '✓' : `#${rank + 1}`}`, CANVAS_W - 6, y);
       ctx.restore();
     });
-  }, [race, framePos, standing, arrived, leadIn, slowMo, atGate, gateMs, candidates, count, viewH, follow, run]);
+  }, [race, framePos, standing, arrived, leadIn, slowMo, atGate, gateMs, candidates, count, viewH, follow, run, t]);
 
   /*
    * 공을 누르면 그 공을 따라간다. 같은 공을 다시 누르면 선두로 돌아간다.
@@ -686,9 +700,16 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
             </option>
           ))}
         </select>
-        <span className="pinball__tip" aria-hidden="true">
-          공을 누르면 그 공을 따라가요
-        </span>
+        {follow !== null && followRank !== null ? (
+          <span className="pinball__tip pinball__tip--done" role="status">
+            {followRank === 1 ? '🎉 ' : '📍 '}
+            {shortName(candidates[follow].name, 10)} {followRank}등으로 들어왔어요
+          </span>
+        ) : (
+          <span className="pinball__tip" aria-hidden="true">
+            공을 누르면 그 공을 따라가요
+          </span>
+        )}
       </label>
     </div>
   );

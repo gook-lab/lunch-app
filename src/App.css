@@ -895,6 +895,7 @@ footer.muted { text-align: center; }
   border-radius: var(--radius-sm);
 }
 .pinball__tip { margin-left: auto; }
+.pinball__tip--done { font-size: var(--fs-sm); font-weight: 700; color: var(--color-bg); }
 
 /* 화면낭독기 전용. 결과 알림(App.tsx)이 쓴다. */
 .sr-only {
