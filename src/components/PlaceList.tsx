@@ -326,41 +326,47 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
 
   // 켜진 가게와 꺼진 가게를 나눈다. 꺼진 가게는 후보에 안 들어가니 접어 두되,
   // 켜진 가게가 하나도 없으면 다시 켤 곳을 찾아야 하므로 펼쳐 둔다.
+  // 데스크톱은 두 칸: 왼쪽 후보·꺼 둔 가게, 오른쪽 최근 다녀온 곳. 한 칸으로 화면 폭을
+  // 다 쓰면 최근 다녀온 곳 줄 가운데가 텅 비고 아래도 비었다(10/10 리뷰).
   return (
-    <>
+    <div className="lt">
       {toggleProblem && (
         <p className="notice notice--empty" role="alert">
           {toggleProblem}
         </p>
       )}
-      <History places={places} visits={visits} today={today} onShowOnMap={onShowOnMap} />
-      <section className="list__group" aria-labelledby="list-on">
-        {/* 추가 단추는 후보 제목 줄 끝에. 혼자 한 줄을 먹으면 맨 위가 비어 보였다(10/9 리뷰). */}
-        <div className="list__headRow">
-          <h2 id="list-on" className="list__heading">
-            후보에 들어가는 가게 <span className="list__count">{on.length}곳</span>
-          </h2>
-          {onAdd && (
-            <Button size="sm" className="list__add" onClick={onAdd}>
-              지도에서 가게 추가
-            </Button>
+      <div className="lt__side">
+        <History places={places} visits={visits} today={today} onShowOnMap={onShowOnMap} />
+      </div>
+      <div className="lt__main">
+        <section className="list__group" aria-labelledby="list-on">
+          {/* 추가 단추는 후보 제목 줄 끝에. 혼자 한 줄을 먹으면 맨 위가 비어 보였다(10/9 리뷰). */}
+          <div className="list__headRow">
+            <h2 id="list-on" className="list__heading">
+              후보에 들어가는 가게 <span className="list__count">{on.length}곳</span>
+            </h2>
+            {onAdd && (
+              <Button size="sm" className="list__add" onClick={onAdd}>
+                지도에서 가게 추가
+              </Button>
+            )}
+          </div>
+          <p className="muted small">도보 가까운 순 · {recentNote(recentCount, excludeRecent)}</p>
+          {on.length > 0 ? (
+            <ul className="list">{on.map(renderRow)}</ul>
+          ) : (
+            <p className="muted small">켜진 가게가 없어요. 아래에서 다시 켜거나 지도에서 새로 넣어 주세요.</p>
           )}
-        </div>
-        <p className="muted small">도보 가까운 순 · {recentNote(recentCount, excludeRecent)}</p>
-        {on.length > 0 ? (
-          <ul className="list">{on.map(renderRow)}</ul>
-        ) : (
-          <p className="muted small">켜진 가게가 없어요. 아래에서 다시 켜거나 지도에서 새로 넣어 주세요.</p>
+        </section>
+        {off.length > 0 && (
+          <details className="list__group list__group--off" open={on.length === 0}>
+            <summary className="list__heading">
+              꺼 둔 가게 <span className="list__count">{off.length}곳</span>
+            </summary>
+            <ul className="list">{off.map(renderRow)}</ul>
+          </details>
         )}
-      </section>
-      {off.length > 0 && (
-        <details className="list__group list__group--off" open={on.length === 0}>
-          <summary className="list__heading">
-            꺼 둔 가게 <span className="list__count">{off.length}곳</span>
-          </summary>
-          <ul className="list">{off.map(renderRow)}</ul>
-        </details>
-      )}
-    </>
+      </div>
+    </div>
   );
 }

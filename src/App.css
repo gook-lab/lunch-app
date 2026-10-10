@@ -1661,11 +1661,21 @@ html:has(.stage--full) { overflow: hidden; }
 .map__canvas { height: max(360px, calc(100svh - 400px)); }
 
 @media (min-width: 960px) {
-  /* 목록: 카드 두 칸 */
+  /* 목록: 왼쪽 후보(카드 한 줄씩) | 오른쪽 최근 다녀온 곳 */
+  .lt {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    align-items: start;
+    gap: var(--space-4) var(--space-6);
+  }
+  .lt > .notice { grid-column: 1 / -1; }
+  .lt__side { grid-column: 2; grid-row: span 2; position: sticky; top: var(--space-4); }
+  .lt__side .history { margin-bottom: 0; }
+  .lt__main { grid-column: 1; grid-row: 1; }
+  .lt > .notice ~ .lt__main { grid-row: 2; }
   .list {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-3);
+    gap: var(--space-2);
   }
   .list .list__item {
     padding: var(--space-3) var(--space-4);
@@ -2048,3 +2058,12 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   .cards__card--lift .cards__face--back { animation: none; }
 }
 .list__headRow { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+
+/* 목록 두 칸 묶음 — 휴대폰에선 위에서 아래로 쌓는다. */
+.lt { display: grid; gap: var(--space-4); }
+.lt__main { display: grid; gap: var(--space-6); min-width: 0; }
+/* "꺼 둔 가게" 펼치기 줄 전체를 44px 높이로 누르게. */
+.list__group--off > summary { min-height: 44px; display: flex; align-items: center; gap: var(--space-2); }
+.list__group--off > summary::before { content: '▸'; transition: transform var(--motion-fast) var(--ease-out); }
+.list__group--off[open] > summary::before { transform: rotate(90deg); }
+.list__group--off > summary::-webkit-details-marker { display: none; }
