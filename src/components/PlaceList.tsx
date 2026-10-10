@@ -10,7 +10,7 @@
  * 이유라서, 표시하지 않으면 목록과 돌림판이 어긋나 보인다.
  */
 import { recentNote } from '../lib/messages';
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { Button } from '@gook-lab/ui';
 import { ChipPicker } from './ChipPicker';
 import { CATEGORIES, type Category } from '../lib/category';
@@ -129,6 +129,8 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
   const [saving, setSaving] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const nameRef = useRef<HTMLInputElement>(null);
+  // 오류 문구를 칸에 이어 붙인다. role=alert 만으로는 칸으로 돌아왔을 때 이유가 안 읽혔다.
+  const errId = useId();
   const catRef = useRef<HTMLDivElement>(null);
   const latRef = useRef<HTMLInputElement>(null);
   const lngRef = useRef<HTMLInputElement>(null);
@@ -195,6 +197,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
           maxLength={40}
           aria-required="true"
           aria-invalid={problem === '이름을 넣어 주세요.' || undefined}
+          aria-describedby={problem ? errId : undefined}
           autoFocus
         />
       </label>
@@ -207,15 +210,15 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
       <div className="edit__coords">
         <label>
           위도
-          <input ref={latRef} value={lat} onChange={(e) => setLat(e.target.value)} inputMode="decimal" aria-invalid={!Number.isFinite(Number(lat)) || undefined} />
+          <input ref={latRef} value={lat} onChange={(e) => setLat(e.target.value)} inputMode="decimal" aria-invalid={!Number.isFinite(Number(lat)) || undefined} aria-describedby={problem ? errId : undefined} />
         </label>
         <label>
           경도
-          <input ref={lngRef} value={lng} onChange={(e) => setLng(e.target.value)} inputMode="decimal" aria-invalid={!Number.isFinite(Number(lng)) || undefined} />
+          <input ref={lngRef} value={lng} onChange={(e) => setLng(e.target.value)} inputMode="decimal" aria-invalid={!Number.isFinite(Number(lng)) || undefined} aria-describedby={problem ? errId : undefined} />
         </label>
       </div>
       <p className="muted small">좌표를 고치면 도보 시간도 다시 계산돼요.</p>
-      {problem && <p className="notice notice--empty" role="alert">{problem}</p>}
+      {problem && <p id={errId} className="notice notice--empty" role="alert">{problem}</p>}
       <div className="row">
         <Button block onClick={() => void save()} loading={saving}>
           저장

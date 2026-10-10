@@ -430,6 +430,8 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
 
   // 폼이 열리면 화면 안으로. 휴대폰에선 지도 아래라 안 보일 수 있다.
   const draftRef = useRef<HTMLElement>(null);
+  // 목록에서 가게를 고르면 단추가 사라지므로 초점을 그 가게 카드로 옮긴다.
+  const selCardRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (draft) draftRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
   }, [draft]);
@@ -651,7 +653,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       </div>
 
       {selected && !draft && (
-        <div className="mp__card">
+        <div className="mp__card" ref={selCardRef} tabIndex={-1} role="region" aria-label={selected.name}>
           {editing ? (
             <PlaceEdit
               place={selected}
@@ -710,7 +712,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       {/*
         * 아무 핀도 안 고르면 데스크톱 오른쪽 칸이 회사 카드·검색창만 남아 텅 비었다(10/9 리뷰).
         * 지금 지도에 그려진 가게를 가까운 순으로 보여 주고, 누르면 그 핀으로 간다.
-        * 휴대폰에선 목록 탭과 겹치므로 CSS 로 숨긴다.
+        * 휴대폰에서도 지도 아래에 둔다. 카카오 핀은 키보드로 못 고르니 이 목록이 그 대안이다(10/10 접근성 리뷰).
         */}
       {phase === 'ready' && !selected && !draft && results.length === 0 && nearby.length > 0 && (
         <section className="mp__card mp__nearby" aria-labelledby="nearby-title">
@@ -718,7 +720,17 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
           <ul className="mp__nearList">
             {nearby.map((p) => (
               <li key={p.id}>
-                <button type="button" className="mp__near" onClick={() => goTo(p)}>
+                <button
+                  type="button"
+                  className="mp__near"
+                  onClick={() => {
+                    goTo(p);
+                    requestAnimationFrame(() => {
+                      selCardRef.current?.focus({ preventScroll: true });
+                      selCardRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+                    });
+                  }}
+                >
                   <span className="mp__nearName">
                     <span aria-hidden="true">{categoryIcon(p.category)} </span>
                     {p.name}

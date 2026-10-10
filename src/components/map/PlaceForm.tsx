@@ -10,7 +10,7 @@
  * 후보에서 빠진 이유를 아무도 설명하지 못한다.
  */
 import { ChipPicker } from '../ChipPicker';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useId, useRef, useState } from 'react';
 import { Button } from '@gook-lab/ui';
 import { PRICE_BANDS, type Place, type PriceBand, type Rating } from '../../lib/candidates';
 import { CATEGORIES, categoryFromKakao, type Category } from '../../lib/category';
@@ -94,6 +94,10 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
   const tooFar = walk.min !== null && walk.min > MAX_WALK_MIN;
 
   const nameRef = useRef<HTMLInputElement>(null);
+
+  // 오류 문구를 칸에 이어 붙인다. role=alert 만으로는 칸으로 돌아왔을 때 이유가 안 읽혔다.
+
+  const errId = useId();
   const catRef = useRef<HTMLDivElement>(null);
 
   const save = async () => {
@@ -171,6 +175,7 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
           maxLength={MAX_NAME}
           aria-required="true"
           aria-invalid={problem === '이름을 넣어 주세요.' || undefined}
+          aria-describedby={problem ? errId : undefined}
           placeholder="가게 이름"
           autoFocus={draft.name === ''}
         />
@@ -233,7 +238,7 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
         />
       </label>
 
-      {problem && <p className="notice notice--empty" role="alert">{problem}</p>}
+      {problem && <p id={errId} className="notice notice--empty" role="alert">{problem}</p>}
 
       <div className="row">
         <Button block size="lg" onClick={() => void save()} loading={saving} disabled={tooFar}>

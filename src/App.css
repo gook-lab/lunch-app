@@ -2007,11 +2007,9 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .slot--wide { width: min(480px, 84vw); }
 .slot--wide .slot__item { font-size: var(--fs-xl); }
 
-/* 지도에 있는 가게 — 데스크톱 오른쪽 칸 전용(휴대폰은 목록 탭이 같은 일을 한다). */
-.mp__nearby { display: none; }
-@media (min-width: 960px) {
-  .mp__nearby { display: flex; }
-}
+/* 지도에 있는 가게 — 데스크톱은 오른쪽 칸, 휴대폰은 지도 아래. 카카오 핀의 키보드 대안이기도 하다. */
+.mp__card[tabindex='-1']:focus { outline: none; }
+.mp__card[tabindex='-1']:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 .mp__nearList { list-style: none; margin: 0; padding: 0; display: grid; }
 .mp__near {
   width: 100%;
