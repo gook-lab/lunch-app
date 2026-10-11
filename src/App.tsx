@@ -539,7 +539,8 @@ export default function App() {
             aria-pressed={expanded}
             onClick={() => setExpanded((v) => !v)}
           >
-            {expanded ? '✕ 작게 보기' : '⤢ 크게 보기'}
+            <span aria-hidden="true">{expanded ? '✕ ' : '⤢ '}</span>
+            {expanded ? '작게 보기' : '크게 보기'}
           </button>
         </div>
 
