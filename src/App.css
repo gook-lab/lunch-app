@@ -152,6 +152,7 @@ body {
 
 .notice--empty {
   color: var(--color-text);
+  /* 패널(neutral-100) 안에 자주 놓이므로 한 단계 어두운 surface 로 남긴다. */
   background: var(--color-surface);
   border-radius: var(--radius-md);
   padding: var(--space-3);
@@ -818,19 +819,6 @@ footer.muted { text-align: center; }
   color: var(--color-neutral-700);
 }
 
-.map__info {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  background: var(--color-surface);
-  border: 1px solid var(--color-neutral-300);
-  border-radius: var(--radius-md);
-}
-
-.map__info p { margin: 2px 0 0; }
-
 /* 가게 추가 시트 */
 .add { display: flex; flex-direction: column; gap: var(--space-3); }
 
@@ -866,7 +854,7 @@ footer.muted { text-align: center; }
   gap: 2px;
   text-align: left;
   padding: var(--space-3);
-  background: var(--color-surface);
+  background: var(--color-neutral-100);
   border: 1px solid var(--color-neutral-300);
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -1221,7 +1209,7 @@ footer.muted { text-align: center; }
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--color-neutral-300);
   border-left: 3px solid var(--color-accent);
-  background: var(--color-surface);
+  background: var(--color-neutral-100);
   font-size: var(--fs-sm);
   color: var(--color-text);
 }
