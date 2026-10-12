@@ -74,7 +74,7 @@ export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expan
 
   return (
     <div className={['gacha', expanded ? 'gacha--big' : '', `gacha--${phase}`].filter(Boolean).join(' ')}>
-      <p className="muted small gacha__hint">{hint}</p>
+      <p className="muted small gacha__hint" aria-live="polite">{hint}</p>
       <div className="gacha__machine" aria-hidden="true">
         <div className="gacha__dome">
           {capsules.map((c, i) => (

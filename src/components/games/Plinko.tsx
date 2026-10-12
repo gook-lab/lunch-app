@@ -86,7 +86,7 @@ export function Plinko({ candidates, winnerIndex, spinning, run, onSpinEnd, expa
 
   return (
     <div className={expanded ? 'plinko plinko--big' : 'plinko'}>
-      <p className="muted small plinko__hint">
+      <p className="muted small plinko__hint" aria-live="polite">
         {t < 0
           ? `공을 떨어뜨리면 핀에 맞으며 칸 ${count}개 중 하나로 들어가요.`
           : landed
