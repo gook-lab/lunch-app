@@ -81,7 +81,7 @@ export function Cards({ candidates, winnerIndex, spinning, run, onSpinEnd, onReq
           : phase === 'all'
             ? '모든 카드를 뒤집었어요.'
             : phase === 'picked'
-              ? '고른 카드를 뒤집었어요. 나머지도 열어 볼게요.'
+              ? '고른 카드를 뒤집었어요. 나머지도 뒤집어 볼게요.'
               : phase === 'lift'
                 ? '고른 카드를 뒤집을게요…'
               : '카드를 섞고 있어요…'}

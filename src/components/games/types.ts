@@ -43,7 +43,7 @@ export const GAME_MODES: { id: GameMode; label: string; action: string }[] = [
   { id: 'wheel', label: '돌림판', action: '돌리기' },
   { id: 'ladder', label: '사다리', action: '사다리 타기' },
   { id: 'slot', label: '슬롯', action: '레버 당기기' },
-  { id: 'pinball', label: '핀볼', action: '구슬 굴리기' },
+  { id: 'pinball', label: '핀볼', action: '공 굴리기' },
   { id: 'cards', label: '카드', action: '카드 뒤집기' },
   { id: 'memory', label: '짝 맞추기', action: '짝 맞추기' },
   { id: 'tournament', label: '토너먼트', action: '대진 시작' },

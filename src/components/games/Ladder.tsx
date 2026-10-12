@@ -170,7 +170,7 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
   return (
     <div className="ladder">
       <div className="ladder__bar">
-        <p className="muted small">번호를 누르면 출발해요. 판을 누르면 가로줄이 생겨요.</p>
+        <p className="muted small">번호를 누르면 출발해요. 판을 누르면 가로줄을 넣거나 뺄 수 있어요.</p>
         <button type="button" className="ladder__shuffle" onClick={reshuffle} disabled={spinning}>
           새 사다리
         </button>

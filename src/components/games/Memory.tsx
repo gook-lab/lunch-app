@@ -160,7 +160,7 @@ export function Memory({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
   };
 
   const hint = !live
-    ? `카드를 두 장씩 뒤집어 짝을 맞춰요. 맞춘 가게는 탈락, 끝까지 남은 짝이 오늘 점심이에요.`
+    ? `카드를 두 장씩 뒤집어 짝을 맞춰요. 짝을 맞춘 가게는 빠지고, 끝까지 남은 짝이 오늘 점심이에요.`
     : board.done
       ? '남은 짝이 오늘 점심이에요.'
       : board.auto

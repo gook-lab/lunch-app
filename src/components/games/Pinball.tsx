@@ -805,7 +805,7 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
           </span>
         ) : (
           <span className="pinball__tip" aria-hidden="true">
-            공을 누르면 그 공을 따라가요
+            공을 누르면 그 가게 공을 따라가요
           </span>
         )}
       </label>

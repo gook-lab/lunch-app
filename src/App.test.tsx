@@ -461,7 +461,7 @@ describe('핀볼 — 공 개수가 곧 확률', () => {
     for (let k = 0; k < 3; k += 1) fireEvent.click(screen.getByRole('button', { name: '마집 공 하나 더' }));
     expect(screen.getByText('공 8개')).toBeTruthy();
     vi.spyOn(Math, 'random').mockReturnValue(0.6);
-    fireEvent.click(screen.getByRole('button', { name: /구슬 굴리기/ }));
+    fireEvent.click(screen.getByRole('button', { name: /공 굴리기/ }));
     for (let k = 0; k < 400; k += 1) act(() => { vi.advanceTimersByTime(100); });
     const dialog = screen.getByRole('dialog', { name: '오늘의 점심 결과' });
     expect(dialog.querySelector('.ticket__name')?.textContent).toBe('마집');
@@ -472,7 +472,7 @@ describe('핀볼 — 공 개수가 곧 확률', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: '핀볼' }));
     vi.spyOn(Math, 'random').mockReturnValue(0.6);
-    fireEvent.click(screen.getByRole('button', { name: /구슬 굴리기/ }));
+    fireEvent.click(screen.getByRole('button', { name: /공 굴리기/ }));
     for (let k = 0; k < 400; k += 1) act(() => { vi.advanceTimersByTime(100); });
     const dialog = screen.getByRole('dialog', { name: '오늘의 점심 결과' });
     expect(dialog.querySelector('.ticket__name')?.textContent).toBe('라집');
@@ -484,12 +484,12 @@ describe('핀볼 — 판이 끝난 뒤 공 개수 바꾸기', () => {
   it('지난 판을 내려놓고 바꾼 개수가 바로 보인다', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: '핀볼' }));
-    fireEvent.click(screen.getByRole('button', { name: /구슬 굴리기/ }));
+    fireEvent.click(screen.getByRole('button', { name: /공 굴리기/ }));
     for (let k = 0; k < 400; k += 1) act(() => { vi.advanceTimersByTime(100); });
     fireEvent.click(screen.getByRole('button', { name: '닫고 게임 보기' }));
     fireEvent.click(screen.getByRole('button', { name: '가집 공 하나 더' }));
     expect(screen.getByText('공 6개')).toBeTruthy();
     expect(screen.getByRole('img', { name: '기본 판, 구슬 6개 핀볼' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /구슬 굴리기/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /공 굴리기/ })).toBeTruthy();
   });
 });
