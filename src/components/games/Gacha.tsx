@@ -1,164 +1,119 @@
 /**
- * 뽑기 기계 — 캡슐이 흔들리다가 하나 떨어진다.
+ * 뽑기 기계 — 손잡이를 돌리면 돔 안 캡슐이 흔들리다 하나가 떨어지고, 열면 가게가 나온다.
  *
- * 당첨은 winnerIndex 가 정한다. 돔 안 캡슐은 서로 구별되지 않으므로
- * 어느 것이 떨어지든 공정하다 — 당첨 가게의 캡슐이 떨어진다.
+ * 당첨은 App 이 정했다(winnerIndex). 돔 안 캡슐에는 이름이 없고 서로 구별되지 않으므로
+ * 어느 캡슐이 떨어지든 공정하다 — 떨어진 캡슐을 열어 보면 당첨 가게다. 캡슐 색은 후보들의
+ * 카테고리 색을 섞어 둔 것이고, 떨어지는 캡슐은 당첨 가게 카테고리 색이다.
+ *
+ * 순서: 흔들기(2.2초, 손잡이 한 바퀴) → 출구로 떨어짐 → 0.5초 뒤 열림 → 끝.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { categoryIcon, categoryHue } from '../../lib/category';
+import { useEffect, useMemo, useState } from 'react';
+import { categoryHue, categoryIcon } from '../../lib/category';
 import { shortName } from '../../lib/name';
-import { prefersReducedMotion, type GameProps } from './types';
+import { seededRandom } from '../../lib/random';
+import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
+
+type Phase = 'idle' | 'shake' | 'drop' | 'open';
 
 const SHAKE_MS = 2200;
-const SHAKE_INTERVAL = 180;
-const RISE_MS = 300;
-const OPEN_DELAY = 500; // 떨어진 후 열릴 때까지 대기
-const MAX_CAPSULES = 20;
-
-/**
- * 흔들림 오프셋. 180ms 간격으로 랜덤 거리 (1~6px).
- */
-function shakeOffset(ms: number): number {
-  const cycle = Math.floor(ms / SHAKE_INTERVAL);
-  const hash = Math.sin(cycle * 12.9898 + 78.233) * 43758.5453;
-  return (hash - Math.floor(hash)) * 5 + 1; // 1~6px
-}
+const OPEN_AT = SHAKE_MS + 500;
+/** 돔에 그리는 캡슐 수 상한. 넘으면 "…외 N개" 로 적는다. */
+export const MAX_CAPSULES = 20;
 
 export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
   const count = candidates.length;
-  const displayCount = Math.min(count, MAX_CAPSULES);
-  const overflowCount = Math.max(0, count - MAX_CAPSULES);
+  const [shown, setShown] = useState<{ run: number; phase: Phase }>({ run: -1, phase: 'idle' });
+  const phase: Phase = shown.run === run ? shown.phase : winnerIndex !== null && !spinning ? 'open' : 'idle';
 
-  const [phase, setPhase] = useState<'idle' | 'shaking' | 'rising' | 'opening' | 'done'>('idle');
-  const [elapsed, setElapsed] = useState(0);
-  const rafRef = useRef<number>();
+  // 돔 안 캡슐: 후보 카테고리 색을 판 번호로 섞어 흩어 놓는다. 이름은 없다.
+  const capsules = useMemo(() => {
+    const r = seededRandom(run + 11);
+    const hues = candidates.slice(0, MAX_CAPSULES).map((p) => categoryHue(p.category));
+    for (let i = hues.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(r() * (i + 1));
+      [hues[i], hues[j]] = [hues[j], hues[i]];
+    }
+    // 해바라기 배치(황금각) — 돔 안에 고르게 퍼진다.
+    return hues.map((hue, i) => {
+      const t = (i + 0.5) / hues.length;
+      const rad = Math.sqrt(t) * 36;
+      const a = i * 2.39996;
+      return { hue, x: 50 + Math.cos(a) * rad, y: 52 + Math.sin(a) * rad * 0.9, tilt: Math.round((r() - 0.5) * 80) };
+    });
+  }, [candidates, run]);
 
-  // 애니메이션 루프.
   useEffect(() => {
     if (!spinning || winnerIndex === null || count === 0) return;
-
-    const reduced = prefersReducedMotion();
-    const t0 = performance.now();
-    let animEndTime = 0;
-
-    const loop = (now: number) => {
-      const elapsed = now - t0;
-
-      if (phase === 'idle') {
-        setPhase('shaking');
-        return;
-      }
-
-      if (phase === 'shaking') {
-        setElapsed(elapsed);
-        if (elapsed >= SHAKE_MS) {
-          setPhase('rising');
-          animEndTime = now;
-        } else {
-          rafRef.current = requestAnimationFrame(loop);
-        }
-        return;
-      }
-
-      if (phase === 'rising') {
-        const elapsed2 = now - animEndTime;
-        setElapsed(elapsed2);
-        if (elapsed2 >= RISE_MS) {
-          setPhase('opening');
-          if (reduced) {
-            onSpinEnd();
-            return;
-          }
-          window.setTimeout(() => {
-            setPhase('done');
-          }, OPEN_DELAY);
-        } else {
-          rafRef.current = requestAnimationFrame(loop);
-        }
-        return;
-      }
-
-      if (phase === 'opening') {
-        setElapsed(now - animEndTime - RISE_MS);
-        rafRef.current = requestAnimationFrame(loop);
-        return;
-      }
-
-      if (phase === 'done') {
-        onSpinEnd();
-      }
-    };
-
-    if (reduced) {
-      setPhase('done');
-      onSpinEnd();
-      return;
+    if (prefersReducedMotion()) {
+      setShown({ run, phase: 'open' });
+      const t = window.setTimeout(onSpinEnd, 0);
+      return () => window.clearTimeout(t);
     }
-
-    rafRef.current = requestAnimationFrame(loop);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spinning, winnerIndex, count, onSpinEnd, phase]);
+    setShown({ run, phase: 'shake' });
+    const timers = [
+      window.setTimeout(() => setShown({ run, phase: 'drop' }), SHAKE_MS),
+      window.setTimeout(() => setShown({ run, phase: 'open' }), OPEN_AT),
+      window.setTimeout(onSpinEnd, SPIN_MS.gacha),
+    ];
+    return () => timers.forEach((t) => window.clearTimeout(t));
+  }, [spinning, winnerIndex, count, run, onSpinEnd]);
 
   if (count === 0) return <div className="gacha gacha--empty" />;
 
-  const capsuleSize = 48;
-  const domeRadius = displayCount <= 6 ? 60 : displayCount <= 12 ? 80 : 100;
-
-  // 캡슐 배치: 원형 배열.
-  const capsules = useMemo(() => {
-    const arr: { place: (typeof candidates)[0]; angle: number }[] = [];
-    for (let i = 0; i < displayCount; i += 1) {
-      const angle = (i / displayCount) * Math.PI * 2;
-      arr.push({ place: candidates[i], angle });
-    }
-    return arr;
-  }, [displayCount, candidates]);
-
-  const winner = winnerIndex >= 0 && winnerIndex < count ? candidates[winnerIndex] : null;
-  const shake = phase === 'shaking' ? shakeOffset(elapsed) : 0;
-  const riseProgress = phase === 'rising' ? Math.min(1, elapsed / RISE_MS) : phase === 'opening' ? 1 : 0;
+  const winner = winnerIndex === null ? null : candidates[winnerIndex];
+  const hint =
+    phase === 'idle'
+      ? `캡슐 ${count}개가 들어 있어요. 손잡이를 돌리면 하나가 나와요.`
+      : phase === 'shake'
+        ? '캡슐을 섞고 있어요…'
+        : phase === 'drop'
+          ? '캡슐이 나왔어요. 열어 볼게요…'
+          : winner
+            ? `${winner.name} 캡슐이 나왔어요.`
+            : '';
 
   return (
-    <div className={expanded ? 'gacha gacha--big' : 'gacha'}>
-      <div className="gacha__dome" style={{ transform: `rotate(${(elapsed / SHAKE_MS) * 360 * 2}deg)` }}>
-        {capsules.map((item, i) => {
-          const x = Math.cos(item.angle) * domeRadius;
-          const y = Math.sin(item.angle) * domeRadius;
-          const isWinner = winnerIndex === i;
-          return (
-            <div
-              key={item.place.id}
-              className={isWinner && phase !== 'idle' ? 'gacha__capsule gacha__capsule--falling' : 'gacha__capsule'}
-              style={{
-                left: `calc(50% + ${x}px)`,
-                top: `calc(50% + ${y}px)`,
-                transform: `translate(-50%, -50%) translateY(${isWinner && phase !== 'idle' ? riseProgress * 80 : shake}px)`,
-              }}
-            >
-              <div className="gacha__capsule-half gacha__capsule-half--color" style={{ background: `oklch(0.7 0.15 ${categoryHue(item.place.category)})` }} />
-              <div className="gacha__capsule-half gacha__capsule-half--white" />
-            </div>
-          );
-        })}
+    <div className={['gacha', expanded ? 'gacha--big' : '', `gacha--${phase}`].filter(Boolean).join(' ')}>
+      <p className="muted small gacha__hint">{hint}</p>
+      <div className="gacha__machine" aria-hidden="true">
+        <div className="gacha__dome">
+          {capsules.map((c, i) => (
+            <span
+              key={i}
+              className="gacha__capsule"
+              style={
+                {
+                  '--cat-hue': c.hue,
+                  left: `${c.x}%`,
+                  top: `${c.y}%`,
+                  rotate: `${c.tilt}deg`,
+                  '--i': i,
+                } as React.CSSProperties
+              }
+            />
+          ))}
+        </div>
+        <div className="gacha__body">
+          <span className="gacha__handle" />
+          <span className="gacha__chute">
+            {winner && phase !== 'idle' && phase !== 'shake' && (
+              <span
+                className="gacha__capsule gacha__capsule--out"
+                style={{ '--cat-hue': categoryHue(winner.category) } as React.CSSProperties}
+              />
+            )}
+          </span>
+        </div>
       </div>
-
-      {overflowCount > 0 && (
-        <div className="gacha__overflow">
-          …외 {overflowCount}개
-        </div>
-      )}
-
-      {phase === 'opening' && winner && (
-        <div className="gacha__result">
-          <div className="gacha__chip">
-            <span className="gacha__icon">{categoryIcon(winner.category)}</span>
-            <strong>{shortName(winner.name, 10)}</strong>
-            <span className="gacha__walk">도보 {winner.walkMin}분</span>
-          </div>
-        </div>
+      {count > MAX_CAPSULES && <p className="muted small gacha__more">…외 {count - MAX_CAPSULES}개</p>}
+      {winner && phase === 'open' && (
+        <p className="gacha__prize" style={{ '--cat-hue': categoryHue(winner.category) } as React.CSSProperties}>
+          <span className="gacha__prizeIcon" aria-hidden="true">{categoryIcon(winner.category)}</span>
+          <strong>{shortName(winner.name, 12)}</strong>
+          <span className="gacha__prizeMeta">
+            {winner.category} · 도보 {winner.walkMin}분
+          </span>
+        </p>
       )}
     </div>
   );

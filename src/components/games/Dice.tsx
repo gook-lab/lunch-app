@@ -1,273 +1,146 @@
 /**
- * 주사위 — 보드 둘레에 말을 이동시킨다.
+ * 주사위 말판 — 가게가 판 둘레 칸이 되고, 주사위를 굴려 말이 시계 방향으로 간다.
  *
- * 말은 지난 판의 자리에서 출발하고, 1~6 눈으로 winnerIndex까지 도착한다.
- * 굴림마다 주사위가 회전하고 말이 한 칸씩 이동한다.
+ * 당첨은 App 이 정했다(winnerIndex). 말이 있는 칸에서 당첨 칸까지 거리를 1~6 눈으로
+ * 나눠 마지막 눈에 정확히 도착하게 한다(lib/dice.ts). 말은 지난 판 자리에서 출발한다.
+ * 가게는 둘레에 고르게 흩어 두고, 사이 빈 칸도 말이 한 칸씩 밟고 지나간다.
+ *
+ * 굴림마다: 주사위가 0.5초 구르고 → 0.55초에 눈이 서고 → 말이 한 칸에 180ms 씩 →
+ * 다음 굴림까지 0.45초. 굴림은 많아야 6번이라 30초 상한 안에 끝난다.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { boardSize, diceRolls, positions } from '../../lib/dice';
+import { useEffect, useRef, useState } from 'react';
 import { categoryHue, categoryIcon } from '../../lib/category';
+import { MAX_ROLLS, boardSide, diceRolls, distanceTo, perimeterCell, placeCell, trackLength } from '../../lib/dice';
 import { shortName } from '../../lib/name';
+import { seededRandom } from '../../lib/random';
 import { prefersReducedMotion, type GameProps } from './types';
 
-const ROLL_MS = 500; // 주사위 회전
-const MOVE_DELAY = 550; // 회전 후 말 이동 시작
-const MOVE_INTERVAL = 180; // 한 칸 이동
-const ROLL_INTERVAL = 450; // 굴림 사이 대기
+const ROLL_MS = 550;
+const STEP_MS = 180;
+const GAP_MS = 450;
+
+/** 굴림 목록의 연출 길이. */
+export function diceDuration(rolls: number[]): number {
+  return rolls.reduce((a, e) => a + ROLL_MS + e * STEP_MS + GAP_MS, 0);
+}
+
+interface View {
+  run: number;
+  pos: number;
+  face: number;
+  roll: number;
+  rolling: boolean;
+  done: boolean;
+}
+
+/** 주사위 눈 점 자리(3×3 격자 번호). */
+const PIPS: Record<number, number[]> = {
+  1: [4],
+  2: [0, 8],
+  3: [0, 4, 8],
+  4: [0, 2, 6, 8],
+  5: [0, 2, 4, 6, 8],
+  6: [0, 2, 3, 5, 6, 8],
+};
 
 export function Dice({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
   const count = candidates.length;
-  const boardS = boardSize(count);
-  const totalPlaces = boardS * 4; // 한 변 boardS, 4변 = 총 boardS*4칸
+  const side = boardSide(count);
+  const track = trackLength(count);
+  // 말은 지난 판 자리에서 출발한다. 판(후보 구성)이 바뀌면 App 이 key 로 새로 만든다.
+  const home = useRef(0);
+  const [view, setView] = useState<View>({ run: -1, pos: 0, face: 1, roll: 0, rolling: false, done: false });
 
-  // 지난 판의 자리 (같은 run 안에서만 유지).
-  const [lastPos, setLastPos] = useState<number>(0);
-  const prevRunRef = useRef<number>(-1);
-
-  // 새 판: run이 바뀌면 지난 자리를 기억.
   useEffect(() => {
-    if (run !== prevRunRef.current) {
-      // 새 판이므로 지난 자리 갱신.
-      prevRunRef.current = run;
-    }
-  }, [run]);
-
-  const [phase, setPhase] = useState<'idle' | 'rolling' | 'moving' | 'done'>('idle');
-  const [rollIndex, setRollIndex] = useState(0);
-  const [elapsed, setElapsed] = useState(0);
-  const [currentPos, setCurrentPos] = useState(lastPos);
-
-  const rolls = useMemo(() => {
-    if (winnerIndex === null || count === 0) return [];
-    // 목표까지의 거리 (시계 방향).
-    const distance = (winnerIndex - lastPos + totalPlaces) % totalPlaces;
-    return diceRolls(distance === 0 ? totalPlaces : distance, totalPlaces);
-  }, [winnerIndex, count, lastPos, totalPlaces]);
-
-  const rollPositions = useMemo(() => {
-    if (rolls.length === 0) return [];
-    return positions(rolls, lastPos, totalPlaces);
-  }, [rolls, lastPos, totalPlaces]);
-
-  // 애니메이션 루프.
-  useEffect(() => {
-    if (!spinning || winnerIndex === null || count === 0 || rolls.length === 0) return;
-
-    const reduced = prefersReducedMotion();
-    if (reduced) {
-      setCurrentPos(rollPositions[rollPositions.length - 1] ?? lastPos);
+    if (!spinning || winnerIndex === null || count === 0) return;
+    const target = placeCell(winnerIndex, count);
+    // 후보가 34곳 넘게 많아 둘레가 36칸을 넘으면 6번 굴림으로 못 닿을 수 있다 — 그땐 닿는 자리에서 출발한다.
+    const reach = MAX_ROLLS * 6;
+    let from = home.current % track;
+    if (distanceTo(from, target, track) > reach) from = (((target - reach) % track) + track) % track;
+    const rolls = diceRolls(distanceTo(from, target, track), seededRandom(run));
+    const finish = () => {
+      home.current = target;
       onSpinEnd();
-      return;
+    };
+    if (prefersReducedMotion()) {
+      setView({ run, pos: target, face: rolls[rolls.length - 1], roll: rolls.length, rolling: false, done: true });
+      const t = window.setTimeout(finish, 0);
+      return () => window.clearTimeout(t);
     }
-
-    let rollTimer = 0;
-    let moveTimer = 0;
-    let rollLoopTimer = 0;
-
-    const doRoll = (idx: number) => {
-      if (idx >= rolls.length) {
-        setPhase('done');
-        setLastPos(rollPositions[rollPositions.length - 1] ?? lastPos);
-        onSpinEnd();
-        return;
+    const timers: number[] = [];
+    const at = (ms: number, fn: () => void) => timers.push(window.setTimeout(fn, ms));
+    let t = 0;
+    let pos = from;
+    setView({ run, pos, face: 1, roll: 0, rolling: false, done: false });
+    rolls.forEach((eyes, i) => {
+      const startPos = pos;
+      at(t, () => setView((v) => ({ ...v, roll: i + 1, rolling: true })));
+      at(t + ROLL_MS, () => setView((v) => ({ ...v, face: eyes, rolling: false })));
+      for (let s = 1; s <= eyes; s += 1) {
+        at(t + ROLL_MS + s * STEP_MS, () => setView((v) => ({ ...v, pos: (startPos + s) % track })));
       }
-
-      setPhase('rolling');
-      setRollIndex(idx);
-      setElapsed(0);
-
-      // 주사위 회전 애니메이션 (500ms).
-      moveTimer = window.setTimeout(() => {
-        setPhase('moving');
-        // 말 이동 (180ms × 눈 개수).
-        const eyes = rolls[idx];
-        const moveCount = eyes;
-        let moveStep = 0;
-
-        const doMove = () => {
-          moveStep += 1;
-          setCurrentPos((p) => (p + 1) % totalPlaces);
-          if (moveStep < moveCount) {
-            moveTimer = window.setTimeout(doMove, MOVE_INTERVAL);
-          } else {
-            // 다음 굴림으로.
-            rollLoopTimer = window.setTimeout(() => doRoll(idx + 1), ROLL_INTERVAL);
-          }
-        };
-
-        doMove();
-      }, ROLL_MS);
-    };
-
-    doRoll(0);
-
-    return () => {
-      window.clearTimeout(rollTimer);
-      window.clearTimeout(moveTimer);
-      window.clearTimeout(rollLoopTimer);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spinning, winnerIndex, count, rolls, rollPositions, onSpinEnd]);
+      pos = (pos + eyes) % track;
+      t += ROLL_MS + eyes * STEP_MS + GAP_MS;
+    });
+    at(t - GAP_MS + STEP_MS, () => setView((v) => ({ ...v, done: true })));
+    at(t, finish);
+    return () => timers.forEach((x) => window.clearTimeout(x));
+  }, [spinning, winnerIndex, count, track, run, onSpinEnd]);
 
   if (count === 0) return <div className="dice dice--empty" />;
 
-  // 보드 그리기: 시계 방향 (1~totalPlaces).
-  const slots: { place: (typeof candidates)[0]; num: number; x: number; y: number }[] = [];
-  let slotNum = 1;
-
-  // 위쪽 (왼쪽 → 오른쪽).
-  for (let i = 0; i < boardS; i += 1) {
-    slots.push({
-      place: candidates[slotNum - 1] ?? { id: '', name: '', category: 'korean', walkMin: 0 },
-      num: slotNum,
-      x: (i / boardS) * 100,
-      y: 0,
-    });
-    slotNum += 1;
-  }
-
-  // 오른쪽 (위 → 아래).
-  for (let i = 1; i < boardS; i += 1) {
-    slots.push({
-      place: candidates[slotNum - 1] ?? { id: '', name: '', category: 'korean', walkMin: 0 },
-      num: slotNum,
-      x: 100,
-      y: (i / boardS) * 100,
-    });
-    slotNum += 1;
-  }
-
-  // 아래쪽 (오른쪽 → 왼쪽).
-  for (let i = boardS - 2; i >= 0; i -= 1) {
-    slots.push({
-      place: candidates[slotNum - 1] ?? { id: '', name: '', category: 'korean', walkMin: 0 },
-      num: slotNum,
-      x: (i / boardS) * 100,
-      y: 100,
-    });
-    slotNum += 1;
-  }
-
-  // 왼쪽 (아래 → 위).
-  for (let i = boardS - 2; i > 0; i -= 1) {
-    slots.push({
-      place: candidates[slotNum - 1] ?? { id: '', name: '', category: 'korean', walkMin: 0 },
-      num: slotNum,
-      x: 0,
-      y: (i / boardS) * 100,
-    });
-    slotNum += 1;
-  }
-
-  const diceRotation = phase === 'rolling' ? (elapsed / ROLL_MS) * 720 : 0;
-  const diceEye = rollIndex < rolls.length ? rolls[rollIndex] : 0;
+  const live = view.run === run;
+  const pos = live ? view.pos : winnerIndex !== null && !spinning ? placeCell(winnerIndex, count) : 0;
+  const done = live ? view.done : winnerIndex !== null && !spinning;
+  const winner = winnerIndex === null ? null : candidates[winnerIndex];
+  // 둘레 칸 → 그 칸의 가게 번호.
+  const places = new Map(candidates.map((_, k) => [placeCell(k, count), k]));
+  const status = !live && !done
+    ? '주사위를 굴리면 말이 칸을 따라가요'
+    : done && winner
+      ? `${shortName(winner.name, 10)} 칸에 도착했어요`
+      : `${view.roll}번째 굴림${view.rolling ? '…' : ` · ${view.face}`}`;
 
   return (
     <div className={expanded ? 'dice dice--big' : 'dice'}>
-      <div className="dice__board">
-        <svg width="100%" viewBox="0 0 320 320" className="dice__slots" preserveAspectRatio="xMidYMid slice">
-          {slots.map((slot, i) => {
-            const nextSlot = slots[(i + 1) % slots.length];
-            const isWin = currentPos === i && phase === 'done';
+      <div className="dice__board" style={{ gridTemplateColumns: `repeat(${side}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${side}, minmax(0, 1fr))` }}>
+        {Array.from({ length: track }, (_, t) => {
+          const cell = perimeterCell(t, side);
+          const here = t === pos;
+          const k = places.get(t);
+          const p = k === undefined ? null : candidates[k];
+          const style = { gridRow: cell.row, gridColumn: cell.col } as React.CSSProperties;
+          if (!p) {
             return (
-              <g key={i}>
-                <rect
-                  x={`${slot.x}%`}
-                  y={`${slot.y}%`}
-                  width={`${100 / boardS}%`}
-                  height={`${100 / boardS}%`}
-                  fill={isWin ? 'var(--color-accent-100)' : 'var(--color-neutral-50)'}
-                  stroke={isWin ? 'var(--color-accent-600)' : 'var(--color-neutral-300)'}
-                  strokeWidth={isWin ? '2' : '1'}
-                  className={isWin ? 'dice__slot dice__slot--win' : 'dice__slot'}
-                />
-                {slot.num <= count && (
-                  <g>
-                    <rect
-                      x={`${slot.x}%`}
-                      y={`${slot.y}%`}
-                      width={`${100 / boardS}%`}
-                      height="8%"
-                      fill={`oklch(0.6 0.15 ${categoryHue(slot.place.category)})`}
-                    />
-                    <text
-                      x={`${slot.x + 50 / boardS}%`}
-                      y={`${slot.y + 16}%`}
-                      textAnchor="middle"
-                      fontSize="10"
-                      fontWeight="600"
-                      fill="var(--color-neutral-900)"
-                    >
-                      {categoryIcon(slot.place.category)}
-                    </text>
-                    {boardS > 4 ? (
-                      <text
-                        x={`${slot.x + 50 / boardS}%`}
-                        y={`${slot.y + 80 / boardS - 8}%`}
-                        textAnchor="middle"
-                        fontSize="8"
-                        fontWeight="600"
-                        fill="var(--color-neutral-700)"
-                      >
-                        {slot.num}
-                      </text>
-                    ) : (
-                      <>
-                        <text
-                          x={`${slot.x + 50 / boardS}%`}
-                          y={`${slot.y + 50 / boardS - 12}%`}
-                          textAnchor="middle"
-                          fontSize="9"
-                          fontWeight="600"
-                          fill="var(--color-neutral-900)"
-                        >
-                          {shortName(slot.place.name, 4)}
-                        </text>
-                        <text
-                          x={`${slot.x + 50 / boardS}%`}
-                          y={`${slot.y + 80 / boardS - 8}%`}
-                          textAnchor="middle"
-                          fontSize="8"
-                          fill="var(--color-neutral-700)"
-                        >
-                          {slot.num}
-                        </text>
-                      </>
-                    )}
-                  </g>
-                )}
-              </g>
+              <div key={`blank-${t}`} className={here ? 'dice__cell dice__cell--blank dice__cell--here' : 'dice__cell dice__cell--blank'} style={style}>
+                {here && <span className="dice__pawn" aria-hidden="true" />}
+              </div>
             );
-          })}
-
-          {/* 말 */}
-          {spinning && (
-            <circle
-              cx="50%"
-              cy="50%"
-              r="8"
-              fill="var(--color-primary-600)"
-              className="dice__pawn"
-              style={{ transform: `translate(calc(${slots[currentPos]?.x ?? 0}% + ${100 / boardS / 2}%), calc(${slots[currentPos]?.y ?? 0}% + ${100 / boardS / 2}%))` }}
-            />
-          )}
-        </svg>
-      </div>
-
-      {/* 주사위 + 상태 글 */}
-      <div className="dice__center">
-        <div className="dice__dice" style={{ transform: `rotateX(${diceRotation * 0.5}deg) rotateY(${diceRotation}deg)` }}>
-          {Array.from({ length: 6 }, (_, i) => (
-            <div key={i + 1} className={`dice__face dice__face--${i + 1}`}>
-              {i + 1}
+          }
+          const win = done && k === winnerIndex;
+          return (
+            <div
+              key={p.id}
+              className={['dice__cell', here ? 'dice__cell--here' : '', win ? 'dice__cell--win' : ''].filter(Boolean).join(' ')}
+              style={{ ...style, '--cat-hue': categoryHue(p.category) } as React.CSSProperties}
+              title={p.name}
+            >
+              <span className="dice__num">{k! + 1}</span>
+              <span className="dice__icon" aria-hidden="true">{categoryIcon(p.category)}</span>
+              <span className="dice__name">{shortName(p.name, side > 4 ? 3 : 5)}</span>
+              {here && <span className="dice__pawn" aria-hidden="true" />}
             </div>
-          ))}
+          );
+        })}
+        <div className="dice__center" style={{ gridRow: `2 / ${side}`, gridColumn: `2 / ${side}` }}>
+          <span className={live && view.rolling ? 'dice__die dice__die--rolling' : 'dice__die'} aria-hidden="true">
+            {Array.from({ length: 9 }, (_, i) => (
+              <span key={i} className={PIPS[live ? view.face : 1].includes(i) ? 'dice__pip dice__pip--on' : 'dice__pip'} />
+            ))}
+          </span>
+          <p className="dice__status" aria-live="polite">{status}</p>
         </div>
-        {phase !== 'idle' && (
-          <div className="dice__status">
-            {rollIndex + 1}번째 굴림 · {diceEye}
-          </div>
-        )}
       </div>
     </div>
   );

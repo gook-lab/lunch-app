@@ -1611,7 +1611,8 @@ html:has(dialog[open]:modal) { overflow: hidden; }
   /* 데스크톱: 방식은 왼쪽 세로 레일, 나머지는 오른쪽 칸에 위에서 아래로. */
   .stage:not(.stage--full) {
     display: grid;
-    grid-template-columns: 104px minmax(0, 1fr);
+    /* 게임이 열 가지라 레일은 두 줄 — 한 줄이면 레일이 640px 를 넘어 판보다 길었다. */
+    grid-template-columns: 176px minmax(0, 1fr);
     align-content: start;
     column-gap: var(--space-4);
     /* 레일이 여러 줄에 걸치므로 줄 간격은 0 — 빈 줄마다 간격이 쌓여 아래가 240px 비었다. 간격은 여백으로. */
@@ -1632,8 +1633,9 @@ html:has(dialog[open]:modal) { overflow: hidden; }
     padding: var(--space-2);
     overflow: visible;
     width: auto;
+    mask-image: none;
   }
-  .stage:not(.stage--full) > .modebar .modebar__item { flex: none; min-height: 64px; }
+  .stage:not(.stage--full) > .modebar .modebar__item { flex: none; min-width: 0; min-height: 64px; }
 }
 
 /* 회사 위치 카드 (지도 탭) */
@@ -2360,178 +2362,173 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   .stage--full .stage__run { bottom: var(--space-2); }
 }
 
-/* 뽑기 기계 */
-.gacha { position: relative; width: min(280px, 84vw); }
+/* 뽑기 기계 — 돔 · 몸통 · 손잡이 · 출구. 캡슐 색은 카테고리 색(--cat-hue) */
+.gacha { display: grid; justify-items: center; gap: var(--space-2); width: min(280px, 84vw); }
+.gacha--big { width: min(380px, 92vw); }
 .gacha--empty { height: 260px; }
+.gacha__hint { margin: 0; text-align: center; min-height: 2.6em; }
+.gacha__machine { display: grid; justify-items: center; width: 100%; }
 .gacha__dome {
   position: relative;
-  width: 100%;
+  width: 84%;
   aspect-ratio: 1;
+  border: 2px solid var(--color-neutral-400);
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-neutral-100) 0%, var(--color-neutral-50) 100%);
-  border: 8px solid var(--color-neutral-300);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: var(--color-surface);
   overflow: hidden;
 }
 .gacha__capsule {
   position: absolute;
-  width: 48px;
-  height: 32px;
-  border-radius: 16px;
-  display: flex;
-  overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: none;
-}
-.gacha__capsule--falling {
-  transition: transform 300ms ease-out;
-}
-.gacha__capsule-half {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 12px;
-}
-.gacha__capsule-half--white {
-  background: var(--color-neutral-0);
-}
-.gacha__overflow {
-  text-align: center;
-  margin-top: var(--space-2);
-  font-size: var(--fs-sm);
-  color: var(--color-neutral-700);
-}
-.gacha__result {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: gacha-open 400ms ease-out both;
-}
-.gacha__chip {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-2);
-  background: var(--color-accent-100);
-  border: 2px solid var(--color-accent-600);
-  border-radius: var(--radius-md);
-  font-weight: 700;
-  color: var(--color-accent-900);
-}
-.gacha__icon { font-size: 20px; }
-.gacha__walk { font-size: var(--fs-xs); color: var(--color-neutral-700); }
-@keyframes gacha-open {
-  from { transform: scale(0.5); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-[data-motion='reduced'] .gacha__result { animation: none; }
-
-/* 플링코 */
-.plinko { position: relative; width: min(300px, 90vw); }
-.plinko--empty { height: 260px; }
-.plinko__board {
-  width: 100%;
-  background: var(--color-neutral-0);
-  border: 2px solid var(--color-neutral-300);
-  border-radius: var(--radius-md);
-}
-.plinko__ball { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2)); }
-.plinko__pin { transition: opacity 100ms ease-out, r 100ms ease-out; }
-.plinko__pin--hit { opacity: 1 !important; }
-.plinko__slot { }
-.plinko__slot--win { }
-.plinko__result {
-  margin-top: var(--space-2);
-  text-align: center;
-}
-.plinko__chip {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
-  background: var(--color-accent-100);
-  border: 1px solid var(--color-accent-600);
-  border-radius: var(--radius-md);
-  font-weight: 700;
-  color: var(--color-accent-900);
-}
-.plinko__icon { font-size: 18px; }
-.plinko__walk { font-size: var(--fs-xs); color: var(--color-neutral-700); }
-
-/* 주사위 */
-.dice { position: relative; width: min(320px, 90vw); }
-.dice--empty { height: 260px; }
-.dice__board {
+  width: 13%;
   aspect-ratio: 1;
-  background: var(--color-neutral-0);
-  border: 2px solid var(--color-neutral-300);
-  border-radius: var(--radius-md);
-  overflow: hidden;
+  border: 1px solid var(--color-neutral-400);
+  border-radius: 50%;
+  background: linear-gradient(to bottom, var(--color-bg) 48%, oklch(0.8 0.12 var(--cat-hue)) 48%);
+  translate: -50% -50%;
+}
+.gacha--shake .gacha__capsule { animation: gacha-jitter 220ms var(--ease-inout) infinite alternate; animation-delay: calc(var(--i) * -37ms); }
+.gacha__body {
   position: relative;
-}
-.dice__slots {
-  width: 100%;
-  height: 100%;
-}
-.dice__slot {
-  transition: all 100ms ease-out;
-}
-.dice__slot--win {
-  animation: dice-win 200ms ease-out;
-}
-.dice__pawn {
-  transition: all 180ms ease-out;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.2));
-}
-@keyframes dice-win {
-  0% { filter: drop-shadow(0 0 8px var(--color-accent-600)); }
-  100% { filter: drop-shadow(0 0 0px var(--color-accent-600)); }
-}
-[data-motion='reduced'] .dice__pawn,
-[data-motion='reduced'] .dice__slot--win { animation: none; transition: none; }
-
-.dice__center {
-  margin-top: var(--space-3);
-  text-align: center;
-}
-.dice__dice {
-  display: inline-block;
-  width: 40px;
-  height: 40px;
-  position: relative;
-  transform-style: preserve-3d;
-  transition: transform 500ms ease-out;
-}
-.dice__face {
-  position: absolute;
-  width: 40px;
-  height: 40px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: var(--color-primary-600);
-  border: 1px solid var(--color-primary-700);
-  color: var(--color-neutral-0);
-  font-weight: 700;
-  font-size: 18px;
+  justify-content: space-between;
+  width: 64%;
+  height: 72px;
+  margin-top: -6px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md) var(--radius-md) var(--radius-sm) var(--radius-sm);
+  background: var(--color-accent);
 }
-.dice__face--1 { transform: translateZ(20px); }
-.dice__face--2 { transform: rotateY(90deg) translateZ(20px); }
-.dice__face--3 { transform: rotateY(180deg) translateZ(20px); }
-.dice__face--4 { transform: rotateY(-90deg) translateZ(20px); }
-.dice__face--5 { transform: rotateX(90deg) translateZ(20px); }
-.dice__face--6 { transform: rotateX(-90deg) translateZ(20px); }
-.dice__status {
-  margin-top: var(--space-2);
-  font-weight: 700;
-  font-size: var(--fs-sm);
-  color: var(--color-neutral-900);
+.gacha__handle {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  box-shadow: var(--shadow-sm);
+}
+.gacha__handle::after {
+  content: '';
+  position: absolute;
+  inset: 50% 4px auto;
+  height: 8px;
+  margin-top: -4px;
+  border-radius: 4px;
+  background: var(--color-accent-700);
+}
+.gacha--shake .gacha__handle { animation: gacha-turn 2200ms var(--ease-inout) both; }
+.gacha__chute {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--color-neutral-900);
+  overflow: hidden;
+}
+.gacha__capsule--out { position: static; width: 28px; translate: none; animation: gacha-drop var(--motion-slow) var(--ease-decel) both; }
+.gacha__more { margin: 0; }
+.gacha__prize {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-neutral-300);
+  border-top: 4px solid oklch(0.75 0.12 var(--cat-hue));
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  animation: gacha-open var(--motion-slow) var(--ease-out) both;
+}
+.gacha__prizeIcon { font-size: 22px; }
+.gacha__prizeMeta { font-size: var(--fs-xs); color: var(--color-neutral-700); }
+@keyframes gacha-jitter { to { translate: calc(-50% + 3px) calc(-50% - 4px); } }
+@keyframes gacha-turn { to { rotate: 360deg; } }
+@keyframes gacha-drop { from { translate: 0 -40px; } }
+@keyframes gacha-open { from { opacity: 0; scale: 0.85; } }
+
+/* 플링코 — 밝은 판. SVG 폭과 칸 줄 폭이 같아 칸이 핀 아래 맞는다 */
+.plinko { display: grid; gap: var(--space-1); width: min(360px, 92vw); }
+.plinko--big { width: min(560px, 94vw); }
+.plinko--empty { height: 260px; }
+.plinko__hint { margin: 0; text-align: center; }
+.plinko__board { display: block; width: 100%; height: auto; }
+.plinko__pin { fill: var(--color-neutral-400); transition: r var(--motion-fast) var(--ease-out); }
+.plinko__pin--hit { fill: var(--color-accent-300); }
+.plinko__pin--now { fill: var(--color-accent); }
+.plinko__wall { stroke: var(--color-neutral-300); stroke-width: 1; }
+.plinko__ball { fill: var(--color-accent-600); stroke: var(--color-bg); stroke-width: 1.5; }
+.plinko__slots { display: grid; margin: 0; padding: 0; list-style: none; }
+.plinko__slot {
+  display: flex;
+  align-items: center;
+  min-height: 64px;
+  max-height: 96px;
+  padding: var(--space-1) 0;
+  border-top: 3px solid oklch(0.75 0.12 var(--cat-hue));
+  color: var(--color-neutral-700);
+  font-size: var(--fs-xs);
+  line-height: 1.1;
+  writing-mode: vertical-rl;
+  overflow: hidden;
+}
+.plinko__slot--win { background: var(--color-accent-100); color: var(--color-text); font-weight: 700; }
+
+/* 주사위 말판 — 둘레 칸 · 가운데 주사위 */
+.dice { width: min(360px, 92vw); }
+.dice--big { width: min(520px, 94vw); }
+.dice--empty { height: 260px; }
+.dice__board { display: grid; gap: var(--space-1); aspect-ratio: 1; }
+.dice__cell {
+  position: relative;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  min-width: 0;
+  padding: 2px;
+  border: 1px solid var(--color-neutral-300);
+  border-top: 3px solid oklch(0.75 0.12 var(--cat-hue));
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  font-size: var(--fs-xs);
+  overflow: hidden;
+}
+.dice__num { position: absolute; top: 1px; left: 3px; color: var(--color-neutral-700); font-size: 10px; }
+.dice__icon { font-size: 16px; line-height: 1; }
+.dice__name { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.dice__cell--blank { border-style: dashed; border-top: 1px dashed var(--color-neutral-300); background: transparent; }
+.dice__cell--here { border-color: var(--color-text); }
+.dice__cell--win { border: 2px solid var(--color-accent); background: var(--color-accent-100); font-weight: 700; }
+.dice__pawn {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--color-bg);
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: var(--shadow-sm);
+}
+.dice__center { display: grid; place-content: center; justify-items: center; gap: var(--space-2); text-align: center; }
+.dice__die {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  width: 52px;
+  height: 52px;
+  padding: 7px;
+  border: 2px solid var(--color-text);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+.dice__die--rolling { animation: dice-roll 500ms var(--ease-inout); }
+.dice__pip { border-radius: 50%; }
+.dice__pip--on { background: var(--color-text); }
+.dice__status { margin: 0; font-size: var(--fs-sm); font-weight: 700; color: var(--color-text); }
+@keyframes dice-roll { 50% { rotate: 200deg; scale: 0.85; } to { rotate: 360deg; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .gacha__capsule, .gacha__handle, .gacha__prize, .gacha__capsule--out, .dice__die--rolling { animation: none !important; }
 }

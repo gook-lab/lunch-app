@@ -1,80 +1,41 @@
 /**
- * 플링코 경로 생성 — 순수 함수.
+ * 플링코 — 공 하나가 삼각형 핀을 맞으며 내려가 아래 칸 하나에 들어간다.
  *
- * 공이 핀을 맞히며 내려갈 때 오른쪽 이동 횟수를 정한다.
- * 오른쪽 이동 횟수 = winnerIndex 가 되도록 좌/우 배열을 만들어 섞는다.
+ * 당첨은 App 이 정했다(winnerIndex). 여기서는 경로를 거꾸로 만든다. 후보가 n 곳이면
+ * 핀은 n − 1 줄이고 줄마다 공이 왼쪽이나 오른쪽으로 반 칸 꺾인다. 오른쪽으로 꺾인
+ * 횟수가 곧 도착 칸 번호라, 오른쪽 winnerIndex 번 · 왼쪽 나머지를 섞으면 어느 순서든
+ * 그 칸에 떨어진다. 순서는 판 번호 난수로 섞어 판마다 다른 길로 보인다.
  */
 
-/**
- * winnerIndex 에 도착하는 좌/우 배열을 만든다.
- * 행 수는 후보 수 − 1 (핀은 경로 분기점).
- * 가게 수가 n이면 행이 n−1 개, 도착 칸이 n 개.
- *
- * @param winnerIndex 도착할 칸 (0 ~ n−1)
- * @param rows 핀 행 수 (n−1)
- * @returns 좌/우 배열. 'R'은 오른쪽 이동 1회.
- */
-export function createPath(winnerIndex: number, rows: number): ('L' | 'R')[] {
-  // 오른쪽 이동 횟수 = winnerIndex
-  const rights = winnerIndex;
-  const lefts = rows - rights;
+export type Turn = 'L' | 'R';
 
-  // R과 L을 섞은 배열.
-  const path: ('L' | 'R')[] = Array(rights).fill('R').concat(Array(lefts).fill('L'));
-
-  // Fisher-Yates 셔플. 고정 시드가 없으므로 결정론적이 아니지만,
-  // 실제로는 컴포넌트가 생성 후 바로 쓰므로 (같은 run 안에서 안 바뀜) 문제없다.
+/** winnerIndex 칸으로 가는 꺾임 순서. 길이 = 후보 수 − 1. */
+export function plinkoPath(winnerIndex: number, count: number, random: () => number = Math.random): Turn[] {
+  const rows = Math.max(0, count - 1);
+  const rights = Math.max(0, Math.min(rows, winnerIndex));
+  const path: Turn[] = [...Array<Turn>(rights).fill('R'), ...Array<Turn>(rows - rights).fill('L')];
   for (let i = path.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(random() * (i + 1));
     [path[i], path[j]] = [path[j], path[i]];
   }
-
   return path;
 }
 
-/**
- * 경로를 따라 공의 (x, y) 궤적을 계산한다.
- * @param path 좌/우 배열
- * @param width 게임판 폭
- * @param pinSpacing 핀 간격
- * @returns 각 핀에서의 (x, y) 위치 배열
- */
-export function tracePath(path: ('L' | 'R')[], width: number, pinSpacing: number): { x: number; y: number }[] {
-  const positions: { x: number; y: number }[] = [];
-  let x = width / 2; // 시작: 가운데
-  let y = 0;
-
-  positions.push({ x, y });
-
-  for (const direction of path) {
-    y += pinSpacing;
-    if (direction === 'R') {
-      x += pinSpacing / 2;
-    } else {
-      x -= pinSpacing / 2;
-    }
-    positions.push({ x, y });
-  }
-
-  return positions;
+/** 경로의 도착 칸(오른쪽으로 꺾인 횟수). */
+export function landingSlot(path: Turn[]): number {
+  return path.filter((t) => t === 'R').length;
 }
 
 /**
- * 주어진 행에서 활성 핀들의 위치 (도착 칸 바로 위, 중심 위치).
- * 행 i (0~rows-1)의 핀은 가운데를 중심으로 i+1 개.
+ * 공이 맞는 핀 차례. hits[r] = r 번째 줄에서 맞는 핀 번호(0..r).
+ * 줄 r 에는 핀이 r + 1 개 있고, 공은 그때까지 오른쪽으로 꺾인 횟수 번째 핀에 떨어진다.
  */
-export function pinsForRow(row: number, width: number, pinSpacing: number): { x: number; y: number; r: number }[] {
-  const count = row + 1;
-  const y = (row + 1) * pinSpacing; // 행 0은 y=pinSpacing, 행 1은 y=2*pinSpacing, ...
-  const radius = 4;
-
-  const pins: { x: number; y: number; r: number }[] = [];
-  for (let i = 0; i < count; i += 1) {
-    // i번째 핀: 가운데(width/2)를 중심으로, 양쪽으로 i개씩 배치.
-    // 중심: width/2 + (i - (count-1)/2) * pinSpacing/2
-    const x = width / 2 + (i - (count - 1) / 2) * (pinSpacing / 2);
-    pins.push({ x, y, r: radius });
+export function pinHits(path: Turn[]): number[] {
+  const hits: number[] = [];
+  let rights = 0;
+  for (let r = 0; r < path.length; r += 1) {
+    hits.push(rights);
+    if (path[r] === 'R') rights += 1;
   }
-
-  return pins;
+  return hits;
 }

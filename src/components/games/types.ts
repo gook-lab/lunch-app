@@ -71,7 +71,7 @@ export const SPIN_MS: Record<Exclude<GameMode, 'pinball' | 'memory' | 'plinko' |
   // 판 수와 상관없이 이 시간 안에 끝난다. 20곳이면 5판이라 판마다 약 0.8초.
   tournament: 4200,
   // 뽑기 기계: 2.2초 흔들림 + 0.3초 떨어짐 + 0.2초 딜레이 = 2.7초.
-  gacha: 2700,
+  gacha: 3000,
 };
 
 /** 게임이 끝나고 결과 모달을 열기까지. 마지막 장면(바늘이 걸리는 순간, 응원한 공 등수)을 볼 틈. */
