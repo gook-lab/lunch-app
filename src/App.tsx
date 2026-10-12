@@ -15,6 +15,7 @@ import { Slot } from './components/games/Slot';
 import { Pinball } from './components/games/Pinball';
 import { Cards } from './components/games/Cards';
 import { Memory } from './components/games/Memory';
+import { ballCountsFor, pickWeighted } from './lib/weights';
 import { Tournament } from './components/games/Tournament';
 import { ShareButton } from './components/ShareButton';
 import {
@@ -103,6 +104,10 @@ export default function App() {
    * 꽂아 엉뚱한 가게를 보여준다. 돌린 판은 그대로 두는 게 맞기도 하다.
    */
   const [board, setBoard] = useState<Place[] | null>(null);
+  // 핀볼 공 개수(가게 id → 개수). 이번 방문 동안만 쓴다. 핀볼일 때만 확률이 된다(lib/weights.ts).
+  const [ballCounts, setBallCounts] = useState<Record<string, number>>({});
+  // 돌린 순간의 공 개수. board 처럼 얼려 둬야 연출 중에 바꿔도 경기가 안 바뀐다.
+  const [boardBalls, setBoardBalls] = useState<number[] | null>(null);
   // 판 번호. 돌릴 때마다 증가 + 난수. 게임이 새 판을 만드는 키이자 핀볼 시드 시작점.
   const [run, setRun] = useState(0);
   // 짝 맞추기처럼 사람이 직접 두는 판의 활동 신호. 연출 잠금 상한을 다시 잰다.
@@ -196,7 +201,10 @@ export default function App() {
     focusResult.current = active === document.body || (active !== null && !!boardRef.current?.closest('.stage')?.contains(active));
     if (focusResult.current) boardRef.current?.focus({ preventScroll: true });
     const frozen = result.candidates;
-    const index = Math.floor(Math.random() * frozen.length);
+    // 핀볼은 공 개수에 비례해 뽑는다. 전부 1개면 아래 균등 추첨과 똑같다.
+    const balls = mode === 'pinball' ? ballCountsFor(frozen.map((p) => p.id), ballCounts) : null;
+    const index = balls ? pickWeighted(balls, Math.random) : Math.floor(Math.random() * frozen.length);
+    setBoardBalls(balls);
     closeResult();
     setSaveProblem(false);
     setBoard(frozen);
@@ -213,7 +221,7 @@ export default function App() {
         block: 'center',
       });
     });
-  }, [result.candidates, spinning, closeResult]);
+  }, [result.candidates, spinning, closeResult, mode, ballCounts]);
 
   useEffect(() => {
     if (!winner || !focusResult.current) return;
@@ -318,6 +326,16 @@ export default function App() {
     setFilters(patch);
   }, []);
 
+  // 공 개수를 바꾸면 지난 판을 내려놓는다(조건 바꾸기와 같다). 얼려 둔 판이 남아 있으면
+  // 바꾼 개수가 화면에 안 보이고, 지난 경기와 구슬 수도 안 맞는다.
+  const changeBalls = useCallback((update: (prev: Record<string, number>) => Record<string, number>) => {
+    setBoard(null);
+    setBoardBalls(null);
+    setWinner(null);
+    setWinnerIndex(null);
+    setBallCounts(update);
+  }, []);
+
   // 단추는 saving 으로 잠기지만, 잠기기 전에 같은 순간 들어온 두 번째 클릭은
   // 막지 못한다. 상태가 아니라 ref 로 즉시 막는다.
   const savingRef = useRef(false);
@@ -379,6 +397,11 @@ export default function App() {
   const notice = noticeMessage(result);
 
   // 결과 카드. 끝난 순간엔 모달 안에, 닫으면 게임 아래에 같은 카드가 놓인다.
+  // 핀볼에서 공 개수를 다르게 줬으면 결과에 그 확률을 남긴다. 다 같으면 안 쓴다.
+  const odds =
+    mode === 'pinball' && boardBalls && winnerIndex !== null && boardBalls.some((n) => n !== boardBalls[0])
+      ? { mine: boardBalls[winnerIndex] ?? 1, total: boardBalls.reduce((a, n) => a + n, 0) }
+      : null;
   const ticket = winner ? (
     <div className="card card--result ticket">
       {/* 어떤 게임으로 뽑았는지 남긴다. 결과 모달이 게임판을 가리므로 여기서 이어 준다. */}
@@ -396,6 +419,11 @@ export default function App() {
         </span>
         <span>도보 {winner.walkMin}분</span>
       </div>
+      {odds && (
+        <p className="muted small ticket__odds">
+          공 {odds.total}개 중 {odds.mine}개였어요 · 확률 {Math.round((odds.mine / odds.total) * 100)}%
+        </p>
+      )}
       <hr className="ticket__perf" aria-hidden="true" />
       {confirmed ? (
         <>
@@ -611,7 +639,10 @@ export default function App() {
               return <Tournament key={key} {...game} />;
             }
             if (mode === 'slot') return <Slot {...game} />;
-            if (mode === 'pinball') return <Pinball {...game} />;
+            if (mode === 'pinball') {
+              const balls = board && boardBalls ? boardBalls : ballCountsFor(game.candidates.map((p) => p.id), ballCounts);
+              return <Pinball {...game} balls={balls} onBallCounts={changeBalls} />;
+            }
             return <Wheel {...game} />;
           })()}
         </div>
