@@ -16,6 +16,8 @@ import { Pinball } from './components/games/Pinball';
 import { Cards } from './components/games/Cards';
 import { Memory } from './components/games/Memory';
 import { ballCountsFor, pickWeighted } from './lib/weights';
+import { CandidateChips } from './components/CandidateChips';
+import { useMedia } from './hooks/useMedia';
 import { Tournament } from './components/games/Tournament';
 import { ShareButton } from './components/ShareButton';
 import {
@@ -104,6 +106,9 @@ export default function App() {
    * 꽂아 엉뚱한 가게를 보여준다. 돌린 판은 그대로 두는 게 맞기도 하다.
    */
   const [board, setBoard] = useState<Place[] | null>(null);
+  // 데스크톱(960px~)은 오른쪽 칸에 후보·조건을 펼쳐 두고, 휴대폰은 요약 한 줄 → 시트로 연다.
+  const wide = useMedia('(min-width: 960px)');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   // 핀볼 공 개수(가게 id → 개수). 이번 방문 동안만 쓴다. 핀볼일 때만 확률이 된다(lib/weights.ts).
   const [ballCounts, setBallCounts] = useState<Record<string, number>>({});
   // 돌린 순간의 공 개수. board 처럼 얼려 둬야 연출 중에 바꿔도 경기가 안 바뀐다.
@@ -263,6 +268,7 @@ export default function App() {
   // 목록의 "지도에서 보기" 로 지도를 열면 그 가게 핀을 고른 채로 연다.
   const [mapFocus, setMapFocus] = useState<string | null>(null);
   const goTab = useCallback((next: Tab) => {
+    setFiltersOpen(false);
     setMapFocus(null);
     setTab(next);
   }, []);
@@ -397,6 +403,34 @@ export default function App() {
   const notice = noticeMessage(result);
 
   // 결과 카드. 끝난 순간엔 모달 안에, 닫으면 게임 아래에 같은 카드가 놓인다.
+  // 후보와 조건. 데스크톱은 오른쪽 칸, 휴대폰은 시트 안에 같은 것을 그린다(한 번에 한 곳만).
+  const filtersPanel = (
+    <>
+      <CandidateChips result={result} winnerId={winner?.id ?? null} />
+      <Roadmap
+        places={places}
+        filters={filters}
+        result={result}
+        winnerId={winner?.id ?? null}
+        onWalk={(walkMin) => updateFilters((f) => ({ ...f, maxWalkMin: walkMin }))}
+        onCategory={toggleCategory}
+        onExcludeRecent={() => updateFilters((f) => ({ ...f, excludeRecent: !f.excludeRecent }))}
+      />
+      {/* officeKey 가 바뀌면 다시 그려진다(회사 위치 저장 → 다시 읽기). */}
+      <div className={officeSource() === 'saved' ? 'today__office' : 'today__office today__office--temp'} data-office={officeKey}>
+        <span>
+          🏢 {officeSource() === 'saved' ? '정해 둔 회사 위치에서 잰 도보 시간이에요' : '회사 위치가 아직 임시값이에요'}
+        </span>
+        <button type="button" className="linkish" onClick={() => goTab('map')}>
+          {officeSource() === 'saved' ? '바꾸기' : '정하기'}
+        </button>
+      </div>
+    </>
+  );
+
+  // 핀볼에서 가게마다 공 개수가 다른가. 그러면 "확률은 같아요" 가 거짓이 된다.
+  const liveBalls = ballCountsFor(result.candidates.map((p) => p.id), ballCounts);
+  const weighted = mode === 'pinball' && liveBalls.some((n) => n !== liveBalls[0]);
   // 핀볼에서 공 개수를 다르게 줬으면 결과에 그 확률을 남긴다. 다 같으면 안 쓴다.
   const odds =
     mode === 'pinball' && boardBalls && winnerIndex !== null && boardBalls.some((n) => n !== boardBalls[0])
@@ -548,6 +582,22 @@ export default function App() {
         className={['stage', spinning ? 'stage--busy' : '', expanded ? 'stage--full' : ''].filter(Boolean).join(' ')}
         aria-label="게임"
       >
+        {/*
+          * 휴대폰: 조건은 요약 한 줄로 줄이고 누르면 시트로 연다. 로드맵(356px)을 게임 아래에
+          * 쌓으면 조건이 탭 바 밑으로 한참 내려가 안 보였다(10/12 와이어프레임 개선).
+          */}
+        {!wide && !expanded && (
+          <button type="button" className="today__summary" aria-haspopup="dialog" onClick={() => setFiltersOpen(true)}>
+            <span className="today__summaryMain">후보 {result.candidates.length}곳</span>
+            <span className="today__summaryRest">
+              도보 {filters.maxWalkMin}분 · {filters.categories.length > 0 ? filters.categories.join('·') : '카테고리 전체'}
+              {filters.excludeRecent ? ' · 최근 2주 제외' : ''}
+            </span>
+            <span className="today__summaryGo">
+              바꾸기<span aria-hidden="true"> ▾</span>
+            </span>
+          </button>
+        )}
         <div className="modebar" role="group" aria-label="방식">
           {GAME_MODES.map((m) => (
             <button
@@ -568,7 +618,9 @@ export default function App() {
           {expanded ? (
             <span className="stage__label">크게 보는 중</span>
           ) : (
-            <p className="muted small stage__hint">방식은 보여주는 것만 달라요 · 확률은 같아요</p>
+            <p className="muted small stage__hint">
+              {weighted ? '핀볼은 공이 많은 가게일수록 잘 걸려요' : '방식은 보여주는 것만 달라요 · 확률은 같아요'}
+            </p>
           )}
           <button
             type="button"
@@ -662,6 +714,7 @@ export default function App() {
           // 가장 큰 빨간 버튼이 또 돌리라고 하면 화면이 두 말을 한다(10/9 UI 점검).
           <Button
             block
+            className="stage__run"
             size={decidedPlace ? 'md' : 'lg'}
             variant={decidedPlace ? 'secondary' : 'primary'}
             onClick={spin}
@@ -678,32 +731,31 @@ export default function App() {
       </section>
 
       {/* 조건은 게임 옆(데스크톱)·아래(휴대폰)에 둔다. 첫 화면은 게임이 차지한다. */}
+      {wide && (
       <aside className="today__filters" aria-labelledby="filters-title">
-        <h2 id="filters-title" className="today__title">조건</h2>
-        <Roadmap
-          places={places}
-          filters={filters}
-          result={result}
-          winnerId={winner?.id ?? null}
-          onWalk={(walkMin) => updateFilters((f) => ({ ...f, maxWalkMin: walkMin }))}
-          onCategory={toggleCategory}
-          onExcludeRecent={() => updateFilters((f) => ({ ...f, excludeRecent: !f.excludeRecent }))}
-        />
-        {/* officeKey 가 바뀌면 다시 그려진다(회사 위치 저장 → 다시 읽기). */}
-        <div className={officeSource() === 'saved' ? 'today__office' : 'today__office today__office--temp'} data-office={officeKey}>
-          <span>
-            🏢 {officeSource() === 'saved' ? '정해 둔 회사 위치에서 잰 도보 시간이에요' : '회사 위치가 아직 임시값이에요'}
-          </span>
-          <button type="button" className="linkish" onClick={() => goTab('map')}>
-            {officeSource() === 'saved' ? '바꾸기' : '정하기'}
-          </button>
-        </div>
+        <h2 id="filters-title" className="today__title">
+          후보 <span className="today__count">{result.candidates.length}곳</span>
+        </h2>
+        {filtersPanel}
       </aside>
+      )}
       </div>
 
       </div>
 
       <footer className="muted small">로그인 없음 · 링크만 있으면 누구나</footer>
+
+      <Sheet
+        open={filtersOpen && !wide && tab === 'roadmap'}
+        onClose={() => setFiltersOpen(false)}
+        title={`후보 ${result.candidates.length}곳`}
+        className="filters-sheet"
+      >
+        {filtersPanel}
+        <Button block variant="secondary" onClick={() => setFiltersOpen(false)}>
+          이대로 할게요
+        </Button>
+      </Sheet>
 
       <Modal
         open={resultOpen && winner !== null && tab === 'roadmap'}

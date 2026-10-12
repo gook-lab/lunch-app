@@ -93,9 +93,12 @@ body {
 .stage__board {
   min-height: 300px;
   display: flex;
-  align-items: center;
+  /* 세로 가운데는 margin auto 로 맞춘다. align-items: center 는 내용이 무대보다 길면 위로도
+     넘쳐서, 크게 보기 핀볼(테마 줄·카메라·공 개수까지)이 머리말을 덮고 위가 잘렸다(10/12 사용자). */
+  align-items: flex-start;
   justify-content: center;
 }
+.stage__board > * { margin-block: auto; }
 
 /* 결과 카드 */
 .card {
@@ -615,7 +618,6 @@ body {
 
 .list__main {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: var(--space-3);
 }
@@ -639,7 +641,36 @@ body {
 
 .list__off .list__name strong { color: var(--color-neutral-700); }
 
-.list__actions { display: flex; gap: var(--space-2); flex-shrink: 0; }
+.list__actions { display: flex; gap: var(--space-1); flex-shrink: 0; margin-left: auto; }
+/* 카테고리 그림 타일 — 이름 앞에서 줄을 훑는 기준점이 된다 */
+.list__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  background: var(--color-neutral-100);
+  border: 1px solid var(--color-neutral-200);
+  font-size: var(--fs-lg);
+}
+.list__text { min-width: 0; flex: 1; }
+.list__off .list__icon { opacity: 0.5; }
+/* 지도·⋯ 아이콘 단추 — 44px */
+.list__iconBtn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--fs-lg);
+  cursor: pointer;
+}
+.list__iconBtn:hover:not(:disabled) { background: var(--color-neutral-100); border-color: var(--color-neutral-300); }
+.list__iconBtn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.list__iconBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .linkish {
   /* 휴대폰 터치 높이·폭 44px. "지도"·"끄기" 두 글자 단추가 폭 39px 였다. */
@@ -1347,18 +1378,23 @@ footer.muted { text-align: center; }
   box-shadow: var(--shadow-sm);
 }
 
-/* 방식 고르기 — 세그먼트 바 */
+/* 방식 고르기 — 휴대폰은 한 줄 가로 스크롤. 두 줄 세그먼트 바가 게임판을 120px 밀어냈다
+   (10/12 와이어프레임 개선). 오른쪽 끝을 흐리게 해 더 있다는 걸 알린다. */
 .modebar {
-  display: grid;
-  /* 방식이 일곱이라 휴대폰에선 위 넷·아래 셋 두 줄(12칸 격자를 3칸·4칸씩).
-     한 줄이면 칸이 55px 로 좁아 이름이 잘리고, 세 칸씩이면 마지막 줄이 한 칸만 남는다. */
-  grid-template-columns: repeat(12, 1fr);
+  display: flex;
   gap: 2px;
   padding: 2px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
   background: var(--color-neutral-300);
+  mask-image: linear-gradient(to right, var(--color-text) calc(100% - 24px), transparent);
 }
+.modebar::-webkit-scrollbar { display: none; }
 .modebar__item {
-  grid-column: span 3;
+  flex: 0 0 auto;
+  min-width: 72px;
+  scroll-snap-align: start;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1374,7 +1410,6 @@ footer.muted { text-align: center; }
   cursor: pointer;
   transition: background 160ms var(--ease-out), color 160ms var(--ease-out);
 }
-.modebar__item:nth-child(n + 5) { grid-column: span 4; }
 .modebar__item:hover:not(:disabled) { background: var(--color-neutral-100); }
 .modebar__item--on,
 .modebar__item--on:hover:not(:disabled) {
@@ -1530,7 +1565,7 @@ html:has(dialog[open]:modal) { overflow: hidden; }
 
 @media (min-width: 960px) {
   .app {
-    max-width: 1080px;
+    max-width: 1240px;
     padding: var(--space-6) var(--space-8) var(--space-8);
   }
   .topbar {
@@ -1566,13 +1601,35 @@ html:has(dialog[open]:modal) { overflow: hidden; }
 
   .today {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-columns: minmax(0, 1fr) 340px;
     align-items: start;
     gap: var(--space-6);
   }
   .today__filters { position: sticky; top: var(--space-6); }
   .stage { padding: var(--space-4); }
-  .stage__board { min-height: 420px; }
+  .stage__board { min-height: 480px; }
+  /* 데스크톱: 방식은 왼쪽 세로 레일, 나머지는 오른쪽 칸에 위에서 아래로. */
+  .stage:not(.stage--full) {
+    display: grid;
+    grid-template-columns: 104px minmax(0, 1fr);
+    align-content: start;
+    column-gap: var(--space-4);
+    /* 레일이 여러 줄에 걸치므로 줄 간격은 0 — 빈 줄마다 간격이 쌓여 아래가 240px 비었다. 간격은 여백으로. */
+    row-gap: 0;
+  }
+  .stage:not(.stage--full) > * { grid-column: 2; }
+  .stage:not(.stage--full) > * + * { margin-top: var(--space-3); }
+  .stage:not(.stage--full) > .modebar {
+    grid-column: 1;
+    grid-row: 1 / span 20;
+    align-self: start;
+    margin-top: 0;
+    position: sticky;
+    top: var(--space-6);
+    flex-direction: column;
+    overflow: visible;
+  }
+  .stage:not(.stage--full) > .modebar .modebar__item { flex: none; min-height: 64px; }
 }
 
 /* 회사 위치 카드 (지도 탭) */
@@ -1672,15 +1729,20 @@ html:has(dialog[open]:modal) { overflow: hidden; }
   animation: rise 220ms var(--ease-decel) both;
 }
 html:has(.stage--full) { overflow: hidden; }
+/* 크게 보기 무대는 세로 flex 라 칸이 줄어들 수 있다. 줄면 게임판이 무대 밖으로 넘쳐
+   사다리 바닥이 실행 단추 밑으로 깔렸다(10/12 점검). 줄지 않고 무대가 스크롤한다. */
+.stage--full > * { flex-shrink: 0; }
 .stage--full .stage__board { min-height: calc(100svh - 260px); background: var(--color-bg); }
 
 /* 게임마다 화면에 맞춰 키운다. 폭과 높이 중 작은 쪽에 맞춘다. */
 .stage--full .wheel { width: min(86vw, calc(100svh - 300px), 640px); }
-.stage--full .ladder,
 .stage--full .slot { width: min(92vw, 760px); }
+/* 사다리는 폭 대비 높이가 약 0.9 라 높이 기준으로도 자른다. */
+.stage--full .ladder { width: min(92vw, 760px, calc((100svh - 300px) / 0.9)); }
 .stage--full .slot__item { font-size: var(--fs-xl); }
 /* 핀볼 캔버스는 크게 볼 때 320:340 이다(가까이 당겨 보기). 높이가 무대를 넘지 않게 폭을 정한다. */
-.stage--full .pinball { width: min(92vw, calc((100svh - 300px) * 320 / 340), 900px); }
+/* 캔버스 아래위로 테마 줄(약 50px)·카메라 줄(약 50px)이 붙는다. 그만큼 빼야 한 화면에 들어온다. */
+.stage--full .pinball { width: min(92vw, calc((100svh - 420px) * 320 / 340), 900px); }
 
 :root[data-motion='reduced'] {
   .stage--full { animation: none; }
@@ -1847,8 +1909,8 @@ html:has(.stage--full) { overflow: hidden; }
 }
 
 @media (min-width: 560px) {
-  .modebar { grid-template-columns: repeat(7, 1fr); }
-  .modebar__item, .modebar__item:nth-child(n + 5) { grid-column: auto; }
+  .modebar { mask-image: none; }
+  .modebar__item { flex: 1 0 auto; }
 }
 
 /* ── 토너먼트 ─────────────────────────────────────────────── */
@@ -2235,4 +2297,61 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .tabs__badge--done { background: var(--color-accent); }
 @media (min-width: 960px) {
   .tabs__badge { position: static; margin-left: var(--space-1); }
+}
+
+/* 오늘 탭 조건 요약 — 휴대폰. 누르면 후보·조건 시트가 열린다. */
+.today__summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-neutral-300);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.today__summaryMain { font-weight: 800; }
+.today__summaryRest { font-size: var(--fs-sm); color: var(--color-neutral-700); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.today__summaryGo { font-size: var(--fs-sm); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.today__summary:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.today__count { font-weight: 600; color: var(--color-neutral-700); }
+
+/* 실행 버튼은 휴대폰에서 탭 바 바로 위에 붙어 있다 — 게임판이 길어도 손이 닿게. */
+@media (max-width: 959px) {
+  .stage__run {
+    position: sticky;
+    bottom: calc(72px + env(safe-area-inset-bottom) + var(--space-2));
+    z-index: 5;
+    box-shadow: var(--shadow-md);
+  }
+}
+
+/* 후보 가게 칩 */
+.cands { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.cands__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border: 1px solid var(--color-neutral-400);
+  background: var(--color-bg);
+  font-size: var(--fs-sm);
+}
+.cands__name { font-weight: 600; }
+.cands__walk { font-size: var(--fs-xs); color: var(--color-neutral-700); }
+.cands__item--released { border-style: dashed; }
+.cands__item--win { border-color: var(--color-accent); background: var(--color-accent-100); }
+
+/* 후보·조건 시트 — 로드맵이 들어가 길다. 본문만 스크롤. */
+.filters-sheet { max-height: 88svh; overflow-y: auto; }
+.filters-sheet .rm__stage { max-width: 280px; }
+
+/* 크게 보기 — 휴대폰. 카드는 세 장씩(두 장씩이면 다섯 장이 화면을 넘었다), 실행 단추는 화면 바닥에. */
+@media (max-width: 959px) {
+  .stage--full .cards--big .cards__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
+  .stage--full .stage__run { bottom: var(--space-2); }
 }

@@ -161,7 +161,10 @@ describe('방식 바꾸기', () => {
 describe('연출 중에 건드리면 잠금이 풀려야 한다 — 영구 고착 회귀', () => {
   it('필터를 바꾸면 연출을 끊고 새 조건으로 돌아온다', () => {
     startWheel();
+    // 휴대폰 폭에서는 조건이 요약 한 줄 → 시트 안에 있다.
+    fireEvent.click(screen.getByRole('button', { name: /후보 \d+곳.*바꾸기/ }));
     fireEvent.click(screen.getByRole('button', { name: '도보 15분 안' }));
+    fireEvent.click(screen.getByRole('button', { name: '이대로 할게요' }));
     act(() => { vi.advanceTimersByTime(100); });
 
     expect(runButton().textContent).toMatch(/돌리기/);

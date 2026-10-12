@@ -11,9 +11,9 @@
  */
 import { recentNote } from '../lib/messages';
 import { useId, useRef, useState } from 'react';
-import { Button } from '@gook-lab/ui';
+import { Button, Menu } from '@gook-lab/ui';
 import { ChipPicker } from './ChipPicker';
-import { CATEGORIES, type Category } from '../lib/category';
+import { CATEGORIES, categoryIcon, type Category } from '../lib/category';
 import type { Place, Visit } from '../lib/candidates';
 import { withJosa } from '../lib/josa';
 import { RECENT_WINDOW_DAYS } from '../lib/candidates';
@@ -103,11 +103,11 @@ function History({
             {onShowOnMap && (
               <button
                 type="button"
-                className="linkish"
+                className="list__iconBtn"
                 aria-label={`${place.name} 지도에서 보기`}
                 onClick={() => onShowOnMap(place.id)}
               >
-                지도
+                <span aria-hidden="true">🗺️</span>
               </button>
             )}
           </li>
@@ -266,7 +266,8 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
     return (
       <li key={place.id} className={place.active ? 'list__item' : 'list__item list__off'}>
         <div className="list__main">
-          <div>
+          <span className="list__icon" aria-hidden="true">{categoryIcon(place.category)}</span>
+          <div className="list__text">
             <div className="list__name">
               <strong>{place.name}</strong>
               {!place.active && <span className="badge">꺼짐</span>}
@@ -276,34 +277,43 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
               <span className={visit.recent ? 'list__recent' : undefined}>{visit.label}</span>
             </div>
           </div>
+          {/*
+            * 줄마다 "지도·끄기·고치기" 글자 링크 셋이 가게 이름보다 눈에 띄었다(10/12 와이어프레임).
+            * 자주 쓰는 지도만 남기고, 끄기·고치기는 ⋯ 메뉴로 접는다.
+            */}
           <div className="list__actions">
             {onShowOnMap && (
               <button
                 type="button"
-                className="linkish"
+                className="list__iconBtn"
                 aria-label={`${place.name} 지도에서 보기`}
                 onClick={() => onShowOnMap(place.id)}
               >
-                지도
+                <span aria-hidden="true">🗺️</span>
               </button>
             )}
-            <button
-              type="button"
-              className="linkish"
-              disabled={busy === place.id}
-              onClick={() => void toggle(place)}
-            >
-              {place.active ? '끄기' : '켜기'}
-            </button>
-            <button
-              type="button"
-              id={`edit-${place.id}`}
-              className="linkish"
-              aria-expanded={editing === place.id}
-              onClick={() => setEditing(editing === place.id ? null : place.id)}
-            >
-              고치기
-            </button>
+            <Menu
+              align="end"
+              trigger={
+                <button
+                  type="button"
+                  id={`edit-${place.id}`}
+                  className="list__iconBtn"
+                  aria-label={`${place.name} 더 보기`}
+                  disabled={busy === place.id}
+                >
+                  <span aria-hidden="true">⋯</span>
+                </button>
+              }
+              items={[
+                { label: '고치기', onSelect: () => setEditing(editing === place.id ? null : place.id) },
+                {
+                  label: place.active ? '끄기' : '켜기',
+                  tone: place.active ? 'danger' : 'default',
+                  onSelect: () => void toggle(place),
+                },
+              ]}
+            />
           </div>
         </div>
         {editing === place.id && (
