@@ -3,7 +3,7 @@
  *
  * 읽기 경로는 셋이다 (엔지니어링 리뷰 D3 + 외부 검증 교정):
  *  1. places        — 1회 읽기. 실시간 구독하지 않는다.
- *  2. 최근 14일 visits — 부팅 시 documentId() 범위 쿼리로 1회.
+ *  2. 최근 31일 visits — 부팅 시 documentId() 범위 쿼리로 1회.
  *  3. visits/{오늘}  — 실시간 구독. 이 앱의 유일한 동시성 지점이다.
  *
  * 2번이 빠져 있으면 "최근 방문 제외" 가 동작할 근거가 없다. 설계에 이 경로가
@@ -56,7 +56,7 @@ export async function saveOffice(coord: { lat: number; lng: number }): Promise<v
   await setDoc(officeDoc(), { lat: coord.lat, lng: coord.lng, updatedAt: serverTimestamp() });
 }
 
-/** 최근 14일 결정 기록. 문서 id 가 YYYYMMDD 라 documentId() 범위 쿼리로 읽는다. */
+/** 최근 31일 결정 기록. 문서 id 가 YYYYMMDD 라 documentId() 범위 쿼리로 읽는다. */
 export async function fetchRecentVisits(today: DayId): Promise<Visit[]> {
   await authReady;
   const snap = await getDocs(
