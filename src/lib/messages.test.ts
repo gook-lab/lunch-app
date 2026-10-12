@@ -56,7 +56,7 @@ describe('noticeMessage — 공개 숫자가 실제와 일치한다', () => {
     const places = pool(12);
     const visits = [1, 2].map((n) => ({ id: dayIdBefore(TODAY, n), placeId: String(n) }));
     const r = selectCandidates(places, visits, filters(), TODAY);
-    expect(noticeMessage(r)).toBe('최근 2주 안에 간 2곳은 뺐어요.');
+    expect(noticeMessage(r)).toBe('최근 1주 안에 간 2곳은 뺐어요.');
   });
 
   it('제외할 것도 없으면 아무 말 안 한다', () => {
@@ -125,7 +125,7 @@ describe('emptyMessage — 원인을 짚되 칩을 대신 풀지 않는다', () 
 });
 
 describe('noticeMessage — 제외를 껐을 때', () => {
-  // 브라우저에서 제외 칩을 끄고 후보 11곳이 다 들어왔는데도 "최근 2주 안에
+  // 브라우저에서 제외 칩을 끄고 후보 11곳이 다 들어왔는데도 "최근 1주 안에
   // 간 7곳은 빠졌습니다" 가 떠 있었다. 빠진 곳이 없는데 빠졌다고 말했다.
   it('최근에 간 곳이 있어도 뺐다고 하지 않는다', () => {
     const visits = [1, 2, 3].map((n) => ({ id: dayIdBefore(TODAY, n), placeId: String(n) }));
@@ -146,6 +146,6 @@ describe('noticeMessage — 제외를 껐을 때', () => {
     const visits = [1, 2].map((n) => ({ id: dayIdBefore(TODAY, n), placeId: String(n) }));
     const r = selectCandidates(pool(8), visits, filters(), TODAY);
     expect(r.excludedRecent).toBe(true);
-    expect(noticeMessage(r)).toBe('최근 2주 안에 간 2곳은 뺐어요.');
+    expect(noticeMessage(r)).toBe('최근 1주 안에 간 2곳은 뺐어요.');
   });
 });

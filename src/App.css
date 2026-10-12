@@ -633,7 +633,7 @@ body {
 
 .list__meta { font-size: var(--fs-xs); color: var(--color-neutral-700); margin-top: 2px; }
 
-/* 최근 2주 안에 간 곳 — 후보에서 왜 빠졌는지 한눈에 보이게 */
+/* 최근 1주 안에 간 곳 — 후보에서 왜 빠졌는지 한눈에 보이게 */
 .list__recent {
   color: var(--color-accent);
   font-weight: 600;
@@ -2532,3 +2532,20 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 @media (prefers-reduced-motion: reduce) {
   .gacha__capsule, .gacha__handle, .gacha__prize, .gacha__capsule--out, .dice__die--rolling { animation: none !important; }
 }
+
+/* 모달을 닫은 뒤 게임 아래 한 줄 결과 */
+.result-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+.result-bar__text { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); margin: 0; min-width: 0; }
+.result-bar__text strong { font-size: var(--fs-lg); }
+.result-bar__meta { color: var(--color-neutral-700); font-size: var(--fs-sm); }
+.result-bar__actions { display: flex; gap: var(--space-2); }

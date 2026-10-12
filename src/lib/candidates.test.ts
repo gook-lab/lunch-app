@@ -63,7 +63,7 @@ describe('selectCandidates — 필터 순서', () => {
     expect(r.candidates).toHaveLength(10);
   });
 
-  it('U11 — 제외 칩을 끄면 14일 창을 무시한다', () => {
+  it('U11 — 제외 칩을 끄면 7일 창을 무시한다', () => {
     const places = pool(6);
     const visits = places.slice(0, 5).map((p) => visit(p.id, 1));
     const r = selectCandidates(places, visits, filters({ excludeRecent: false }), TODAY);
@@ -73,31 +73,31 @@ describe('selectCandidates — 필터 순서', () => {
   });
 });
 
-describe('selectCandidates — 14일 창 경계', () => {
-  it('U3 — 14일째는 아직 제외', () => {
+describe('selectCandidates — 7일 창 경계', () => {
+  it('U3 — 7일째는 아직 제외', () => {
     const places = pool(6);
-    const r = selectCandidates(places, [visit('1', 14)], filters(), TODAY);
+    const r = selectCandidates(places, [visit('1', 7)], filters(), TODAY);
     expect(r.recentlyVisitedCount).toBe(1);
     expect(r.candidates.map((p) => p.id)).not.toContain('1');
   });
 
-  it('U4 — 15일째는 다시 후보', () => {
+  it('U4 — 8일째는 다시 후보', () => {
     const places = pool(6);
-    const r = selectCandidates(places, [visit('1', 15)], filters(), TODAY);
+    const r = selectCandidates(places, [visit('1', 8)], filters(), TODAY);
     expect(r.recentlyVisitedCount).toBe(0);
     expect(r.candidates.map((p) => p.id)).toContain('1');
   });
 
   it('U5 — 같은 곳을 여러 번 갔으면 마지막 방문일로 본다', () => {
-    // 3일 전과 12일 전에 1번 가게, 12일 전에 2번 가게.
+    // 3일 전과 6일 전에 1번 가게, 6일 전에 2번 가게.
     const places = pool(7);
-    const visits = [visit('1', 12), visit('1', 3), visit('2', 12)];
+    const visits = [visit('1', 6), visit('1', 3), visit('2', 6)];
     // 후보가 5곳(3~7번)이라 보정이 안 일어난다 — 1·2번 모두 제외 상태.
     const r = selectCandidates(places, visits, filters(), TODAY);
     expect(r.releasedCount).toBe(0);
     expect(r.candidates.map((p) => p.id)).toEqual(['3', '4', '5', '6', '7']);
 
-    // 후보를 하나 줄이면 오래된 쪽(2번, 12일 전)이 먼저 풀려야 한다.
+    // 후보를 하나 줄이면 오래된 쪽(2번, 6일 전)이 먼저 풀려야 한다.
     const smaller = places.slice(0, 6);
     const r2 = selectCandidates(smaller, visits, filters(), TODAY);
     expect(r2.releasedCount).toBe(1);
@@ -108,46 +108,36 @@ describe('selectCandidates — 14일 창 경계', () => {
   it('U14 — 월 경계에서도 문자열이 아니라 날짜로 센다', () => {
     const october = '20261003';
     const places = pool(6);
-    // 20260925 는 10/3 기준 8일 전 — 창 안.
-    const r = selectCandidates(places, [{ id: '20260925', placeId: '1' }], filters(), october);
+    // 20260926 은 10/3 기준 7일 전 — 창 안.
+    const r = selectCandidates(places, [{ id: '20260926', placeId: '1' }], filters(), october);
     expect(r.recentlyVisitedCount).toBe(1);
-    // 20260918 은 15일 전 — 창 밖.
-    const r2 = selectCandidates(places, [{ id: '20260918', placeId: '1' }], filters(), october);
+    // 20260925 는 8일 전 — 창 밖.
+    const r2 = selectCandidates(places, [{ id: '20260925', placeId: '1' }], filters(), october);
     expect(r2.recentlyVisitedCount).toBe(0);
   });
 });
 
 describe('selectCandidates — 최소 5곳 보정', () => {
   it('U6 — 오래된 방문부터 풀어 5곳을 채운다', () => {
-    // 12곳 중 9곳이 최근 방문. 남는 건 3곳이라 2곳을 풀어야 한다.
-    const places = pool(12);
-    const visits = [
-      visit('1', 1),
-      visit('2', 2),
-      visit('3', 3),
-      visit('4', 4),
-      visit('5', 5),
-      visit('6', 10),
-      visit('7', 11),
-      visit('8', 12),
-      visit('9', 13),
-    ];
+    // 10곳 중 7곳이 최근 방문. 남는 건 3곳이라 2곳을 풀어야 한다.
+    const places = pool(10);
+    const visits = Array.from({ length: 7 }, (_, i) => visit(String(i + 1), i + 1));
     const r = selectCandidates(places, visits, filters(), TODAY);
     expect(r.candidates).toHaveLength(MIN_CANDIDATES);
     expect(r.releasedCount).toBe(2);
-    // 가장 오래된 방문은 9번(13일 전), 그 다음이 8번(12일 전).
+    // 가장 오래된 방문은 7번(7일 전), 그 다음이 6번(6일 전).
     const ids = r.candidates.map((p) => p.id);
-    expect(ids).toEqual(expect.arrayContaining(['10', '11', '12', '9', '8']));
+    expect(ids).toEqual(expect.arrayContaining(['8', '9', '10', '7', '6']));
     expect(ids).not.toContain('1');
   });
 
   it('U7 — 보정 사유를 화면이 조립할 수 있다', () => {
-    const places = pool(12);
-    const visits = Array.from({ length: 9 }, (_, i) => visit(String(i + 1), i + 1));
+    const places = pool(10);
+    const visits = Array.from({ length: 7 }, (_, i) => visit(String(i + 1), i + 1));
     const r = selectCandidates(places, visits, filters(), TODAY);
-    // "12곳 중 9곳은 최근에 갔습니다 — 그 중 2곳을 다시 넣었습니다"
-    expect(r.afterCategoryCount).toBe(12);
-    expect(r.recentlyVisitedCount).toBe(9);
+    // "10곳 중 7곳은 최근에 갔어요 — 그중 2곳을 다시 넣었어요"
+    expect(r.afterCategoryCount).toBe(10);
+    expect(r.recentlyVisitedCount).toBe(7);
     expect(r.releasedCount).toBe(2);
   });
 
@@ -162,10 +152,10 @@ describe('selectCandidates — 최소 5곳 보정', () => {
 
   it('U12 — 풀이 20곳을 넘으면 보정이 발동하지 않는다', () => {
     const places = pool(22);
-    const visits = Array.from({ length: 9 }, (_, i) => visit(String(i + 1), i + 1));
+    const visits = Array.from({ length: 7 }, (_, i) => visit(String(i + 1), i + 1));
     const r = selectCandidates(places, visits, filters(), TODAY);
     expect(r.releasedCount).toBe(0);
-    expect(r.candidates).toHaveLength(13);
+    expect(r.candidates).toHaveLength(15);
   });
 
   it('U13 — 단계별 카운트가 실제와 일치한다', () => {

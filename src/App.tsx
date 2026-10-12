@@ -148,6 +148,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('roadmap');
   const boardRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLHeadingElement>(null);
+  const resultBarRef = useRef<HTMLButtonElement>(null);
   // 키보드로 실행한 판이면 결과가 뜰 때 초점을 결과로 옮긴다. 실행 단추는
   // 누르는 순간 잠기고, 끝나면 결과 카드로 갈아 끼워져서 초점이 <body> 로
   // 떨어진다(10/8 실측). 다른 곳에 초점이 있었으면 건드리지 않는다.
@@ -249,13 +250,13 @@ export default function App() {
     resultRef.current?.focus({ preventScroll: true });
   }, [winner]);
 
-  // 모달이 열리면 카드가 게임 아래에서 모달 안으로 옮겨 간다. 초점도 따라가게
-  // 모달 안 당첨 이름에 둔다(dialog 기본은 첫 단추 "여기로 결정" 이다).
-  // 닫으면 카드가 게임 아래로 돌아온다. 초점도 그 카드로 — dialog 기본 복귀처는
-  // 모달이 열리기 전 초점(대개 body)이라 키보드 사용자가 길을 잃었다(16회차).
+  // 모달이 열리면 초점을 모달 안 당첨 이름에 둔다(dialog 기본은 첫 단추 "여기로 결정" 이다).
+  // 닫으면 게임 아래 한 줄 결과의 "결과 보기" 로 — dialog 기본 복귀처는 모달이 열리기 전
+  // 초점(대개 body)이라 키보드 사용자가 길을 잃었다(16회차).
   const wasResultOpen = useRef(false);
   useEffect(() => {
-    if (resultOpen || wasResultOpen.current) resultRef.current?.focus({ preventScroll: resultOpen });
+    if (resultOpen) resultRef.current?.focus({ preventScroll: true });
+    else if (wasResultOpen.current) resultBarRef.current?.focus({ preventScroll: true });
     wasResultOpen.current = resultOpen;
   }, [resultOpen]);
 
@@ -407,7 +408,7 @@ export default function App() {
           role="status"
           art={<span className="status__ring">🍱</span>}
           title="불러오는 중이에요"
-          lines={['가게 목록과 최근 2주 방문을 읽고 있어요']}
+          lines={['가게 목록과 방문 기록을 읽고 있어요']}
         />
       </main>
     );
@@ -508,7 +509,7 @@ export default function App() {
             </Button>
           </div>
           <p className="muted small">
-            누르면 방문 기록이 남고, 2주 동안 후보에서 빠져요.
+            누르면 방문 기록이 남고, 1주 동안 후보에서 빠져요.
           </p>
           {/* 확인 시트가 떠 있으면 시트 쪽에만 띄운다. 두 곳에서 읽히면 두 번 들린다. */}
           {saveProblem && !confirming && (
@@ -641,7 +642,7 @@ export default function App() {
             <span className="today__summaryMain">후보 {result.candidates.length}곳</span>
             <span className="today__summaryRest">
               도보 {filters.maxWalkMin}분 · {filters.categories.length > 0 ? filters.categories.join('·') : '카테고리 전체'}
-              {filters.excludeRecent ? ' · 최근 2주 제외' : ''}
+              {filters.excludeRecent ? ' · 최근 1주 제외' : ''}
             </span>
             <span className="today__summaryGo">
               바꾸기<span aria-hidden="true"> ▾</span>
@@ -763,8 +764,26 @@ export default function App() {
           {winner && !spinning ? `${winner.name}, 도보 ${winner.walkMin}분이 뽑혔어요` : ''}
         </p>
 
+        {/* 모달을 닫으면 게임 아래엔 한 줄만 남긴다. 티켓 전체가 남으면 모달과 같은 카드가
+            화면 아래를 계속 차지했다(10/13 사용자). 결정·공유는 "결과 보기" 로 다시 연다. */}
         {winner && !resultOpen ? (
-          ticket
+          <div className="result-bar">
+            <p className="result-bar__text">
+              <span aria-hidden="true">{MODE_ICON[mode]} </span>
+              <strong>{winner.name}</strong>
+              <span className="result-bar__meta">
+                도보 {winner.walkMin}분{confirmed ? ' · 오늘 점심으로 정했어요' : ''}
+              </span>
+            </p>
+            <div className="result-bar__actions">
+              <Button ref={resultBarRef} onClick={() => setResultOpen(true)}>
+                결과 보기
+              </Button>
+              <Button variant="secondary" onClick={spin} disabled={spinning}>
+                다시 하기
+              </Button>
+            </div>
+          </div>
         ) : (
           // 오늘 이미 정했으면 다시 하기는 보조 동작이다. 위 배너가 "정했어요" 라고 하는데
           // 가장 큰 빨간 버튼이 또 돌리라고 하면 화면이 두 말을 한다(10/9 UI 점검).

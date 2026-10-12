@@ -5,7 +5,7 @@
  * 그래서 문구에 들어가는 숫자가 틀리면 기능의 명분이 사라진다. 순수 함수로
  * 빼서 테스트로 고정하는 이유가 그것이다.
  *
- * 카피는 "2주", 스펙·구현은 "14일" 로 쓴다 (설계 Success Criteria).
+ * 카피는 "1주", 스펙·구현은 "7일" 로 쓴다 (설계 Success Criteria).
  */
 import type { CandidateResult } from './candidates';
 import { HEALTHY_POOL_SIZE, MIN_CANDIDATES } from './candidates';
@@ -54,16 +54,16 @@ export function noticeMessage(result: CandidateResult): string | null {
   // 제외를 껐으면 최근에 간 곳도 그대로 후보다. "빠졌습니다" 는 거짓이 된다.
   if (!result.excludedRecent) {
     return recentlyVisitedCount > 0
-      ? `최근 2주 제외를 꺼서 최근에 간 ${recentlyVisitedCount}곳도 후보에 들어 있어요.`
+      ? `최근 1주 제외를 꺼서 최근에 간 ${recentlyVisitedCount}곳도 후보에 들어 있어요.`
       : null;
   }
 
   if (releasedCount > 0) {
-    return `${afterCategoryCount}곳 중 ${recentlyVisitedCount}곳은 최근 2주 안에 갔어요. 후보 ${MIN_CANDIDATES}곳을 채우려고 그중 오래된 ${releasedCount}곳을 다시 넣었어요.`;
+    return `${afterCategoryCount}곳 중 ${recentlyVisitedCount}곳은 최근 1주 안에 갔어요. 후보 ${MIN_CANDIDATES}곳을 채우려고 그중 오래된 ${releasedCount}곳을 다시 넣었어요.`;
   }
 
   if (recentlyVisitedCount > 0) {
-    return `최근 2주 안에 간 ${recentlyVisitedCount}곳은 뺐어요.`;
+    return `최근 1주 안에 간 ${recentlyVisitedCount}곳은 뺐어요.`;
   }
 
   return null;
@@ -74,7 +74,7 @@ export function noticeMessage(result: CandidateResult): string | null {
  * 말하면 안 된다 — 같은 거짓말을 noticeMessage 에서 한 번 고쳤다.
  */
 export function recentNote(recentCount: number, excludeRecent: boolean): string {
-  if (recentCount === 0) return '최근 2주에 간 곳이 없어요';
-  if (!excludeRecent) return `최근 2주 제외를 꺼 둬서 최근에 간 ${recentCount}곳도 오늘 후보예요`;
-  return `최근 2주에 간 ${recentCount}곳은 오늘 후보에서 빠져요`;
+  if (recentCount === 0) return '최근 1주에 간 곳이 없어요';
+  if (!excludeRecent) return `최근 1주 제외를 꺼 둬서 최근에 간 ${recentCount}곳도 오늘 후보예요`;
+  return `최근 1주에 간 ${recentCount}곳은 오늘 후보에서 빠져요`;
 }

@@ -25,7 +25,7 @@ import {
 } from 'firebase/firestore';
 import { db, authReady } from './firebase';
 import { dayIdBefore, type DayId } from '../lib/date';
-import { RECENT_WINDOW_DAYS, type Place, type Visit } from '../lib/candidates';
+import { VISIT_HISTORY_DAYS, type Place, type Visit } from '../lib/candidates';
 
 const places = () => collection(db, 'places');
 const officeDoc = () => doc(db, 'settings', 'office');
@@ -62,7 +62,7 @@ export async function fetchRecentVisits(today: DayId): Promise<Visit[]> {
   const snap = await getDocs(
     query(
       visits(),
-      where(documentId(), '>=', dayIdBefore(today, RECENT_WINDOW_DAYS)),
+      where(documentId(), '>=', dayIdBefore(today, VISIT_HISTORY_DAYS)),
       where(documentId(), '<=', today),
     ),
   );

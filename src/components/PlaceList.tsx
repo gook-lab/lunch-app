@@ -6,7 +6,7 @@
  * walkMin 탓에 영원히 후보에서 빠지고, 고칠 길이 없어 2주차 판정의 근거인
  * 풀 크기가 오염된다.
  *
- * 화면에서는 "최근 2주 안에 간 곳" 을 강조한다. 그게 오늘 후보에서 빠진
+ * 화면에서는 "최근 1주 안에 간 곳" 을 강조한다. 그게 오늘 후보에서 빠진
  * 이유라서, 표시하지 않으면 목록과 돌림판이 어긋나 보인다.
  */
 import { recentNote } from '../lib/messages';
@@ -26,7 +26,7 @@ interface Props {
   visits: Visit[];
   today: DayId;
   onChanged: () => void;
-  /** 로드맵의 "최근 2주 제외" 칩 상태. 꺼져 있으면 "빠집니다" 가 거짓이 된다. */
+  /** 로드맵의 "최근 1주 제외" 칩 상태. 꺼져 있으면 "빠집니다" 가 거짓이 된다. */
   excludeRecent: boolean;
   /** 지도 탭을 열고 이 가게 핀을 고른다. */
   onShowOnMap?: (placeId: string) => void;

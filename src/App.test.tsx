@@ -39,7 +39,9 @@ vi.mock('./components/MapTab', () => ({
 }));
 
 const runButton = () => screen.getByRole('button', { name: /돌리기 \(후보 \d+곳\)|진행 중/ });
-const card = () => document.querySelector('.card--result h2')?.textContent?.trim() ?? null;
+// 결과는 모달 안 티켓, 모달을 닫았거나 뜨기 전이면 게임 아래 한 줄 결과에 있다.
+const card = () =>
+  (document.querySelector('dialog[open] .ticket__name') ?? document.querySelector('.result-bar strong'))?.textContent?.trim() ?? null;
 const lockedButtons = () =>
   [...document.querySelectorAll('button')].filter((b) => b.disabled).map((b) => b.textContent?.trim());
 
@@ -79,7 +81,7 @@ function startWheel() {
 }
 
 describe('결과 모달', () => {
-  it('끝나면 결과가 모달로 뜨고, 닫으면 같은 카드가 게임 아래에 남는다', () => {
+  it('끝나면 결과가 모달로 뜨고, 닫으면 게임 아래엔 한 줄만 남는다', () => {
     startWheel();
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
     // 마지막 장면을 잠깐 보여 준 뒤에 연다.
@@ -93,17 +95,22 @@ describe('결과 모달', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '닫고 게임 보기' }));
     expect(screen.queryByRole('dialog', { name: '오늘의 점심 결과' })).toBeNull();
-    expect(document.querySelector('.stage .ticket__name')?.textContent).toBe('가집');
-    // 닫으면 초점이 <body> 가 아니라 게임 아래 같은 카드로 간다.
-    expect(document.querySelector('.stage .ticket__name')).toBe(document.activeElement);
+    // 티켓 전체가 아니라 한 줄 결과만 남는다(10/13 사용자). 초점은 <body> 가 아니라 "결과 보기" 로.
+    expect(document.querySelector('.stage .ticket')).toBeNull();
+    expect(document.querySelector('.result-bar strong')?.textContent).toBe('가집');
+    const reopen = screen.getByRole('button', { name: '결과 보기' });
+    expect(reopen).toBe(document.activeElement);
+
+    fireEvent.click(reopen);
+    expect((screen.getByRole('dialog', { name: '오늘의 점심 결과' }) as HTMLDialogElement).open).toBe(true);
+    expect(screen.getByRole('button', { name: '여기로 결정' })).toBeTruthy();
   });
 
-  it('모달이 뜨기 전에 게임 아래 카드에서 결정하면 모달은 뜨지 않는다', async () => {
+  it('모달이 뜨기 전에도 한 줄 결과의 "결과 보기" 로 바로 연다', () => {
     startWheel();
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '여기로 결정' })); });
-    act(() => { vi.advanceTimersByTime(RESULT_DELAY_MS * 2); });
-    expect(screen.queryByRole('dialog', { name: '오늘의 점심 결과' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '결과 보기' }));
+    expect(screen.getByRole('button', { name: '여기로 결정' })).toBeTruthy();
   });
 });
 
@@ -113,7 +120,7 @@ describe('연출 한 판', () => {
     expect(runButton().textContent).toBe('진행 중');
     expect(card()).toBeNull();
 
-    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
 
     // 난수 0 → 첫 후보. 끝나면 하단 실행 버튼은 결과 카드의 버튼들로 바뀐다.
     expect(card()).toBe('가집');
@@ -134,7 +141,7 @@ describe('크게 보기', () => {
     expect(screen.getByRole('button', { name: /작게 보기/ }).getAttribute('aria-pressed')).toBe('true');
 
     fireEvent.click(runButton());
-    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
     expect(card()).toBe('가집');
 
     fireEvent.keyDown(window, { key: 'Escape' });
@@ -145,7 +152,7 @@ describe('크게 보기', () => {
 describe('방식 바꾸기', () => {
   it('결과가 떠 있을 때 다른 방식을 고르면 판이 처음으로 돌아간다', () => {
     startWheel();
-    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
     expect(card()).toBe('가집');
 
     fireEvent.click(screen.getByRole('button', { name: '사다리' }));
@@ -247,7 +254,7 @@ describe('접근성', () => {
     fireEvent.click(run);
     expect(document.activeElement?.classList.contains('stage__board')).toBe(true);
 
-    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
     expect(document.activeElement?.tagName).toBe('H2');
     expect(document.activeElement?.textContent).toBe(card());
   });
@@ -256,7 +263,7 @@ describe('접근성', () => {
     startWheel();
     const live = document.querySelector('[aria-live="polite"]');
     expect(live?.textContent).toBe('');
-    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
     expect(live?.textContent).toMatch(/가집, 도보 \d+분이 뽑혔어요/);
   });
 });
@@ -281,7 +288,7 @@ describe('결정 저장 실패', () => {
   it('저장이 실패하면 알려 준다 — 스피너만 멈추고 조용하지 않다', async () => {
     vi.mocked(decideToday).mockRejectedValueOnce(new Error('offline'));
     startWheel();
-    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: '여기로 결정' })); });
     expect(screen.getByRole('alert').textContent).toBe('저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.');
   });
@@ -290,7 +297,7 @@ describe('결정 저장 실패', () => {
 describe('여기로 결정', () => {
   it('화면에 뜬 당첨의 id 로 오늘 기록을 쓴다', async () => {
     startWheel();
-    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
     expect(card()).toBe('가집');
 
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: '여기로 결정' })); });
@@ -301,7 +308,7 @@ describe('여기로 결정', () => {
 
   it('같은 순간 두 번 눌러도 기록은 한 번만 쓴다', async () => {
     startWheel();
-    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
     const decide = screen.getByRole('button', { name: '여기로 결정' });
     await act(async () => {
       decide.click();
@@ -313,7 +320,7 @@ describe('여기로 결정', () => {
   it('오늘 이미 다른 곳으로 정해져 있으면 확인 시트를 먼저 열고, 바꾸기를 눌러야 쓴다', async () => {
     fx.decision = { dayId: '20261008', placeId: 'b' };
     startWheel();
-    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
     expect(card()).toBe('가집');
 
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: '여기로 결정' })); });
@@ -443,7 +450,7 @@ describe('기기의 "동작 줄이기"', () => {
     fireEvent.click(runButton());
     act(() => { vi.advanceTimersByTime(50); });
     expect(card()).toBeNull();
-    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
     expect(card()).toBe('가집');
   });
 

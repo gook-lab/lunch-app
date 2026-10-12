@@ -2,7 +2,7 @@
  * 후보 산출 — 이 앱의 진짜 로직 (엔지니어링 리뷰 D5).
  *
  * 돌림판 애니메이션은 표시일 뿐이고, "오늘 뭐가 후보인가" 를 정하는 것은 여기다.
- * 순수 함수로 두는 이유는 하나 — 14일 제외와 최소 5곳 보정이 섞인 부분이 가장
+ * 순수 함수로 두는 이유는 하나 — 7일 제외와 최소 5곳 보정이 섞인 부분이 가장
  * 틀리기 쉬운데, 화면 안에 있으면 브라우저를 열어야만 확인할 수 있기 때문이다.
  *
  * 반환은 단계별 카운트다. totalCount 하나로는 화면에 띄울 문구를 만들 수 없다.
@@ -71,7 +71,7 @@ export type EmptyReason =
 export interface CandidateResult {
   candidates: Place[];
   /**
-   * 최근 14일 안에 간 곳 목록. 카운트만으로는 로드맵에서 점 하나하나를
+   * 최근 7일 안에 간 곳 목록. 카운트만으로는 로드맵에서 점 하나하나를
    * 어떤 상태로 그릴지 알 수 없다 — 그래서 목록도 같이 준다.
    */
   recent: Place[];
@@ -83,14 +83,14 @@ export interface CandidateResult {
   afterWalkCount: number;
   /** 카테고리 칩까지 통과한 수. 화면 문구의 "N곳 중". */
   afterCategoryCount: number;
-  /** 그 N곳 중 최근 14일 안에 간 곳 수. 화면 문구의 "M곳은 최근에 갔습니다". */
+  /** 그 N곳 중 최근 7일 안에 간 곳 수. 화면 문구의 "M곳은 최근에 갔습니다". */
   recentlyVisitedCount: number;
   /** 최소 5곳을 채우려고 제외에서 다시 꺼낸 수. 몰래 풀지 않고 밝힌다. */
   releasedCount: number;
   /** 전부 풀어도 5곳이 안 되는 상태. 있는 만큼 돌린다. */
   shortOfMinimum: boolean;
   /**
-   * "최근 2주 제외" 가 실제로 적용됐는가. 끄면 recent 는 그대로 세되
+   * "최근 1주 제외" 가 실제로 적용됐는가. 끄면 recent 는 그대로 세되
    * 아무도 빠지지 않는다 — 문구가 "빠졌습니다" 라고 말하면 거짓이다.
    */
   excludedRecent: boolean;
@@ -98,7 +98,13 @@ export interface CandidateResult {
 }
 
 /** 방문 제외 창. UI 로 길이를 바꾸지 못한다. */
-export const RECENT_WINDOW_DAYS = 14;
+export const RECENT_WINDOW_DAYS = 7;
+/**
+ * 방문 기록을 읽어 오는 기간. 제외 창(7일)보다 길게 읽어 목록 탭 "최근 다녀온 곳" 과
+ * "다시 넣음" 순서(오래된 곳부터)가 1주 너머도 보이게 한다. 2026-10-13 사용자: 근처
+ * 밥집이 적어 2주 제외를 1주로 줄였다.
+ */
+export const VISIT_HISTORY_DAYS = 14;
 
 /** 이 아래로 떨어지면 오래된 방문부터 풀어서 채운다. */
 export const MIN_CANDIDATES = 5;
@@ -248,7 +254,7 @@ export function selectCandidates(
  *
  * 로드맵이 점을 다르게 그리려면 "후보다/아니다" 보다 한 단계 자세한 값이
  * 필요하다. 특히 released 와 cand 를 구분해야 한다 — 다시 꺼낸 곳을 그냥
- * 후보로 그리면 화면이 "최근 2주 제외" 를 지킨 것처럼 보이지만 실제로는
+ * 후보로 그리면 화면이 "최근 1주 제외" 를 지킨 것처럼 보이지만 실제로는
  * 풀어준 것이고, 그 사실을 감추면 이 앱의 유일한 공정성 장치가 무의미해진다.
  */
 export type PlaceStatus =
@@ -256,7 +262,7 @@ export type PlaceStatus =
   | 'candidate'
   /** 최근에 갔지만 5곳을 채우려고 다시 넣음 */
   | 'released'
-  /** 최근 2주 안에 가서 빠짐 */
+  /** 최근 1주 안에 가서 빠짐 */
   | 'recent'
   /** 도보·카테고리 범위 밖 */
   | 'out'
