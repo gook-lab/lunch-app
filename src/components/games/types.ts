@@ -36,7 +36,7 @@ export interface GameProps {
   onActivity?: () => void;
 }
 
-export type GameMode = 'wheel' | 'ladder' | 'slot' | 'pinball' | 'cards' | 'memory' | 'tournament';
+export type GameMode = 'wheel' | 'ladder' | 'slot' | 'pinball' | 'cards' | 'memory' | 'tournament' | 'gacha' | 'plinko' | 'dice';
 
 /** label 은 칩에, action 은 실행 버튼에 쓴다. "돌리기" 는 슬롯·핀볼에 안 맞는다. */
 export const GAME_MODES: { id: GameMode; label: string; action: string }[] = [
@@ -47,6 +47,9 @@ export const GAME_MODES: { id: GameMode; label: string; action: string }[] = [
   { id: 'cards', label: '카드', action: '카드 뒤집기' },
   { id: 'memory', label: '짝 맞추기', action: '짝 맞추기' },
   { id: 'tournament', label: '토너먼트', action: '대진 시작' },
+  { id: 'gacha', label: '뽑기 기계', action: '손잡이 돌리기' },
+  { id: 'plinko', label: '플링코', action: '공 떨어뜨리기' },
+  { id: 'dice', label: '주사위', action: '주사위 굴리기' },
 ];
 
 export function actionLabel(mode: GameMode): string {
@@ -56,10 +59,10 @@ export function actionLabel(mode: GameMode): string {
 /**
  * 모드마다 연출 길이가 다르다. 결과는 같다.
  *
- * 핀볼은 여기 없다 — 재생 길이가 경기마다 달라 컴포넌트가 정한다(timingFor).
+ * 핀볼·플링코·주사위는 여기 없다 — 재생 길이가 경기마다 달라 컴포넌트가 정한다.
  * 여기 적어두면 두 곳이 어긋날 수 있다. 짝 맞추기도 없다 — 사람이 두는 만큼 걸린다.
  */
-export const SPIN_MS: Record<Exclude<GameMode, 'pinball' | 'memory'>, number> = {
+export const SPIN_MS: Record<Exclude<GameMode, 'pinball' | 'memory' | 'plinko' | 'dice'>, number> = {
   wheel: 2600,
   // 사다리·슬롯은 핀볼에 비해 너무 빨리 끝나 긴장이 쌓일 틈이 없었다(10/9 손맛 리뷰 5·4점).
   ladder: 2800,
@@ -67,6 +70,8 @@ export const SPIN_MS: Record<Exclude<GameMode, 'pinball' | 'memory'>, number> = 
   cards: 3000,
   // 판 수와 상관없이 이 시간 안에 끝난다. 20곳이면 5판이라 판마다 약 0.8초.
   tournament: 4200,
+  // 뽑기 기계: 2.2초 흔들림 + 0.3초 떨어짐 + 0.2초 딜레이 = 2.7초.
+  gacha: 2700,
 };
 
 /** 게임이 끝나고 결과 모달을 열기까지. 마지막 장면(바늘이 걸리는 순간, 응원한 공 등수)을 볼 틈. */

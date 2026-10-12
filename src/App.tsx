@@ -15,6 +15,9 @@ import { Slot } from './components/games/Slot';
 import { Pinball } from './components/games/Pinball';
 import { Cards } from './components/games/Cards';
 import { Memory } from './components/games/Memory';
+import { Gacha } from './components/games/Gacha';
+import { Plinko } from './components/games/Plinko';
+import { Dice } from './components/games/Dice';
 import { ballCountsFor, pickWeighted } from './lib/weights';
 import { CandidateChips } from './components/CandidateChips';
 import { useMedia } from './hooks/useMedia';
@@ -66,7 +69,7 @@ const TAB_TITLE: Record<Tab, string> = {
 };
 
 /** 방식 단추 그림. 글자 이름은 그대로 두고 그림은 보조로만 쓴다. */
-const MODE_ICON: Record<GameMode, string> = { wheel: '🎡', ladder: '🪜', slot: '🎰', pinball: '🎱', cards: '🃏', memory: '🧩', tournament: '🏆' };
+const MODE_ICON: Record<GameMode, string> = { wheel: '🎡', ladder: '🪜', slot: '🎰', pinball: '🎱', cards: '🃏', memory: '🧩', tournament: '🏆', gacha: '🎁', plinko: '🔻', dice: '🎲' };
 
 const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
 /** "20261008" 을 "10월 8일 목요일" 로. */
@@ -741,6 +744,12 @@ export default function App() {
             if (mode === 'pinball') {
               const balls = board && boardBalls ? boardBalls : ballCountsFor(game.candidates.map((p) => p.id), ballCounts);
               return <Pinball {...game} balls={balls} onBallCounts={changeBalls} />;
+            }
+            if (mode === 'gacha') return <Gacha {...game} />;
+            if (mode === 'plinko') return <Plinko {...game} />;
+            if (mode === 'dice') {
+              const key = game.candidates.map((p) => p.id).join(',');
+              return <Dice key={key} {...game} />;
             }
             return <Wheel {...game} />;
           })()}
