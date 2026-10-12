@@ -18,6 +18,7 @@ import { Memory } from './components/games/Memory';
 import { ballCountsFor, pickWeighted } from './lib/weights';
 import { CandidateChips } from './components/CandidateChips';
 import { useMedia } from './hooks/useMedia';
+import { StatusScreen } from './components/StatusScreen';
 import { Tournament } from './components/games/Tournament';
 import { ShareButton } from './components/ShareButton';
 import {
@@ -41,6 +42,8 @@ import { officeSource } from './lib/walk';
 import { emptyMessage, noticeMessage } from './lib/messages';
 import { decideToday } from './services/lunch';
 import './App.css';
+// 종이 식권 테마는 App.css 뒤에 — 같은 명시도로 덮는다.
+import './theme.css';
 
 // 지도와 추가는 결정 화면 첫 페인트에 섞이지 않는다 (D7).
 const MapTab = lazy(() => import('./components/MapTab'));
@@ -74,6 +77,15 @@ function formatDay(day: string): string {
   if (!y || !m || !d) return '';
   const w = WEEKDAY[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
   return `${m}월 ${d}일 ${w}요일`;
+}
+
+/** "20261013" 이 그해 몇 번째 날인가(1월 1일 = 1). 식권 번호로 쓴다. */
+function dayOfYear(day: string): number {
+  const y = Number(day.slice(0, 4));
+  const m = Number(day.slice(4, 6));
+  const d = Number(day.slice(6, 8));
+  if (!y || !m || !d) return 0;
+  return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(y, 0, 1)) / 86_400_000) + 1;
 }
 
 export default function App() {
@@ -386,15 +398,29 @@ export default function App() {
     }));
 
   if (state === 'loading') {
-    return <main className="app app--center"><p className="muted">불러오는 중이에요</p></main>;
+    return (
+      <main className="app app--center">
+        <StatusScreen
+          role="status"
+          art={<span className="status__ring">🍱</span>}
+          title="불러오는 중이에요"
+          lines={['가게 목록과 최근 2주 방문을 읽고 있어요']}
+        />
+      </main>
+    );
   }
 
   if (state === 'error') {
     return (
       <main className="app app--center">
-        <p>목록을 불러오지 못했어요.</p>
-        <p className="muted small">{String((error as Error)?.message ?? error)}</p>
-        <Button onClick={reload}>다시 시도</Button>
+        <StatusScreen
+          role="alert"
+          art={<span className="status__bang">!</span>}
+          title="목록을 불러오지 못했어요"
+          code={String((error as Error)?.message ?? error)}
+          lines={['네트워크를 확인하고 다시 시도해 주세요.', '계속 안 되면 링크를 새로 받아 열어 주세요.']}
+          action={<Button onClick={reload}>다시 시도</Button>}
+        />
       </main>
     );
   }
@@ -496,7 +522,10 @@ export default function App() {
     <main className="app">
       <div className="topbar">
       <header className="app__header">
-        <p className="app__date">{formatDay(today)}</p>
+        {/* 종이 식권 테마 — 날마다 번호가 붙는 식권처럼. 번호는 그해 몇 번째 날이다. */}
+        <p className="app__date">
+          <span className="app__ticketNo">NO. {String(dayOfYear(today)).padStart(4, '0')}</span> · {formatDay(today)} · 사내 점심 식권
+        </p>
         <div className="app__titleRow">
           <h1>{TAB_TITLE[tab]}</h1>
           <span className="app__count">
@@ -577,6 +606,24 @@ export default function App() {
         </section>
       )}
 
+      {places.length === 0 ? (
+        <StatusScreen
+          inline
+          art={
+            <span className="status__office">
+              <span className="status__dot" />
+              <span className="status__officeLabel">사무실</span>
+            </span>
+          }
+          title="아직 등록된 가게가 없어요"
+          lines={['지도 탭에서 회사 위치를 정하고', '첫 가게를 넣어 주세요. 5곳부터 게임이 돼요.']}
+          action={
+            <Button onClick={() => goTab('map')}>
+              <span aria-hidden="true">🗺️ </span>지도에서 가게 추가
+            </Button>
+          }
+        />
+      ) : (
       <div className="today">
       <section
         className={['stage', spinning ? 'stage--busy' : '', expanded ? 'stage--full' : ''].filter(Boolean).join(' ')}
@@ -740,6 +787,7 @@ export default function App() {
       </aside>
       )}
       </div>
+      )}
 
       </div>
 

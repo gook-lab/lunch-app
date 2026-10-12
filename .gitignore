@@ -29,3 +29,6 @@ dist-ssr
 # firebase 에뮬레이터
 firestore-debug.log
 firebase-debug.log
+
+# 에이전트 작업 공간
+.claude/worktrees

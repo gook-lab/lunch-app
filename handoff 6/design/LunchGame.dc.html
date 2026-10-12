@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="display:flex;flex-direction:column;gap:16px;align-items:stretch;font-family:{{ cFont }};color:{{ cInk }}">
+  <sc-if value="{{ isWheel }}" hint-placeholder-val="{{ true }}">
+    <div style="position:relative;width:{{ wheelW }};max-width:80vw;aspect-ratio:1;margin:0 auto">
+      <div style="position:absolute;top:-4px;left:50%;translate:-50% 0;z-index:2;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:16px solid {{ cAccent }};filter:drop-shadow(0 1px 1px rgba(0,0,0,0.25))"></div>
+      <div style="width:100%;height:100%;border-radius:50%;border:2px solid {{ cInk }};position:relative;overflow:hidden;box-sizing:border-box;background:{{ wheelBg }};transform:rotate({{ angle }}deg);transition:transform {{ wheelDur }}ms cubic-bezier(0.15, 0.85, 0.2, 1)">
+        <sc-for list="{{ slices }}" as="s" hint-placeholder-count="5">
+          <div style="position:absolute;left:50%;top:0;width:1px;height:50%;background:{{ cBorder }};transform-origin:bottom center;transform:rotate({{ s.edge }}deg)"></div>
+          <div style="position:absolute;inset:0;display:flex;justify-content:center;align-items:flex-start;padding-top:12px;transform:rotate({{ s.mid }}deg)">
+            <span style="font-size:11px;line-height:1.3;color:{{ wheelInk }};font-weight:{{ s.fw }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:6.5em;transform:{{ s.flip }}">{{ s.name }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <sc-if value="{{ hasWinner }}">
+        <div style="position:absolute;inset:27%;z-index:1;border-radius:50%;background:{{ cCard }};border:2px solid {{ cInk }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px;text-align:center">
+          <strong style="font-family:{{ cFontH }};font-size:15px;line-height:1.25;word-break:keep-all">{{ winnerName }}</strong>
+          <span style="font-size:11px;color:{{ cMuted }}">{{ winnerShort }}</span>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isSlot }}">
+    <div style="position:relative;width:320px;max-width:100%;margin:0 auto">
+      <div style="height:168px;overflow:hidden;border-radius:12px;background:{{ slotBg }};-webkit-mask-image:linear-gradient(transparent, #000 26%, #000 74%, transparent);mask-image:linear-gradient(transparent, #000 26%, #000 74%, transparent)">
+        <div style="transform:translateY({{ slotY }}px);transition:transform {{ slotDur }}ms cubic-bezier(0.08, 0.7, 0.05, 1)">
+          <sc-for list="{{ reel }}" as="r" hint-placeholder-count="3">
+            <div style="height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:18px;font-family:{{ cFontH }};color:{{ slotInk }}">
+              <span style="max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px">{{ r.name }}</span>
+              <span style="font-size:11px;color:{{ slotMeta }};font-family:{{ cFont }}">도보 {{ r.walkMin }}분</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="position:absolute;left:0;right:0;top:56px;height:56px;border-top:2px solid {{ slotFrame }};border-bottom:2px solid {{ slotFrame }};pointer-events:none"></div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isLadder }}">
+    <div style="width:320px;max-width:100%;margin:0 auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
+        <p style="margin:0;font-size:11px;color:{{ cMuted }};text-align:left">출발 번호를 고르면 바로 탑니다 · 선을 눌러 사다리를 고칠 수 있어요</p>
+        <button style="flex:none;background:none;border:1px solid {{ cBorder }};border-radius:4px;padding:4px 8px;font:11px {{ cFont }};color:{{ cMuted }};cursor:pointer;min-height:32px">섞기</button>
+      </div>
+      <div style="position:relative">
+        <sc-for list="{{ rails }}" as="l"><button style="position:absolute;top:0;left:{{ l.left }};translate:-50% 0;width:26px;height:26px;border-radius:50%;border:1.5px solid {{ l.bd }};background:{{ l.bg }};color:{{ l.fg }};font:700 11px {{ cFont }};cursor:pointer">{{ l.n }}</button></sc-for>
+        <svg viewBox="0 0 320 260" style="width:100%;display:block;margin-top:13px">
+          <sc-for list="{{ rails }}" as="l"><line x1="{{ l.x1 }}" y1="{{ l.y1 }}" x2="{{ l.x2 }}" y2="{{ l.y2 }}" stroke="{{ cBorder }}" stroke-width="1.5"></line></sc-for>
+          <sc-for list="{{ rungs }}" as="l"><line x1="{{ l.x1 }}" y1="{{ l.y1 }}" x2="{{ l.x2 }}" y2="{{ l.y2 }}" stroke="{{ cBorder }}" stroke-width="1.5"></line></sc-for>
+          <polyline points="{{ ladderPts }}" fill="none" stroke="{{ ladderInk }}" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
+          <sc-if value="{{ ladderHead }}"><circle cx="{{ ladderHead.x }}" cy="{{ ladderHead.y }}" r="5" fill="{{ ladderInk }}"></circle></sc-if>
+        </svg>
+      </div>
+      <div style="display:grid;gap:2px;margin-top:8px;grid-template-columns:{{ ladderCols }}">
+        <sc-for list="{{ ladderLabels }}" as="lb">
+          <span style="font-size:11px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:{{ lb.ink }};font-weight:{{ lb.fw }};background:{{ lb.bg }};border:{{ lb.border }};height:22px;line-height:22px;justify-self:center;min-width:26px;padding:0 2px;box-sizing:border-box">{{ lb.name }}</span>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isPinball }}">
+    <div style="position:relative;width:{{ pbW }};max-width:100%;margin:0 auto;border-radius:12px;overflow:hidden;background:{{ pbBg }};line-height:0">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px;padding:8px 8px 4px;line-height:1.4">
+        <div style="display:flex;gap:4px">
+          <sc-for list="{{ pbThemes }}" as="t"><span style="min-height:28px;display:inline-flex;align-items:center;padding:0 8px;border:1px solid {{ t.bd }};border-radius:12px;background:{{ t.bg }};color:{{ t.fg }};font:600 11px {{ cFont }}">{{ t.label }}</span></sc-for>
+        </div>
+        <span style="font:700 11px ui-monospace, Consolas, monospace;letter-spacing:1px;color:{{ hitInk }}">{{ hitLabel }}</span>
+      </div>
+      <svg viewBox="0 0 320 {{ pbSvgH }}" style="width:100%;display:block">
+        <sc-for list="{{ bumpers }}" as="bp">
+          <circle cx="{{ bp.x }}" cy="{{ bp.y }}" r="19" fill="none" stroke="{{ bp.ring }}" stroke-width="2" opacity="{{ bp.ringOp }}"></circle>
+          <circle cx="{{ bp.x }}" cy="{{ bp.y }}" r="{{ bp.r }}" fill="{{ bp.fill }}"></circle>
+        </sc-for>
+        <sc-for list="{{ pegs }}" as="p"><circle cx="{{ p.x }}" cy="{{ p.y }}" r="{{ p.r }}" fill="{{ p.fill }}"></circle></sc-for>
+        <sc-if value="{{ pegRing }}"><circle cx="{{ pegRing.x }}" cy="{{ pegRing.y }}" r="11" fill="none" stroke="oklch(0.85 0.17 90)" stroke-width="2" opacity="0.7"></circle></sc-if>
+        <sc-for list="{{ binWalls }}" as="w"><line x1="{{ w.x }}" y1="{{ w.y1 }}" x2="{{ w.x }}" y2="{{ w.y2 }}" stroke="{{ pbWall }}" stroke-width="1.5"></line></sc-for>
+        <sc-if value="{{ ball }}">
+          <circle cx="{{ ball.x }}" cy="{{ ball.y }}" r="11" fill="{{ pbGlow }}"></circle>
+          <circle cx="{{ ball.x }}" cy="{{ ball.y }}" r="6" fill="{{ pbBall }}"></circle>
+        </sc-if>
+      </svg>
+      <div style="display:grid;grid-template-columns:{{ pbCols }};height:96px">
+        <sc-for list="{{ bins }}" as="b">
+          <div style="display:flex;align-items:flex-start;justify-content:center;padding-top:6px;background:{{ b.bg }};border-top:3px solid {{ b.bar }};overflow:hidden">
+            <span style="writing-mode:vertical-rl;font-size:11px;letter-spacing:0;color:{{ b.ink }};font-weight:{{ b.fw }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:84px;line-height:1">{{ b.name }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;line-height:1.4;font-size:11px;color:{{ pbMeta }}">
+        <span>카메라</span>
+        <span style="min-height:28px;display:inline-flex;align-items:center;padding:0 8px;border:1px solid {{ pbWall }};border-radius:4px;background:{{ cCard }};color:{{ cInk }};font-size:12px">선두 따라가기 ▾</span>
+        <span style="margin-left:auto">{{ pbTip }}</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isCards }}">
+    <div style="width:360px;max-width:90vw;margin:0 auto;display:flex;flex-direction:column;gap:12px">
+      <p style="margin:0;text-align:center;font-size:11px;color:{{ cMuted }}">{{ cardsHint }}</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(76px, 104px));justify-content:center;gap:8px">
+        <sc-for list="{{ cardList }}" as="cd" hint-placeholder-count="5">
+          <div style="aspect-ratio:3 / 4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px;text-align:center;background:{{ cd.bg }};color:{{ cd.fg }};border:{{ cd.border }};outline:{{ cd.outline }};box-shadow:0 1px 2px rgba(0,0,0,0.12);transition:transform 420ms ease-in-out, opacity 260ms;transform:{{ cd.tf }};opacity:{{ cd.op }}">
+            <span style="font-family:{{ cFontH }};font-size:{{ cd.numSize }};font-weight:800;line-height:1">{{ cd.num }}</span>
+            <strong style="font-size:12px;line-height:1.2;word-break:keep-all;color:{{ cd.nameInk }}">{{ cd.name }}</strong>
+            <span style="font-size:11px;color:{{ cd.metaInk }}">{{ cd.meta }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isMemory }}">
+    <div style="width:360px;max-width:90vw;margin:0 auto;display:flex;flex-direction:column;gap:12px">
+      <p style="margin:0;text-align:center;font-size:11px;color:{{ cMuted }}">{{ memHint }}</p>
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:4px">
+        <sc-for list="{{ memLeft }}" as="m"><span style="padding:2px 8px;border:1px {{ m.bs }} {{ m.bd }};border-radius:12px;font-size:11px;color:{{ m.fg }};background:{{ m.bg }};text-decoration:{{ m.deco }};font-weight:{{ m.fw }}">{{ m.name }}</span></sc-for>
+      </div>
+      <div style="display:grid;gap:8px;grid-template-columns:{{ memCols }}">
+        <sc-for list="{{ memCards }}" as="mc" hint-placeholder-count="8">
+          <div style="aspect-ratio:3 / 4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px;text-align:center;background:{{ mc.bg }};color:{{ mc.fg }};border:{{ mc.border }};outline:{{ mc.outline }};box-shadow:0 1px 2px rgba(0,0,0,0.12);opacity:{{ mc.op }};transform:{{ mc.tf }};transition:opacity 300ms, transform 300ms">
+            <span style="font-size:18px;line-height:1">{{ mc.icon }}</span>
+            <strong style="font-size:11px;line-height:1.2;word-break:keep-all">{{ mc.name }}</strong>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isTournament }}">
+    <div style="width:360px;max-width:90vw;margin:0 auto;display:grid;gap:12px;padding:8px 0">
+      <p style="margin:0;text-align:center;font-size:11px;color:{{ cMuted }}">{{ tourHint }}</p>
+      <sc-if value="{{ tourIdle }}">
+        <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px">
+          <sc-for list="{{ tourEntries }}" as="e"><span style="min-height:40px;display:inline-flex;align-items:center;padding:0 12px;border:1px solid {{ e.bd }};border-radius:12px;background:{{ e.bg }};color:{{ e.fg }};font-size:13px;font-weight:600">{{ e.name }}</span></sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ tourLive }}">
+        <div style="display:flex;justify-content:center;gap:4px;font-size:11px;font-weight:700">
+          <sc-for list="{{ tourSteps }}" as="st"><span style="padding:2px 8px;border-radius:4px;color:{{ st.fg }};background:{{ st.bg }};text-decoration:{{ st.deco }}">{{ st.label }}</span></sc-for>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));gap:8px">
+          <sc-for list="{{ tourMatches }}" as="m">
+            <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:4px;padding:8px;border:1px solid {{ cBorder }};border-radius:8px;background:{{ cCard }}">
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font-size:13px;font-weight:600;padding:2px;border-radius:4px;background:{{ m.aBg }};color:{{ m.aFg }};opacity:{{ m.aOp }};text-decoration:{{ m.aDeco }}">{{ m.a }}</span>
+              <span style="font-size:11px;font-weight:700;color:{{ cMuted }}">vs</span>
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font-size:13px;font-weight:600;padding:2px;border-radius:4px;background:{{ m.bBg }};color:{{ m.bFg }};opacity:{{ m.bOp }};text-decoration:{{ m.bDeco }};font-style:{{ m.bStyle }}">{{ m.b }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <sc-if value="{{ hasWinner }}">
+          <div style="display:grid;justify-items:center;gap:4px;padding:16px 12px;border:2px solid {{ cAccent }};border-radius:12px;background:{{ cCard }}">
+            <span style="font-size:40px;line-height:1">🏆</span>
+            <strong style="font-size:18px;text-align:center">{{ winnerName }}</strong>
+          </div>
+        </sc-if>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isGacha }}">
+    <div style="width:280px;max-width:100%;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:10px">
+      <p style="margin:0;text-align:center;font-size:11px;color:{{ cMuted }}">{{ gachaHint }}</p>
+      <div style="position:relative;width:240px;height:300px">
+        <div style="position:absolute;left:0;right:0;top:0;height:200px;border-radius:120px 120px 16px 16px;background:linear-gradient(160deg, rgba(255,255,255,0.7), rgba(255,255,255,0.15) 40%, rgba(0,0,0,0.05)), {{ cCard }};border:2px solid {{ cInk }};box-sizing:border-box;overflow:hidden">
+          <sc-for list="{{ capsules }}" as="cp" hint-placeholder-count="5">
+            <div style="position:absolute;left:{{ cp.x }}px;top:{{ cp.y }}px;width:40px;height:40px;border-radius:50%;background:linear-gradient(180deg, {{ cp.top }} 50%, #fff 50%);border:1.5px solid rgba(0,0,0,0.25);box-sizing:border-box;transition:transform 180ms ease-in-out;transform:{{ cp.tf }}"></div>
+          </sc-for>
+        </div>
+        <div style="position:absolute;left:0;right:0;top:196px;height:104px;border-radius:0 0 16px 16px;background:{{ cAccent }};border:2px solid {{ cInk }};box-sizing:border-box"></div>
+        <div style="position:absolute;left:50%;top:214px;translate:-50% 0;width:48px;height:48px;border-radius:50%;background:{{ cCard }};border:2px solid {{ cInk }};box-sizing:border-box;display:grid;place-items:center;transition:transform 600ms ease-in-out;transform:rotate({{ gachaKnob }}deg)"><div style="width:6px;height:30px;background:{{ cInk }};border-radius:3px"></div></div>
+        <div style="position:absolute;left:24px;bottom:12px;width:70px;height:34px;border-radius:8px;background:rgba(0,0,0,0.35);border:2px solid {{ cInk }};box-sizing:border-box"></div>
+        <sc-if value="{{ gachaOut }}">
+          <div style="position:absolute;left:39px;bottom:16px;width:40px;height:40px;border-radius:50%;background:linear-gradient(180deg, {{ gachaOut.top }} 50%, #fff 50%);border:1.5px solid rgba(0,0,0,0.25);box-sizing:border-box;animation:rise 300ms ease-out both"></div>
+        </sc-if>
+      </div>
+      <sc-if value="{{ hasWinner }}">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border:2px solid {{ cAccent }};border-radius:999px;background:{{ cCard }};animation:rise 320ms ease-out both">
+          <span style="font-size:22px">{{ winnerIcon }}</span><strong style="font-size:16px;color:{{ cInk }}">{{ winnerName }}</strong><span style="font-size:12px;color:{{ cMuted }}">{{ winnerShort }}</span>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isPlinko }}">
+    <div style="width:320px;max-width:100%;margin:0 auto;border-radius:12px;overflow:hidden;background:{{ cCard }};border:1px solid {{ cBorder }}">
+      <svg viewBox="0 0 320 {{ plSvgH }}" style="width:100%;display:block">
+        <sc-for list="{{ plPegs }}" as="p"><circle cx="{{ p.x }}" cy="{{ p.y }}" r="{{ p.r }}" fill="{{ p.fill }}"></circle></sc-for>
+        <sc-for list="{{ plWalls }}" as="w"><line x1="{{ w.x }}" y1="{{ w.y1 }}" x2="{{ w.x }}" y2="{{ w.y2 }}" stroke="{{ cBorder }}" stroke-width="1.5"></line></sc-for>
+        <sc-if value="{{ plBall }}"><circle cx="{{ plBall.x }}" cy="{{ plBall.y }}" r="7" fill="{{ cAccent }}"></circle></sc-if>
+      </svg>
+      <div style="display:grid;grid-template-columns:{{ plCols }};height:88px;border-top:1px solid {{ cBorder }}">
+        <sc-for list="{{ plBins }}" as="b">
+          <div style="display:flex;align-items:flex-start;justify-content:center;padding-top:6px;background:{{ b.bg }};border-top:3px solid {{ b.bar }};overflow:hidden">
+            <span style="writing-mode:vertical-rl;font-size:11px;color:{{ b.ink }};font-weight:{{ b.fw }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:76px;line-height:1">{{ b.name }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isDice }}">
+    <div style="width:340px;max-width:100%;margin:0 auto;display:flex;flex-direction:column;gap:10px">
+      <p style="margin:0;text-align:center;font-size:11px;color:{{ cMuted }}">{{ diceHint }}</p>
+      <div style="position:relative;display:grid;grid-template-columns:repeat({{ diceN }}, minmax(0, 1fr));grid-template-rows:repeat({{ diceN }}, minmax(0, 1fr));gap:4px;aspect-ratio:1">
+        <sc-for list="{{ diceCells }}" as="dc" hint-placeholder-count="12">
+          <div style="grid-row:{{ dc.row }};grid-column:{{ dc.col }};box-sizing:border-box;border-radius:8px;padding:5px;display:flex;flex-direction:column;justify-content:space-between;background:{{ dc.bg }};border:{{ dc.border }};overflow:hidden;min-width:0">
+            <span style="font-size:9px;font-weight:700;color:{{ dc.stepInk }}">{{ dc.step }}</span>
+            <span style="font-size:14px;line-height:1">{{ dc.icon }}</span>
+            <span style="font-size:9.5px;line-height:1.2;font-weight:600;color:{{ dc.ink }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ dc.name }}</span>
+          </div>
+        </sc-for>
+        <div style="grid-row:2 / {{ diceInnerEnd }};grid-column:2 / {{ diceInnerEnd }};border-radius:8px;background:{{ cCard }};border:1px solid {{ cBorder }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+          <div style="display:flex;gap:8px">
+            <div style="width:44px;height:44px;border-radius:10px;background:#fff;border:2px solid {{ cInk }};box-sizing:border-box;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:5px;gap:2px;transition:transform 500ms cubic-bezier(0.2,0.8,0.2,1);transform:rotate({{ diceRot }}deg)">
+              <sc-for list="{{ dicePips }}" as="pp"><span style="border-radius:50%;background:{{ pp }}"></span></sc-for>
+            </div>
+          </div>
+          <span style="font-size:11px;color:{{ cMuted }}">{{ diceLabel }}</span>
+        </div>
+        <div style="position:absolute;left:{{ dicePieceX }};top:{{ dicePieceY }};width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:{{ cAccent }};border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);box-sizing:border-box;transition:left 180ms ease-out, top 180ms ease-out;pointer-events:none"></div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showCard }}">
+    <div style="border:1px solid {{ cBorder }};border-radius:{{ cRadius }};padding:16px;display:flex;flex-direction:column;gap:8px;background:{{ cCard }};box-shadow:{{ cShadow }}">
+      <span style="align-self:flex-start;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:{{ winnerTint }};color:#18181b">{{ winnerCat }}</span>
+      <h2 style="margin:0;font-size:22px;font-weight:600;line-height:1.18;color:{{ cInk }};font-family:{{ cFontH }}">{{ winnerName }}</h2>
+      <p style="margin:0;font-size:13px;color:{{ cMuted }}">{{ winnerMeta }}</p>
+      <div style="display:flex;gap:8px">
+        <button onClick="{{ decide }}" style="flex:1;height:40px;border:0;border-radius:{{ cBtnRadius }};background:{{ cAccent }};color:{{ cOnAccent }};font:600 15px {{ cFont }};cursor:pointer;box-shadow:{{ cBtnShadow }}">여기로 결정</button>
+        <button onClick="{{ spin }}" style="flex:1;height:40px;border:1px solid {{ cBorder }};border-radius:{{ cBtnRadius }};background:transparent;color:{{ cInk }};font:600 15px {{ cFont }};cursor:pointer">다시 하기</button>
+      </div>
+      <p style="margin:0;font-size:13px;color:{{ cMuted }}">누르면 방문 기록이 남고, 2주 동안 후보에서 빠져요.</p>
+    </div>
+  </sc-if>
+  <sc-if value="{{ showSpin }}">
+    <button onClick="{{ spin }}" disabled="{{ spinDisabled }}" style="width:100%;height:48px;border:0;border-radius:{{ cBtnRadius }};background:{{ cAccent }};color:{{ cOnAccent }};font:600 16px {{ cFont }};cursor:pointer;opacity:{{ spinOpacity }};box-shadow:{{ cBtnShadow }}">{{ spinLabel }}</button>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":360,"height":520},"candidates":{"editor":null,"tsType":"Place[]","default":[{"id":"a","name":"샘플 한식집 1","category":"한식","walkMin":4},{"id":"b","name":"샘플 면집 1","category":"면","walkMin":5},{"id":"c","name":"샘플 분식집 1","category":"분식","walkMin":3},{"id":"d","name":"샘플 고기집 2","category":"고기","walkMin":10},{"id":"e","name":"샘플 분식집 2","category":"분식","walkMin":9}]},"mode":{"editor":"enum","options":["wheel","ladder","slot","pinball","cards","memory","tournament","gacha","plinko","dice"],"default":"pinball","tsType":"string"},"vivid":{"editor":"boolean","default":true,"tsType":"boolean"},"hideCard":{"editor":"boolean","default":false,"tsType":"boolean"},"hideSpin":{"editor":"boolean","default":false,"tsType":"boolean"},"expanded":{"editor":"boolean","default":false,"tsType":"boolean"},"palette":{"editor":null,"tsType":"object"},"onResult":{"editor":null,"tsType":"(p)=>void"},"onDecide":{"editor":null,"tsType":"(p)=>void"},"onSpinStart":{"editor":null,"tsType":"()=>void"}}'>
+const HUE = { 한식: 25, 면: 80, 고기: 355, 분식: 145, 양식: 250, 중식: 300 };
+const ICON = { 한식: '🍚', 면: '🍜', 고기: '🥩', 분식: '🍢', 양식: '🍝', 중식: '🥟' };
+const hue = (c) => HUE[c] ?? 200;
+const ITEM_H = 56, LOOPS = 6, ROWS = 9;
+const ACTION = { wheel: '돌리기', ladder: '사다리 타기', slot: '레버 당기기', pinball: '구슬 굴리기', cards: '카드 뒤집기', memory: '짝 맞추기', tournament: '대진 시작', gacha: '손잡이 돌리기', plinko: '공 떨어뜨리기', dice: '주사위 굴리기' };
+const perimeter = (n) => { const side = Math.max(2, Math.ceil(n / 4) + 1); const cells = []; for (let c = 1; c <= side; c++) cells.push([1, c]); for (let r = 2; r <= side; r++) cells.push([r, side]); for (let c = side - 1; c >= 1; c--) cells.push([side, c]); for (let r = side - 1; r >= 2; r--) cells.push([r, 1]); return { side, cells }; };
+const reduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+const shuffle = (a) => { const r = [...a]; for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; };
+
+class Component extends DCLogic {
+  state = { hits: 0, spinning: false, winnerIndex: null, winner: null, angle: 0, wheelDur: 0, slotY: 56, slotDur: 0, ladder: null, drawn: 0, ball: null, litPeg: -1, litBin: -1,
+    cardsMine: -1, cardsOpen: false, cardsDone: false, cardsOrder: null, memOut: 0, memDone: false, tour: null, tourShown: 0,
+    gachaShake: 0, gachaKnob: 0, gachaOut: null, plBall: null, plLit: -1, plBin: -1, diceFace: 0, diceRot: 0, dicePos: 0, diceRolls: 0 };
+  turns = 0;
+
+  componentDidUpdate(prev) {
+    if (prev.run !== this.props.run && this.props.run) { this.cancel(); this.setState({ spinning: false }, () => this.spin()); return; }
+    if (prev.mode !== this.props.mode) {
+      this.cancel();
+      this.setState({ spinning: false, winner: null, winnerIndex: null, ball: null, litPeg: -1, litBin: -1, drawn: 0, ladder: null, cardsOpen: false, cardsDone: false, cardsMine: -1, cardsOrder: null, memOut: 0, memDone: false, tour: null, tourShown: 0, gachaShake: 0, gachaKnob: 0, gachaOut: null, plBall: null, plLit: -1, plBin: -1, diceFace: 0, dicePos: 0, diceRolls: 0 });
+    }
+  }
+  componentWillUnmount() { this.cancel(); }
+  cancel() { clearTimeout(this.timer); clearTimeout(this.kick); clearInterval(this.iv); cancelAnimationFrame(this.raf); }
+  cands() { return this.props.candidates || []; }
+  mode() { return this.props.mode || 'wheel'; }
+
+  finish(idx) {
+    const c = this.cands()[idx];
+    this.setState({ spinning: false, winner: c });
+    this.props.onResult?.(c);
+  }
+  animate(ms, onFrame, onDone) {
+    const t0 = performance.now();
+    const tick = (now) => { const t = Math.min(1, (now - t0) / ms); onFrame(t); if (t < 1) this.raf = requestAnimationFrame(tick); else onDone(); };
+    this.raf = requestAnimationFrame(tick);
+  }
+  colX(col, n) { return n <= 1 ? 160 : 18 + (col * 284) / (n - 1); }
+  rowY(row) { return 26 + (row * 208) / ROWS; }
+  buildLadder(n) {
+    const rungs = [];
+    for (let r = 0; r < ROWS; r++) { let prev = -2; for (let c = 0; c < n - 1; c++) if (c - prev > 1 && Math.random() < 0.5) { rungs.push({ row: r, col: c }); prev = c; } }
+    return rungs;
+  }
+  ladderPath(rungs, start) {
+    let col = start; const pts = [{ col, row: 0 }];
+    for (let r = 0; r < ROWS; r++) {
+      const right = rungs.find((g) => g.row === r && g.col === col), left = rungs.find((g) => g.row === r && g.col === col - 1);
+      if (right || left) { pts.push({ col, row: r + 0.5 }); col = right ? col + 1 : col - 1; pts.push({ col, row: r + 0.5 }); }
+    }
+    pts.push({ col, row: ROWS });
+    return pts;
+  }
+  geo(n) {
+    const binW = 320 / n, R = n - 1, rowH = R > 0 ? Math.min(26, 210 / R) : 0, pegTop = 18, binsTop = pegTop + R * rowH + 16;
+    return { binW, R, rowH, pegTop, binsTop, peg: (r, k) => ({ x: 160 + (k - r / 2) * binW, y: pegTop + r * rowH }), svgH: binsTop + 18 };
+  }
+
+  spin = () => {
+    const c = this.cands(), n = c.length;
+    if (n === 0 || this.state.spinning) return;
+    this.cancel();
+    const idx = Math.floor(Math.random() * n);
+    const rm = reduced();
+    this.setState({ winnerIndex: idx, winner: null, spinning: true, litBin: -1, litPeg: -1 });
+    this.props.onSpinStart?.();
+    const m = this.mode();
+
+    if (m === 'wheel') {
+      const slice = 360 / n;
+      if (!rm) this.turns += 4;
+      this.setState({ angle: this.turns * 360 + (360 - (idx * slice + slice / 2)), wheelDur: rm ? 0 : 2600 });
+      this.timer = setTimeout(() => this.finish(idx), rm ? 0 : 2600);
+    } else if (m === 'slot') {
+      this.setState({ slotDur: 0 });
+      this.kick = setTimeout(() => this.setState({ slotDur: rm ? 0 : 2800, slotY: -((rm ? 0 : LOOPS * n) + idx - 1) * ITEM_H }), 30);
+      this.timer = setTimeout(() => { this.setState({ slotDur: 0, slotY: -(n + idx - 1) * ITEM_H }); this.finish(idx); }, rm ? 40 : 2850);
+    } else if (m === 'ladder') {
+      const rungs = this.buildLadder(n);
+      let start = 0;
+      for (let s = 0; s < n; s++) { const p = this.ladderPath(rungs, s); if (p[p.length - 1].col === idx) { start = s; break; } }
+      const path = this.ladderPath(rungs, start).map((p) => ({ x: this.colX(p.col, n), y: this.rowY(p.row) }));
+      this.setState({ ladder: { rungs, path, n, start }, drawn: rm ? 1 : 0 });
+      if (rm) return this.finish(idx);
+      this.animate(2800, (t) => this.setState({ drawn: t < 0.8 ? t / 0.8 * 0.8 : 0.8 + ((t - 0.8) / 0.2) * 0.2 }), () => this.finish(idx));
+    } else if (m === 'pinball') {
+      const g = this.geo(n);
+      const rights = shuffle(Array.from({ length: g.R }, (_, i) => i < idx));
+      const pts = [{ x: 160, y: -6, peg: -1 }];
+      let k = 0;
+      for (let r = 0; r < g.R; r++) { const p = g.peg(r, k); pts.push({ x: p.x, y: p.y - 7, peg: (r * (r + 1)) / 2 + k }); if (rights[r]) k++; }
+      pts.push({ x: (idx + 0.5) * g.binW, y: g.binsTop + 8, peg: -1 });
+      if (rm) { this.setState({ ball: pts[pts.length - 1], litBin: idx }); return this.finish(idx); }
+      let lastSeg = -1;
+      this.setState({ hits: 0 });
+      this.animate(200 * (pts.length - 1), (t) => {
+        const f = t * (pts.length - 1), i = Math.min(pts.length - 2, Math.floor(f)), u = f - i, a = pts[i], b = pts[i + 1];
+        const patch = { ball: { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * (u * u) - Math.sin(Math.PI * u) * 7 }, litPeg: u < 0.45 ? a.peg : -1 };
+        if (i !== lastSeg && a.peg >= 0) { lastSeg = i; patch.hits = (this.state.hits || 0) + 1; }
+        this.setState(patch);
+      }, () => { this.setState({ ball: pts[pts.length - 1], litBin: idx, litPeg: -1 }); this.finish(idx); });
+    } else if (m === 'cards') {
+      const mine = Math.floor(Math.random() * n);
+      const others = shuffle(c.map((_, i) => i).filter((i) => i !== idx));
+      const order = c.map((_, i) => (i === mine ? idx : others.shift()));
+      this.setState({ cardsMine: mine, cardsOrder: order, cardsOpen: false, cardsDone: false });
+      if (rm) { this.setState({ cardsOpen: true, cardsDone: true }); return this.finish(idx); }
+      this.kick = setTimeout(() => this.setState({ cardsOpen: true }), 1400);
+      this.timer = setTimeout(() => { this.setState({ cardsDone: true }); this.finish(idx); }, 3000);
+    } else if (m === 'memory') {
+      const order = shuffle(c.map((_, i) => i).filter((i) => i !== idx));
+      this.setState({ memOrder: order, memOut: 0, memDone: false });
+      if (rm) { this.setState({ memOut: order.length, memDone: true }); return this.finish(idx); }
+      let k = 0;
+      this.iv = setInterval(() => {
+        k++; this.setState({ memOut: k });
+        if (k >= order.length) { clearInterval(this.iv); this.timer = setTimeout(() => { this.setState({ memDone: true }); this.finish(idx); }, 500); }
+      }, 550);
+    } else if (m === 'gacha') {
+      this.setState({ gachaOut: null, gachaKnob: (s0 => s0 + 360)(this.state.gachaKnob || 0), gachaShake: 1 });
+      if (rm) { this.setState({ gachaOut: idx, gachaShake: 0 }); return this.finish(idx); }
+      let k = 0;
+      this.iv = setInterval(() => { k++; this.setState({ gachaShake: k }); }, 180);
+      this.timer = setTimeout(() => { clearInterval(this.iv); this.setState({ gachaShake: 0, gachaOut: idx }); this.kick = setTimeout(() => this.finish(idx), 500); }, 2200);
+    } else if (m === 'plinko') {
+      const R = Math.max(n - 1, 1), binW = 320 / n, rowH = Math.min(26, 220 / R), top = 20;
+      const rights = shuffle(Array.from({ length: R }, (_, i) => i < idx));
+      const pts = [{ x: 160, y: -6 }];
+      let k = 0;
+      for (let r = 0; r < R; r++) { pts.push({ x: 160 + (k - r / 2) * binW, y: top + r * rowH - 8, peg: (r * (r + 1)) / 2 + k }); if (rights[r]) k++; }
+      pts.push({ x: (idx + 0.5) * binW, y: top + R * rowH + 10 });
+      if (rm) { this.setState({ plBall: pts[pts.length - 1], plBin: idx }); return this.finish(idx); }
+      this.setState({ plBin: -1 });
+      this.animate(170 * (pts.length - 1), (t) => {
+        const f = t * (pts.length - 1), i = Math.min(pts.length - 2, Math.floor(f)), u = f - i, a = pts[i], b = pts[i + 1];
+        this.setState({ plBall: { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * (u * u) - Math.sin(Math.PI * u) * 6 }, plLit: u < 0.4 && a.peg !== undefined ? a.peg : -1 });
+      }, () => { this.setState({ plBall: pts[pts.length - 1], plBin: idx, plLit: -1 }); this.finish(idx); });
+    } else if (m === 'dice') {
+      // 눈 1~6을 굴려 당첨 칸(idx)에 정확히 멈추도록 마지막 눈을 맞춘다.
+      const start = this.state.dicePos || 0;
+      const dist = ((idx - start) % n + n) % n || n;
+      const rolls = [];
+      let left = dist;
+      while (left > 6) { const r = 1 + Math.floor(Math.random() * Math.min(6, left - 1)); rolls.push(r); left -= r; }
+      rolls.push(left);
+      if (rm) { this.setState({ dicePos: idx, diceFace: rolls[rolls.length - 1], diceRolls: rolls.length }); return this.finish(idx); }
+      let ri = 0, pos = start;
+      const rollOne = () => {
+        const face = rolls[ri];
+        this.setState({ diceFace: face, diceRot: (this.state.diceRot || 0) + 360 + 90 * face, diceRolls: ri + 1 });
+        let step = 0;
+        this.kick = setTimeout(() => {
+          this.iv = setInterval(() => {
+            step++; pos = (pos + 1) % n; this.setState({ dicePos: pos });
+            if (step >= face) { clearInterval(this.iv); ri++; if (ri < rolls.length) this.timer = setTimeout(rollOne, 450); else this.timer = setTimeout(() => this.finish(idx), 400); }
+          }, 180);
+        }, 550);
+      };
+      rollOne();
+    } else {
+      const rounds = [];
+      let field = shuffle(c.map((_, i) => i));
+      while (field.length > 1) {
+        const matches = [];
+        const next = [];
+        for (let i = 0; i < field.length; i += 2) {
+          const a = field[i], b = field[i + 1];
+          if (b === undefined) { matches.push({ a, b: null, win: a }); next.push(a); continue; }
+          const win = a === idx ? a : b === idx ? b : (Math.random() < 0.5 ? a : b);
+          matches.push({ a, b, win }); next.push(win);
+        }
+        rounds.push(matches); field = next;
+      }
+      this.setState({ tour: rounds, tourShown: 0 });
+      if (rm) { this.setState({ tourShown: rounds.length }); return this.finish(idx); }
+      let k = 0;
+      this.iv = setInterval(() => {
+        k++; this.setState({ tourShown: k });
+        if (k >= rounds.length) { clearInterval(this.iv); this.timer = setTimeout(() => this.finish(idx), 400); }
+      }, Math.max(600, 4200 / Math.max(rounds.length, 1)));
+    }
+  };
+
+  renderVals() {
+    const c = this.cands(), n = c.length, m = this.mode(), s = this.state;
+    const vivid = this.props.vivid !== false;
+    const P = this.props.palette || {};
+    const ink = P.ink ?? '#08060d', muted = P.muted ?? '#6b6375', card = P.card ?? '#fff', border = P.border ?? '#d4d4d8', accent = P.accent ?? '#aa3bff', onAccent = P.onAccent ?? '#fff';
+    const accent100 = P.accent100 ?? 'color-mix(in oklab, ' + accent + ' 14%, white)';
+    const tint = (p, i) => vivid ? (i % 2 ? accent100 : card) : (i % 2 === 0 ? '#f4f4f5' : '#e4e4e7');
+    const short = (p) => p.name.replace(/^샘플 /, '');
+
+    const slice = n > 0 ? 360 / n : 360;
+    const wheelBg = n === 0 ? 'transparent' : 'conic-gradient(' + c.map((p, i) => tint(p, i) + ' ' + (i * slice) + 'deg ' + ((i + 1) * slice) + 'deg').join(', ') + ')';
+    const slices = c.map((p, i) => { const mid = i * slice + slice / 2; return { name: p.name, mid, edge: i * slice, flip: mid > 90 && mid < 270 ? 'rotate(180deg)' : 'none', fw: 500 }; });
+    const reel = Array.from({ length: LOOPS + 3 }, () => c).flat();
+
+    const lad = s.ladder && s.ladder.n === n ? s.ladder : null;
+    const rails = c.map((_, i) => { const x = this.colX(i, n); const on = lad && lad.start === i; return { x1: x, y1: this.rowY(0), x2: x, y2: this.rowY(ROWS), left: (x / 3.2) + '%', n: i + 1, bd: on ? accent : ink, bg: on ? accent : card, fg: on ? onAccent : ink }; });
+    const rungSrc = lad ? lad.rungs : (this._idle && this._idle.n === n ? this._idle.rungs : (this._idle = { n, rungs: this.buildLadder(n) }).rungs);
+    const rungs = rungSrc.map((r) => ({ x1: this.colX(r.col, n), y1: this.rowY(r.row + 0.5), x2: this.colX(r.col + 1, n), y2: this.rowY(r.row + 0.5) }));
+    let drawnPts = [];
+    if (lad && s.drawn > 0) {
+      const pts = lad.path, seg = pts.slice(1).map((p, i) => Math.hypot(p.x - pts[i].x, p.y - pts[i].y));
+      let rem = s.drawn * seg.reduce((a, b) => a + b, 0);
+      drawnPts = [pts[0]];
+      for (let i = 0; i < seg.length && rem > 0; i++) {
+        if (rem >= seg[i]) { drawnPts.push(pts[i + 1]); rem -= seg[i]; }
+        else { const t = rem / seg[i]; drawnPts.push({ x: pts[i].x + (pts[i + 1].x - pts[i].x) * t, y: pts[i].y + (pts[i + 1].y - pts[i].y) * t }); rem = 0; }
+      }
+    }
+    const ladderDone = lad && s.drawn >= 1;
+    const ladderLabels = c.map((p, i) => {
+      const hidden = !ladderDone;
+      const win = ladderDone && s.winnerIndex === i;
+      return { name: hidden ? '?' : short(p), ink: win ? accent : hidden ? muted : muted, fw: win || hidden ? 700 : 400, bg: hidden ? '#f4f4f5' : 'transparent', border: hidden ? '1px dashed #a1a1aa' : '1px solid transparent' };
+    });
+
+    const g = this.geo(Math.max(n, 1));
+    const pegs = [];
+    for (let r = 0; r < g.R; r++) for (let k = 0; k <= r; k++) { const p = g.peg(r, k); const lit = pegs.length === s.litPeg; pegs.push({ x: p.x, y: p.y, r: lit ? 5 : 3, fill: lit ? 'oklch(0.85 0.17 90)' : '#71717a' }); }
+    const litP = s.litPeg >= 0 ? pegs[s.litPeg] : null;
+    const hits = s.hits || 0;
+    const bY = g.pegTop + g.R * g.rowH * 0.42;
+    const bumpers = [[34, bY, 0], [286, bY, 1], [22, bY + 46, 1], [298, bY + 46, 0]].map(([x, y, side]) => {
+      const on = s.spinning && hits > 0 && hits % 2 === side, h = side ? 320 : 200;
+      return { x, y, r: on ? 15 : 13, fill: 'oklch(' + (on ? 0.85 : 0.5) + ' ' + (on ? 0.2 : 0.14) + ' ' + h + ')', ring: 'oklch(0.9 0.15 ' + h + ')', ringOp: on ? 0.9 : 0.25 };
+    });
+    const binWalls = Array.from({ length: Math.max(n - 1, 0) }, (_, i) => ({ x: (i + 1) * g.binW, y1: g.binsTop, y2: g.svgH }));
+    const bins = c.map((p, i) => { const win = s.litBin === i; return { name: short(p), bg: win ? 'oklch(0.87 0.12 ' + hue(p.category) + ')' : '#27272a', bar: 'oklch(0.72 0.15 ' + hue(p.category) + ')', ink: win ? '#18181b' : '#e4e4e7', fw: win ? 700 : 400 }; });
+    const pbThemes = ['기본', '우주', '정글', '카지노'].map((label, i) => ({ label, bg: i === 0 ? '#fff' : 'transparent', fg: i === 0 ? '#18181b' : '#fff', bd: i === 0 ? '#fff' : '#71717a' }));
+
+    const order = s.cardsOrder && s.cardsOrder.length === n ? s.cardsOrder : null;
+    const cardList = c.map((p, i) => {
+      const open = s.cardsOpen && order;
+      const mine = i === s.cardsMine;
+      const who = order ? c[order[i]] : p;
+      const win = open && order[i] === s.winnerIndex;
+      return open
+        ? { num: ICON[who.category] ?? '🍴', numSize: '18px', name: who.name, meta: who.category + ' · ' + who.walkMin + '분', bg: win ? accent100 : card, fg: ink, nameInk: win ? accent : ink, metaInk: muted, border: win ? '2px solid ' + accent : '1px solid #a1a1aa', outline: 'none', tf: s.cardsDone && win ? 'translateY(-6px) scale(1.06)' : 'none', op: s.cardsDone && !win ? 0.5 : 1 }
+        : { num: String(i + 1), numSize: '18px', name: '', meta: '', bg: 'repeating-linear-gradient(45deg, transparent 0 6px, rgba(255,255,255,0.18) 6px 8px), ' + ink, fg: card, nameInk: card, metaInk: card, border: '3px solid ' + card, outline: mine && s.spinning ? '3px solid ' + accent : '1px solid ' + ink, tf: mine && s.spinning ? 'translateY(-10px) rotate(-2deg)' : 'none', op: 1 };
+    });
+
+    const memOrder = s.memOrder || [];
+    const outSet = new Set(memOrder.slice(0, s.memOut));
+    const memLeft = c.map((p, i) => { const out = outSet.has(i), win = s.memDone && i === s.winnerIndex; return { name: short(p), bs: out ? 'dashed' : 'solid', bd: win ? accent : '#a1a1aa', fg: win ? accent : out ? muted : ink, bg: win ? accent100 : 'transparent', deco: out ? 'line-through' : 'none', fw: win ? 700 : 400 }; });
+    const pairs = c.flatMap((p, i) => [i, i]);
+    const memShuf = this._memShuf && this._memShuf.length === pairs.length ? this._memShuf : (this._memShuf = shuffle(pairs));
+    const memCards = memShuf.map((i, k) => {
+      const p = c[i], out = outSet.has(i), win = s.memDone && i === s.winnerIndex, face = out || win;
+      return face
+        ? { icon: ICON[p.category] ?? '🍴', name: p.name, bg: win ? accent100 : card, fg: ink, border: win ? '2px solid ' + accent : '1px solid #a1a1aa', outline: 'none', op: out ? 0.5 : 1, tf: win ? 'scale(1.08)' : 'none' }
+        : { icon: '', name: String(k + 1), bg: 'repeating-linear-gradient(45deg, transparent 0 6px, rgba(255,255,255,0.18) 6px 8px), ' + ink, fg: card, border: '3px solid ' + card, outline: '1px solid ' + ink, op: 1, tf: 'none' };
+    });
+    const memCols = 'repeat(' + (pairs.length > 10 ? 4 : 5) + ', minmax(0, 1fr))';
+
+    const tour = s.tour;
+    const tourSteps = tour ? tour.map((_, r) => { const label = r === tour.length - 1 ? '결승' : r === tour.length - 2 ? '4강' : (r + 1) + '회전'; const past = r < s.tourShown - 1, now = r === s.tourShown - 1; return { label, bg: now ? ink : '#f4f4f5', fg: now ? card : muted, deco: past ? 'line-through' : 'none' }; }) : [];
+    const roundIdx = Math.max(0, Math.min((tour ? tour.length : 1) - 1, s.tourShown - 1));
+    const tourMatches = tour ? tour[roundIdx].map((mt) => {
+      const decided = s.tourShown > roundIdx || !s.spinning;
+      const side = (i, isB) => i === null ? { t: '부전승', bg: 'transparent', fg: muted, op: 1, deco: 'none', st: 'italic' } : { t: c[i].name, bg: decided && mt.win === i ? accent : 'transparent', fg: decided && mt.win === i ? onAccent : ink, op: decided && mt.win !== i ? 0.45 : 1, deco: decided && mt.win !== i ? 'line-through' : 'none', st: 'normal' };
+      const A = side(mt.a, false), B = side(mt.b, true);
+      return { a: A.t, aBg: A.bg, aFg: A.fg, aOp: A.op, aDeco: A.deco, b: B.t, bBg: B.bg, bFg: B.fg, bOp: B.op, bDeco: B.deco, bStyle: B.st };
+    }) : [];
+
+    const capsules = c.map((p, i) => {
+      const cols = 5, cx = 20 + (i % cols) * 42 + ((Math.floor(i / cols) % 2) * 21), cy = 150 - Math.floor(i / cols) * 36;
+      const sh = s.gachaShake ? Math.sin(s.gachaShake * 2.1 + i) * 8 : 0, sv = s.gachaShake ? Math.cos(s.gachaShake * 1.7 + i * 1.3) * 6 : 0;
+      return { x: Math.min(180, cx), y: Math.max(8, cy), top: 'oklch(0.75 0.15 ' + hue(p.category) + ')', tf: 'translate(' + sh + 'px,' + sv + 'px) rotate(' + (sh * 3) + 'deg)' };
+    });
+    const gw = s.gachaOut !== null && c[s.gachaOut] ? c[s.gachaOut] : null;
+
+    const plR = Math.max(n - 1, 1), plBinW = 320 / Math.max(n, 1), plRowH = Math.min(26, 220 / plR), plTop = 20;
+    const plPegs = [];
+    for (let r = 0; r < plR; r++) for (let k = 0; k <= r; k++) { const lit = plPegs.length === s.plLit; plPegs.push({ x: 160 + (k - r / 2) * plBinW, y: plTop + r * plRowH, r: lit ? 5 : 3, fill: lit ? accent : '#cfcdd3' }); }
+    const plSvgH = plTop + plR * plRowH + 18;
+    const plWalls = Array.from({ length: Math.max(n - 1, 0) }, (_, i) => ({ x: (i + 1) * plBinW, y1: plTop + plR * plRowH + 2, y2: plSvgH }));
+    const plBins = c.map((p, i) => { const win = s.plBin === i; return { name: short(p), bg: win ? accent100 : 'transparent', bar: 'oklch(0.72 0.15 ' + hue(p.category) + ')', ink: win ? accent : muted, fw: win ? 700 : 400 }; });
+
+    const per = perimeter(Math.max(n, 1));
+    const diceCells = c.map((p, i) => { const [row, col] = per.cells[i] || [1, 1]; const here = s.dicePos === i; const win = w && w.id === p.id; return { row, col, step: String(i + 1).padStart(2, '0'), icon: ICON[p.category] ?? '🍴', name: short(p), bg: win ? accent100 : here ? '#f4f3ec' : card, border: win ? '2px solid ' + accent : here ? '1.5px solid ' + ink : '1px solid ' + border, ink, stepInk: here || win ? ink : muted }; });
+    const pc = per.cells[s.dicePos || 0] || [1, 1];
+    const cellPct = 100 / per.side;
+    const PIPS = { 0: [], 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+    const dicePips = Array.from({ length: 9 }, (_, i) => ((PIPS[s.diceFace] || []).includes(i) ? ink : 'transparent'));
+
+    const w = s.winner;
+    return {
+      isGacha: m === 'gacha', isPlinko: m === 'plinko', isDice: m === 'dice',
+      capsules, gachaKnob: s.gachaKnob || 0, gachaOut: gw ? { top: 'oklch(0.75 0.15 ' + hue(gw.category) + ')' } : null,
+      gachaHint: s.spinning ? '캡슐이 섞이는 중…' : w ? '캡슐이 열렸어요' : '손잡이를 돌리면 캡슐 하나가 떨어져요',
+      winnerIcon: w ? (ICON[w.category] ?? '🍴') : '',
+      plPegs, plWalls, plBins, plBall: s.plBall, plSvgH, plCols: 'repeat(' + Math.max(n, 1) + ', 1fr)',
+      diceN: per.side, diceInnerEnd: per.side, diceCells, dicePips, diceRot: s.diceRot || 0,
+      dicePieceX: 'calc(' + ((pc[1] - 0.5) * cellPct) + '% - 2px)', dicePieceY: 'calc(' + ((pc[0] - 0.5) * cellPct) + '% - 2px)',
+      diceLabel: s.spinning ? (s.diceRolls || 0) + '번째 굴림 · ' + (s.diceFace || '') : w ? '도착!' : '사무실에서 출발',
+      diceHint: s.spinning ? '눈만큼 칸을 돌아요' : w ? '말이 멈춘 칸이 점심이에요' : '주사위를 굴려 말이 멈춘 칸이 점심',
+      cFont: P.font ?? "system-ui, 'Segoe UI', Roboto, sans-serif", cFontH: P.fontH ?? P.font ?? 'inherit',
+      cInk: ink, cMuted: muted, cCard: card, cBorder: border, cAccent: accent, cOnAccent: onAccent,
+      cRadius: P.radius ?? '12px', cBtnRadius: P.btnRadius ?? '8px', cShadow: P.shadow ?? 'none', cBtnShadow: P.btnShadow ?? 'none',
+      wheelInk: P.wheelInk ?? ink, wheelW: this.props.expanded ? '480px' : '300px', pbW: this.props.expanded ? '480px' : '320px',
+      isWheel: m === 'wheel', isSlot: m === 'slot', isLadder: m === 'ladder', isPinball: m === 'pinball', isCards: m === 'cards', isMemory: m === 'memory', isTournament: m === 'tournament',
+      wheelBg, angle: s.angle, wheelDur: s.wheelDur, slices,
+      reel, slotY: s.slotY, slotDur: s.slotDur,
+      slotBg: P.gameBg ?? '#f4f3ec', slotInk: P.gameInk ?? ink, slotMeta: P.gameMeta ?? muted, slotFrame: P.gameFrame ?? accent,
+      rails, rungs, ladderPts: drawnPts.length > 1 ? drawnPts.map((p) => p.x + ',' + p.y).join(' ') : '',
+      ladderHead: drawnPts.length > 0 ? drawnPts[drawnPts.length - 1] : null,
+      ladderInk: P.ladderInk ?? accent, ladderCols: 'repeat(' + Math.max(n, 1) + ', 1fr)', ladderLabels,
+      pegs, binWalls, bins, ball: s.ball, pegRing: litP ? { x: litP.x, y: litP.y } : null, bumpers, hitLabel: 'HIT ' + hits, hitInk: P.hitInk ?? 'oklch(0.85 0.17 90)',
+      pbSvgH: g.svgH, pbCols: 'repeat(' + Math.max(n, 1) + ', 1fr)', pbBg: P.gameBg ?? '#08070c', pbWall: P.gameWall ?? '#3f3f46', pbBall: '#fff', pbGlow: 'rgba(255,240,180,0.35)', pbMeta: '#d4d4d8', pbThemes,
+      pbTip: s.spinning ? '공을 누르면 따라가요' : (w ? short(w) + ' 1등!' : '구슬을 굴려 보세요'),
+      cardList, cardsHint: s.spinning ? (s.cardsOpen ? '카드를 엽니다…' : '섞는 중… 고른 카드가 떠오릅니다') : w ? '고른 카드가 ' + short(w) + '였어요' : '카드를 골라 뒤집어요 · 한 장이 점심이에요',
+      memLeft, memCards, memCols, memHint: s.spinning ? '짝을 맞춘 가게는 탈락해요 · 남은 ' + (n - s.memOut) + '곳' : w ? '끝까지 남은 짝은 ' + short(w) : '두 장씩 뒤집어 짝을 맞춰요 · 마지막 남은 짝이 점심',
+      tourIdle: !tour, tourLive: !!tour, tourEntries: c.map((p, i) => ({ name: short(p), bd: i === 0 ? accent : '#a1a1aa', bg: i === 0 ? accent : card, fg: i === 0 ? onAccent : ink })), tourSteps, tourMatches,
+      tourHint: tour ? (s.spinning ? '경기 진행 중' : '우승!') : '응원할 가게를 골라도 돼요 · 결과와는 무관해요',
+      hasWinner: !!w, showCard: !!w && this.props.hideCard !== true, showSpin: !w && this.props.hideSpin !== true,
+      winnerName: w?.name, winnerShort: w ? w.category + ' · 도보 ' + w.walkMin + '분' : '', winnerMeta: w ? w.category + ' · 도보 ' + w.walkMin + '분' : '',
+      winnerCat: w?.category, winnerTint: w ? 'oklch(0.9 0.08 ' + hue(w.category) + ')' : '',
+      decide: () => w && this.props.onDecide?.(w),
+      spin: this.spin,
+      spinDisabled: n === 0 || s.spinning, spinOpacity: n === 0 || s.spinning ? 0.4 : 1,
+      spinLabel: s.spinning ? '진행 중' : (ACTION[m] ?? '돌리기') + ' (후보 ' + n + '곳)',
+    };
+  }
+}
+</script>
+</body>
+</html>

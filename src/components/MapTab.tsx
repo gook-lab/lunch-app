@@ -71,7 +71,7 @@ function troubleOf(error: unknown): Trouble {
       return {
         title: '카카오 JS 키가 없어요',
         detail:
-          '.env.local 의 VITE_KAKAO_JS_KEY 를 채우고 개발 서버를 다시 띄워 주세요. 지도만 막히고 로드맵·목록은 그대로 쓸 수 있어요.',
+          '.env.local 의 VITE_KAKAO_JS_KEY 를 채우고 개발 서버를 다시 띄워 주세요. 지도만 막히고 오늘·목록 탭은 그대로 쓸 수 있어요.',
         retryable: false,
       };
     }
@@ -532,18 +532,20 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       <section className="map map--trouble">
         {/* 지도가 없어도 GPS 로는 회사 위치를 정할 수 있다. */}
         <OfficeCard onSaved={onOfficeChanged} />
-        <p className="notice notice--empty">{trouble.title}</p>
-        <p className="muted small">{trouble.detail}</p>
-        {trouble.retryable && (
-          <Button variant="secondary" onClick={retry}>
-            다시 시도
-          </Button>
-        )}
-        {!kakaoJsKey() && (
-          <p className="muted small">
-            키가 없어도 로드맵·목록은 잘 돌아가요. 지도는 나중에 붙이면 돼요.
-          </p>
-        )}
+        {/* 지도 자리에 같은 크기의 점선 상자를 두고 안에서 알린다(handoff 6 · 5e). */}
+        <div className="map__troubleBox" role="alert">
+          <span className="map__troubleArt" aria-hidden="true">🗺️</span>
+          <p className="map__troubleTitle">{trouble.title}</p>
+          <p className="muted small">{trouble.detail}</p>
+          {trouble.retryable && (
+            <Button variant="secondary" onClick={retry}>
+              다시 시도
+            </Button>
+          )}
+        </div>
+        <p className="muted small">
+          {kakaoJsKey() ? '지도가 없어도 오늘·목록 탭은 그대로 쓸 수 있어요.' : '키가 없어도 오늘·목록 탭은 잘 돌아가요. 지도는 나중에 붙이면 돼요.'}
+        </p>
       </section>
     );
   }

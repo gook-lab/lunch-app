@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <style>
+    body { margin: 0; background: #ececee; font-family: system-ui, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #08060d; } a:hover { color: #6b6375; }
+    @keyframes rise { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: none; } }
+  </style>
+</helmet>
+
+<section style="padding:48px 48px 24px;display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:6px;max-width:900px">
+    <h2 style="margin:0;font-size:22px;font-weight:600;color:#18181b">5 · 공통 상태</h2>
+    <p style="margin:0;font-size:14px;line-height:1.5;color:#52525b;text-wrap:pretty">코드에 문구만 있고 화면이 없던 상태들. 로딩·오류·빈 데이터는 <code>App.tsx</code>의 <code>app--center</code>를, 지도 오류는 <code>MapTab</code>의 <code>troubleOf()</code>를 따릅니다. 404는 라우터가 없어 새로 제안합니다.</p>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+
+    <div id="5a" style="display:flex;flex-direction:column;gap:10px;width:300px">
+      <div style="display:flex;align-items:center;gap:8px"><span style="font:700 12px system-ui;background:#18181b;color:#fff;padding:2px 8px;border-radius:6px">5a</span><span style="font-size:13px;color:#18181b;font-weight:600">불러오는 중</span></div>
+      <main style="background:#fff;border:1px solid #e5e4e7;height:460px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;box-sizing:border-box">
+        <div style="position:relative;width:56px;height:56px">
+          <div style="position:absolute;inset:0;border-radius:50%;border:3px dashed #cfcdd3"></div>
+          <div style="position:absolute;inset:14px;border-radius:50%;background:#aa3bff;opacity:0.15"></div>
+          <span style="position:absolute;inset:0;display:grid;place-items:center;font-size:22px">🍱</span>
+        </div>
+        <p style="margin:0;font-size:15px;color:#6b6375">불러오는 중이에요</p>
+        <p style="margin:0;font-size:12px;color:#9a94a3">가게 목록과 최근 2주 방문을 읽고 있어요</p>
+      </main>
+    </div>
+
+    <div id="5b" style="display:flex;flex-direction:column;gap:10px;width:300px">
+      <div style="display:flex;align-items:center;gap:8px"><span style="font:700 12px system-ui;background:#18181b;color:#fff;padding:2px 8px;border-radius:6px">5b</span><span style="font-size:13px;color:#18181b;font-weight:600">불러오기 실패</span></div>
+      <main style="background:#fff;border:1px solid #e5e4e7;height:460px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;box-sizing:border-box">
+        <div style="width:56px;height:56px;border-radius:50%;background:#f3e8ff;display:grid;place-items:center;font-size:24px;color:#7a1fcf;font-weight:800">!</div>
+        <p style="margin:0;font-size:16px;color:#08060d;font-weight:600">목록을 불러오지 못했어요.</p>
+        <p style="margin:0;font-size:12px;color:#6b6375;font-family:ui-monospace, monospace;background:#f4f3ec;padding:6px 10px;border-radius:6px;max-width:100%;overflow-wrap:anywhere">FirebaseError: permission-denied</p>
+        <p style="margin:0;font-size:13px;color:#6b6375;line-height:1.5">네트워크를 확인하고 다시 시도해 주세요.<br>계속 안 되면 링크를 새로 받아 열어 주세요.</p>
+        <button style="margin-top:4px;height:44px;padding:0 20px;border:0;border-radius:8px;background:#08060d;color:#fff;font:600 15px system-ui;cursor:pointer">다시 시도</button>
+      </main>
+    </div>
+
+    <div id="5c" style="display:flex;flex-direction:column;gap:10px;width:300px">
+      <div style="display:flex;align-items:center;gap:8px"><span style="font:700 12px system-ui;background:#18181b;color:#fff;padding:2px 8px;border-radius:6px">5c</span><span style="font-size:13px;color:#18181b;font-weight:600">가게 0곳 (빈 데이터)</span></div>
+      <main style="background:#fff;border:1px solid #e5e4e7;height:460px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;box-sizing:border-box">
+        <div style="position:relative;width:120px;height:120px">
+          <svg viewBox="0 0 120 120" style="width:100%;height:100%">
+            <circle cx="60" cy="60" r="54" fill="#f7f7f8"></circle>
+            <circle cx="60" cy="60" r="38" fill="none" stroke="#cfcdd3" stroke-width="1" stroke-dasharray="3 4"></circle>
+            <circle cx="60" cy="60" r="20" fill="none" stroke="#cfcdd3" stroke-width="1" stroke-dasharray="3 4"></circle>
+            <rect x="55" y="55" width="10" height="10" rx="2" fill="#08060d"></rect>
+          </svg>
+          <span style="position:absolute;left:50%;top:70%;translate:-50% 0;font-size:10px;color:#6b6375">사무실</span>
+        </div>
+        <p style="margin:0;font-size:16px;color:#08060d;font-weight:600">아직 등록된 가게가 없어요</p>
+        <p style="margin:0;font-size:13px;color:#6b6375;line-height:1.5">지도 탭에서 회사 위치를 정하고<br>첫 가게를 넣어 주세요. 5곳부터 게임이 돼요.</p>
+        <button style="margin-top:4px;height:44px;padding:0 20px;border:0;border-radius:8px;background:#08060d;color:#fff;font:600 15px system-ui;cursor:pointer;white-space:nowrap">🗺️ 지도에서 가게 추가</button>
+      </main>
+    </div>
+
+    <div id="5d" style="display:flex;flex-direction:column;gap:10px;width:300px">
+      <div style="display:flex;align-items:center;gap:8px"><span style="font:700 12px system-ui;background:#18181b;color:#fff;padding:2px 8px;border-radius:6px">5d</span><span style="font-size:13px;color:#18181b;font-weight:600">404 · 없는 주소</span></div>
+      <main style="background:#fff;border:1px solid #e5e4e7;height:460px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;box-sizing:border-box">
+        <p style="margin:0;font-size:52px;font-weight:800;line-height:1;color:#08060d;letter-spacing:-2px;white-space:nowrap">4<span style="color:#aa3bff">🍽</span>4</p>
+        <p style="margin:0;font-size:16px;color:#08060d;font-weight:600">이런 주소는 없어요</p>
+        <p style="margin:0;font-size:13px;color:#6b6375;line-height:1.5">점심은 한 화면에서 정해요.<br>링크 뒤에 붙은 경로는 필요 없어요.</p>
+        <button style="margin-top:4px;height:44px;padding:0 20px;border:0;border-radius:8px;background:#08060d;color:#fff;font:600 15px system-ui;cursor:pointer;white-space:nowrap">오늘 점심으로 가기</button>
+      </main>
+    </div>
+
+    <div id="5e" style="display:flex;flex-direction:column;gap:10px;width:300px">
+      <div style="display:flex;align-items:center;gap:8px"><span style="font:700 12px system-ui;background:#18181b;color:#fff;padding:2px 8px;border-radius:6px">5e</span><span style="font-size:13px;color:#18181b;font-weight:600">지도 오류 · 키 없음 / 도메인</span></div>
+      <main style="background:#fff;border:1px solid #e5e4e7;height:460px;display:flex;flex-direction:column;gap:12px;padding:16px;box-sizing:border-box;font-size:13px;color:#6b6375">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;border:1px solid #e5e4e7"><span style="font-weight:800;color:#08060d;font-size:15px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px">🏢 회사 위치 <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#ececee;color:#3f3946;white-space:nowrap">정해 둠</span></span><span style="text-decoration:underline;text-underline-offset:3px">바꾸기</span></div>
+        <div style="flex:1;border-radius:8px;border:1px solid #e5e4e7;background:#f7f7f8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:16px">
+          <span style="font-size:28px">🗺️</span>
+          <p style="margin:0;font-size:15px;color:#08060d;font-weight:600;background:#f4f3ec;padding:8px 12px;border-radius:8px">지도 SDK 를 받지 못했어요</p>
+          <p style="margin:0;font-size:12px;line-height:1.5">가장 흔한 원인은 도메인 미등록이에요. 카카오 개발자 콘솔 › 앱 › 플랫폼 › Web 사이트 도메인에 <code style="background:#ececee;padding:1px 4px;border-radius:3px">http://localhost:5173</code> 이 있는지 확인해 주세요.</p>
+          <button style="height:40px;padding:0 16px;border:1px solid #cfcdd3;border-radius:8px;background:#fff;color:#08060d;font:600 14px system-ui;cursor:pointer">다시 시도</button>
+        </div>
+        <p style="margin:0;font-size:12px">키가 없어도 로드맵·목록은 잘 돌아가요. 지도는 나중에 붙이면 돼요.</p>
+      </main>
+    </div>
+
+    <div id="5f" style="display:flex;flex-direction:column;gap:10px;width:300px">
+      <div style="display:flex;align-items:center;gap:8px"><span style="font:700 12px system-ui;background:#18181b;color:#fff;padding:2px 8px;border-radius:6px">5f</span><span style="font-size:13px;color:#18181b;font-weight:600">인라인 안내 모음</span></div>
+      <main style="background:#fff;border:1px solid #e5e4e7;height:460px;display:flex;flex-direction:column;gap:10px;padding:16px;box-sizing:border-box;font-size:13px;overflow:auto">
+        <p style="margin:0;font-size:11px;font-weight:700;color:#6b6375;letter-spacing:1px">후보 0곳</p>
+        <p style="margin:0;padding:12px;border-radius:8px;background:#f4f3ec;color:#08060d;line-height:1.55;text-align:center">도보 15분으로 넓히면 9곳입니다.</p>
+        <p style="margin:0;padding:12px;border-radius:8px;background:#f4f3ec;color:#08060d;line-height:1.55;text-align:center">고른 카테고리에 해당하는 곳이 없습니다. 카테고리를 풀면 7곳입니다.</p>
+        <p style="margin:0;font-size:11px;font-weight:700;color:#6b6375;letter-spacing:1px;margin-top:4px">공정성 안내</p>
+        <p style="margin:0;color:#6b6375;line-height:1.55;text-align:center">7곳 중 4곳은 최근 2주 안에 갔습니다 — 후보 5곳을 채우려고 그 중 오래된 2곳을 다시 넣었습니다.</p>
+        <p style="margin:0;color:#6b6375;line-height:1.55;text-align:center">후보가 3곳뿐입니다. 가게가 20곳은 돼야 최근 방문 제외가 제대로 돌아갑니다.</p>
+        <p style="margin:0;font-size:11px;font-weight:700;color:#6b6375;letter-spacing:1px;margin-top:4px">저장 실패</p>
+        <p style="margin:0;padding:12px;border-radius:8px;background:#f4f3ec;color:#08060d;line-height:1.55;text-align:center">저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.</p>
+        <p style="margin:0;font-size:11px;font-weight:700;color:#6b6375;letter-spacing:1px;margin-top:4px">동작 줄이기</p>
+        <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border:1px solid #e5e4e7;border-left:3px solid #aa3bff;background:#f7f7f8;color:#08060d"><p style="margin:0;flex:1;line-height:1.5">기기의 ‘동작 줄이기’가 켜져 있어서 연출 없이 결과만 보여 드려요.</p><button style="flex:none;min-height:40px;padding:0 12px;border:0;background:#08060d;color:#fff;font:600 13px system-ui;cursor:pointer">연출 켜기</button></div>
+        <p style="margin:0;font-size:11px;font-weight:700;color:#6b6375;letter-spacing:1px;margin-top:4px">회사 위치 임시값</p>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px dashed #e5e4e7;color:#7a1fcf;font-weight:600"><span>🏢 회사 위치가 아직 임시값이에요</span><span style="text-decoration:underline;text-underline-offset:3px">정하기</span></div>
+      </main>
+    </div>
+  </div>
+</section>
+
+<section style="padding:24px 48px 64px;display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:6px;max-width:900px">
+    <h2 style="margin:0;font-size:22px;font-weight:600;color:#18181b">4 · 현재 코드 구조 반영 (오늘 · 목록 · 지도) + 새 게임 3종</h2>
+    <p style="margin:0;font-size:14px;line-height:1.5;color:#52525b;text-wrap:pretty">10/12 기준 <code>App.tsx</code>·<code>MapTab.tsx</code>·<code>PlaceList.tsx</code>를 따라 다시 그렸습니다. 휴대폰은 하단 탭바 + 요약 한 줄 → 조건 시트, 데스크톱(960px~)은 머리말 탭 + 게임 | 조건 두 칸, 방식은 왼쪽 레일. 게임 7종 + 새로 제안한 <strong>뽑기 기계 · 플링코 · 주사위</strong>(방식 바 맨 뒤), 결과는 티켓 모달. 모두 작동합니다. 구현 요청은 <code>handoff/PROMPT-games.md</code>.</p>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+
+    <div id="4a" style="display:flex;flex-direction:column;gap:12px;width:390px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font:700 13px system-ui;background:#18181b;color:#fff;padding:3px 9px;border-radius:6px">4a</span><span style="font-size:14px;color:#18181b;font-weight:600">휴대폰 · 오늘 / 목록 / 지도</span><span style="font-size:12px;color:#6b6375">아래 탭바로 전환</span></div>
+      <main style="position:relative;width:390px;height:844px;overflow:hidden;background:#fff;border:1px solid #e5e4e7;box-sizing:border-box;color:#6b6375;font-size:15px;line-height:1.45">
+        <div style="position:absolute;inset:0 0 72px 0;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:24px;box-sizing:border-box">
+          <header style="display:flex;flex-direction:column;gap:2px">
+            <p style="margin:0;font-size:11px;font-weight:600;color:#6b6375;letter-spacing:0.3px">10월 12일 월요일</p>
+            <div style="display:flex;align-items:center;gap:8px">
+              <h1 style="margin:0;font-size:18px;font-weight:700;color:#08060d;letter-spacing:-0.2px">{{ m.title }}</h1>
+              <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#ececee;color:#3f3946">가게 11곳</span>
+            </div>
+          </header>
+
+          <sc-if value="{{ m.isToday }}" hint-placeholder-val="{{ true }}">
+            <sc-if value="{{ m.hasDecided }}">
+              <section style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid #e5e4e7;border-left:4px solid #aa3bff;background:#f7f7f8">
+                <span style="flex:none;width:28px;height:28px;display:grid;place-items:center;background:#aa3bff;color:#fff;font-weight:800">✓</span>
+                <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                  <p style="margin:0;font-size:15px;color:#08060d">오늘은 <strong style="font-weight:800">{{ m.decidedName }}</strong>{{ m.decidedJosa }} 정했어요</p>
+                  <p style="margin:0;font-size:13px">{{ m.decidedMeta }} · 다시 돌려서 바꿀 수 있어요</p>
+                  <button style="margin-top:6px;align-self:flex-start;height:32px;padding:0 12px;border:1px solid #cfcdd3;border-radius:8px;background:#fff;color:#08060d;font:600 13px system-ui;cursor:pointer">📤 동료에게 알리기</button>
+                </div>
+              </section>
+            </sc-if>
+            <section style="display:flex;flex-direction:column;gap:12px;padding:12px;border:1px solid #e5e4e7;background:#f7f7f8;box-shadow:0 1px 2px rgba(0,0,0,0.06)">
+              <button onClick="{{ m.openSheet }}" style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;min-height:44px;padding:8px 12px;border:1px solid #e5e4e7;background:#fff;color:#08060d;font:15px system-ui;text-align:left;cursor:pointer">
+                <span style="font-weight:800;white-space:nowrap">후보 {{ m.candCount }}곳</span>
+                <span style="font-size:13px;color:#6b6375;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ m.summaryRest }}</span>
+                <span style="font-size:13px;font-weight:700;text-decoration:underline;text-underline-offset:3px">바꾸기 ▾</span>
+              </button>
+              <div style="display:flex;gap:2px;padding:2px;overflow-x:auto;background:#e5e4e7;scrollbar-width:none;-webkit-mask-image:linear-gradient(to right, #000 calc(100% - 24px), transparent);mask-image:linear-gradient(to right, #000 calc(100% - 24px), transparent)">
+                <sc-for list="{{ m.modes }}" as="md" hint-placeholder-count="7">
+                  <button onClick="{{ md.onClick }}" style="flex:0 0 auto;min-width:72px;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:52px;padding:8px 4px;border:0;background:{{ md.bg }};color:{{ md.fg }};font:600 13px system-ui;cursor:pointer"><span style="font-size:18px;line-height:1">{{ md.icon }}</span>{{ md.label }}</button>
+                </sc-for>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <p style="margin:0;font-size:13px;text-align:left">방식은 보여주는 것만 달라요 · 확률은 같아요</p>
+                <button style="flex-shrink:0;min-height:36px;padding:0 12px;border:0;border-radius:4px;background:transparent;color:#3f3946;font:600 13px system-ui;cursor:pointer">⤢ 크게 보기</button>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:center;min-height:260px;padding:12px 0;background:{{ m.boardBg }}">
+                <dc-import name="LunchGame" candidates="{{ m.cands }}" mode="{{ m.mode }}" hide-card="{{ true }}" hide-spin="{{ true }}" on-result="{{ m.onResult }}" on-spin-start="{{ m.onSpinStart }}" run="{{ m.run }}" style="width:100%;min-width:0" hint-size="100%,300px"></dc-import>
+              </div>
+              <sc-if value="{{ m.showTicketInline }}">
+                <div style="position:relative;padding:24px 16px 16px;background:#fff;border:1px solid #08060d;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:flex;flex-direction:column;gap:8px;text-align:center;animation:rise 320ms ease-out both">
+                  <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:1.5px;color:#6b6375">{{ m.ticketEyebrow }}</p>
+                  <h2 style="margin:0;font-size:30px;font-weight:800;line-height:1.15;color:#08060d;word-break:keep-all">{{ m.winnerName }}</h2>
+                  <div style="display:flex;justify-content:center;align-items:center;gap:8px;font-size:13px"><span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:{{ m.winnerTint }};color:#08060d">{{ m.winnerCat }}</span><span>도보 {{ m.winnerWalk }}분</span></div>
+                  <hr style="width:calc(100% + 32px);margin:8px -16px;border:0;border-top:2px dashed #e5e4e7">
+                  <sc-if value="{{ m.confirmed }}">
+                    <p style="margin:8px 0 0;font-size:15px;font-weight:600;color:#aa3bff">오늘 점심으로 정했어요</p>
+                    <button style="height:36px;border:1px solid #cfcdd3;border-radius:8px;background:#fff;color:#08060d;font:600 13px system-ui;cursor:pointer">📤 동료에게 알리기</button>
+                    <button onClick="{{ m.spinAgain }}" style="height:40px;border:1px solid #cfcdd3;border-radius:8px;background:transparent;color:#08060d;font:600 15px system-ui;cursor:pointer">그래도 다시 하기</button>
+                    <p style="margin:0;font-size:13px">다시 해서 다른 곳을 고르면 오늘 기록이 바뀌어요.</p>
+                  </sc-if>
+                  <sc-if value="{{ m.notConfirmed }}">
+                    <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+                      <button onClick="{{ m.decide }}" style="height:48px;border:0;border-radius:8px;background:#aa3bff;color:#fff;font:600 16px system-ui;cursor:pointer">여기로 결정</button>
+                      <button onClick="{{ m.spinAgain }}" style="height:40px;border:1px solid #cfcdd3;border-radius:8px;background:transparent;color:#08060d;font:600 15px system-ui;cursor:pointer">다시 하기</button>
+                    </div>
+                    <p style="margin:0;font-size:13px">누르면 방문 기록이 남고, 2주 동안 후보에서 빠져요.</p>
+                  </sc-if>
+                </div>
+              </sc-if>
+              <sc-if value="{{ m.showRun }}">
+                <button onClick="{{ m.spin }}" disabled="{{ m.runDisabled }}" style="position:sticky;bottom:8px;z-index:5;height:{{ m.runH }};border:{{ m.runBorder }};border-radius:8px;background:{{ m.runBg }};color:{{ m.runFg }};font:600 16px system-ui;cursor:pointer;opacity:{{ m.runOp }};box-shadow:0 4px 12px rgba(0,0,0,0.12)">{{ m.runLabel }}</button>
+              </sc-if>
+              <sc-if value="{{ m.empty }}"><p style="margin:0;padding:12px;border-radius:8px;background:#f4f3ec;color:#08060d;font-size:13px;line-height:1.55;text-align:center">{{ m.empty }}</p></sc-if>
+              <sc-if value="{{ m.notice }}"><p style="margin:0;font-size:13px;line-height:1.55;text-align:center">{{ m.notice }}</p></sc-if>
+            </section>
+          </sc-if>
+
+          <sc-if value="{{ m.isList }}">
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <section style="display:grid;gap:4px">
+                <h2 style="margin:0;font-size:15px;font-weight:800;color:#08060d">최근 다녀온 곳 <span style="font-size:13px;font-weight:600;color:#6b6375">5번</span></h2>
+                <ol style="list-style:none;margin:0;padding:0 12px;border:1px solid #e5e4e7;border-radius:8px;background:#f7f7f8">
+                  <sc-for list="{{ history }}" as="h" hint-placeholder-count="5">
+                    <li style="display:grid;grid-template-columns:3.6em minmax(0,1fr) auto;align-items:center;gap:8px;min-height:44px;border-bottom:{{ h.border }}">
+                      <span style="font-size:11px;font-weight:700">{{ h.when }}</span>
+                      <strong style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:#08060d">{{ h.name }}</strong>
+                      <span style="display:grid;place-items:center;width:44px;height:44px;font-size:18px">🗺️</span>
+                    </li>
+                  </sc-for>
+                </ol>
+              </section>
+              <section style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                  <h2 style="margin:0;font-size:15px;font-weight:800;color:#08060d;white-space:nowrap">후보에 들어가는 가게 <span style="font-size:13px;font-weight:600;color:#6b6375">{{ listOnCount }}곳</span></h2>
+                  <button onClick="{{ m.goMap }}" style="height:28px;padding:0 10px;border:0;border-radius:8px;background:#aa3bff;color:#fff;font:600 12px system-ui;cursor:pointer;white-space:nowrap;flex:none">지도에서 가게 추가</button>
+                </div>
+                <p style="margin:0;font-size:13px">도보 가까운 순 · 최근 2주 안에 간 5곳은 오늘 후보에서 빠집니다</p>
+                <ul style="list-style:none;margin:0;padding:0">
+                  <sc-for list="{{ listOn }}" as="p" hint-placeholder-count="6">
+                    <li style="padding:12px 0;border-bottom:1px solid #ececee">
+                      <div style="display:flex;align-items:center;gap:12px">
+                        <span style="display:grid;place-items:center;width:40px;height:40px;flex:none;background:#f7f7f8;border:1px solid #ececee;font-size:18px">{{ p.icon }}</span>
+                        <div style="min-width:0;flex:1">
+                          <div style="display:flex;align-items:baseline;gap:8px"><strong style="font-size:15px;color:#08060d">{{ p.name }}</strong></div>
+                          <div style="font-size:11px;margin-top:2px">{{ p.meta }} · <span style="color:{{ p.visitInk }};font-weight:{{ p.visitFw }}">{{ p.visit }}</span></div>
+                        </div>
+                        <div style="display:flex;gap:4px;flex-shrink:0;margin-left:auto">
+                          <button onClick="{{ m.goMap }}" style="display:grid;place-items:center;width:44px;height:44px;border:1px solid transparent;background:none;font-size:18px;cursor:pointer">🗺️</button>
+                          <button style="display:grid;place-items:center;width:44px;height:44px;border:1px solid transparent;background:none;font-size:18px;cursor:pointer;color:#08060d">⋯</button>
+                        </div>
+                      </div>
+                    </li>
+                  </sc-for>
+                </ul>
+                <details style="display:flex;flex-direction:column;gap:8px">
+                  <summary style="min-height:44px;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:15px;font-weight:800;color:#08060d;list-style:none">▸ 꺼 둔 가게 <span style="font-size:13px;font-weight:600;color:#6b6375">1곳</span></summary>
+                  <ul style="list-style:none;margin:0;padding:0">
+                    <li style="padding:12px 0;border-bottom:1px solid #ececee">
+                      <div style="display:flex;align-items:center;gap:12px">
+                        <span style="display:grid;place-items:center;width:40px;height:40px;flex:none;background:#f7f7f8;border:1px solid #ececee;font-size:18px;opacity:0.5">🥟</span>
+                        <div style="min-width:0;flex:1">
+                          <div style="display:flex;align-items:baseline;gap:8px"><strong style="font-size:15px;color:#6b6375">샘플 중식집 1</strong><span style="font-size:11px;border:1px solid #cfcdd3;border-radius:4px;padding:1px 8px">꺼짐</span></div>
+                          <div style="font-size:11px;margin-top:2px">중식 · 도보 17분 · 기록 없음</div>
+                        </div>
+                        <div style="display:flex;gap:4px;flex-shrink:0;margin-left:auto"><button style="display:grid;place-items:center;width:44px;height:44px;border:1px solid transparent;background:none;font-size:18px;cursor:pointer">🗺️</button><button style="display:grid;place-items:center;width:44px;height:44px;border:1px solid transparent;background:none;font-size:18px;cursor:pointer;color:#08060d">⋯</button></div>
+                      </div>
+                    </li>
+                  </ul>
+                </details>
+              </section>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ m.isMap }}">
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <section style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;border:1px solid #e5e4e7;background:#fff">
+                <h2 style="margin:0;display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;color:#08060d;white-space:nowrap">🏢 회사 위치 <span style="font-size:11px;font-weight:700;padding:2px 8px;background:#ececee;color:#3f3946;white-space:nowrap">정해 둠</span></h2>
+                <button style="min-height:44px;background:none;border:0;padding:4px 8px;font-size:13px;color:#6b6375;text-decoration:underline;text-underline-offset:3px;cursor:pointer">바꾸기</button>
+              </section>
+              <div style="display:flex;gap:8px">
+                <input placeholder="가게 이름으로 찾기" style="flex:1;min-width:0;padding:12px;font-size:15px;font-family:inherit;color:#08060d;background:#fff;border:1px solid #cfcdd3;border-radius:4px">
+                <button style="height:46px;padding:0 16px;border:0;border-radius:8px;background:#aa3bff;color:#fff;font:600 15px system-ui;cursor:pointer;opacity:0.5">찾기</button>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px">
+                <sc-for list="{{ mapCats }}" as="mc"><button onClick="{{ mc.onClick }}" style="min-height:36px;padding:0 12px;border:1px solid {{ mc.bd }};border-radius:12px;background:{{ mc.bg }};color:{{ mc.fg }};font:600 13px system-ui;cursor:pointer;white-space:nowrap">{{ mc.label }}</button></sc-for>
+              </div>
+              <label style="display:inline-flex;align-items:center;gap:8px;min-height:44px;font-size:13px"><input type="checkbox"> 꺼 둔 가게도 보기</label>
+              <div onPointerDown="{{ mp.down }}" onPointerUp="{{ mp.up }}" onPointerLeave="{{ mp.up }}" onContextMenu="{{ mp.noMenu }}" style="position:relative;height:380px;border-radius:8px;border:1px solid #e5e4e7;overflow:hidden;background-color:#f7f7f8;background-image:repeating-linear-gradient(0deg, transparent 0 39px, #e5e4e7 39px 40px), repeating-linear-gradient(90deg, transparent 0 39px, #e5e4e7 39px 40px);touch-action:none;user-select:none;-webkit-user-select:none;cursor:crosshair">
+                <span style="position:absolute;left:8px;top:8px;font-size:11px;color:#6b6375;background:#fff;border:1px solid #cfcdd3;border-radius:4px;padding:2px 6px">카카오맵 SDK 자리</span>
+                <sc-for list="{{ mp.rings }}" as="r">
+                  <div style="position:absolute;left:{{ r.left }}px;top:{{ r.top }}px;width:{{ r.d }}px;height:{{ r.d }}px;border-radius:50%;border:2px dashed rgba(8,6,13,0.6);box-sizing:border-box;pointer-events:none"></div>
+                  <span style="position:absolute;left:{{ r.lx }}px;top:{{ r.ly }}px;translate:-50% -50%;font-size:11px;font-weight:700;color:#fff;background:#08060d;padding:1px 8px;border-radius:4px;pointer-events:none">도보 {{ r.label }}</span>
+                </sc-for>
+                <div style="position:absolute;left:{{ mp.ox }}px;top:{{ mp.oy }}px;translate:-50% -50%;font-size:11px;font-weight:700;color:#fff;background:#08060d;padding:3px 8px;border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.2);pointer-events:none;white-space:nowrap">🏢 회사</div>
+                <span style="position:absolute;left:50%;top:50%;width:28px;height:28px;translate:-50% -50%;pointer-events:none;background:linear-gradient(#aa3bff,#aa3bff) center / 2px 100% no-repeat, linear-gradient(#aa3bff,#aa3bff) center / 100% 2px no-repeat"></span>
+                <sc-for list="{{ mp.pins }}" as="p">
+                  <button onPointerDown="{{ p.stop }}" onClick="{{ p.pick }}" style="position:absolute;left:{{ p.x }}px;top:{{ p.y }}px;translate:-50% -100%;display:inline-flex;align-items:center;gap:4px;min-height:28px;margin-bottom:7px;padding:2px 8px 2px 4px;border:{{ p.border }};border-radius:12px;background:{{ p.bg }};color:{{ p.fg }};font:700 11px system-ui;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.15);cursor:pointer;scale:{{ p.scale }};z-index:{{ p.z }}">
+                    <span style="font-size:13px;line-height:1">{{ p.icon }}</span><span style="max-width:9em;overflow:hidden;text-overflow:ellipsis">{{ p.label }}</span><span style="color:{{ p.walkFg }};font-weight:600">{{ p.walk }}분</span>
+                  </button>
+                </sc-for>
+                <sc-if value="{{ mp.press }}"><div style="position:absolute;left:{{ mp.press.x }}px;top:{{ mp.press.y }}px;width:48px;height:48px;margin:-24px 0 0 -24px;border-radius:50%;border:2px solid #aa3bff;box-sizing:border-box;opacity:0.6;pointer-events:none"></div></sc-if>
+                <sc-if value="{{ mp.pending }}"><div style="position:absolute;left:{{ mp.pending.x }}px;top:{{ mp.pending.y }}px;translate:-50% -100%;width:18px;height:18px;border-radius:50% 50% 50% 0;rotate:-45deg;background:#aa3bff;border:3px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.3);box-sizing:border-box;pointer-events:none"></div></sc-if>
+              </div>
+              <p style="margin:0;font-size:13px">원은 도보 5·10·15분이에요 · 핀을 누르면 정보, 빈 곳을 꾹 누르면 새 가게</p>
+
+              <sc-if value="{{ mp.sel }}">
+                <div style="display:flex;flex-direction:column;gap:8px;padding:12px;background:#f7f7f8;border:1px solid #e5e4e7;border-radius:8px">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+                    <div><strong style="font-size:15px;color:#08060d">{{ mp.sel.name }}</strong><p style="margin:0;font-size:13px">{{ mp.sel.meta }}</p></div>
+                    <button onClick="{{ mp.close }}" style="min-height:44px;background:none;border:0;font-size:13px;color:#6b6375;text-decoration:underline;text-underline-offset:3px;cursor:pointer">닫기</button>
+                  </div>
+                  <sc-if value="{{ mp.sel.stars }}"><span style="font-size:13px;color:#08060d;letter-spacing:1px">{{ mp.sel.stars }}</span></sc-if>
+                  <sc-if value="{{ mp.sel.review }}"><p style="margin:0;font-size:13px;color:#08060d">{{ mp.sel.review }}</p></sc-if>
+                  <sc-if value="{{ mp.sel.memo }}"><p style="margin:0;font-size:13px">{{ mp.sel.memo }}</p></sc-if>
+                  <div style="display:flex;gap:8px"><button style="flex:1;height:36px;border:1px solid #cfcdd3;border-radius:8px;background:#fff;color:#08060d;font:600 13px system-ui;cursor:pointer">고치기</button><button style="flex:1;height:36px;border:1px solid #cfcdd3;border-radius:8px;background:#fff;color:#08060d;font:600 13px system-ui;cursor:pointer">끄기</button></div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ mp.showNearby }}">
+                <section style="display:flex;flex-direction:column;gap:8px;padding:12px;background:#f7f7f8;border:1px solid #e5e4e7;border-radius:8px">
+                  <h3 style="margin:0;font-size:18px;color:#08060d">지도에 있는 가게 {{ mp.nearCount }}곳</h3>
+                  <ul style="list-style:none;margin:0;padding:0;display:grid">
+                    <sc-for list="{{ mp.nearby }}" as="nb">
+                      <li><button onClick="{{ nb.pick }}" style="width:100%;min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 4px;border:0;border-bottom:1px solid #ececee;background:none;color:#08060d;font:15px system-ui;text-align:left;cursor:pointer"><span style="display:inline-flex;align-items:center;gap:4px;font-weight:600">{{ nb.icon }} {{ nb.name }}</span><span style="font-size:13px;color:#6b6375">도보 {{ nb.walk }}분</span></button></li>
+                    </sc-for>
+                  </ul>
+                </section>
+              </sc-if>
+              <sc-if value="{{ mp.pending }}">
+                <section style="display:flex;flex-direction:column;gap:12px;padding:12px;background:#f7f7f8;border:2px solid #aa3bff;border-radius:8px">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between"><h3 style="margin:0;font-size:18px;color:#08060d">여기 저장할까요?</h3><button onClick="{{ mp.cancel }}" style="min-height:44px;background:none;border:0;font-size:13px;color:#6b6375;text-decoration:underline;text-underline-offset:3px;cursor:pointer">닫기</button></div>
+                  <label style="display:flex;flex-direction:column;gap:8px;font-size:13px">이름<input value="{{ mp.form.name }}" onChange="{{ mp.setName }}" maxLength="40" placeholder="가게 이름" style="padding:12px;font-size:15px;font-family:inherit;color:#08060d;background:#fff;border:1px solid #cfcdd3;border-radius:4px"></label>
+                  <p style="margin:0;font-size:13px">회사에서 도보 {{ mp.pending.walk }}분 (추정값 · 직선거리 기준)</p>
+                  <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">카테고리<div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ mp.catChips }}" as="ch"><button onClick="{{ ch.onClick }}" style="height:30px;padding:0 12px;border-radius:999px;border:1px solid {{ ch.bd }};background:{{ ch.bg }};color:{{ ch.fg }};font:{{ ch.fw }} 13px system-ui;cursor:pointer">{{ ch.label }}</button></sc-for></div></div>
+                  <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">가격대 (선택)<div style="display:flex;gap:8px"><sc-for list="{{ mp.priceChips }}" as="ch"><button onClick="{{ ch.onClick }}" style="height:30px;padding:0 12px;border-radius:999px;border:1px solid {{ ch.bd }};background:{{ ch.bg }};color:{{ ch.fg }};font:{{ ch.fw }} 13px system-ui;cursor:pointer">{{ ch.label }}</button></sc-for></div></div>
+                  <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">별점 (선택)<div style="display:flex;align-items:center;gap:4px"><sc-for list="{{ mp.starBtns }}" as="st"><button onClick="{{ st.onClick }}" style="background:none;border:0;padding:2px;font-size:18px;line-height:1;color:{{ st.ink }};cursor:pointer">★</button></sc-for></div></div>
+                  <label style="display:flex;flex-direction:column;gap:8px;font-size:13px">한줄평 (선택)<input value="{{ mp.form.review }}" onChange="{{ mp.setReview }}" maxLength="40" placeholder="김치찌개가 진함" style="padding:12px;font-size:15px;font-family:inherit;color:#08060d;background:#fff;border:1px solid #cfcdd3;border-radius:4px"></label>
+                  <label style="display:flex;flex-direction:column;gap:8px;font-size:13px">메모 (선택)<textarea value="{{ mp.form.memo }}" onChange="{{ mp.setMemo }}" maxLength="120" rows="2" placeholder="12시 전에 가야 자리 있음" style="padding:12px;font-size:15px;font-family:inherit;color:#08060d;background:#fff;border:1px solid #cfcdd3;border-radius:4px;resize:vertical"></textarea></label>
+                  <sc-if value="{{ mp.problem }}"><p style="margin:0;padding:12px;border-radius:8px;background:#f4f3ec;color:#08060d;font-size:13px;text-align:center">{{ mp.problem }}</p></sc-if>
+                  <div style="display:flex;gap:8px"><button onClick="{{ mp.save }}" style="flex:1;height:48px;border:0;border-radius:8px;background:#aa3bff;color:#fff;font:600 16px system-ui;cursor:pointer">저장</button><button onClick="{{ mp.cancel }}" style="flex:1;height:48px;border:1px solid #cfcdd3;border-radius:8px;background:#fff;color:#08060d;font:600 15px system-ui;cursor:pointer">취소</button></div>
+                </section>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <footer style="font-size:13px;text-align:center">로그인 없음 · 링크만 있으면 누구나</footer>
+        </div>
+
+        <nav style="position:absolute;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(3, 1fr);background:#fff;border-top:1px solid #e5e4e7;box-shadow:0 -4px 12px rgba(0,0,0,0.06)">
+          <sc-for list="{{ m.tabs }}" as="t" hint-placeholder-count="3">
+            <button onClick="{{ t.onClick }}" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:60px;padding:8px 0;background:none;border:0;font:600 11px system-ui;color:{{ t.fg }};cursor:pointer;box-shadow:{{ t.bar }}">
+              <span style="font-size:24px;line-height:1">{{ t.icon }}</span>{{ t.label }}
+              <sc-if value="{{ t.badge }}"><span style="position:absolute;top:0;left:calc(50% + 12px);padding:0 4px;border-radius:12px;background:{{ t.badgeBg }};color:#fff;font-size:11px;font-weight:700;line-height:1.5;white-space:nowrap">{{ t.badge }}</span></sc-if>
+            </button>
+          </sc-for>
+        </nav>
+
+        <sc-if value="{{ m.sheetOpen }}">
+          <div onClick="{{ m.closeSheet }}" style="position:absolute;inset:0;z-index:30;background:rgba(8,6,13,0.4)"></div>
+          <div style="position:absolute;left:0;right:0;bottom:0;z-index:31;max-height:88%;overflow-y:auto;background:#fff;border-radius:16px 16px 0 0;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 -8px 24px rgba(0,0,0,0.12)">
+            <h2 style="margin:0;font-size:18px;font-weight:700;color:#08060d">후보 {{ m.candCount }}곳</h2>
+            <ul style="list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px">
+              <sc-for list="{{ m.candChips }}" as="cc"><li style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border:1px {{ cc.bs }} #cfcdd3;background:#fff;font-size:13px"><span>{{ cc.icon }}</span><span style="font-weight:600;color:#08060d">{{ cc.name }}</span><span style="font-size:11px">{{ cc.walk }}분</span></li></sc-for>
+            </ul>
+            <div style="position:relative;max-width:280px;margin:0 auto;width:100%">
+              <svg viewBox="0 0 400 400" style="width:100%;display:block">
+                <circle cx="200" cy="200" r="{{ rm.discR }}" fill="#f7f7f8"></circle>
+                <sc-for list="{{ rm.selWedges }}" as="w"><path d="{{ w.d }}" fill="#ececee"></path></sc-for>
+                <sc-for list="{{ rm.spokes }}" as="s"><line x1="200" y1="200" x2="{{ s.x }}" y2="{{ s.y }}" stroke="#ececee" stroke-width="1"></line></sc-for>
+                <sc-for list="{{ rm.rings }}" as="r"><circle cx="200" cy="200" r="{{ r.r }}" fill="none" stroke="{{ r.stroke }}" stroke-width="{{ r.sw }}" stroke-dasharray="{{ r.dash }}"></circle></sc-for>
+                <sc-for list="{{ rm.wedges }}" as="w"><path d="{{ w.d }}" fill="transparent" style="cursor:pointer" onClick="{{ w.onClick }}"></path></sc-for>
+                <sc-for list="{{ rm.dots }}" as="d">
+                  <circle cx="{{ d.x }}" cy="{{ d.y }}" r="11" fill="none" stroke="#08060d" stroke-width="1.5" opacity="{{ d.haloOp }}"></circle>
+                  <circle cx="{{ d.x }}" cy="{{ d.y }}" r="{{ d.r }}" fill="{{ d.fill }}" stroke="{{ d.stroke }}" stroke-width="{{ d.sw }}" stroke-dasharray="{{ d.dash }}"></circle>
+                </sc-for>
+                <rect x="193" y="193" width="14" height="14" rx="3" fill="#08060d"></rect>
+              </svg>
+              <sc-for list="{{ rm.wedges }}" as="w"><button onClick="{{ w.onClick }}" style="position:absolute;left:{{ w.left }};top:{{ w.top }};translate:-50% -50%;background:none;border:0;padding:4px;font:{{ w.fw }} 13px system-ui;color:{{ w.ink }};cursor:pointer;white-space:nowrap;line-height:1">{{ w.label }}</button></sc-for>
+              <sc-for list="{{ rm.dots }}" as="d"><span style="position:absolute;left:{{ d.left }};top:{{ d.top }};translate:{{ d.tr }};font-size:9.5px;font-weight:{{ d.fw }};color:{{ d.ink }};white-space:nowrap;line-height:1;pointer-events:none;max-width:9em;overflow:hidden;text-overflow:ellipsis">{{ d.label }}</span></sc-for>
+              <sc-for list="{{ rm.rings }}" as="r"><button onClick="{{ r.onClick }}" style="position:absolute;left:{{ r.left }};top:{{ r.top }};translate:-50% -50%;height:18px;padding:0 8px;border-radius:9px;border:1px solid {{ r.pillBd }};background:{{ r.pillBg }};color:{{ r.pillInk }};font:600 11px system-ui;cursor:pointer;line-height:1">{{ r.label }}</button></sc-for>
+              <span style="position:absolute;left:50%;top:52.5%;translate:-50% 0;font-size:11px;color:#6b6375;background:#f7f7f8;padding:1px 3px;border-radius:4px;line-height:1;pointer-events:none">사무실</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+              <span style="font-size:13px">{{ m.summary }}</span>
+              <button onClick="{{ m.toggleEx }}" style="height:28px;padding:0 12px;border-radius:999px;border:1px solid {{ m.exBd }};background:{{ m.exBg }};color:{{ m.exFg }};font:{{ m.exFw }} 13px system-ui;cursor:pointer">{{ m.exLabel }}</button>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:center;font-size:11px">
+              <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:#08060d"></span>후보</span>
+              <span style="display:flex;align-items:center;gap:5px"><span style="width:6px;height:6px;border-radius:50%;border:2px solid #08060d;background:#fff"></span>다시 넣음</span>
+              <span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;border:1px dashed #9a94a3"></span>최근 제외</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:8px;border-top:1px dashed #e5e4e7;font-size:13px"><span>🏢 정해 둔 회사 위치에서 잰 도보 시간이에요</span><span style="text-decoration:underline;text-underline-offset:3px">바꾸기</span></div>
+            <button onClick="{{ m.closeSheet }}" style="height:44px;border:1px solid #cfcdd3;border-radius:8px;background:#fff;color:#08060d;font:600 15px system-ui;cursor:pointer">이대로 할게요</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ m.resultOpen }}">
+          <div onClick="{{ m.closeResult }}" style="position:absolute;inset:0;z-index:40;background:rgba(8,6,13,0.45);display:flex;align-items:center;justify-content:center;padding:16px">
+            <div onClick="{{ m.stop }}" style="width:100%;max-width:420px;background:#fff;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;animation:rise 260ms ease-out both">
+              <div style="position:relative;padding:24px 16px 16px;background:#fff;border:1px solid #08060d;border-radius:12px;display:flex;flex-direction:column;gap:8px;text-align:center">
+                <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:1.5px;color:#6b6375">{{ m.ticketEyebrow }}</p>
+                <h2 style="margin:0;font-size:30px;font-weight:800;line-height:1.15;color:#08060d;word-break:keep-all">{{ m.winnerName }}</h2>
+                <div style="display:flex;justify-content:center;align-items:center;gap:8px;font-size:13px;color:#6b6375"><span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:{{ m.winnerTint }};color:#08060d">{{ m.winnerCat }}</span><span>도보 {{ m.winnerWalk }}분</span></div>
+                <hr style="width:calc(100% + 32px);margin:8px -16px;border:0;border-top:2px dashed #e5e4e7">
+                <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+                  <button onClick="{{ m.decide }}" style="height:48px;border:0;border-radius:8px;background:#aa3bff;color:#fff;font:600 16px system-ui;cursor:pointer">여기로 결정</button>
+                  <button onClick="{{ m.spinAgain }}" style="height:40px;border:1px solid #cfcdd3;border-radius:8px;background:transparent;color:#08060d;font:600 15px system-ui;cursor:pointer">다시 하기</button>
+                </div>
+                <p style="margin:0;font-size:13px;color:#6b6375">누르면 방문 기록이 남고, 2주 동안 후보에서 빠져요.</p>
+              </div>
+              <button onClick="{{ m.closeResult }}" style="align-self:center;min-height:44px;background:none;border:0;font-size:13px;color:#6b6375;text-decoration:underline;text-underline-offset:3px;cursor:pointer">닫고 게임 보기</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ m.confirming }}">
+          <div onClick="{{ m.cancelConfirm }}" style="position:absolute;inset:0;z-index:40;background:rgba(8,6,13,0.4)"></div>
+          <div style="position:absolute;left:0;right:0;bottom:0;z-index:41;background:#fff;border-radius:16px 16px 0 0;padding:20px 16px 24px;display:flex;flex-direction:column;gap:12px;box-shadow:0 -8px 24px rgba(0,0,0,0.12)">
+            <h2 style="margin:0;font-size:18px;font-weight:700;color:#08060d">오늘은 이미 정했어요</h2>
+            <p style="margin:0;font-size:14px">{{ m.confirmText }}</p>
+            <div style="display:flex;gap:8px"><button onClick="{{ m.commitConfirm }}" style="flex:1;height:44px;border:0;border-radius:8px;background:#aa3bff;color:#fff;font:600 15px system-ui;cursor:pointer">바꾸기</button><button onClick="{{ m.cancelConfirm }}" style="flex:1;height:44px;border:0;border-radius:8px;background:transparent;color:#08060d;font:600 15px system-ui;cursor:pointer">그대로 두기</button></div>
+          </div>
+        </sc-if>
+      </main>
+    </div>
+
+    <div id="4b" style="display:flex;flex-direction:column;gap:12px;width:1000px;flex:none">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font:700 13px system-ui;background:#18181b;color:#fff;padding:3px 9px;border-radius:6px">4b</span><span style="font-size:14px;color:#18181b;font-weight:600">데스크톱(960px~) · 오늘</span><span style="font-size:12px;color:#6b6375">머리말 탭 · 왼쪽 방식 레일 · 오른쪽 조건 칸</span></div>
+      <main style="width:1000px;background:#fff;border:1px solid #e5e4e7;padding:24px 32px 32px;display:flex;flex-direction:column;gap:24px;color:#6b6375;font-size:15px;line-height:1.45;box-sizing:border-box">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid #e5e4e7">
+          <header style="display:flex;flex-direction:column;gap:2px">
+            <p style="margin:0;font-size:11px;font-weight:600;letter-spacing:0.3px">10월 12일 월요일</p>
+            <div style="display:flex;align-items:center;gap:16px"><h1 style="margin:0;font-size:24px;font-weight:700;color:#08060d;letter-spacing:-0.3px">오늘 점심</h1><span style="font-size:11px;font-weight:700;padding:2px 8px;background:#ececee;color:#3f3946">가게 11곳</span></div>
+          </header>
+          <nav style="display:flex;gap:4px;padding:2px;background:#ececee">
+            <button style="display:flex;align-items:center;gap:8px;min-height:40px;padding:0 16px;border:0;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.08);font:600 13px system-ui;color:#08060d;cursor:pointer"><span style="font-size:15px">🍱</span>오늘</button>
+            <button style="display:flex;align-items:center;gap:8px;min-height:40px;padding:0 16px;border:0;background:none;font:600 13px system-ui;color:#6b6375;cursor:pointer"><span style="font-size:15px">📋</span>목록</button>
+            <button style="display:flex;align-items:center;gap:8px;min-height:40px;padding:0 16px;border:0;background:none;font:600 13px system-ui;color:#6b6375;cursor:pointer"><span style="font-size:15px">🗺️</span>지도</button>
+          </nav>
+        </div>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 340px;align-items:start;gap:24px">
+          <section style="display:grid;grid-template-columns:104px minmax(0,1fr);column-gap:16px;align-content:start;padding:16px;border:1px solid #e5e4e7;background:#f7f7f8;box-shadow:0 1px 2px rgba(0,0,0,0.06)">
+            <div style="grid-column:1;grid-row:1 / span 6;display:flex;flex-direction:column;gap:2px;padding:2px;background:#e5e4e7;align-self:start">
+              <sc-for list="{{ d.modes }}" as="md" hint-placeholder-count="7">
+                <button onClick="{{ md.onClick }}" style="display:flex;flex-direction:column;align-items:center;gap:2px;min-height:64px;padding:8px 4px;border:0;background:{{ md.bg }};color:{{ md.fg }};font:600 13px system-ui;cursor:pointer"><span style="font-size:18px;line-height:1">{{ md.icon }}</span>{{ md.label }}</button>
+              </sc-for>
+            </div>
+            <div style="grid-column:2;display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <p style="margin:0;font-size:13px">방식은 보여주는 것만 달라요 · 확률은 같아요</p>
+              <button style="min-height:36px;padding:0 12px;border:0;border-radius:4px;background:transparent;color:#3f3946;font:600 13px system-ui;cursor:pointer">⤢ 크게 보기</button>
+            </div>
+            <div style="grid-column:2;margin-top:12px;display:flex;align-items:center;justify-content:center;min-height:480px;background:{{ d.boardBg }}">
+              <dc-import name="LunchGame" candidates="{{ d.cands }}" mode="{{ d.mode }}" hide-card="{{ true }}" hide-spin="{{ true }}" expanded="{{ true }}" on-result="{{ d.onResult }}" on-spin-start="{{ d.onSpinStart }}" run="{{ d.run }}" style="width:100%;min-width:0" hint-size="100%,480px"></dc-import>
+            </div>
+            <sc-if value="{{ d.hasWinner }}">
+              <div style="grid-column:2;margin-top:12px;position:relative;padding:24px 16px 16px;background:#fff;border:1px solid #08060d;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:flex;flex-direction:column;gap:8px;text-align:center;animation:rise 320ms ease-out both">
+                <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:1.5px">{{ d.ticketEyebrow }}</p>
+                <h2 style="margin:0;font-size:30px;font-weight:800;line-height:1.15;color:#08060d">{{ d.winnerName }}</h2>
+                <div style="display:flex;justify-content:center;align-items:center;gap:8px;font-size:13px"><span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:{{ d.winnerTint }};color:#08060d">{{ d.winnerCat }}</span><span>도보 {{ d.winnerWalk }}분</span></div>
+                <hr style="width:calc(100% + 32px);margin:8px -16px;border:0;border-top:2px dashed #e5e4e7">
+                <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><button style="height:48px;border:0;border-radius:8px;background:#aa3bff;color:#fff;font:600 16px system-ui;cursor:pointer">여기로 결정</button><button onClick="{{ d.spinAgain }}" style="height:40px;border:1px solid #cfcdd3;border-radius:8px;background:transparent;color:#08060d;font:600 15px system-ui;cursor:pointer">다시 하기</button></div>
+                <p style="margin:0;font-size:13px">누르면 방문 기록이 남고, 2주 동안 후보에서 빠져요.</p>
+              </div>
+            </sc-if>
+            <sc-if value="{{ d.noWinner }}">
+              <button onClick="{{ d.spin }}" disabled="{{ d.runDisabled }}" style="grid-column:2;margin-top:12px;height:48px;border:0;border-radius:8px;background:#aa3bff;color:#fff;font:600 16px system-ui;cursor:pointer;opacity:{{ d.runOp }}">{{ d.runLabel }}</button>
+            </sc-if>
+            <sc-if value="{{ d.notice }}"><p style="grid-column:2;margin:12px 0 0;font-size:13px;line-height:1.55;text-align:center">{{ d.notice }}</p></sc-if>
+          </section>
+          <aside style="display:flex;flex-direction:column;gap:12px;padding:16px;border:1px solid #e5e4e7;background:#f7f7f8">
+            <h2 style="margin:0;font-size:15px;font-weight:800;color:#08060d">후보 <span style="font-weight:600;color:#6b6375">{{ d.candCount }}곳</span></h2>
+            <ul style="list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px">
+              <sc-for list="{{ d.candChips }}" as="cc"><li style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border:1px {{ cc.bs }} {{ cc.bd }};background:{{ cc.bg }};font-size:13px"><span>{{ cc.icon }}</span><span style="font-weight:600;color:#08060d">{{ cc.name }}</span><span style="font-size:11px">{{ cc.walk }}분</span></li></sc-for>
+            </ul>
+            <div style="position:relative;max-width:300px;margin:0 auto;width:100%">
+              <svg viewBox="0 0 400 400" style="width:100%;display:block">
+                <circle cx="200" cy="200" r="{{ drm.discR }}" fill="#fff"></circle>
+                <sc-for list="{{ drm.selWedges }}" as="w"><path d="{{ w.d }}" fill="#ececee"></path></sc-for>
+                <sc-for list="{{ drm.spokes }}" as="s"><line x1="200" y1="200" x2="{{ s.x }}" y2="{{ s.y }}" stroke="#ececee" stroke-width="1"></line></sc-for>
+                <sc-for list="{{ drm.rings }}" as="r"><circle cx="200" cy="200" r="{{ r.r }}" fill="none" stroke="{{ r.stroke }}" stroke-width="{{ r.sw }}" stroke-dasharray="{{ r.dash }}"></circle></sc-for>
+                <sc-for list="{{ drm.wedges }}" as="w"><path d="{{ w.d }}" fill="transparent" style="cursor:pointer" onClick="{{ w.onClick }}"></path></sc-for>
+                <sc-for list="{{ drm.dots }}" as="d">
+                  <circle cx="{{ d.x }}" cy="{{ d.y }}" r="11" fill="none" stroke="#08060d" stroke-width="1.5" opacity="{{ d.haloOp }}"></circle>
+                  <circle cx="{{ d.x }}" cy="{{ d.y }}" r="{{ d.r }}" fill="{{ d.fill }}" stroke="{{ d.stroke }}" stroke-width="{{ d.sw }}" stroke-dasharray="{{ d.dash }}"></circle>
+                </sc-for>
+                <rect x="193" y="193" width="14" height="14" rx="3" fill="#08060d"></rect>
+              </svg>
+              <sc-for list="{{ drm.wedges }}" as="w"><button onClick="{{ w.onClick }}" style="position:absolute;left:{{ w.left }};top:{{ w.top }};translate:-50% -50%;background:none;border:0;padding:4px;font:{{ w.fw }} 13px system-ui;color:{{ w.ink }};cursor:pointer;white-space:nowrap;line-height:1">{{ w.label }}</button></sc-for>
+              <sc-for list="{{ drm.dots }}" as="d"><span style="position:absolute;left:{{ d.left }};top:{{ d.top }};translate:{{ d.tr }};font-size:9.5px;font-weight:{{ d.fw }};color:{{ d.ink }};white-space:nowrap;line-height:1;pointer-events:none">{{ d.label }}</span></sc-for>
+              <sc-for list="{{ drm.rings }}" as="r"><button onClick="{{ r.onClick }}" style="position:absolute;left:{{ r.left }};top:{{ r.top }};translate:-50% -50%;height:18px;padding:0 8px;border-radius:9px;border:1px solid {{ r.pillBd }};background:{{ r.pillBg }};color:{{ r.pillInk }};font:600 11px system-ui;cursor:pointer;line-height:1">{{ r.label }}</button></sc-for>
+              <span style="position:absolute;left:50%;top:52.5%;translate:-50% 0;font-size:11px;background:#fff;padding:1px 3px;border-radius:4px;line-height:1;pointer-events:none">사무실</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+              <span style="font-size:13px">{{ d.summary }}</span>
+              <button onClick="{{ d.toggleEx }}" style="height:28px;padding:0 12px;border-radius:999px;border:1px solid {{ d.exBd }};background:{{ d.exBg }};color:{{ d.exFg }};font:{{ d.exFw }} 13px system-ui;cursor:pointer">{{ d.exLabel }}</button>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:center;font-size:11px">
+              <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:#08060d"></span>후보</span>
+              <span style="display:flex;align-items:center;gap:5px"><span style="width:6px;height:6px;border-radius:50%;border:2px solid #08060d;background:#fff"></span>다시 넣음</span>
+              <span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;border:1px dashed #9a94a3"></span>최근 제외</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:8px;border-top:1px dashed #e5e4e7;font-size:13px"><span>🏢 정해 둔 회사 위치에서 잰 도보 시간이에요</span><span style="text-decoration:underline;text-underline-offset:3px">바꾸기</span></div>
+          </aside>
+        </div>
+        <footer style="font-size:13px;text-align:center">로그인 없음 · 링크만 있으면 누구나</footer>
+      </main>
+    </div>
+  </div>
+  <p style="margin:0;font-size:13px;color:#6b6375">이전 시안(로드맵 3안·지도 2a·테마 4종)은 <a href="점심 로드맵.dc.html">점심 로드맵</a>, <a href="Lunch Roadmap Themes.dc.html">Lunch Roadmap Themes</a>에 그대로 있습니다.</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const PLACES = [
+  ['p1', '샘플 한식집 1', '한식', 4], ['p2', '샘플 한식집 2', '한식', 6], ['p3', '샘플 한식집 3', '한식', 9],
+  ['p4', '샘플 면집 1', '면', 5], ['p5', '샘플 면집 2', '면', 7], ['p6', '샘플 면집 3', '면', 14],
+  ['p7', '샘플 고기집 1', '고기', 6], ['p8', '샘플 고기집 2', '고기', 10],
+  ['p9', '샘플 분식집 1', '분식', 3], ['p10', '샘플 분식집 2', '분식', 9],
+  ['p11', '샘플 양식집 1', '양식', 12], ['p12', '샘플 중식집 1', '중식', 17],
+].map(([id, name, category, walkMin]) => ({ id, name, category, walkMin, active: id !== 'p12' }));
+const VISIT_AGO = { p1: 1, p2: 2, p3: 3, p4: 4, p5: 5, p6: 11, p7: 13 };
+const CATS = ['한식', '면', '고기', '분식', '양식', '중식'];
+const ICON = { 한식: '🍚', 면: '🍜', 고기: '🥩', 분식: '🍢', 양식: '🍝', 중식: '🥟' };
+const HUE = { 한식: 25, 면: 80, 고기: 355, 분식: 145, 양식: 250, 중식: 300 };
+const WALKS = [5, 10, 15];
+const MIN = 5, HEALTHY = 20;
+const MODES = [['wheel', '돌림판', '🎡', '돌리기'], ['ladder', '사다리', '🪜', '사다리 타기'], ['slot', '슬롯', '🎰', '레버 당기기'], ['pinball', '핀볼', '🎱', '구슬 굴리기'], ['cards', '카드', '🃏', '카드 뒤집기'], ['memory', '짝 맞추기', '🧩', '짝 맞추기'], ['tournament', '토너먼트', '🏆', '대진 시작'], ['gacha', '뽑기 기계', '🎁', '손잡이 돌리기'], ['plinko', '플링코', '🔻', '공 떨어뜨리기'], ['dice', '주사위', '🎲', '주사위 굴리기']];
+const TABS = [['roadmap', '오늘', '🍱', '오늘 점심'], ['list', '목록', '📋', '가게 목록'], ['map', '지도', '🗺️', '우리 도보권']];
+const MAP_OX = 178, MAP_OY = 190;
+const EMPTY_FORM = { name: '', category: '', price: '', rating: 0, review: '', memo: '' };
+const R_MIN = 32, R_15 = 150, R_MAX = 168;
+const radiusForWalk = (w) => Math.min(R_MIN + (R_15 - R_MIN) * Math.sqrt(Math.max(w, 0) / 15), R_MAX);
+const josa = (name, a, b) => { const code = name.charCodeAt(name.length - 1); const has = code >= 0xac00 && code <= 0xd7a3 && (code - 0xac00) % 28 !== 0; return has ? a : b; };
+
+function select(f) {
+  const active = PLACES.filter((p) => p.active);
+  const afterWalk = active.filter((p) => p.walkMin <= f.walk);
+  const afterCat = f.cats.length === 0 ? afterWalk : afterWalk.filter((p) => f.cats.includes(p.category));
+  const base = { afterWalkCount: afterWalk.length, afterCategoryCount: afterCat.length };
+  if (afterCat.length === 0) {
+    let emptyReason;
+    if (afterWalk.length === 0) { const wider = WALKS.find((s) => s > f.walk) ?? f.walk; emptyReason = { kind: 'walk', widerWalkMin: wider, countAtWiderWalk: active.filter((p) => p.walkMin <= wider).length }; }
+    else emptyReason = { kind: 'category', countWithoutCategory: afterWalk.length };
+    return { ...base, candidates: [], released: [], recentlyVisitedCount: 0, releasedCount: 0, shortOfMinimum: true, emptyReason };
+  }
+  const recent = afterCat.filter((p) => VISIT_AGO[p.id] !== undefined);
+  if (!f.ex) return { ...base, candidates: [...afterCat], released: [], recentlyVisitedCount: recent.length, releasedCount: 0, shortOfMinimum: afterCat.length < MIN, emptyReason: null };
+  const fresh = afterCat.filter((p) => VISIT_AGO[p.id] === undefined);
+  const short = MIN - fresh.length;
+  if (short <= 0) return { ...base, candidates: fresh, released: [], recentlyVisitedCount: recent.length, releasedCount: 0, shortOfMinimum: false, emptyReason: null };
+  const released = [...recent].sort((a, b) => VISIT_AGO[b.id] - VISIT_AGO[a.id]).slice(0, short);
+  return { ...base, candidates: [...fresh, ...released], released, recentlyVisitedCount: recent.length, releasedCount: released.length, shortOfMinimum: fresh.length + released.length < MIN, emptyReason: null };
+}
+function emptyMessage(r) {
+  const e = r.emptyReason; if (!e) return null;
+  if (e.kind === 'walk') return e.countAtWiderWalk > 0 ? `도보 ${e.widerWalkMin}분으로 넓히면 ${e.countAtWiderWalk}곳입니다.` : `도보 ${e.widerWalkMin}분으로 넓혀도 해당하는 곳이 없습니다.`;
+  return `고른 카테고리에 해당하는 곳이 없습니다. 카테고리를 풀면 ${e.countWithoutCategory}곳입니다.`;
+}
+function noticeMessage(r) {
+  if (r.emptyReason) return null;
+  if (r.shortOfMinimum) return `후보가 ${r.candidates.length}곳뿐입니다. 가게가 ${HEALTHY}곳은 돼야 최근 방문 제외가 제대로 돌아갑니다.`;
+  if (r.releasedCount > 0) return `${r.afterCategoryCount}곳 중 ${r.recentlyVisitedCount}곳은 최근 2주 안에 갔습니다 — 후보 ${MIN}곳을 채우려고 그 중 오래된 ${r.releasedCount}곳을 다시 넣었습니다.`;
+  if (r.recentlyVisitedCount > 0) return `최근 2주 안에 간 ${r.recentlyVisitedCount}곳은 빠졌습니다.`;
+  return null;
+}
+function statusOf(p, f, r) {
+  if (!p.active) return 'off';
+  if (p.walkMin > f.walk || (f.cats.length && !f.cats.includes(p.category))) return 'out';
+  if (r.released.includes(p)) return 'released';
+  if (r.candidates.includes(p)) return 'cand';
+  return 'recent';
+}
+const LABEL_H = 13, LABEL_GAP = 3;
+const labelWidth = (s) => [...s].reduce((w, ch) => w + (/[가-힣]/.test(ch) ? 12.7 : ch === ' ' ? 4 : 7), 0);
+function labelBox(d, side) {
+  const w = labelWidth(d.label), off = d.r + LABEL_GAP;
+  if (side === 'above') return { x1: d.x - w / 2, x2: d.x + w / 2, y1: d.y - off - LABEL_H, y2: d.y - off };
+  if (side === 'right') return { x1: d.x + off, x2: d.x + off + w, y1: d.y - LABEL_H / 2, y2: d.y + LABEL_H / 2 };
+  if (side === 'left') return { x1: d.x - off - w, x2: d.x - off, y1: d.y - LABEL_H / 2, y2: d.y + LABEL_H / 2 };
+  return { x1: d.x - w / 2, x2: d.x + w / 2, y1: d.y + off, y2: d.y + off + LABEL_H };
+}
+const hit = (a, b) => a.x1 < b.x2 && b.x1 < a.x2 && a.y1 < b.y2 && b.y1 < a.y2;
+function resolveLabels(dots, rings) {
+  const taken = [{ x1: 192, y1: 192, x2: 208, y2: 208 }, { x1: 178, y1: 210, x2: 222, y2: 227 }, ...rings.map((r) => { const [x, y] = pt(r.pr, 0); return { x1: x - 27, y1: y - 12, x2: x + 27, y2: y + 12 }; })];
+  const dotBoxes = dots.map((d) => ({ d, b: { x1: d.x - d.r, y1: d.y - d.r, x2: d.x + d.r, y2: d.y + d.r } }));
+  const TR = { below: '-50% 0', above: '-50% 0', right: '0 -50%', left: '-100% -50%' };
+  const px = (v) => (v / 4) + '%';
+  for (const d of dots) {
+    d.tr = '-50% 0';
+    if (!d.labelled) { d.label = ''; d.left = px(d.x); d.top = px(d.y); continue; }
+    const others = dotBoxes.filter((o) => o.d !== d).map((o) => o.b);
+    const fits = (side, avoid) => { const b = labelBox(d, side); return !taken.some((t) => hit(b, t)) && b.x1 >= 0 && b.x2 <= 400 && !(avoid && others.some((o) => hit(b, o))); };
+    const SIDES = ['below', 'above', 'right', 'left'];
+    const side = SIDES.find((s) => fits(s, true)) ?? SIDES.find((s) => fits(s, false));
+    if (!side) { d.label = ''; d.left = px(d.x); d.top = px(d.y); continue; }
+    const b = labelBox(d, side);
+    const ax = side === 'right' ? b.x1 : side === 'left' ? b.x2 : d.x, ay = side === 'right' || side === 'left' ? d.y : b.y1;
+    d.left = px(ax); d.top = px(ay); d.tr = TR[side];
+    taken.push(b);
+  }
+}
+const chip = (label, on, onClick) => ({ label, onClick, bg: on ? '#08060d' : '#fff', fg: on ? '#fff' : '#6b6375', bd: on ? '#08060d' : '#cfcdd3', fw: on ? 600 : 400 });
+const pt = (r, deg) => { const a = (deg * Math.PI) / 180; return [200 + r * Math.sin(a), 200 - r * Math.cos(a)]; };
+const wedge = (r, a0, a1) => { const [x0, y0] = pt(r, a0), [x1, y1] = pt(r, a1); return `M200 200 L${x0} ${y0} A${r} ${r} 0 0 1 ${x1} ${y1} Z`; };
+
+class Component extends DCLogic {
+  state = {
+    m: { tab: 'roadmap', walk: 10, cats: [], ex: true, mode: 'wheel', decided: null, winner: null, spinning: false, resultOpen: false, sheetOpen: false, confirming: null, run: 0 },
+    d: { walk: 10, cats: [], ex: true, mode: 'pinball', winner: null, spinning: false, run: 0 },
+    mapCat: null, selId: null, press: null, pending: null, form: EMPTY_FORM, problem: null, mapP: null,
+  };
+  upd(k, fn) { this.setState((s) => ({ [k]: { ...s[k], ...fn(s[k]) } })); }
+  toggleCat(k, c) { this.upd(k, (o) => ({ cats: o.cats.includes(c) ? o.cats.filter((x) => x !== c) : [...o.cats, c], winner: null, resultOpen: false })); }
+  componentWillUnmount() { clearTimeout(this.pressT); clearTimeout(this.resT); }
+
+  view(k) {
+    const f = this.state[k];
+    const r = select(f);
+    const w = f.winner;
+    const modeDef = MODES.find((x) => x[0] === f.mode) || MODES[0];
+    const decidedThis = w && f.decided && f.decided.id === w.id;
+    return {
+      f, r, mode: f.mode, cands: r.candidates, candCount: r.candidates.length, run: f.run,
+      notice: noticeMessage(r), empty: emptyMessage(r),
+      summary: `후보 ${r.candidates.length}곳 · 도보 ${f.walk}분 · ${f.cats.length ? f.cats.join('·') : '카테고리 전체'}`,
+      summaryRest: `도보 ${f.walk}분 · ${f.cats.length ? f.cats.join('·') : '카테고리 전체'}${f.ex ? ' · 최근 2주 제외' : ''}`,
+      exLabel: f.ex ? '✓ 최근 2주 제외' : '최근 2주 제외', exBg: f.ex ? '#08060d' : 'transparent', exFg: f.ex ? '#fff' : '#6b6375', exBd: f.ex ? '#08060d' : '#cfcdd3', exFw: f.ex ? 600 : 400,
+      toggleEx: () => this.upd(k, (o) => ({ ex: !o.ex, winner: null, resultOpen: false })),
+      candChips: r.candidates.map((p) => ({ icon: ICON[p.category], name: p.name, walk: p.walkMin, bs: r.released.includes(p) ? 'dashed' : 'solid', bd: w && w.id === p.id ? '#aa3bff' : '#cfcdd3', bg: w && w.id === p.id ? '#f3e8ff' : '#fff' })),
+      modes: MODES.map(([id, label, icon]) => ({ label, icon, bg: f.mode === id ? '#08060d' : '#fff', fg: f.mode === id ? '#fff' : '#3f3946', onClick: () => this.upd(k, () => ({ mode: id, winner: null, resultOpen: false, spinning: false })) })),
+      boardBg: f.mode === 'pinball' ? '#08060d' : '#fff',
+      hasWinner: !!w, noWinner: !w, showTicketInline: !!w && !f.resultOpen, showRun: !w,
+      confirmed: !!decidedThis, notConfirmed: !decidedThis,
+      runDisabled: r.candidates.length === 0 || f.spinning, runOp: r.candidates.length === 0 || f.spinning ? 0.4 : 1,
+      runLabel: f.spinning ? '진행 중' : `${f.decided ? '다시 ' : ''}${modeDef[3]} (후보 ${r.candidates.length}곳)`,
+      runH: f.decided ? '40px' : '48px', runBg: f.decided ? '#fff' : '#aa3bff', runFg: f.decided ? '#08060d' : '#fff', runBorder: f.decided ? '1px solid #cfcdd3' : '0',
+      ticketEyebrow: `${modeDef[2]} ${modeDef[1]}${josa(modeDef[1], '으로', '로')} 뽑은 오늘의 점심`,
+      winnerName: w?.name, winnerCat: w?.category, winnerWalk: w?.walkMin, winnerTint: w ? `oklch(0.9 0.08 ${HUE[w.category] ?? 200})` : '',
+      spin: () => { if (r.candidates.length === 0) return; this.upd(k, (o) => ({ run: o.run + 1, winner: null, resultOpen: false })); },
+      spinAgain: () => this.upd(k, (o) => ({ run: o.run + 1, winner: null, resultOpen: false })),
+      onSpinStart: () => this.upd(k, () => ({ spinning: true })),
+      onResult: (p) => { this.upd(k, () => ({ winner: p, spinning: false })); if (k === 'm') { clearTimeout(this.resT); this.resT = setTimeout(() => this.upd('m', () => ({ resultOpen: true })), 700); } },
+      resultOpen: f.resultOpen, closeResult: () => this.upd(k, () => ({ resultOpen: false })), stop: (e) => e.stopPropagation(),
+      decide: () => { if (!w) return; if (f.decided && f.decided.id !== w.id) this.upd(k, () => ({ confirming: w, resultOpen: false })); else this.upd(k, () => ({ decided: w, resultOpen: false })); },
+      confirming: !!f.confirming, confirmText: f.confirming && f.decided ? `${f.decided.name}에서 ${f.confirming.name}${josa(f.confirming.name, '으로', '로')} 바꿀까요?` : '',
+      commitConfirm: () => this.upd(k, (o) => ({ decided: o.confirming, confirming: null })), cancelConfirm: () => this.upd(k, () => ({ confirming: null })),
+      hasDecided: !!f.decided && !w, decidedName: f.decided?.name, decidedJosa: f.decided ? josa(f.decided.name, '으로', '로') : '', decidedMeta: f.decided ? `${f.decided.category} · 도보 ${f.decided.walkMin}분` : '',
+      sheetOpen: f.sheetOpen, openSheet: () => this.upd(k, () => ({ sheetOpen: true })), closeSheet: () => this.upd(k, () => ({ sheetOpen: false })),
+      isToday: f.tab === 'roadmap', isList: f.tab === 'list', isMap: f.tab === 'map', title: (TABS.find((t) => t[0] === f.tab) || TABS[0])[3],
+      goMap: () => this.upd(k, () => ({ tab: 'map' })),
+      tabs: TABS.map(([id, label, icon]) => { const on = f.tab === id; const badge = id === 'roadmap' && !on && (f.spinning || f.resultOpen) ? (f.resultOpen ? '결과' : '게임 중') : null; return { label, icon, fg: on ? '#08060d' : '#6b6375', bar: on ? 'inset 0 3px 0 #aa3bff' : 'none', badge, badgeBg: f.resultOpen ? '#aa3bff' : '#08060d', onClick: () => this.upd(k, () => ({ tab: id, sheetOpen: false })) }; }),
+    };
+  }
+
+  rmVals(k, v) {
+    const { f, r } = v;
+    const rings = WALKS.map((w) => {
+      const on = f.walk === w, rad = radiusForWalk(w);
+      const [plx, ply] = pt(w === 15 ? rad + 12 : rad - 12, 0);
+      return { r: rad, pr: w === 15 ? rad + 12 : rad - 12, label: `${w}분`, left: `${plx / 4}%`, top: `${ply / 4}%`, stroke: on ? '#08060d' : '#e5e4e7', sw: on ? 1.5 : 1, dash: on ? '' : '3 4', pillBg: on ? '#08060d' : '#fff', pillBd: on ? '#08060d' : '#e5e4e7', pillInk: on ? '#fff' : '#6b6375', onClick: () => this.upd(k, () => ({ walk: w, winner: null, resultOpen: false })) };
+    });
+    const wedges = CATS.map((c, i) => { const on = f.cats.includes(c); const [lx, ly] = pt(184, i * 60 + 30); return { d: wedge(178, i * 60, (i + 1) * 60), label: c, left: `${lx / 4}%`, top: `${ly / 4}%`, fw: on ? 700 : 400, ink: on || !f.cats.length ? '#08060d' : '#6b6375', onClick: () => this.toggleCat(k, c) }; });
+    const selWedges = CATS.map((c, i) => (f.cats.includes(c) ? { d: wedge(radiusForWalk(f.walk), i * 60, (i + 1) * 60) } : null)).filter(Boolean);
+    const spokes = CATS.map((_, i) => { const [x, y] = pt(172, i * 60); return { x, y }; });
+    const dots = [];
+    CATS.forEach((c, i) => {
+      const list = PLACES.filter((p) => p.category === c).sort((a, b) => a.walkMin - b.walkMin);
+      list.forEach((p, j) => {
+        const [x, y] = pt(radiusForWalk(p.walkMin), i * 60 + ((j + 1) * 60) / (list.length + 1));
+        const st = statusOf(p, f, r);
+        const S = { cand: { r: 6, fill: '#08060d', stroke: 'none', sw: 0, dash: '', ink: '#08060d', fw: 600 }, released: { r: 5, fill: '#fff', stroke: '#08060d', sw: 2, dash: '', ink: '#08060d', fw: 600 }, recent: { r: 5, fill: '#fff', stroke: '#9a94a3', sw: 1, dash: '2 2', ink: '#6b6375', fw: 400 }, out: { r: 3.5, fill: '#e5e4e7', stroke: 'none', sw: 0, dash: '', ink: 'transparent', fw: 400 }, off: { r: 3.5, fill: 'none', stroke: '#e5e4e7', sw: 1, dash: '', ink: 'transparent', fw: 400 } }[st];
+        dots.push({ x, y, ...S, labelled: st !== 'out' && st !== 'off', label: p.name.replace('샘플 ', ''), haloOp: f.winner && f.winner.id === p.id ? 1 : 0 });
+      });
+    });
+    resolveLabels(dots, rings);
+    return { rings, wedges, selWedges, spokes, dots, discR: radiusForWalk(f.walk) };
+  }
+
+  initMap() {
+    const EXTRA = { p1: ['~1만', 4, '김치찌개가 진함', ''], p4: ['~1만', 5, '면이 쫄깃함', '12시 전에 가야 자리 있음'], p8: ['1.5만~', 3, '', '회식 때 좋음'] };
+    const out = [];
+    CATS.forEach((c, i) => {
+      const list = PLACES.filter((p) => p.category === c).sort((a, b) => a.walkMin - b.walkMin);
+      list.forEach((p, j) => {
+        const deg = i * 60 + ((j + 1) * 60) / (list.length + 1), a = (deg * Math.PI) / 180, r = p.walkMin * 10;
+        const [price, rating, review, memo] = EXTRA[p.id] || ['', 0, '', ''];
+        out.push({ ...p, x: MAP_OX + r * Math.sin(a), y: MAP_OY - r * Math.cos(a), price, rating, review, memo });
+      });
+    });
+    return out;
+  }
+  mapTab() {
+    const s = this.state;
+    const pins = s.mapP || (this.state.mapP = this.initMap());
+    const form = s.form || EMPTY_FORM;
+    const setF = (patch) => this.setState((st) => ({ form: { ...(st.form || EMPTY_FORM), ...patch }, problem: null }));
+    const sel = pins.find((p) => p.id === s.selId);
+    const shown = pins.filter((p) => p.active && (s.mapCat === null || p.category === s.mapCat)).sort((a, b) => a.walkMin - b.walkMin);
+    const decidedId = s.m.decided?.id;
+    return {
+      ox: MAP_OX, oy: MAP_OY,
+      rings: WALKS.map((w) => ({ left: MAP_OX - w * 10, top: MAP_OY - w * 10, d: w * 20, label: `${w}분`, lx: MAP_OX, ly: MAP_OY - w * 10 })),
+      pins: shown.map((p) => { const on = p.id === s.selId, today = p.id === decidedId; return { x: p.x, y: p.y, icon: ICON[p.category], label: p.name.replace('샘플 ', ''), walk: p.walkMin, bg: on ? '#08060d' : '#f4f3ec', fg: on ? '#fff' : '#08060d', walkFg: on ? '#fff' : '#6b6375', border: today ? '2px solid #aa3bff' : `1px solid ${on ? '#08060d' : '#cfcdd3'}`, scale: on ? 1.08 : 1, z: on ? 6 : today ? 4 : 3, stop: (e) => e.stopPropagation(), pick: () => this.setState({ selId: on ? null : p.id, pending: null }) }; }),
+      press: s.press, pending: s.pending, form, problem: s.problem,
+      sel: sel ? { name: sel.name, stars: sel.rating ? '★'.repeat(sel.rating) + '☆'.repeat(5 - sel.rating) : '', review: sel.review, memo: sel.memo, meta: [sel.category, `도보 ${sel.walkMin}분`, sel.price].filter(Boolean).join(' · ') } : null,
+      close: () => this.setState({ selId: null }),
+      showNearby: !sel && !s.pending, nearCount: shown.length, nearby: shown.map((p) => ({ icon: ICON[p.category], name: p.name, walk: p.walkMin, pick: () => this.setState({ selId: p.id }) })),
+      down: (e) => {
+        if (s.pending) return;
+        const rect = e.currentTarget.getBoundingClientRect(), x = e.clientX - rect.left, y = e.clientY - rect.top;
+        this.setState({ press: { x, y } });
+        clearTimeout(this.pressT);
+        this.pressT = setTimeout(() => { const walk = Math.max(1, Math.round(Math.hypot(x - MAP_OX, y - MAP_OY) / 10)); this.setState({ press: null, pending: { x, y, walk }, form: EMPTY_FORM, problem: null, selId: null }); }, 500);
+      },
+      up: () => { clearTimeout(this.pressT); if (this.state.press) this.setState({ press: null }); },
+      noMenu: (e) => e.preventDefault(),
+      cancel: () => this.setState({ pending: null, problem: null }),
+      setName: (e) => setF({ name: e.target.value }), setReview: (e) => setF({ review: e.target.value }), setMemo: (e) => setF({ memo: e.target.value }),
+      catChips: CATS.map((c) => chip(c, form.category === c, () => setF({ category: c }))),
+      priceChips: ['~1만', '1~1.5만', '1.5만~'].map((p) => chip(p, form.price === p, () => setF({ price: form.price === p ? '' : p }))),
+      starBtns: [1, 2, 3, 4, 5].map((n) => ({ ink: n <= form.rating ? '#08060d' : '#cfcdd3', onClick: () => setF({ rating: form.rating === n ? 0 : n }) })),
+      save: () => {
+        const pd = this.state.pending;
+        if (!form.name.trim()) return this.setState({ problem: '이름을 넣어 주세요.' });
+        if (!form.category) return this.setState({ problem: '카테고리를 골라 주세요.' });
+        if (pd.walk > 60) return this.setState({ problem: `도보 ${pd.walk}분이에요. 60분이 넘는 곳은 넣을 수 없어요.` });
+        const id = `m${Date.now()}`;
+        this.setState((st) => ({ mapP: [...st.mapP, { id, name: form.name.trim(), category: form.category, walkMin: pd.walk, active: true, x: pd.x, y: pd.y, price: form.price, rating: form.rating, review: form.review.trim(), memo: form.memo.trim() }], pending: null, selId: id }));
+      },
+    };
+  }
+
+  renderVals() {
+    const m = this.view('m'), d = this.view('d');
+    const s = this.state;
+    const sorted = [...PLACES].filter((p) => p.active).sort((a, b) => a.walkMin - b.walkMin);
+    const ago = (n) => (n === 0 ? '오늘' : n === 1 ? '어제' : n < 7 ? `${n}일 전` : `${Math.floor(n / 7)}주 전`);
+    const hist = Object.entries(VISIT_AGO).sort((a, b) => a[1] - b[1]).slice(0, 5).map(([id, n], i, arr) => { const p = PLACES.find((x) => x.id === id); return { when: ago(n), name: p.name, border: i === arr.length - 1 ? '0' : '1px solid #ececee' }; });
+    const mapCatList = [...new Set(PLACES.filter((p) => p.active).map((p) => p.category))];
+    return {
+      m, d, rm: this.rmVals('m', m), drm: this.rmVals('d', d), mp: this.mapTab(),
+      history: hist,
+      listOnCount: sorted.length,
+      listOn: sorted.map((p) => { const n = VISIT_AGO[p.id]; const recent = n !== undefined && n <= 14; return { icon: ICON[p.category], name: p.name, meta: `${p.category} · 도보 ${p.walkMin}분`, visit: n === undefined ? '기록 없음' : ago(n), visitInk: recent ? '#aa3bff' : '#6b6375', visitFw: recent ? 600 : 400 }; }),
+      mapCats: [{ label: '전체', c: null }, ...mapCatList.map((c) => ({ label: `${ICON[c]} ${c}`, c }))].map((o) => { const on = s.mapCat === o.c; return { label: o.label, bg: on ? '#08060d' : '#fff', fg: on ? '#fff' : '#08060d', bd: on ? '#08060d' : '#cfcdd3', onClick: () => this.setState({ mapCat: o.c, selId: null }) }; }),
+    };
+  }
+}
+</script>
+</body>
+</html>

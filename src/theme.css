@@ -1,0 +1,167 @@
+/*
+ * 종이 식권 테마 (handoff 6 · 3d). 색은 MODUL 토큰 그대로 — 흑백 바탕에 도장 빨강(accent).
+ * 테마가 더하는 것은 고정폭 글꼴, 점선, 자간, 일련번호뿐이다. 다른 세 시안(따뜻한 식당·
+ * 오락실 네온·도시 지도)은 MODUL 에 없는 색 팔레트가 필요해 고르지 않았다.
+ *
+ * App.css 뒤에 불러와 같은 명시도로 덮는다.
+ */
+:root {
+  /* 식권 글씨. 한글 고정폭이 있는 나눔고딕코딩, 없으면 시스템 고정폭. */
+  --app-mono: 'Nanum Gothic Coding', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+/* 머리말 — 일련번호 줄과 자간 넓힌 제목 */
+.app__header h1 { font-family: var(--app-mono); letter-spacing: 0.08em; }
+.app__date { font-family: var(--app-mono); letter-spacing: 0.06em; }
+.app__ticketNo { font-weight: 700; color: var(--color-text); }
+.app__count { font-family: var(--app-mono); }
+
+/* 탭 — 데스크톱은 알약 묶음 대신 점선 위 빨간 밑줄 */
+.tabs button { font-family: var(--app-mono); }
+@media (min-width: 960px) {
+  .topbar { border-bottom-style: dashed; border-bottom-color: var(--color-neutral-500); }
+  .tabs { background: none; padding: 0; gap: var(--space-4); }
+  .tabs button { padding: 0 var(--space-1); min-height: 44px; }
+  .tabs button.on { background: none; box-shadow: inset 0 -2px 0 var(--color-accent); }
+}
+
+/* 패널 — 실선 대신 점선. 종이에 인쇄한 칸처럼 */
+.stage,
+.today__filters,
+.today__summary,
+.office,
+.history__list,
+.list .list__item,
+.mp__card,
+.mp__nearby {
+  border-style: dashed;
+  border-color: var(--color-neutral-500);
+}
+
+/* 섹션 제목·숫자·칩은 식권 글씨로 */
+.today__title,
+.list__heading,
+.list__count,
+.today__summaryMain,
+.modebar__item,
+.cands__walk,
+.ticket__eyebrow,
+.stage__label {
+  font-family: var(--app-mono);
+}
+.today__title, .list__heading { letter-spacing: 0.04em; }
+
+/* 바닥글 — 점선 위, 자간 */
+.app > footer {
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--color-neutral-500);
+  text-align: center;
+  letter-spacing: 0.06em;
+  font-family: var(--app-mono);
+}
+
+/* ── 공통 상태(불러오는 중·실패·가게 0곳·없는 주소) ── */
+.status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 60svh;
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+}
+.status--inline {
+  min-height: 0;
+  border: 1px dashed var(--color-neutral-500);
+  background: var(--color-neutral-100);
+}
+.status__art { display: grid; place-items: center; }
+.status__title { margin: 0; font-family: var(--app-mono); font-size: var(--fs-md); font-weight: 700; }
+.status__lines { margin: 0; display: grid; gap: 2px; font-size: var(--fs-sm); color: var(--color-neutral-700); }
+.status__code {
+  margin: 0;
+  max-width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-neutral-100);
+  border: 1px dashed var(--color-neutral-400);
+  font-family: var(--app-mono);
+  font-size: var(--fs-xs);
+  color: var(--color-neutral-700);
+  overflow-wrap: anywhere;
+}
+.status__ring {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 3px dashed var(--color-neutral-400);
+  border-radius: 50%;
+  font-size: var(--fs-xl);
+  animation: status-spin 2.4s linear infinite;
+}
+@keyframes status-spin { to { rotate: 360deg; } }
+:root[data-motion='reduced'] .status__ring { animation: none; }
+@media (prefers-reduced-motion: reduce) { .status__ring { animation: none; } }
+.status__bang {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--color-accent-100);
+  color: var(--color-accent-700);
+  font-family: var(--app-mono);
+  font-size: var(--fs-xl);
+  font-weight: 800;
+}
+.status__office {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 88px;
+  height: 88px;
+  border: 1px dashed var(--color-neutral-400);
+  border-radius: 50%;
+  background: var(--color-bg);
+}
+.status__dot { width: 10px; height: 10px; background: var(--color-text); }
+.status__officeLabel { position: absolute; bottom: var(--space-3); font-size: var(--fs-xs); color: var(--color-neutral-700); }
+.status__404 {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--app-mono);
+  font-size: var(--fs-xl);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  scale: 1.8;
+  margin-block: var(--space-4);
+}
+.status__plate { font-size: var(--fs-lg); }
+.status__btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-weight: 700;
+  text-decoration: none;
+}
+.status__btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+/* 지도 오류 — 지도 자리의 점선 상자 */
+.map__troubleBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 280px;
+  justify-content: center;
+  padding: var(--space-6) var(--space-4);
+  border: 1px dashed var(--color-neutral-500);
+  background: var(--color-neutral-100);
+  text-align: center;
+}
+.map__troubleArt { font-size: var(--fs-xl); }
+.map__troubleTitle { margin: 0; font-family: var(--app-mono); font-weight: 700; }

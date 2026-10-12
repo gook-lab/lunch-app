@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic+Coding:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: #ececee; font-family: system-ui, 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #18181b; } a:hover { color: #52525b; }
+  </style>
+</helmet>
+
+<section style="padding:48px 48px 64px;display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:6px;max-width:900px">
+    <h2 style="margin:0;font-size:22px;font-weight:600;color:#18181b">3 · 1a 도보권 지도에 테마 입히기</h2>
+    <p style="margin:0;font-size:14px;line-height:1.5;color:#52525b;text-wrap:pretty">같은 구조와 동작에 네 가지 테마. 모두 작동합니다 — 링·조각을 누르고 게임을 돌려 보세요. 구조 시안은 <a href="점심 로드맵.dc.html">점심 로드맵</a>에 있습니다.</p>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+
+    <div id="3a" style="display:flex;flex-direction:column;gap:12px;width:400px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font:700 13px system-ui;background:#18181b;color:#fff;padding:3px 9px;border-radius:6px">3a</span><span style="font-size:14px;color:#18181b;font-weight:600">따뜻한 식당</span></div>
+      <p style="margin:0;font-size:13px;color:#52525b;line-height:1.5">크림 바탕, 테라코타 포인트, 명조 제목. 라이트.</p>
+      <main style="background:#f6efe4;padding:16px;display:flex;flex-direction:column;gap:18px;color:#8a6f61;font-family:'IBM Plex Sans KR', system-ui, sans-serif;font-size:15px;line-height:1.45;border-radius:24px;box-shadow:0 1px 2px rgba(80,50,30,0.06), 0 8px 24px rgba(80,50,30,0.08);border:1px solid #e7d9c7">
+        <header style="display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between">
+            <h1 style="margin:0;color:#3b2a21;font-family:'Gowun Batang', serif;font-size:26px;font-weight:700;letter-spacing:-0.5px">오늘 점심</h1>
+            <span style="font-size:12px;color:#8a6f61">11곳 등록됨</span>
+          </div>
+          <p style="margin:0;font-size:13px;color:#8a6f61">사무실에서 걸어서, 오늘은 어디로 갈까요</p>
+        </header>
+        <nav style="display:flex;gap:6px;background:#f1e4d2;padding:4px;border-radius:999px">
+          <button style="background:none;border:0;cursor:pointer;font-family:'IBM Plex Sans KR', system-ui, sans-serif;font-size:14px;flex:1;height:34px;border-radius:999px;background:#3b2a21;color:#fff8f2;font-weight:600">로드맵</button>
+          <button style="background:none;border:0;cursor:pointer;font-family:'IBM Plex Sans KR', system-ui, sans-serif;font-size:14px;flex:1;height:34px;border-radius:999px;color:#8a6f61">목록</button>
+          <button style="background:none;border:0;cursor:pointer;font-family:'IBM Plex Sans KR', system-ui, sans-serif;font-size:14px;flex:1;height:34px;border-radius:999px;color:#8a6f61">지도</button>
+        </nav>
+        <sc-if value="{{ w.hasDecided }}">
+          <section style="border:1px solid #e7d9c7;border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;background:#fffaf2">
+            <p style="margin:0;font-size:12px;color:#8a6f61">오늘은 이미 정했습니다</p>
+            <h2 style="margin:0;font-size:20px;font-weight:600;color:#3b2a21;font-family:'Gowun Batang', serif">{{ w.decidedName }}</h2>
+            <p style="margin:0;font-size:12px;color:#8a6f61">{{ w.decidedMeta }}</p>
+          </section>
+        </sc-if>
+        <section style="display:flex;flex-direction:column;gap:12px;background:#fffaf2;border-radius:18px;padding:12px;border:1px solid #e7d9c7">
+          <div style="position:relative;border-radius:14px;overflow:hidden;background:#f1e4d2;">
+          <svg viewBox="0 0 400 400" style="width:100%;display:block">
+            <circle cx="200" cy="200" r="{{ wmap.discR }}" fill="{{ wmap.disc }}"></circle>
+            <sc-for list="{{ wmap.selWedges }}" as="w"><path d="{{ w.d }}" fill="{{ w.fill }}"></path></sc-for>
+            <sc-for list="{{ wmap.spokes }}" as="s"><line x1="200" y1="200" x2="{{ s.x }}" y2="{{ s.y }}" stroke="#e7d9c7" stroke-width="1"></line></sc-for>
+            <sc-for list="{{ wmap.rings }}" as="r"><circle cx="200" cy="200" r="{{ r.r }}" fill="none" stroke="{{ r.stroke }}" stroke-width="{{ r.sw }}" stroke-dasharray="{{ r.dash }}"></circle></sc-for>
+            <sc-for list="{{ wmap.wedges }}" as="w"><path d="{{ w.d }}" fill="transparent" style="cursor:pointer" onClick="{{ w.onClick }}"></path></sc-for>
+            <sc-for list="{{ wmap.dots }}" as="d">
+              <circle cx="{{ d.x }}" cy="{{ d.y }}" r="{{ d.halo }}" fill="none" stroke="#c4553a" stroke-width="2" opacity="{{ d.haloOp }}"></circle>
+              <circle cx="{{ d.x }}" cy="{{ d.y }}" r="{{ d.r }}" fill="{{ d.fill }}" stroke="{{ d.stroke }}" stroke-width="{{ d.sw }}" stroke-dasharray="{{ d.dash }}"></circle>
+            </sc-for>
+            <rect x="193" y="193" width="14" height="14" rx="4" fill="#3b2a21"></rect>
+          </svg>
+          <sc-for list="{{ wmap.wedges }}" as="w">
+            <span onClick="{{ w.onClick }}" style="position:absolute;left:{{ w.left }};top:{{ w.top }};translate:-50% -50%;font-size:12px;font-weight:{{ w.fw }};color:{{ w.ink }};cursor:pointer;white-space:nowrap;line-height:1;padding:3px 7px;border-radius:999px;background:{{ w.bg }}">{{ w.label }}</span>
+          </sc-for>
+          <sc-for list="{{ wmap.dots }}" as="d">
+            <span style="position:absolute;left:{{ d.left }};top:{{ d.top }};translate:-50% 0;font-size:9.5px;font-weight:{{ d.fw }};color:{{ d.ink }};white-space:nowrap;line-height:1;pointer-events:none">{{ d.label }}</span>
+          </sc-for>
+          <sc-for list="{{ wmap.rings }}" as="r">
+            <button onClick="{{ r.onClick }}" style="position:absolute;left:{{ r.left }};top:{{ r.top }};translate:-50% -50%;height:20px;padding:0 8px;border-radius:10px;border:1px solid {{ r.pillBd }};background:{{ r.pillBg }};color:{{ r.pillInk }};font:600 11px 'IBM Plex Sans KR', system-ui, sans-serif;cursor:pointer;line-height:1">{{ r.label }}</button>
+          </sc-for>
+          <span style="position:absolute;left:50%;top:47.5%;translate:-50% -100%;font-size:10px;color:#8a6f61;line-height:1;background:{{ wmap.disc }};padding:1px 4px;border-radius:3px">사무실</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+            <span style="font-size:13px;color:#3b2a21;font-weight:600">{{ w.summary }}</span>
+            <sc-for list="{{ w.exChips }}" as="ch"><button onClick="{{ ch.onClick }}" style="height:30px;padding:0 12px;border-radius:{{ ch.radius }};border:1px solid {{ ch.bd }};background:{{ ch.bg }};color:{{ ch.fg }};font:{{ ch.fw }} 13px {{ ch.font }};cursor:pointer;box-shadow:{{ ch.shadow }}">{{ ch.label }}</button></sc-for>
+          </div>
+        </section>
+        <section style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ w.modeChips }}" as="ch"><button onClick="{{ ch.onClick }}" style="height:30px;padding:0 12px;border-radius:{{ ch.radius }};border:1px solid {{ ch.bd }};background:{{ ch.bg }};color:{{ ch.fg }};font:{{ ch.fw }} 13px {{ ch.font }};cursor:pointer;box-shadow:{{ ch.shadow }}">{{ ch.label }}</button></sc-for></div>
+          <dc-import name="LunchGame" candidates="{{ w.cands }}" mode="{{ w.mode }}" vivid="{{ true }}" palette="{{ w.palette }}" on-result="{{ w.onResult }}" on-decide="{{ w.onDecide }}" hint-size="100%,420px"></dc-import>
+          <sc-if value="{{ w.empty }}"><p style="margin:0;font-size:13px;color:#3b2a21;text-align:center;line-height:1.5">{{ w.empty }}</p></sc-if>
+          <sc-if value="{{ w.notice }}"><p style="margin:0;font-size:12px;color:#8a6f61;text-align:center;line-height:1.5">{{ w.notice }}</p></sc-if>
+        </section>
+        <footer style="font-size:12px;color:#8a6f61;">로그인 없음 · 링크만 있으면 누구나</footer>
+      </main>
+    </div>
+
+    <div id="3b" style="display:flex;flex-direction:column;gap:12px;width:400px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font:700 13px system-ui;background:#18181b;color:#fff;padding:3px 9px;border-radius:6px">3b</span><span style="font-size:14px;color:#18181b;font-weight:600">오락실 네온</span></div>
+      <p style="margin:0;font-size:13px;color:#52525b;line-height:1.5">어두운 바탕, 형광 초록·핑크. 다크.</p>
+      <main style="background:#0b0b14;padding:16px;display:flex;flex-direction:column;gap:18px;color:#9b97b8;font-family:'IBM Plex Sans KR', system-ui, sans-serif;font-size:15px;line-height:1.45;border-radius:24px;box-shadow:0 0 0 1px rgba(57,255,136,0.08), 0 8px 30px rgba(0,0,0,0.5);border:1px solid #2b2b48">
+        <header style="display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between">
+            <h1 style="margin:0;color:#f4f1ff;font-family:'Do Hyeon', sans-serif;font-size:30px;font-weight:400;letter-spacing:1px;text-shadow:0 0 18px rgba(255,60,172,0.55)">오늘 점심</h1>
+            <span style="font-size:12px;color:#9b97b8">11곳 등록됨</span>
+          </div>
+          <p style="margin:0;font-size:12px;letter-spacing:3px;color:#39ff88;text-shadow:0 0 12px rgba(57,255,136,0.6)">INSERT COIN · PRESS START</p>
+        </header>
+        <nav style="display:flex;gap:18px;border-bottom:1px solid #2b2b48">
+          <button style="background:none;border:0;cursor:pointer;font-family:'IBM Plex Sans KR', system-ui, sans-serif;font-size:14px;padding:10px 2px;color:#f4f1ff;font-weight:700;box-shadow:inset 0 -2px 0 #39ff88">로드맵</button>
+          <button style="background:none;border:0;cursor:pointer;font-family:'IBM Plex Sans KR', system-ui, sans-serif;font-size:14px;padding:10px 2px;color:#9b97b8">목록</button>
+          <button style="background:none;border:0;cursor:pointer;font-family:'IBM Plex Sans KR', system-ui, sans-serif;font-size:14px;padding:10px 2px;color:#9b97b8">지도</button>
+        </nav>
+        <sc-if value="{{ n.hasDecided }}">
+          <section style="border:1px solid #2b2b48;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;background:#15152a">
+            <p style="margin:0;font-size:12px;color:#9b97b8">오늘은 이미 정했습니다</p>
+            <h2 style="margin:0;font-size:20px;font-weight:600;color:#f4f1ff;font-family:'Do Hyeon', sans-serif">{{ n.decidedName }}</h2>
+            <p style="margin:0;font-size:12px;color:#9b97b8">{{ n.decidedMeta }}</p>
+          </section>
+        </sc-if>
+        <section style="display:flex;flex-direction:column;gap:12px;background:#15152a;border-radius:12px;padding:12px;border:1px solid #2b2b48">
+          <div style="position:relative;border-radius:14px;overflow:hidden;background-color:#1d1d36;background-image:radial-gradient(#2b2b48 1px, transparent 1px);background-size:16px 16px;">
+          <svg viewBox="0 0 400 400" style="width:100%;display:block">
+            <circle cx="200" cy="200" r="{{ nmap.discR }}" fill="{{ nmap.disc }}"></circle>
+            <sc-for list="{{ nmap.selWedges }}" as="w"><path d="{{ w.d }}" fill="{{ w.fill }}"></path></sc-for>
+            <sc-for list="{{ nmap.spokes }}" as="s"><line x1="200" y1="200" x2="{{ s.x }}" y2="{{ s.y }}" stroke="#2b2b48" stroke-width="1"></line></sc-for>
+            <sc-for list="{{ nmap.rings }}" as="r"><circle cx="200" cy="200" r="{{ r.r }}" fill="none" stroke="{{ r.stroke }}" stroke-width="{{ r.sw }}" stroke-dasharray="{{ r.dash }}"></circle></sc-for>
+            <sc-for list="{{ nmap.wedges }}" as="w"><path d="{{ w.d }}" fill="transparent" style="cursor:pointer" onClick="{{ w.onClick }}"></path></sc-for>
+            <sc-for list="{{ nmap.dots }}" as="d">
+              <circle cx="{{ d.x }}" cy="{{ d.y }}" r="{{ d.halo }}" fill="none" stroke="#ff3cac" stroke-width="2" opacity="{{ d.haloOp }}"></circle>
+              <circle cx="{{ d.x }}" cy="{{ d.y }}" r="{{ d.r }}" fill="{{ d.fill }}" stroke="{{ d.stroke }}" stroke-width="{{ d.sw }}" stroke-dasharray="{{ d.dash }}"></circle>
+            </sc-for>
+            <rect x="193" y="193" width="14" height="14" rx="4" fill="#f4f1ff"></rect>
+          </svg>
+          <sc-for list="{{ nmap.wedges }}" as="w">
+            <span onClick="{{ w.onClick }}" style="position:absolute;left:{{ w.left }};top:{{ w.top }};translate:-50% -50%;font-size:12px;font-weight:{{ w.fw }};color:{{ w.ink }};cursor:pointer;white-space:nowrap;line-height:1;padding:3px 7px;border-radius:999px;background:{{ w.bg }}">{{ w.label }}</span>
+          </sc-for>
+          <sc-for list="{{ nmap.dots }}" as="d">
+            <span style="position:absolute;left:{{ d.left }};top:{{ d.top }};translate:-50% 0;font-size:9.5px;font-weight:{{ d.fw }};color:{{ d.ink }};white-space:nowrap;line-height:1;pointer-events:none">{{ d.label }}</span>
+          </sc-for>
+          <sc-for list="{{ nmap.rings }}" as="r">
+            <button onClick="{{ r.onClick }}" style="position:absolute;left:{{ r.left }};top:{{ r.top }};translate:-50% -50%;height:20px;padding:0 8px;border-radius:10px;border:1px solid {{ r.pillBd }};background:{{ r.pillBg }};color:{{ r.pillInk }};font:600 11px 'IBM Plex Sans KR', system-ui, sans-serif;cursor:pointer;line-height:1">{{ r.label }}</button>
+          </sc-for>
+          <span style="position:absolute;left:50%;top:47.5%;translate:-50% -100%;font-size:10px;color:#9b97b8;line-height:1;background:{{ nmap.disc }};padding:1px 4px;border-radius:3px">사무실</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+            <span style="font-size:13px;color:#f4f1ff;font-weight:600">{{ n.summary }}</span>
+            <sc-for list="{{ n.exChips }}" as="ch"><button onClick="{{ ch.onClick }}" style="height:30px;padding:0 12px;border-radius:{{ ch.radius }};border:1px solid {{ ch.bd }};background:{{ ch.bg }};color:{{ ch.fg }};font:{{ ch.fw }} 13px {{ ch.font }};cursor:pointer;box-shadow:{{ ch.shadow }}">{{ ch.label }}</button></sc-for>
+          </div>
+        </section>
+        <section style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ n.modeChips }}" as="ch"><button onClick="{{ ch.onClick }}" style="height:30px;padding:0 12px;border-radius:{{ ch.radius }};border:1px solid {{ ch.bd }};background:{{ ch.bg }};color:{{ ch.fg }};font:{{ ch.fw }} 13px {{ ch.font }};cursor:pointer;box-shadow:{{ ch.shadow }}">{{ ch.label }}</button></sc-for></div>
+          <dc-import name="LunchGame" candidates="{{ n.cands }}" mode="{{ n.mode }}" vivid="{{ true }}" palette="{{ n.palette }}" on-result="{{ n.onResult }}" on-decide="{{ n.onDecide }}" hint-size="100%,420px"></dc-import>
+          <sc-if value="{{ n.empty }}"><p style="margin:0;font-size:13px;color:#f4f1ff;text-align:center;line-height:1.5">{{ n.empty }}</p></sc-if>
+          <sc-if value="{{ n.notice }}"><p style="margin:0;font-size:12px;color:#9b97b8;text-align:center;line-height:1.5">{{ n.notice }}</p></sc-if>
+        </section>
+        <footer style="font-size:12px;color:#9b97b8;">로그인 없음 · 링크만 있으면 누구나</footer>
+      </main>
+    </div>
+
+    <div id="3c" style="display:flex;flex-direction:column;gap:12px;width:400px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font:700 13px system-ui;background:#18181b;color:#fff;padding:3px 9px;border-radius:6px">3c</span><span style="font-size:14px;color:#18181b;font-weight:600">도시 지도</span></div>
+      <p style="margin:0;font-size:13px;color:#52525b;line-height:1.5">흰 바탕, 넓은 여백, 파랑·노랑 지도색. 라이트.</p>
+      <main style="background:#ffffff;padding:16px;display:flex;flex-direction:column;gap:18px;color:#5b6b85;font-family:'IBM Plex Sans KR', system-ui, sans-serif;font-size:15px;line-height:1.45;border-radius:24px;box-shadow:0 1px 2px rgba(20,33,61,0.05);border:1px solid #dfe6f0">
+        <header style="display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between">
+            <h1 style="margin:0;color:#14213d;font-family:'IBM Plex Sans KR', system-ui, sans-serif;font-size:24px;font-weight:700;letter-spacing:-0.5px">오늘 점심</h1>
+            <span style="font-size:12px;color:#5b6b85">11곳 등록됨</span>
+          </div>
+          <p style="margin:0;font-size:13px;color:#5b6b85">사무실 반경 15분 · 오늘의 후보</p>
+        </header>
+        <nav style="display:flex;gap:4px;border:1px solid #dfe6f0;padding:3px;border-radius:12px">
+          <button style="background:none;border:0;cursor:pointer;font-family:'IBM Plex Sans KR', system-ui, sans-serif;font-size:14px;flex:1;height:32px;border-radius:9px;background:#14213d;color:#ffffff;font-weight:600">로드맵</button>
+          <button style="background:none;border:0;cursor:pointer;font-family:'IBM Plex Sans KR', system-ui, sans-serif;font-size:14px;flex:1;height:32px;border-radius:9px;color:#5b6b85">목록</button>
+          <button style="background:none;border:0;cursor:pointer;font-family:'IBM Plex Sans KR', system-ui, sans-serif;font-size:14px;flex:1;height:32px;border-radius:9px;color:#5b6b85">지도</button>
+        </nav>
+        <sc-if value="{{ c.hasDecided }}">
+          <section style="border:1px solid #dfe6f0;border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;background:#f6f8fb">
+            <p style="margin:0;font-size:12px;color:#5b6b85">오늘은 이미 정했습니다</p>
+            <h2 style="margin:0;font-size:20px;font-weight:600;color:#14213d;font-family:'IBM Plex Sans KR', system-ui, sans-serif">{{ c.decidedName }}</h2>
+            <p style="margin:0;font-size:12px;color:#5b6b85">{{ c.decidedMeta }}</p>
+          </section>
+        </sc-if>
+        <section style="display:flex;flex-direction:column;gap:12px;background:#f6f8fb;border-radius:14px;padding:12px;border:1px solid #dfe6f0">
+          <div style="position:relative;border-radius:14px;overflow:hidden;background-color:#eef3fa;background-image:linear-gradient(#dfe6f0 1px, transparent 1px), linear-gradient(90deg, #dfe6f0 1px, transparent 1px);background-size:40px 40px;">
+          <svg viewBox="0 0 400 400" style="width:100%;display:block">
+            <circle cx="200" cy="200" r="{{ cmap.discR }}" fill="{{ cmap.disc }}"></circle>
+            <sc-for list="{{ cmap.selWedges }}" as="w"><path d="{{ w.d }}" fill="{{ w.fill }}"></path></sc-for>
+            <sc-for list="{{ cmap.spokes }}" as="s"><line x1="200" y1="200" x2="{{ s.x }}" y2="{{ s.y }}" stroke="#dfe6f0" stroke-width="1"></line></sc-for>
+            <sc-for list="{{ cmap.rings }}" as="r"><circle cx="200" cy="200" r="{{ r.r }}" fill="none" stroke="{{ r.stroke }}" stroke-width="{{ r.sw }}" stroke-dasharray="{{ r.dash }}"></circle></sc-for>
+            <sc-for list="{{ cmap.wedges }}" as="w"><path d="{{ w.d }}" fill="transparent" style="cursor:pointer" onClick="{{ w.onClick }}"></path></sc-for>
+            <sc-for list="{{ cmap.dots }}" as="d">
+              <circle cx="{{ d.x }}" cy="{{ d.y }}" r="{{ d.halo }}" fill="none" stroke="#ffb703" stroke-width="2" opacity="{{ d.haloOp }}"></circle>
+              <circle cx="{{ d.x }}" cy="{{ d.y }}" r="{{ d.r }}" fill="{{ d.fill }}" stroke="{{ d.stroke }}" stroke-width="{{ d.sw }}" stroke-dasharray="{{ d.dash }}"></circle>
+            </sc-for>
+            <rect x="193" y="193" width="14" height="14" rx="4" fill="#14213d"></rect>
+          </svg>
+          <sc-for list="{{ cmap.wedges }}" as="w">
+            <span onClick="{{ w.onClick }}" style="position:absolute;left:{{ w.left }};top:{{ w.top }};translate:-50% -50%;font-size:12px;font-weight:{{ w.fw }};color:{{ w.ink }};cursor:pointer;white-space:nowrap;line-height:1;padding:3px 7px;border-radius:999px;background:{{ w.bg }}">{{ w.label }}</span>
+          </sc-for>
+          <sc-for list="{{ cmap.dots }}" as="d">
+            <span style="position:absolute;left:{{ d.left }};top:{{ d.top }};translate:-50% 0;font-size:9.5px;font-weight:{{ d.fw }};color:{{ d.ink }};white-space:nowrap;line-height:1;pointer-events:none">{{ d.label }}</span>
+          </sc-for>
+          <sc-for list="{{ cmap.rings }}" as="r">
+            <button onClick="{{ r.onClick }}" style="position:absolute;left:{{ r.left }};top:{{ r.top }};translate:-50% -50%;height:20px;padding:0 8px;border-radius:10px;border:1px solid {{ r.pillBd }};background:{{ r.pillBg }};color:{{ r.pillInk }};font:600 11px 'IBM Plex Sans KR', system-ui, sans-serif;cursor:pointer;line-height:1">{{ r.label }}</button>
+          </sc-for>
+          <span style="position:absolute;left:50%;top:47.5%;translate:-50% -100%;font-size:10px;color:#5b6b85;line-height:1;background:{{ cmap.disc }};padding:1px 4px;border-radius:3px">사무실</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+            <span style="font-size:13px;color:#14213d;font-weight:600">{{ c.summary }}</span>
+            <sc-for list="{{ c.exChips }}" as="ch"><button onClick="{{ ch.onClick }}" style="height:30px;padding:0 12px;border-radius:{{ ch.radius }};border:1px solid {{ ch.bd }};background:{{ ch.bg }};color:{{ ch.fg }};font:{{ ch.fw }} 13px {{ ch.font }};cursor:pointer;box-shadow:{{ ch.shadow }}">{{ ch.label }}</button></sc-for>
+          </div>
+        </section>
+        <section style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ c.modeChips }}" as="ch"><button onClick="{{ ch.onClick }}" style="height:30px;padding:0 12px;border-radius:{{ ch.radius }};border:1px solid {{ ch.bd }};background:{{ ch.bg }};color:{{ ch.fg }};font:{{ ch.fw }} 13px {{ ch.font }};cursor:pointer;box-shadow:{{ ch.shadow }}">{{ ch.label }}</button></sc-for></div>
+          <dc-import name="LunchGame" candidates="{{ c.cands }}" mode="{{ c.mode }}" vivid="{{ true }}" palette="{{ c.palette }}" on-result="{{ c.onResult }}" on-decide="{{ c.onDecide }}" hint-size="100%,420px"></dc-import>
+          <sc-if value="{{ c.empty }}"><p style="margin:0;font-size:13px;color:#14213d;text-align:center;line-height:1.5">{{ c.empty }}</p></sc-if>
+          <sc-if value="{{ c.notice }}"><p style="margin:0;font-size:12px;color:#5b6b85;text-align:center;line-height:1.5">{{ c.notice }}</p></sc-if>
+        </section>
+        <footer style="font-size:12px;color:#5b6b85;">로그인 없음 · 링크만 있으면 누구나</footer>
+      </main>
+    </div>
+
+    <div id="3d" style="display:flex;flex-direction:column;gap:12px;width:400px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font:700 13px system-ui;background:#18181b;color:#fff;padding:3px 9px;border-radius:6px">3d</span><span style="font-size:14px;color:#18181b;font-weight:600">종이 식권</span></div>
+      <p style="margin:0;font-size:13px;color:#52525b;line-height:1.5">모노스페이스, 점선, 도장 빨강. 라이트.</p>
+      <main style="background:#ecebe4;padding:16px;display:flex;flex-direction:column;gap:18px;color:#6b6b66;font-family:'Nanum Gothic Coding', ui-monospace, monospace;font-size:15px;line-height:1.45;border-radius:0;box-shadow:0 1px 0 rgba(0,0,0,0.08);border:1px solid #9a9a94">
+        <header style="display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between">
+            <h1 style="margin:0;color:#1f1f1f;font-family:'Nanum Gothic Coding', ui-monospace, monospace;font-size:22px;font-weight:700;letter-spacing:2px">오늘 점심</h1>
+            <span style="font-size:12px;color:#6b6b66">11곳 등록됨</span>
+          </div>
+          <p style="margin:0;font-size:12px;color:#6b6b66;letter-spacing:1px">NO. 0412 · 2026-10-12 · 사내 점심 식권</p>
+        </header>
+        <nav style="display:flex;gap:18px;border-bottom:1px dashed #9a9a94">
+          <button style="background:none;border:0;cursor:pointer;font-family:'Nanum Gothic Coding', ui-monospace, monospace;font-size:14px;padding:10px 2px;color:#1f1f1f;font-weight:700;box-shadow:inset 0 -2px 0 #d2262e">로드맵</button>
+          <button style="background:none;border:0;cursor:pointer;font-family:'Nanum Gothic Coding', ui-monospace, monospace;font-size:14px;padding:10px 2px;color:#6b6b66">목록</button>
+          <button style="background:none;border:0;cursor:pointer;font-family:'Nanum Gothic Coding', ui-monospace, monospace;font-size:14px;padding:10px 2px;color:#6b6b66">지도</button>
+        </nav>
+        <sc-if value="{{ r.hasDecided }}">
+          <section style="border:1px dashed #9a9a94;border-radius:4px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;background:#fbfaf5">
+            <p style="margin:0;font-size:12px;color:#6b6b66">오늘은 이미 정했습니다</p>
+            <h2 style="margin:0;font-size:20px;font-weight:600;color:#1f1f1f;font-family:'Nanum Gothic Coding', ui-monospace, monospace">{{ r.decidedName }}</h2>
+            <p style="margin:0;font-size:12px;color:#6b6b66">{{ r.decidedMeta }}</p>
+          </section>
+        </sc-if>
+        <section style="display:flex;flex-direction:column;gap:12px;background:#fbfaf5;border-radius:4px;padding:12px;background-image:radial-gradient(circle at 10px 0, transparent 7px, #fbfaf5 8px);background-size:20px 20px;background-repeat:repeat-x;background-position:0 -10px;border:1px dashed #9a9a94">
+          <div style="position:relative;border-radius:2px;overflow:hidden;background:#f1f0e9;">
+          <svg viewBox="0 0 400 400" style="width:100%;display:block">
+            <circle cx="200" cy="200" r="{{ rmap.discR }}" fill="{{ rmap.disc }}"></circle>
+            <sc-for list="{{ rmap.selWedges }}" as="w"><path d="{{ w.d }}" fill="{{ w.fill }}"></path></sc-for>
+            <sc-for list="{{ rmap.spokes }}" as="s"><line x1="200" y1="200" x2="{{ s.x }}" y2="{{ s.y }}" stroke="#9a9a94" stroke-width="1"></line></sc-for>
+            <sc-for list="{{ rmap.rings }}" as="r"><circle cx="200" cy="200" r="{{ r.r }}" fill="none" stroke="{{ r.stroke }}" stroke-width="{{ r.sw }}" stroke-dasharray="{{ r.dash }}"></circle></sc-for>
+            <sc-for list="{{ rmap.wedges }}" as="w"><path d="{{ w.d }}" fill="transparent" style="cursor:pointer" onClick="{{ w.onClick }}"></path></sc-for>
+            <sc-for list="{{ rmap.dots }}" as="d">
+              <circle cx="{{ d.x }}" cy="{{ d.y }}" r="{{ d.halo }}" fill="none" stroke="#d2262e" stroke-width="2" opacity="{{ d.haloOp }}"></circle>
+              <circle cx="{{ d.x }}" cy="{{ d.y }}" r="{{ d.r }}" fill="{{ d.fill }}" stroke="{{ d.stroke }}" stroke-width="{{ d.sw }}" stroke-dasharray="{{ d.dash }}"></circle>
+            </sc-for>
+            <rect x="193" y="193" width="14" height="14" rx="1" fill="#1f1f1f"></rect>
+          </svg>
+          <sc-for list="{{ rmap.wedges }}" as="w">
+            <span onClick="{{ w.onClick }}" style="position:absolute;left:{{ w.left }};top:{{ w.top }};translate:-50% -50%;font-size:12px;font-weight:{{ w.fw }};color:{{ w.ink }};cursor:pointer;white-space:nowrap;line-height:1;padding:3px 7px;border-radius:999px;background:{{ w.bg }}">{{ w.label }}</span>
+          </sc-for>
+          <sc-for list="{{ rmap.dots }}" as="d">
+            <span style="position:absolute;left:{{ d.left }};top:{{ d.top }};translate:-50% 0;font-size:9.5px;font-weight:{{ d.fw }};color:{{ d.ink }};white-space:nowrap;line-height:1;pointer-events:none">{{ d.label }}</span>
+          </sc-for>
+          <sc-for list="{{ rmap.rings }}" as="r">
+            <button onClick="{{ r.onClick }}" style="position:absolute;left:{{ r.left }};top:{{ r.top }};translate:-50% -50%;height:20px;padding:0 8px;border-radius:3px;border:1px solid {{ r.pillBd }};background:{{ r.pillBg }};color:{{ r.pillInk }};font:600 11px 'Nanum Gothic Coding', ui-monospace, monospace;cursor:pointer;line-height:1">{{ r.label }}</button>
+          </sc-for>
+          <span style="position:absolute;left:50%;top:47.5%;translate:-50% -100%;font-size:10px;color:#6b6b66;line-height:1;background:{{ rmap.disc }};padding:1px 4px;border-radius:3px">사무실</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+            <span style="font-size:13px;color:#1f1f1f;font-weight:600">{{ r.summary }}</span>
+            <sc-for list="{{ r.exChips }}" as="ch"><button onClick="{{ ch.onClick }}" style="height:30px;padding:0 12px;border-radius:{{ ch.radius }};border:1px solid {{ ch.bd }};background:{{ ch.bg }};color:{{ ch.fg }};font:{{ ch.fw }} 13px {{ ch.font }};cursor:pointer;box-shadow:{{ ch.shadow }}">{{ ch.label }}</button></sc-for>
+          </div>
+        </section>
+        <section style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ r.modeChips }}" as="ch"><button onClick="{{ ch.onClick }}" style="height:30px;padding:0 12px;border-radius:{{ ch.radius }};border:1px solid {{ ch.bd }};background:{{ ch.bg }};color:{{ ch.fg }};font:{{ ch.fw }} 13px {{ ch.font }};cursor:pointer;box-shadow:{{ ch.shadow }}">{{ ch.label }}</button></sc-for></div>
+          <dc-import name="LunchGame" candidates="{{ r.cands }}" mode="{{ r.mode }}" vivid="{{ true }}" palette="{{ r.palette }}" on-result="{{ r.onResult }}" on-decide="{{ r.onDecide }}" hint-size="100%,420px"></dc-import>
+          <sc-if value="{{ r.empty }}"><p style="margin:0;font-size:13px;color:#1f1f1f;text-align:center;line-height:1.5">{{ r.empty }}</p></sc-if>
+          <sc-if value="{{ r.notice }}"><p style="margin:0;font-size:12px;color:#6b6b66;text-align:center;line-height:1.5">{{ r.notice }}</p></sc-if>
+        </section>
+        <footer style="font-size:12px;color:#6b6b66;text-align:center;letter-spacing:1px;border-top:1px dashed #9a9a94;padding-top:10px">로그인 없음 · 링크만 있으면 누구나</footer>
+      </main>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const PLACES = [
+  ['p1', '샘플 한식집 1', '한식', 4], ['p2', '샘플 한식집 2', '한식', 6], ['p3', '샘플 한식집 3', '한식', 9],
+  ['p4', '샘플 면집 1', '면', 5], ['p5', '샘플 면집 2', '면', 7], ['p6', '샘플 면집 3', '면', 14],
+  ['p7', '샘플 고기집 1', '고기', 6], ['p8', '샘플 고기집 2', '고기', 10],
+  ['p9', '샘플 분식집 1', '분식', 3], ['p10', '샘플 분식집 2', '분식', 9],
+  ['p11', '샘플 양식집 1', '양식', 12], ['p12', '샘플 중식집 1', '중식', 17],
+].map(([id, name, category, walkMin]) => ({ id, name, category, walkMin, active: id !== 'p12' }));
+const VISIT_AGO = { p1: 1, p2: 2, p3: 3, p4: 4, p5: 5, p6: 11, p7: 13 };
+const CATS = ['한식', '면', '고기', '분식', '양식', '중식'];
+const WALKS = [5, 10, 15];
+const MIN = 5, HEALTHY = 20;
+const MODES = [['wheel', '돌림판'], ['ladder', '사다리'], ['slot', '슬롯'], ['pinball', '핀볼']];
+const THEMES = {
+ "w": {
+  "id": "3a",
+  "title": "따뜻한 식당",
+  "note": "크림 바탕, 테라코타 포인트, 명조 제목. 라이트.",
+  "bg": "#f6efe4",
+  "card": "#fffaf2",
+  "ink": "#3b2a21",
+  "muted": "#8a6f61",
+  "accent": "#c4553a",
+  "onAccent": "#fff8f2",
+  "border": "#e7d9c7",
+  "soft": "#f1e4d2",
+  "radius": "18px",
+  "btnRadius": "12px",
+  "fontH": "'Gowun Batang', serif",
+  "font": "'IBM Plex Sans KR', system-ui, sans-serif",
+  "shadow": "0 1px 2px rgba(80,50,30,0.06), 0 8px 24px rgba(80,50,30,0.08)",
+  "btnShadow": "0 4px 12px rgba(196,85,58,0.25)",
+  "pageBg": "#f6efe4",
+  "navOnBg": "#3b2a21",
+  "navOnFg": "#fff8f2",
+  "navStyle": "pill",
+  "wheelInk": "#3b2a21",
+  "gameBg": "#3b2a21",
+  "gameInk": "#fff8f2",
+  "gameMeta": "#d8c3b5",
+  "gameFrame": "#e8a87c",
+  "gameWall": "#5b463c",
+  "hitInk": "#f3c08a",
+  "ladderInk": "#c4553a",
+  "dotHalo": "#c4553a",
+  "hueShift": 0
+ },
+ "n": {
+  "id": "3b",
+  "title": "오락실 네온",
+  "note": "어두운 바탕, 형광 초록·핑크. 다크.",
+  "bg": "#0b0b14",
+  "card": "#15152a",
+  "ink": "#f4f1ff",
+  "muted": "#9b97b8",
+  "accent": "#39ff88",
+  "onAccent": "#071a0f",
+  "border": "#2b2b48",
+  "soft": "#1d1d36",
+  "radius": "12px",
+  "btnRadius": "8px",
+  "fontH": "'Do Hyeon', sans-serif",
+  "font": "'IBM Plex Sans KR', system-ui, sans-serif",
+  "shadow": "0 0 0 1px rgba(57,255,136,0.08), 0 8px 30px rgba(0,0,0,0.5)",
+  "btnShadow": "0 0 18px rgba(57,255,136,0.45)",
+  "pageBg": "#0b0b14",
+  "navOnBg": "#39ff88",
+  "navOnFg": "#071a0f",
+  "navStyle": "under",
+  "wheelInk": "#0b0b14",
+  "gameBg": "#07070f",
+  "gameInk": "#f4f1ff",
+  "gameMeta": "#9b97b8",
+  "gameFrame": "#ff3cac",
+  "gameWall": "#2b2b48",
+  "hitInk": "#ff3cac",
+  "ladderInk": "#ff3cac",
+  "dotHalo": "#ff3cac",
+  "hueShift": 0
+ },
+ "c": {
+  "id": "3c",
+  "title": "도시 지도",
+  "note": "흰 바탕, 넓은 여백, 파랑·노랑 지도색. 라이트.",
+  "bg": "#ffffff",
+  "card": "#f6f8fb",
+  "ink": "#14213d",
+  "muted": "#5b6b85",
+  "accent": "#1b6ef3",
+  "onAccent": "#ffffff",
+  "border": "#dfe6f0",
+  "soft": "#eef3fa",
+  "radius": "14px",
+  "btnRadius": "10px",
+  "fontH": "'IBM Plex Sans KR', system-ui, sans-serif",
+  "font": "'IBM Plex Sans KR', system-ui, sans-serif",
+  "shadow": "0 1px 2px rgba(20,33,61,0.05)",
+  "btnShadow": "none",
+  "pageBg": "#ffffff",
+  "navOnBg": "#14213d",
+  "navOnFg": "#ffffff",
+  "navStyle": "seg",
+  "wheelInk": "#14213d",
+  "gameBg": "#14213d",
+  "gameInk": "#ffffff",
+  "gameMeta": "#aab7cc",
+  "gameFrame": "#ffb703",
+  "gameWall": "#2c3d63",
+  "hitInk": "#ffb703",
+  "ladderInk": "#1b6ef3",
+  "dotHalo": "#ffb703",
+  "hueShift": 0
+ },
+ "r": {
+  "id": "3d",
+  "title": "종이 식권",
+  "note": "모노스페이스, 점선, 도장 빨강. 라이트.",
+  "bg": "#ecebe4",
+  "card": "#fbfaf5",
+  "ink": "#1f1f1f",
+  "muted": "#6b6b66",
+  "accent": "#d2262e",
+  "onAccent": "#fffdf8",
+  "border": "#9a9a94",
+  "soft": "#f1f0e9",
+  "radius": "4px",
+  "btnRadius": "4px",
+  "fontH": "'Nanum Gothic Coding', ui-monospace, monospace",
+  "font": "'Nanum Gothic Coding', ui-monospace, monospace",
+  "shadow": "0 1px 0 rgba(0,0,0,0.08)",
+  "btnShadow": "none",
+  "pageBg": "#ecebe4",
+  "navOnBg": "#1f1f1f",
+  "navOnFg": "#fbfaf5",
+  "navStyle": "under",
+  "wheelInk": "#1f1f1f",
+  "gameBg": "#1f1f1f",
+  "gameInk": "#fbfaf5",
+  "gameMeta": "#b5b5ae",
+  "gameFrame": "#d2262e",
+  "gameWall": "#4a4a46",
+  "hitInk": "#ffd166",
+  "ladderInk": "#d2262e",
+  "dotHalo": "#d2262e",
+  "hueShift": 0
+ }
+};
+
+function select(f) {
+  const active = PLACES.filter((p) => p.active);
+  const afterWalk = active.filter((p) => p.walkMin <= f.walk);
+  const afterCat = f.cats.length === 0 ? afterWalk : afterWalk.filter((p) => f.cats.includes(p.category));
+  const base = { afterWalkCount: afterWalk.length, afterCategoryCount: afterCat.length };
+  if (afterCat.length === 0) {
+    let emptyReason;
+    if (afterWalk.length === 0) {
+      const wider = WALKS.find((s) => s > f.walk) ?? f.walk;
+      emptyReason = { kind: 'walk', widerWalkMin: wider, countAtWiderWalk: active.filter((p) => p.walkMin <= wider).length };
+    } else emptyReason = { kind: 'category', countWithoutCategory: afterWalk.length };
+    return { ...base, candidates: [], released: [], recentlyVisitedCount: 0, releasedCount: 0, shortOfMinimum: true, emptyReason };
+  }
+  const recent = afterCat.filter((p) => VISIT_AGO[p.id] !== undefined);
+  if (!f.ex) return { ...base, candidates: [...afterCat], released: [], recentlyVisitedCount: recent.length, releasedCount: 0, shortOfMinimum: afterCat.length < MIN, emptyReason: null };
+  const fresh = afterCat.filter((p) => VISIT_AGO[p.id] === undefined);
+  const short = MIN - fresh.length;
+  if (short <= 0) return { ...base, candidates: fresh, released: [], recentlyVisitedCount: recent.length, releasedCount: 0, shortOfMinimum: false, emptyReason: null };
+  const released = [...recent].sort((a, b) => VISIT_AGO[b.id] - VISIT_AGO[a.id]).slice(0, short);
+  return { ...base, candidates: [...fresh, ...released], released, recentlyVisitedCount: recent.length, releasedCount: released.length, shortOfMinimum: fresh.length + released.length < MIN, emptyReason: null };
+}
+function emptyMessage(r) {
+  const e = r.emptyReason;
+  if (!e) return null;
+  if (e.kind === 'walk') return e.countAtWiderWalk > 0 ? `도보 ${e.widerWalkMin}분으로 넓히면 ${e.countAtWiderWalk}곳입니다.` : `도보 ${e.widerWalkMin}분으로 넓혀도 해당하는 곳이 없습니다.`;
+  return `고른 카테고리에 해당하는 곳이 없습니다. 카테고리를 풀면 ${e.countWithoutCategory}곳입니다.`;
+}
+function noticeMessage(r) {
+  if (r.emptyReason) return null;
+  if (r.shortOfMinimum) return `후보가 ${r.candidates.length}곳뿐입니다. 가게가 ${HEALTHY}곳은 돼야 최근 방문 제외가 제대로 돌아갑니다.`;
+  if (r.releasedCount > 0) return `${r.afterCategoryCount}곳 중 ${r.recentlyVisitedCount}곳은 최근 2주 안에 갔습니다 — 후보 ${MIN}곳을 채우려고 그 중 오래된 ${r.releasedCount}곳을 다시 넣었습니다.`;
+  if (r.recentlyVisitedCount > 0) return `최근 2주 안에 간 ${r.recentlyVisitedCount}곳은 빠졌습니다.`;
+  return null;
+}
+function statusOf(p, f, r) {
+  if (!p.active) return 'off';
+  if (p.walkMin > f.walk || (f.cats.length && !f.cats.includes(p.category))) return 'out';
+  if (r.released.includes(p)) return 'released';
+  if (r.candidates.includes(p)) return 'cand';
+  return 'recent';
+}
+const pt = (r, deg) => { const a = (deg * Math.PI) / 180; return [200 + r * Math.sin(a), 200 - r * Math.cos(a)]; };
+const wedge = (r, a0, a1) => { const [x0, y0] = pt(r, a0), [x1, y1] = pt(r, a1); return `M200 200 L${x0} ${y0} A${r} ${r} 0 0 1 ${x1} ${y1} Z`; };
+const mix = (hex, pct) => `color-mix(in oklab, ${hex} ${pct}%, transparent)`;
+
+class Component extends DCLogic {
+  state = Object.fromEntries(Object.keys(THEMES).map((k) => [k, { walk: 10, cats: [], ex: true, mode: k === 'n' ? 'pinball' : k === 'r' ? 'slot' : 'wheel', decided: null, landed: null }]));
+  upd(k, fn) { this.setState((s) => ({ [k]: { ...s[k], ...fn(s[k]) } })); }
+  toggleCat(k, c) { this.upd(k, (o) => ({ cats: o.cats.includes(c) ? o.cats.filter((x) => x !== c) : [...o.cats, c] })); }
+
+  chip(T, label, on, onClick) {
+    const round = T.id === '3d' ? '3px' : '999px';
+    return { label, onClick, radius: round, font: T.font, bg: on ? T.accent : T.card, fg: on ? T.onAccent : T.ink, bd: on ? T.accent : T.border, fw: on ? 700 : 500, shadow: on ? T.btnShadow : 'none' };
+  }
+
+  view(k) {
+    const T = THEMES[k];
+    const f = this.state[k];
+    const r = select(f);
+    return {
+      f, r, T, mode: f.mode, cands: r.candidates,
+      palette: { font: T.font, fontH: T.fontH, ink: T.ink, muted: T.muted, card: T.card, border: T.border, accent: T.accent, onAccent: T.onAccent, radius: T.radius, btnRadius: T.btnRadius, shadow: T.shadow, btnShadow: T.btnShadow, wheelInk: T.wheelInk, gameBg: T.gameBg, gameInk: T.gameInk, gameMeta: T.gameMeta, gameFrame: T.gameFrame, gameWall: T.gameWall, hitInk: T.hitInk, ladderInk: T.ladderInk },
+      notice: noticeMessage(r), empty: emptyMessage(r),
+      summary: `도보 ${f.walk}분 · ${f.cats.length ? f.cats.join('·') : '전체'} → 후보 ${r.candidates.length}곳`,
+      exChips: [this.chip(T, '최근 2주 제외', f.ex, () => this.upd(k, (o) => ({ ex: !o.ex })))],
+      modeChips: MODES.map(([id, label]) => this.chip(T, label, f.mode === id, () => this.upd(k, () => ({ mode: id, landed: null })))),
+      hasDecided: !!f.decided, decidedName: f.decided?.name, decidedMeta: f.decided ? `${f.decided.category} · 도보 ${f.decided.walkMin}분` : '',
+      onDecide: (p) => this.upd(k, () => ({ decided: p })),
+      onResult: (p) => this.upd(k, () => ({ landed: p?.id ?? null })),
+    };
+  }
+
+  mapVals(k, v) {
+    const { f, r, T } = v;
+    const dark = T.id === '3b';
+    const rings = WALKS.map((w) => {
+      const on = f.walk === w, rad = w * 10;
+      const [plx, ply] = pt(rad, 330);
+      return { r: rad, label: `${w}분`, left: `${plx / 4}%`, top: `${ply / 4}%`, stroke: on ? T.accent : T.border, sw: on ? 2 : 1, dash: on ? '' : '3 4',
+        pillBg: on ? T.accent : T.card, pillBd: on ? T.accent : T.border, pillInk: on ? T.onAccent : T.muted, onClick: () => this.upd(k, () => ({ walk: w })) };
+    });
+    const wedges = CATS.map((c, i) => {
+      const on = f.cats.includes(c);
+      const [lx, ly] = pt(184, i * 60 + 30);
+      return { d: wedge(178, i * 60, (i + 1) * 60), label: c, left: `${lx / 4}%`, top: `${ly / 4}%`, fw: on ? 700 : 500,
+        ink: on ? T.onAccent : (f.cats.length ? T.muted : T.ink), bg: on ? T.accent : 'transparent', onClick: () => this.toggleCat(k, c) };
+    });
+    const selWedges = CATS.map((c, i) => (f.cats.includes(c) ? { d: wedge(f.walk * 10, i * 60, (i + 1) * 60), fill: mix(T.accent, dark ? 22 : 14) } : null)).filter(Boolean);
+    const spokes = CATS.map((_, i) => { const [x, y] = pt(172, i * 60); return { x, y }; });
+    const dots = [];
+    CATS.forEach((c, i) => {
+      const list = PLACES.filter((p) => p.category === c).sort((a, b) => a.walkMin - b.walkMin);
+      list.forEach((p, j) => {
+        const [x, y] = pt(p.walkMin * 10, i * 60 + ((j + 1) * 60) / (list.length + 1));
+        const st = statusOf(p, f, r);
+        const landed = f.landed === p.id;
+        const S = {
+          cand: { r: 6, fill: T.accent, stroke: T.card, sw: 2, dash: '', ink: T.ink, fw: 600 },
+          released: { r: 5.5, fill: T.card, stroke: T.accent, sw: 2, dash: '', ink: T.ink, fw: 600 },
+          recent: { r: 5, fill: T.card, stroke: T.muted, sw: 1, dash: '2 2', ink: T.muted, fw: 400 },
+          out: { r: 3.5, fill: T.border, stroke: 'none', sw: 0, dash: '', ink: 'transparent', fw: 400 },
+          off: { r: 3.5, fill: 'none', stroke: T.border, sw: 1, dash: '', ink: 'transparent', fw: 400 },
+        }[st];
+        dots.push({ x, y, ...S, left: `${x / 4}%`, top: `${(y + S.r + 3) / 4}%`, label: p.name.replace('샘플 ', ''), halo: 11, haloOp: landed ? 1 : 0 });
+      });
+    });
+    return { rings, wedges, selWedges, spokes, dots, discR: f.walk * 10, disc: dark ? T.card : (T.id === '3c' ? '#ffffff' : T.card) };
+  }
+
+  renderVals() {
+    const out = {};
+    for (const k of Object.keys(THEMES)) { const v = this.view(k); out[k] = v; out[k + 'map'] = this.mapVals(k, v); }
+    return out;
+  }
+}
+</script>
+</body>
+</html>
