@@ -46,6 +46,8 @@ describe('뽑기 기계', () => {
       run(4_000);
       expect(onSpinEnd).toHaveBeenCalledTimes(1);
       expect(r.container.querySelector('.gacha__prize')?.textContent).toContain(`가게${n}`);
+      // 나온 캡슐만큼 돔이 하나 줄었다.
+      expect(r.container.querySelectorAll('.gacha__dome .gacha__capsule')).toHaveLength(Math.min(n, MAX_CAPSULES) - 1);
       r.unmount();
     }
   });

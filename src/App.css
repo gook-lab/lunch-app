@@ -2362,73 +2362,143 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   .stage--full .stage__run { bottom: var(--space-2); }
 }
 
-/* 뽑기 기계 — 돔 · 몸통 · 손잡이 · 출구. 캡슐 색은 카테고리 색(--cat-hue) */
+/* 뽑기 기계 — 유리 돔 · 쌓인 캡슐 · 몸통 · 손잡이 · 출구. 캡슐 색은 카테고리 색(--cat-hue).
+   입체는 그라디언트·안쪽 그림자로만 낸다(새 색 없음). */
 .gacha { display: grid; justify-items: center; gap: var(--space-2); width: min(280px, 84vw); }
 .gacha--big { width: min(380px, 92vw); }
 .gacha--empty { height: 260px; }
 .gacha__hint { margin: 0; text-align: center; min-height: 2.6em; }
-.gacha__machine { display: grid; justify-items: center; width: 100%; }
+.gacha__machine { display: grid; justify-items: center; width: 100%; perspective: 600px; }
 .gacha__dome {
   position: relative;
+  z-index: 1;
   width: 84%;
   aspect-ratio: 1;
-  border: 2px solid var(--color-neutral-400);
+  border: 2px solid var(--color-neutral-300);
   border-radius: 50%;
-  background: var(--color-surface);
+  background:
+    radial-gradient(circle at 50% 120%, var(--color-neutral-300) 0 30%, transparent 62%),
+    radial-gradient(circle at 50% 45%, var(--color-bg) 0 40%, var(--color-neutral-100) 75%, var(--color-neutral-200));
+  box-shadow: inset 0 -10px 24px var(--color-neutral-300), inset 0 8px 16px var(--color-bg), var(--shadow-md);
   overflow: hidden;
+}
+/* 유리 반사광 — 왼쪽 위 큰 호, 오른쪽 아래 작은 점 */
+.gacha__glare {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse 22% 34% at 28% 26%, color-mix(in oklch, var(--color-bg) 85%, transparent), transparent 70%),
+    radial-gradient(circle 5% at 74% 72%, color-mix(in oklch, var(--color-bg) 70%, transparent), transparent);
+  pointer-events: none;
 }
 .gacha__capsule {
   position: absolute;
-  width: 13%;
+  width: 16%;
   aspect-ratio: 1;
-  border: 1px solid var(--color-neutral-400);
   border-radius: 50%;
-  background: linear-gradient(to bottom, var(--color-bg) 48%, oklch(0.8 0.12 var(--cat-hue)) 48%);
   translate: -50% -50%;
+  rotate: var(--tilt);
+  background:
+    radial-gradient(circle at 34% 26%, var(--color-bg) 0 9%, transparent 16%),
+    linear-gradient(to bottom, oklch(0.97 0.015 var(--cat-hue)) 0 47%, oklch(0.55 0.08 var(--cat-hue)) 47% 53%, oklch(0.78 0.13 var(--cat-hue)) 53%);
+  box-shadow:
+    inset -3px -4px 6px oklch(0.45 0.1 var(--cat-hue) / 0.45),
+    inset 2px 2px 3px var(--color-bg),
+    0 2px 3px oklch(0.4 0.05 var(--cat-hue) / 0.35);
 }
-.gacha--shake .gacha__capsule { animation: gacha-jitter 220ms var(--ease-inout) infinite alternate; animation-delay: calc(var(--i) * -37ms); }
+.gacha--shake .gacha__capsule {
+  animation: gacha-tumble 560ms var(--ease-inout) infinite;
+  animation-delay: calc(var(--i) * -71ms);
+}
 .gacha__body {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 64%;
-  height: 72px;
-  margin-top: -6px;
-  padding: 0 var(--space-3);
+  width: 70%;
+  height: 84px;
+  margin-top: -14px;
+  padding: var(--space-3) var(--space-3) 0;
   border-radius: var(--radius-md) var(--radius-md) var(--radius-sm) var(--radius-sm);
-  background: var(--color-accent);
+  background: linear-gradient(to right, var(--color-accent-700), var(--color-accent) 30%, var(--color-accent-400) 55%, var(--color-accent) 75%, var(--color-accent-700));
+  box-shadow: inset 0 6px 8px var(--color-accent-800), var(--shadow-md);
+}
+/* 동전 투입구 */
+.gacha__slot {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  width: 6px;
+  height: 22px;
+  margin-left: -3px;
+  border-radius: 3px;
+  background: var(--color-neutral-900);
+  box-shadow: 0 1px 0 var(--color-accent-300);
 }
 .gacha__handle {
   position: relative;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: var(--color-bg);
-  box-shadow: var(--shadow-sm);
+  background: radial-gradient(circle at 35% 30%, var(--color-bg), var(--color-neutral-200) 70%, var(--color-neutral-400));
+  box-shadow: 0 3px 0 var(--color-accent-800), var(--shadow-sm);
 }
 .gacha__handle::after {
   content: '';
   position: absolute;
-  inset: 50% 4px auto;
-  height: 8px;
-  margin-top: -4px;
-  border-radius: 4px;
-  background: var(--color-accent-700);
+  inset: 50% 3px auto;
+  height: 10px;
+  margin-top: -5px;
+  border-radius: 5px;
+  background: linear-gradient(to bottom, var(--color-accent-400), var(--color-accent-700));
 }
 .gacha--shake .gacha__handle { animation: gacha-turn 2200ms var(--ease-inout) both; }
 .gacha__chute {
   position: relative;
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 40px;
-  border-radius: var(--radius-sm);
-  background: var(--color-neutral-900);
-  overflow: hidden;
+  width: 48px;
+  height: 44px;
+  border-radius: var(--radius-sm) var(--radius-sm) 50% 50% / var(--radius-sm) var(--radius-sm) 30% 30%;
+  background: radial-gradient(ellipse at 50% 20%, var(--color-neutral-800), var(--color-neutral-900));
+  box-shadow: inset 0 6px 8px var(--color-text);
+  overflow: visible;
 }
-.gacha__capsule--out { position: static; width: 28px; translate: none; animation: gacha-drop var(--motion-slow) var(--ease-decel) both; }
-.gacha__more { margin: 0; }
+.gacha__base {
+  width: 78%;
+  height: 14px;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  background: linear-gradient(to bottom, var(--color-accent-800), var(--color-accent-900));
+  box-shadow: 0 8px 12px -6px var(--color-neutral-500);
+}
+/* 나온 캡슐 — 두 쪽으로 열린다 */
+.gacha__out {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  animation: gacha-drop var(--motion-slow) var(--ease-decel) both;
+}
+.gacha__half {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  transition: transform var(--motion-slow) var(--ease-out), opacity var(--motion-slow) var(--ease-out);
+}
+.gacha__half--top {
+  top: 0;
+  border-radius: 15px 15px 0 0;
+  background: radial-gradient(circle at 34% 40%, var(--color-bg) 0 14%, oklch(0.95 0.02 var(--cat-hue)) 30%, oklch(0.85 0.03 var(--cat-hue)));
+  transform-origin: 0 100%;
+}
+.gacha__half--bottom {
+  bottom: 0;
+  border-radius: 0 0 15px 15px;
+  background: linear-gradient(to bottom, oklch(0.55 0.08 var(--cat-hue)) 0 12%, oklch(0.8 0.13 var(--cat-hue)) 12%, oklch(0.6 0.13 var(--cat-hue)));
+}
+.gacha--open .gacha__half--top { transform: translate(-6px, -10px) rotate(-55deg); }
 .gacha__prize {
   display: grid;
   justify-items: center;
@@ -2439,14 +2509,24 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   border-top: 4px solid oklch(0.75 0.12 var(--cat-hue));
   border-radius: var(--radius-md);
   background: var(--color-bg);
+  box-shadow: var(--shadow-md);
   animation: gacha-open var(--motion-slow) var(--ease-out) both;
 }
 .gacha__prizeIcon { font-size: 22px; }
 .gacha__prizeMeta { font-size: var(--fs-xs); color: var(--color-neutral-700); }
-@keyframes gacha-jitter { to { translate: calc(-50% + 3px) calc(-50% - 4px); } }
+@keyframes gacha-tumble {
+  0%, 100% { translate: -50% -50%; rotate: var(--tilt); }
+  40% { translate: calc(-50% + var(--dx)) calc(-50% + var(--dy)); rotate: calc(var(--tilt) + 180deg); }
+  70% { translate: calc(-50% - var(--dx) / 2) calc(-50% + var(--dy) / 3); rotate: calc(var(--tilt) + 300deg); }
+}
 @keyframes gacha-turn { to { rotate: 360deg; } }
-@keyframes gacha-drop { from { translate: 0 -40px; } }
-@keyframes gacha-open { from { opacity: 0; scale: 0.85; } }
+@keyframes gacha-drop {
+  0% { translate: 0 -46px; rotate: -90deg; }
+  70% { translate: 0 4px; rotate: 10deg; }
+  85% { translate: 0 -3px; }
+  100% { translate: 0 0; rotate: 0deg; }
+}
+@keyframes gacha-open { from { opacity: 0; scale: 0.6; translate: 0 -24px; } }
 
 /* 플링코 — 밝은 판. SVG 폭과 칸 줄 폭이 같아 칸이 핀 아래 맞는다 */
 .plinko { display: grid; gap: var(--space-1); width: min(360px, 92vw); }
@@ -2530,7 +2610,8 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 @keyframes dice-roll { 50% { rotate: 200deg; scale: 0.85; } to { rotate: 360deg; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .gacha__capsule, .gacha__handle, .gacha__prize, .gacha__capsule--out, .dice__die--rolling { animation: none !important; }
+  .gacha__capsule, .gacha__handle, .gacha__prize, .gacha__out, .dice__die--rolling { animation: none !important; }
+  .gacha__half { transition: none; }
 }
 
 /* 모달을 닫은 뒤 게임 아래 한 줄 결과 */

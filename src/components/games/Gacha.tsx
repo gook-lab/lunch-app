@@ -25,7 +25,8 @@ export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expan
   const [shown, setShown] = useState<{ run: number; phase: Phase }>({ run: -1, phase: 'idle' });
   const phase: Phase = shown.run === run ? shown.phase : winnerIndex !== null && !spinning ? 'open' : 'idle';
 
-  // 돔 안 캡슐: 후보 카테고리 색을 판 번호로 섞어 흩어 놓는다. 이름은 없다.
+  // 돔 안 캡슐: 후보 카테고리 색을 판 번호로 섞어 바닥부터 쌓는다. 이름은 없다.
+  // 아래 줄일수록 앞(크고 밝게), 위 줄일수록 뒤 — 쌓인 더미가 입체로 보인다.
   const capsules = useMemo(() => {
     const r = seededRandom(run + 11);
     const hues = candidates.slice(0, MAX_CAPSULES).map((p) => categoryHue(p.category));
@@ -33,13 +34,27 @@ export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expan
       const j = Math.floor(r() * (i + 1));
       [hues[i], hues[j]] = [hues[j], hues[i]];
     }
-    // 해바라기 배치(황금각) — 돔 안에 고르게 퍼진다.
-    return hues.map((hue, i) => {
-      const t = (i + 0.5) / hues.length;
-      const rad = Math.sqrt(t) * 36;
-      const a = i * 2.39996;
-      return { hue, x: 50 + Math.cos(a) * rad, y: 52 + Math.sin(a) * rad * 0.9, tilt: Math.round((r() - 0.5) * 80) };
-    });
+    const out: { hue: number; x: number; y: number; tilt: number; depth: number; dx: number; dy: number }[] = [];
+    const size = 0.16;
+    for (let row = 0, y = 0.8; out.length < hues.length; row += 1, y -= 0.115) {
+      // 돔 안쪽 원(반지름 0.44)이 이 높이에서 갖는 폭만큼 한 줄에 놓는다.
+      const half = Math.sqrt(Math.max(0, 0.44 ** 2 - (y - 0.5) ** 2));
+      const fit = Math.max(1, Math.floor((half * 2) / size));
+      const take = Math.min(fit, hues.length - out.length);
+      const start = 0.5 - ((take - 1) * size) / 2 + (row % 2 ? size / 4 : -size / 4);
+      for (let k = 0; k < take; k += 1) {
+        out.push({
+          hue: hues[out.length],
+          x: (start + k * size + (r() - 0.5) * 0.02) * 100,
+          y: (y + (r() - 0.5) * 0.02) * 100,
+          tilt: Math.round((r() - 0.5) * 120),
+          depth: row,
+          dx: Math.round((r() - 0.5) * 160),
+          dy: -Math.round(90 + r() * 220),
+        });
+      }
+    }
+    return out;
   }, [candidates, run]);
 
   useEffect(() => {
@@ -77,33 +92,45 @@ export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expan
       <p className="muted small gacha__hint" aria-live="polite">{hint}</p>
       <div className="gacha__machine" aria-hidden="true">
         <div className="gacha__dome">
-          {capsules.map((c, i) => (
+          {/* 하나가 나오면 돔에서도 하나(맨 위)가 빠진다. */}
+          {capsules.slice(0, phase === 'drop' || phase === 'open' ? capsules.length - 1 : capsules.length).map((c, i) => (
             <span
               key={i}
               className="gacha__capsule"
               style={
                 {
                   '--cat-hue': c.hue,
+                  '--tilt': `${c.tilt}deg`,
+                  '--dx': `${c.dx}%`,
+                  '--dy': `${c.dy}%`,
+                  '--i': i,
                   left: `${c.x}%`,
                   top: `${c.y}%`,
-                  rotate: `${c.tilt}deg`,
-                  '--i': i,
+                  zIndex: 10 - c.depth,
+                  scale: `${1 - c.depth * 0.04}`,
+                  filter: `brightness(${1 - c.depth * 0.05})`,
                 } as React.CSSProperties
               }
             />
           ))}
+          <span className="gacha__glare" />
         </div>
         <div className="gacha__body">
+          <span className="gacha__slot" />
           <span className="gacha__handle" />
           <span className="gacha__chute">
             {winner && phase !== 'idle' && phase !== 'shake' && (
               <span
-                className="gacha__capsule gacha__capsule--out"
+                className="gacha__out"
                 style={{ '--cat-hue': categoryHue(winner.category) } as React.CSSProperties}
-              />
+              >
+                <span className="gacha__half gacha__half--top" />
+                <span className="gacha__half gacha__half--bottom" />
+              </span>
             )}
           </span>
         </div>
+        <span className="gacha__base" />
       </div>
       {count > MAX_CAPSULES && <p className="muted small gacha__more">…외 {count - MAX_CAPSULES}개</p>}
       {winner && phase === 'open' && (
