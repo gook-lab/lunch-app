@@ -246,21 +246,19 @@ export default function App() {
     }
   }, [winnerIndex, board]);
 
-  // 탭을 옮기면 연출을 끊는다. 게임판은 로드맵 탭에만 렌더되므로
-  // (tab === 'roadmap' && ...) 옮기는 순간 언마운트되고, effect cleanup 이
-  // 타이머를 지워 onSpinEnd 가 영영 안 불린다. 돌아오면 "진행 중" 에
-  // 갇혀 있다. 어차피 딴 탭에서는 연출이 안 보이니 끊는 게 맞다.
-  // 탭 이동은 전부 이 함수를 거친다 — setTab 을 직접 부르면 이 방어가 빠진다.
+  // 탭을 옮겨도 게임은 계속된다. 오늘 탭 패널은 숨기기만 하고 내리지 않는다
+  // (hidden). 게임 도중 목록·지도를 보고 오고 싶다는 요청이 있었다(10/12).
+  // 예전엔 패널을 내려서 게임 타이머가 지워졌고, 그래서 탭을 옮기면 판을 끊었다.
+  // 딴 탭에서 끝나면 결과 모달은 보던 화면을 덮지 않게 오늘 탭에서만 열린다
+  // (Modal open 조건). 그동안 탭 바에 "결과" 를 단다.
+  // 탭 이동은 전부 이 함수를 거친다.
   // 목록의 "지도에서 보기" 로 지도를 열면 그 가게 핀을 고른 채로 연다.
   const [mapFocus, setMapFocus] = useState<string | null>(null);
   const goTab = useCallback((next: Tab) => {
-    setSpinning(false);
-    closeResult();
     setMapFocus(null);
     setTab(next);
-  }, [closeResult]);
+  }, []);
   const showOnMap = useCallback((placeId: string) => {
-    setSpinning(false);
     setMapFocus(placeId);
     setTab('map');
   }, []);
@@ -295,11 +293,13 @@ export default function App() {
    * 가장 긴 연출이 핀볼 최대 약 10.5초다(게이트 + 9초 + 정리). 그 두 배를 넘기면 뭔가 잘못된 것이니
    * 결과를 만들지 말고 잠금만 푼다 — 안 본 경기를 당첨으로 기록할 수는 없다.
    */
+  // 딴 탭에 있는 동안은 재지 않는다 — 직접 두던 짝 맞추기가 자리 비운 사이 풀리면 안 된다.
+  // 돌아오면 처음부터 다시 잰다.
   useEffect(() => {
-    if (!spinning) return;
+    if (!spinning || tab !== 'roadmap') return;
     const t = window.setTimeout(() => setSpinning(false), SPIN_TIMEOUT_MS);
     return () => window.clearTimeout(t);
-  }, [spinning, alive]);
+  }, [spinning, alive, tab]);
 
   // 조건을 바꾸면 얼려둔 판을 버리고 현재 후보로 돌아간다.
   // 안 그러면 칩을 눌러도 지난 결과가 그대로 떠 있어 화면이 거짓말을 한다.
@@ -457,6 +457,12 @@ export default function App() {
           >
             <span className="tabs__icon" aria-hidden="true">{TAB_ICON[t]}</span>
             {TAB_LABEL[t]}
+            {t === 'roadmap' && tab !== 'roadmap' && (spinning || resultOpen) && (
+              <span className={resultOpen ? 'tabs__badge tabs__badge--done' : 'tabs__badge'}>
+                <span className="sr-only">, </span>
+                {resultOpen ? '결과' : '게임 중'}
+              </span>
+            )}
           </button>
         ))}
       </nav>
@@ -491,8 +497,7 @@ export default function App() {
         </div>
       )}
 
-      {tab === 'roadmap' && (
-      <div role="tabpanel" id="panel-roadmap" aria-labelledby="tab-roadmap" className="panel">
+      <div role="tabpanel" id="panel-roadmap" aria-labelledby="tab-roadmap" className="panel" hidden={tab !== 'roadmap'}>
 
       {decidedPlace && !winner && (
         <section className="decided" aria-label="오늘 정한 곳">
@@ -666,12 +671,11 @@ export default function App() {
       </div>
 
       </div>
-      )}
 
       <footer className="muted small">로그인 없음 · 링크만 있으면 누구나</footer>
 
       <Modal
-        open={resultOpen && winner !== null}
+        open={resultOpen && winner !== null && tab === 'roadmap'}
         onClose={closeResult}
         className="result-modal"
         aria-label="오늘의 점심 결과"

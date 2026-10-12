@@ -1368,6 +1368,8 @@ footer.muted { text-align: center; }
   flex-direction: column;
   gap: var(--space-6);
 }
+/* 오늘 탭은 딴 탭에 있는 동안에도 내리지 않고 숨긴다 — 게임이 계속 돌아야 한다. */
+.panel[hidden] { display: none; }
 
 /* 수정 폼 단추 — 휴대폰 터치 높이 44px */
 .edit .btn { min-height: 44px; }
@@ -2145,4 +2147,23 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .memory__auto { align-self: center; }
 :root[data-motion='reduced'] {
   .memory__face, .memory__card { transition: none; }
+}
+
+/* 탭 바 "게임 중"·"결과" 표시 — 딴 탭에 있는 동안 오늘 탭에 붙는다 */
+.tabs__badge {
+  position: absolute;
+  top: 0;
+  left: calc(50% + 12px);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-lg);
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.tabs__badge--done { background: var(--color-accent); }
+@media (min-width: 960px) {
+  .tabs__badge { position: static; margin-left: var(--space-1); }
 }

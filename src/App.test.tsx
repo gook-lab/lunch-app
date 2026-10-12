@@ -189,14 +189,18 @@ describe('연출 중에 건드리면 잠금이 풀려야 한다 — 영구 고�
     expect(lockedButtons()).toEqual([]);
   });
 
-  it('탭을 옮겼다 돌아와도 "진행 중" 에 갇히지 않는다', () => {
+  it('게임 도중 탭을 옮겨도 판은 계속되고, 돌아오면 결과가 뜬다', () => {
     startWheel();
     fireEvent.click(screen.getByRole('tab', { name: '목록' }));
-    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 500); });
-    fireEvent.click(screen.getByRole('tab', { name: '오늘' }));
-    act(() => { vi.advanceTimersByTime(100); });
+    expect(screen.getByRole('tab', { name: /오늘.*게임 중/ })).toBeTruthy();
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + RESULT_DELAY_MS + 500); });
+    // 딴 탭에서는 결과 모달이 보던 화면을 덮지 않는다. 탭 바에만 알린다.
+    expect(screen.queryByRole('dialog', { name: '오늘의 점심 결과' })).toBeNull();
+    fireEvent.click(screen.getByRole('tab', { name: /오늘.*결과/ }));
+    act(() => { vi.advanceTimersByTime(RESULT_DELAY_MS + 50); });
 
-    expect(runButton().textContent).toMatch(/돌리기/);
+    expect((screen.getByRole('dialog', { name: '오늘의 점심 결과' }) as HTMLDialogElement).open).toBe(true);
+    expect(screen.getByRole('tab', { name: '오늘' })).toBeTruthy();
     expect(lockedButtons()).toEqual([]);
   });
 });
