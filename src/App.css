@@ -1281,13 +1281,15 @@ footer.muted { text-align: center; }
 /* 방식 고르기 — 세그먼트 바 */
 .modebar {
   display: grid;
-  /* 방식이 여섯이라 휴대폰에선 세 칸씩 두 줄. 한 줄이면 칸이 55px 로 좁아 이름이 잘린다. */
-  grid-template-columns: repeat(3, 1fr);
+  /* 방식이 일곱이라 휴대폰에선 위 넷·아래 셋 두 줄(12칸 격자를 3칸·4칸씩).
+     한 줄이면 칸이 55px 로 좁아 이름이 잘리고, 세 칸씩이면 마지막 줄이 한 칸만 남는다. */
+  grid-template-columns: repeat(12, 1fr);
   gap: 2px;
   padding: 2px;
   background: var(--color-neutral-300);
 }
 .modebar__item {
+  grid-column: span 3;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1303,6 +1305,7 @@ footer.muted { text-align: center; }
   cursor: pointer;
   transition: background 160ms var(--ease-out), color 160ms var(--ease-out);
 }
+.modebar__item:nth-child(n + 5) { grid-column: span 4; }
 .modebar__item:hover:not(:disabled) { background: var(--color-neutral-100); }
 .modebar__item--on,
 .modebar__item--on:hover:not(:disabled) {
@@ -1773,7 +1776,8 @@ html:has(.stage--full) { overflow: hidden; }
 }
 
 @media (min-width: 560px) {
-  .modebar { grid-template-columns: repeat(6, 1fr); }
+  .modebar { grid-template-columns: repeat(7, 1fr); }
+  .modebar__item, .modebar__item:nth-child(n + 5) { grid-column: auto; }
 }
 
 /* ── 토너먼트 ─────────────────────────────────────────────── */
@@ -2055,3 +2059,90 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .list__group--off > summary::before { content: '▸'; transition: transform var(--motion-fast) var(--ease-out); }
 .list__group--off[open] > summary::before { transform: rotate(90deg); }
 .list__group--off > summary::-webkit-details-marker { display: none; }
+
+/* ── 짝 맞추기 ─────────────────────────────────────────── */
+.memory { width: min(360px, 90vw); display: flex; flex-direction: column; gap: var(--space-3); }
+.memory--big { width: min(92vw, 720px); }
+.memory--empty { height: 260px; }
+.memory__hint { text-align: center; }
+.memory__left { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-1); }
+.memory__chip {
+  padding: 2px var(--space-2);
+  border: 1px solid var(--color-neutral-400);
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-xs);
+  color: var(--color-text);
+}
+.memory__chip--out { color: var(--color-neutral-700); text-decoration: line-through; border-style: dashed; }
+.memory__chip--win { border-color: var(--color-accent); background: var(--color-accent-100); color: var(--color-accent-700); font-weight: 700; }
+.memory__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  /* 열 수는 장수에 맞춘다(Memory.tsx columns) — 10장이면 다섯, 12장이면 넷. */
+  grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr));
+  gap: var(--space-2);
+}
+.memory--big .memory__grid { grid-template-columns: repeat(var(--cols-big, 6), minmax(0, 1fr)); gap: var(--space-3); }
+.memory__card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  perspective: 600px;
+  font: inherit;
+  transition: opacity var(--motion-base) var(--ease-out), scale var(--motion-base) var(--ease-out);
+}
+.memory__card:disabled { cursor: default; }
+.memory__card:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.memory__face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--space-1);
+  backface-visibility: hidden;
+  transition: transform 360ms var(--ease-inout);
+  box-shadow: var(--shadow-sm);
+}
+.memory__face--back {
+  background:
+    repeating-linear-gradient(45deg, transparent 0 6px, color-mix(in srgb, var(--color-bg) 18%, transparent) 6px 8px),
+    var(--color-text);
+  color: var(--color-bg);
+  border: 3px solid var(--color-bg);
+  outline: 1px solid var(--color-text);
+  font-family: var(--font-heading);
+  font-size: var(--fs-lg);
+  font-weight: 800;
+}
+.memory__face--front {
+  transform: rotateY(180deg);
+  background: var(--color-bg);
+  border: 1px solid var(--color-neutral-400);
+  text-align: center;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.memory__icon { font-size: var(--fs-lg); line-height: 1; }
+.memory__face--front strong { font-size: var(--fs-xs); color: var(--color-text); line-height: 1.2; }
+.memory--big .memory__face--front strong { font-size: var(--fs-sm); }
+.memory__tag { font-size: var(--fs-xs); color: var(--color-neutral-700); }
+.memory__card--open .memory__face--back { transform: rotateY(-180deg); }
+.memory__card--open .memory__face--front { transform: rotateY(0deg); }
+.memory__card:hover:not(:disabled):not(.memory__card--open) .memory__face--back { transform: translateY(-4px); }
+.memory__card--out { opacity: 0.5; }
+.memory__card--win .memory__face--front { border: 2px solid var(--color-accent); background: var(--color-accent-100); }
+.memory__card--win .memory__face--front strong { color: var(--color-accent-700); }
+.memory__grid--done .memory__card--win { scale: 1.08; z-index: 1; }
+.memory__auto { align-self: center; }
+:root[data-motion='reduced'] {
+  .memory__face, .memory__card { transition: none; }
+}

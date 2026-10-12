@@ -29,9 +29,14 @@ export interface GameProps {
    * 버튼과 같은 spin 이다 — 당첨은 여전히 App 이 균등 난수로 정한다.
    */
   onRequestSpin?: () => void;
+  /**
+   * 사용자가 판을 직접 두고 있다는 신호(짝 맞추기). App 의 연출 잠금 상한은
+   * 이 신호가 올 때마다 처음부터 다시 잰다 — 직접 두는 판은 30초를 넘길 수 있다.
+   */
+  onActivity?: () => void;
 }
 
-export type GameMode = 'wheel' | 'ladder' | 'slot' | 'pinball' | 'cards' | 'tournament';
+export type GameMode = 'wheel' | 'ladder' | 'slot' | 'pinball' | 'cards' | 'memory' | 'tournament';
 
 /** label 은 칩에, action 은 실행 버튼에 쓴다. "돌리기" 는 슬롯·핀볼에 안 맞는다. */
 export const GAME_MODES: { id: GameMode; label: string; action: string }[] = [
@@ -40,6 +45,7 @@ export const GAME_MODES: { id: GameMode; label: string; action: string }[] = [
   { id: 'slot', label: '슬롯', action: '레버 당기기' },
   { id: 'pinball', label: '핀볼', action: '구슬 굴리기' },
   { id: 'cards', label: '카드', action: '카드 뒤집기' },
+  { id: 'memory', label: '짝 맞추기', action: '짝 맞추기' },
   { id: 'tournament', label: '토너먼트', action: '대진 시작' },
 ];
 
@@ -51,9 +57,9 @@ export function actionLabel(mode: GameMode): string {
  * 모드마다 연출 길이가 다르다. 결과는 같다.
  *
  * 핀볼은 여기 없다 — 재생 길이가 경기마다 달라 컴포넌트가 정한다(timingFor).
- * 여기 적어두면 두 곳이 어긋날 수 있다.
+ * 여기 적어두면 두 곳이 어긋날 수 있다. 짝 맞추기도 없다 — 사람이 두는 만큼 걸린다.
  */
-export const SPIN_MS: Record<Exclude<GameMode, 'pinball'>, number> = {
+export const SPIN_MS: Record<Exclude<GameMode, 'pinball' | 'memory'>, number> = {
   wheel: 2600,
   // 사다리·슬롯은 핀볼에 비해 너무 빨리 끝나 긴장이 쌓일 틈이 없었다(10/9 손맛 리뷰 5·4점).
   ladder: 2800,

@@ -14,6 +14,7 @@ import { Ladder } from './components/games/Ladder';
 import { Slot } from './components/games/Slot';
 import { Pinball } from './components/games/Pinball';
 import { Cards } from './components/games/Cards';
+import { Memory } from './components/games/Memory';
 import { Tournament } from './components/games/Tournament';
 import { ShareButton } from './components/ShareButton';
 import {
@@ -59,7 +60,7 @@ const TAB_TITLE: Record<Tab, string> = {
 };
 
 /** 방식 단추 그림. 글자 이름은 그대로 두고 그림은 보조로만 쓴다. */
-const MODE_ICON: Record<GameMode, string> = { wheel: '🎡', ladder: '🪜', slot: '🎰', pinball: '🎱', cards: '🃏', tournament: '🏆' };
+const MODE_ICON: Record<GameMode, string> = { wheel: '🎡', ladder: '🪜', slot: '🎰', pinball: '🎱', cards: '🃏', memory: '🧩', tournament: '🏆' };
 
 const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
 /** "20261008" 을 "10월 8일 목요일" 로. */
@@ -104,6 +105,9 @@ export default function App() {
   const [board, setBoard] = useState<Place[] | null>(null);
   // 판 번호. 돌릴 때마다 증가 + 난수. 게임이 새 판을 만드는 키이자 핀볼 시드 시작점.
   const [run, setRun] = useState(0);
+  // 짝 맞추기처럼 사람이 직접 두는 판의 활동 신호. 연출 잠금 상한을 다시 잰다.
+  const [alive, setAlive] = useState(0);
+  const onActivity = useCallback(() => setAlive((n) => n + 1), []);
   const [confirming, setConfirming] = useState<Place | null>(null);
   // 게임이 끝나면 결과를 모달로 띄운다. 닫으면 같은 결과 카드가 게임 아래에 남는다.
   const [resultOpen, setResultOpen] = useState(false);
@@ -295,7 +299,7 @@ export default function App() {
     if (!spinning) return;
     const t = window.setTimeout(() => setSpinning(false), SPIN_TIMEOUT_MS);
     return () => window.clearTimeout(t);
-  }, [spinning]);
+  }, [spinning, alive]);
 
   // 조건을 바꾸면 얼려둔 판을 버리고 현재 후보로 돌아간다.
   // 안 그러면 칩을 눌러도 지난 결과가 그대로 떠 있어 화면이 거짓말을 한다.
@@ -591,6 +595,10 @@ export default function App() {
             if (mode === 'cards') {
               const key = game.candidates.map((p) => p.id).join(',');
               return <Cards key={key} {...game} onRequestSpin={spin} />;
+            }
+            if (mode === 'memory') {
+              const key = game.candidates.map((p) => p.id).join(',');
+              return <Memory key={key} {...game} onRequestSpin={spin} onActivity={onActivity} />;
             }
             if (mode === 'tournament') {
               // 응원 고른 것은 같은 후보 구성 안에서만 유지한다.
