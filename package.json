@@ -16,6 +16,7 @@
     "dev:emu": "firebase emulators:exec --only firestore,auth \"node scripts/seed-fixture.mjs && vite --port 5173 --strictPort\""
   },
   "dependencies": {
+    "@gook-lab/motion": "0.2.7",
     "@gook-lab/tokens": "^0.2.7",
     "@gook-lab/ui": "^0.2.7",
     "firebase": "^12.19.0",

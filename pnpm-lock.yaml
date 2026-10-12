@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@gook-lab/motion':
+        specifier: 0.2.7
+        version: 0.2.7(@gook-lab/tokens@0.2.7)(react@19.3.0)
       '@gook-lab/tokens':
         specifier: ^0.2.7
         version: 0.2.7
