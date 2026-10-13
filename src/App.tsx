@@ -15,6 +15,9 @@ import { CandidateChips } from './components/CandidateChips';
 import { useMedia } from './hooks/useMedia';
 import { StatusScreen } from './components/StatusScreen';
 import { Confetti } from './components/Confetti';
+import { Predictions } from './components/Predictions';
+import { winnersOf } from './lib/predictions';
+import { castVote, clearVote, myUid, subscribeVotes, type Vote } from './services/predictions';
 import { buzz, playChime, setSoundOn, soundOn } from './lib/celebrate';
 import { Cards, Dice, Gacha, Ladder, Memory, Pinball, Plinko, Slot, Tournament, Wheel, preloadGames } from './components/games';
 import { ShareButton } from './components/ShareButton';
@@ -88,6 +91,18 @@ function dayOfYear(day: string): number {
 export default function App() {
   const today = useTodayKST();
   const { state, error, places, visits, today: decision, refreshing, reload, officeKey } = useLunchData(today);
+  // 동료 예측. 오늘 표를 실시간으로 받는다. 당첨에는 쓰지 않는다 — spin() 은 이 값을 보지 않는다.
+  const [votes, setVotes] = useState<Vote[]>([]);
+  const [uid, setUid] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    myUid().then((u) => live && setUid(u)).catch(() => {});
+    const stop = subscribeVotes(today, setVotes, () => setVotes([]));
+    return () => {
+      live = false;
+      stop();
+    };
+  }, [today]);
 
   const [filters, setFilters] = useState<Filters>({
     maxWalkMin: 10,
@@ -503,6 +518,13 @@ export default function App() {
           공 {odds.total}개 중 {odds.mine}개였어요 · 확률 {Math.round((odds.mine / odds.total) * 100)}%
         </p>
       )}
+      {votes.length > 0 && (
+        <p className="ticket__guess">
+          {winnersOf(votes, winner.id).length > 0
+            ? `🎯 맞힌 사람: ${winnersOf(votes, winner.id).join(', ')}`
+            : `예측한 ${votes.length}명 중 맞힌 사람이 없어요`}
+        </p>
+      )}
       <hr className="ticket__perf" aria-hidden="true" />
       {confirmed ? (
         <>
@@ -705,8 +727,9 @@ export default function App() {
               if (!sound) playChime();
             }}
           >
+            {/* 켬/끔은 aria-pressed 로 읽힌다. 글자를 줄여야 휴대폰에서 한 줄에 든다. */}
             <span aria-hidden="true">{sound ? '🔔 ' : '🔕 '}</span>
-            {sound ? '소리 켬' : '소리 끔'}
+            소리
           </button>
           <button
             type="button"
@@ -836,6 +859,16 @@ export default function App() {
           </Button>
         )}
 
+        {result.candidates.length > 0 && (
+          <Predictions
+            candidates={result.candidates}
+            votes={votes}
+            myUid={uid}
+            locked={spinning}
+            onVote={(placeId, name) => castVote(today, placeId, name)}
+            onClear={() => clearVote(today)}
+          />
+        )}
         {empty && <p className="notice notice--empty">{empty}</p>}
         {notice && <p className="notice">{notice}</p>}
       </section>

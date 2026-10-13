@@ -132,6 +132,25 @@ service cloud.firestore {
     }
 
     // 그 외에는 전부 막는다.
+    // 동료 예측 — 게임 전에 "어디 나올까" 를 찍는다. 당첨에는 아무 영향이 없다
+    // (당첨은 클라이언트 spin() 의 균등 난수). 기기당 하루 한 표, 자기 표만 쓰고 지운다.
+    match /predictions/{dayId}/votes/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.auth.uid == uid
+        && isTodayKST(dayId)
+        && request.resource.data.keys().hasOnly(['placeId', 'name', 'at'])
+        && request.resource.data.keys().hasAll(['placeId', 'name', 'at'])
+        && request.resource.data.placeId is string
+        && request.resource.data.placeId.size() > 0
+        && request.resource.data.placeId.size() <= 64
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 12
+        && request.resource.data.at == request.time;
+      allow delete: if signedIn() && request.auth.uid == uid && isTodayKST(dayId);
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

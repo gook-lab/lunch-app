@@ -1,0 +1,71 @@
+/**
+ * 동료 예측 — predictions/{오늘}/votes/{익명 uid}.
+ *
+ * 게임 전에 링크로 들어온 사람들이 "어디 나올까" 를 찍고, 결과에 맞힌 사람을 단다.
+ * 당첨에는 아무 영향이 없다 — 표는 읽기만 하고 spin() 은 보지 않는다.
+ * 기기(익명 uid)당 하루 한 표. 규칙이 자기 문서·오늘·이름 1~12자를 지킨다.
+ */
+import {
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  serverTimestamp,
+  setDoc,
+  type Unsubscribe,
+} from 'firebase/firestore';
+import { auth, authReady, db } from './firebase';
+import type { DayId } from '../lib/date';
+
+export interface Vote {
+  uid: string;
+  placeId: string;
+  name: string;
+}
+
+const votes = (day: DayId) => collection(db, 'predictions', day, 'votes');
+
+export async function myUid(): Promise<string> {
+  const user = await authReady;
+  return user.uid;
+}
+
+export function subscribeVotes(
+  day: DayId,
+  onChange: (votes: Vote[]) => void,
+  onError: (error: unknown) => void,
+): Unsubscribe {
+  let stopped = false;
+  let inner: Unsubscribe | undefined;
+  authReady
+    .then(() => {
+      if (stopped) return;
+      inner = onSnapshot(
+        votes(day),
+        (snap) =>
+          onChange(
+            snap.docs.map((d) => {
+              const v = d.data() as { placeId: string; name: string };
+              return { uid: d.id, placeId: v.placeId, name: v.name };
+            }),
+          ),
+        onError,
+      );
+    })
+    .catch(onError);
+  return () => {
+    stopped = true;
+    inner?.();
+  };
+}
+
+export async function castVote(day: DayId, placeId: string, name: string): Promise<void> {
+  await authReady;
+  const uid = auth.currentUser!.uid;
+  await setDoc(doc(votes(day), uid), { placeId, name: name.trim().slice(0, 12), at: serverTimestamp() });
+}
+
+export async function clearVote(day: DayId): Promise<void> {
+  await authReady;
+  await deleteDoc(doc(votes(day), auth.currentUser!.uid));
+}

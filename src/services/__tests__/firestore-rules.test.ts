@@ -278,6 +278,38 @@ d('firestore.rules', () => {
     });
   });
 
+  describe('predictions — 동료 예측', () => {
+    const vote = (over: Record<string, unknown> = {}) => ({
+      placeId: 'seed',
+      name: '민수',
+      at: serverTimestamp(),
+      ...over,
+    });
+
+    it('P1 — 오늘, 자기 uid 문서에 허용 필드만 쓰면 허용', async () => {
+      await assertSucceeds(setDoc(doc(db(ALICE), `predictions/${TODAY}/votes/${ALICE}`), vote()));
+    });
+
+    it('P2 — 남의 uid 문서·지난 날짜·인증 없음은 거부', async () => {
+      await assertFails(setDoc(doc(db(ALICE), `predictions/${TODAY}/votes/${BOB}`), vote()));
+      await assertFails(setDoc(doc(db(ALICE), `predictions/${YESTERDAY}/votes/${ALICE}`), vote()));
+      await assertFails(setDoc(doc(anon(), `predictions/${TODAY}/votes/${ALICE}`), vote()));
+    });
+
+    it('P3 — 이름이 비거나 12자 넘거나 필드가 섞이면 거부', async () => {
+      const ref = doc(db(ALICE), `predictions/${TODAY}/votes/${ALICE}`);
+      await assertFails(setDoc(ref, vote({ name: '' })));
+      await assertFails(setDoc(ref, vote({ name: '열두글자를넘는아주긴이름이에요' })));
+      await assertFails(setDoc(ref, vote({ weight: 3 })));
+    });
+
+    it('P4 — 자기 표는 지울 수 있고 남의 표는 못 지운다', async () => {
+      await assertSucceeds(setDoc(doc(db(ALICE), `predictions/${TODAY}/votes/${ALICE}`), vote()));
+      await assertFails(deleteDoc(doc(db(BOB), `predictions/${TODAY}/votes/${ALICE}`)));
+      await assertSucceeds(deleteDoc(doc(db(ALICE), `predictions/${TODAY}/votes/${ALICE}`)));
+    });
+  });
+
   describe('그 외 컬렉션', () => {
     it('정의하지 않은 경로는 전부 막힌다', async () => {
       await assertFails(setDoc(doc(db(ALICE), 'anything/x'), { a: 1 }));

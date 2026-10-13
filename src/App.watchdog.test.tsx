@@ -16,9 +16,19 @@ const fx = vi.hoisted(() => ({
     id, name: `${id}집`, category: '한식', lat: 37.5, lng: 126.9, walkMin: 5,
     kakaoPlaceId: `k-${id}`, active: true, createdBy: 'u',
   })),
+  votes: [] as { uid: string; placeId: string; name: string }[],
 }));
 
 vi.mock('./hooks/useTodayKST', () => ({ useTodayKST: () => '20261008' }));
+vi.mock('./services/predictions', () => ({
+  myUid: async () => 'me',
+  subscribeVotes: (_d: string, on: (v: { uid: string; placeId: string; name: string }[]) => void) => {
+    on(fx.votes ?? []);
+    return () => {};
+  },
+  castVote: vi.fn(async () => {}),
+  clearVote: vi.fn(async () => {}),
+}));
 vi.mock('./hooks/useLunchData', () => ({
   useLunchData: () => ({ state: 'ready', error: null, places: fx.places, visits: [], today: null, refreshing: false, reload: () => {} }),
 }));

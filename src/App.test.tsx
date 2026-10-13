@@ -24,10 +24,20 @@ const fx = vi.hoisted(() => {
   return {
     places: [place('a', '가집'), place('b', '나집'), place('c', '다집'), place('d', '라집'), place('e', '마집')],
     decision: null as null | { dayId: string; placeId: string },
+    votes: [] as { uid: string; placeId: string; name: string }[],
   };
 });
 
 vi.mock('./hooks/useTodayKST', () => ({ useTodayKST: () => '20261008' }));
+vi.mock('./services/predictions', () => ({
+  myUid: async () => 'me',
+  subscribeVotes: (_d: string, on: (v: { uid: string; placeId: string; name: string }[]) => void) => {
+    on(fx.votes ?? []);
+    return () => {};
+  },
+  castVote: vi.fn(async () => {}),
+  clearVote: vi.fn(async () => {}),
+}));
 vi.mock('./hooks/useLunchData', () => ({
   useLunchData: () => ({
     state: 'ready', error: null, places: fx.places, visits: [],
@@ -122,10 +132,10 @@ describe('결과 모달', () => {
   it('소리는 기본으로 꺼져 있고, 켜면 기억한다', () => {
     window.localStorage.removeItem('lunch-app:sound');
     render(<App />);
-    const toggle = screen.getByRole('button', { name: /소리 끔/ });
+    const toggle = screen.getByRole('button', { name: /소리/ });
     expect(toggle.getAttribute('aria-pressed')).toBe('false');
     fireEvent.click(toggle);
-    expect(screen.getByRole('button', { name: /소리 켬/ }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: /소리/ }).getAttribute('aria-pressed')).toBe('true');
     expect(window.localStorage.getItem('lunch-app:sound')).toBe('1');
     window.localStorage.removeItem('lunch-app:sound');
   });
@@ -135,6 +145,29 @@ describe('결과 모달', () => {
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
     fireEvent.click(screen.getByRole('button', { name: '결과 보기' }));
     expect(screen.getByRole('button', { name: '여기로 결정' })).toBeTruthy();
+  });
+});
+
+describe('동료 예측', () => {
+  afterEach(() => { fx.votes = []; });
+
+  it('예측은 당첨을 바꾸지 않고, 결과에 맞힌 사람을 단다', () => {
+    fx.votes = [
+      { uid: 'u1', placeId: 'a', name: '민수' },
+      { uid: 'u2', placeId: 'b', name: '지영' },
+      { uid: 'u3', placeId: 'a', name: '하늘' },
+    ];
+    startWheel();
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
+    // 난수 0 → 첫 후보 가집. 표가 많아도 균등 추첨 그대로다.
+    expect(card()).toBe('가집');
+    expect(document.querySelector('dialog[open] .ticket__guess')?.textContent).toBe('🎯 맞힌 사람: 민수, 하늘');
+  });
+
+  it('게임 중엔 예측을 못 바꾼다', () => {
+    startWheel();
+    const toggle = screen.getByRole('button', { name: '게임 중엔 못 바꿔요' }) as HTMLButtonElement;
+    expect(toggle.disabled).toBe(true);
   });
 });
 

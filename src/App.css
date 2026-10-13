@@ -2705,6 +2705,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   font: inherit;
   font-size: var(--fs-sm);
   font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
 }
 .stage__sound:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
@@ -2815,3 +2816,39 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   font-size: 10px;
   opacity: 0.8;
 }
+
+/* 동료 예측 — 게임 판 아래 한 줄, 누르면 그 자리에서 펼침 */
+.predict { display: grid; gap: var(--space-2); padding: var(--space-2) var(--space-3); border: 1px dashed var(--color-neutral-400); border-radius: var(--radius-md); }
+.predict__row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-1) var(--space-3); }
+.predict__sum { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); margin: 0; font-size: var(--fs-sm); }
+.predict__tag { padding: 0 var(--space-2); border-radius: var(--radius-lg); background: var(--color-neutral-200); font-size: var(--fs-xs); color: var(--color-neutral-800); }
+.predict__toggle { min-height: 44px; }
+.predict__mine { margin: 0; }
+.predict__form { display: grid; gap: var(--space-3); }
+.predict__name { display: grid; gap: var(--space-1); max-width: 240px; }
+.predict__name input {
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-neutral-400);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+}
+.predict__name input:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+.predict__picks { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.predict__pick {
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-neutral-400);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.predict__pick[aria-pressed='true'] { border-color: var(--color-text); background: var(--color-text); color: var(--color-bg); }
+.predict__pick:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.predict__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.ticket__guess { margin: var(--space-1) 0 0; font-size: var(--fs-sm); color: var(--color-neutral-800); }
