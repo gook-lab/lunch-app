@@ -2990,3 +2990,20 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   .pinball__oddName { overflow: hidden; text-overflow: ellipsis; }
   .pinball__oddPct { margin-left: auto; }
 }
+
+/* 길찾기 — 카카오맵 도보 경로 새 탭. 보조 버튼과 같은 무게 */
+.dir-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  margin-top: var(--space-2);
+  border: 1px solid var(--color-neutral-400);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  text-decoration: none;
+}
+.dir-link:hover { background: var(--color-neutral-100); }
+.dir-link:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }

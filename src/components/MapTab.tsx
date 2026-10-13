@@ -15,6 +15,7 @@ import { ChipPicker } from './ChipPicker';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Checkbox, Input, Textarea } from '@gook-lab/ui';
 import { PRICE_BANDS, WALK_STEPS, type Place, type PriceBand, type Rating } from '../lib/candidates';
+import { DirectionsLink } from './DirectionsLink';
 import { CATEGORIES, categoryIcon, type Category } from '../lib/category';
 import { metersForWalkMinutes, officeCoord, type Coord } from '../lib/walk';
 import { OfficeCard } from './map/OfficeCard';
@@ -706,6 +707,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
                   {selected.active ? '끄기' : '켜기'}
                 </Button>
               </div>
+              <DirectionsLink place={selected} />
             </>
           )}
         </div>

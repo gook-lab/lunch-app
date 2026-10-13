@@ -20,6 +20,7 @@ import { winnersOf } from './lib/predictions';
 import { castVote, clearVote, myUid, subscribeVotes, type Vote } from './services/predictions';
 import { buzz, playChime, setSoundOn, soundOn } from './lib/celebrate';
 import { CarRace, Cards, Dice, Gacha, HorseRace, Ladder, Memory, Pinball, Plinko, Slot, Tournament, Wheel, preloadGames } from './components/games';
+import { DirectionsLink } from './components/DirectionsLink';
 import { ShareButton } from './components/ShareButton';
 import {
   actionLabel,
@@ -529,6 +530,7 @@ export default function App() {
       {confirmed ? (
         <>
           <p className="confirmed">오늘 점심으로 정했어요</p>
+          <DirectionsLink place={winner} />
           <ShareButton place={winner} />
           <Button block variant="secondary" onClick={spin} disabled={spinning}>
             그래도 다시 하기
@@ -649,6 +651,7 @@ export default function App() {
             <p className="muted small">
               {decidedPlace.category} · 도보 {decidedPlace.walkMin}분 · 다시 돌려서 바꿀 수 있어요
             </p>
+            <DirectionsLink place={decidedPlace} />
             <ShareButton place={decidedPlace} />
           </div>
         </section>
