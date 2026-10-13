@@ -6,5 +6,5 @@ import viteConfig from './vite.config';
 // vite.config.ts 를 건드리면 돌고 있는 개발 서버가 다시 뜨므로 따로 둔다.
 export default mergeConfig(
   viteConfig,
-  defineConfig({ test: { exclude: [...configDefaults.exclude, '.claude/**'] } }),
+  defineConfig({ test: { exclude: [...configDefaults.exclude, '.claude/**'], setupFiles: ['src/test/setup.ts'] } }),
 );

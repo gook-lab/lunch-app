@@ -3282,3 +3282,69 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 .list__sort button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -2px; }
 .list__rate { display: grid; gap: var(--space-2); padding: var(--space-2) 0; }
 .demo-note .linkish { margin-left: var(--space-1); }
+
+/* 첫 방문 안내 — 화면을 어둡게 덮고 설명하는 곳만 밝힌다(pig-ma 시작 안내와 같은 구조) */
+.tour { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
+.tour__dim { position: absolute; inset: 0; background: color-mix(in oklch, var(--color-neutral-900) 55%, transparent); }
+.tour__hole {
+  position: absolute;
+  border-radius: var(--radius-lg);
+  /* 구멍 바깥 전체를 그림자로 칠한다 — 구멍 안은 밝은 그대로 보인다 */
+  box-shadow: 0 0 0 200vmax color-mix(in oklch, var(--color-neutral-900) 55%, transparent);
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  transition: top var(--motion-slow) var(--ease-out), left var(--motion-slow) var(--ease-out),
+    width var(--motion-slow) var(--ease-out), height var(--motion-slow) var(--ease-out);
+  animation: tour-pulse 1.8s var(--ease-inout) infinite;
+}
+@keyframes tour-pulse { 50% { outline-offset: 5px; } }
+.tour__block { position: absolute; inset: 0; pointer-events: auto; }
+.tour__card {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  width: min(360px, calc(100vw - 32px));
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--color-text);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  color: var(--color-text);
+  box-shadow: 0 8px 24px color-mix(in oklch, var(--color-neutral-900) 30%, transparent);
+  pointer-events: auto;
+  animation: tour-in var(--motion-slow) var(--ease-out);
+}
+.tour__card--center { translate: -50% -50%; }
+@keyframes tour-in { from { opacity: 0; } }
+.tour__head { display: flex; gap: var(--space-3); align-items: center; }
+.tour__icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--color-neutral-100);
+  font-size: 22px;
+}
+.tour__count { margin: 0; font-size: var(--fs-xs); font-weight: 700; color: var(--color-neutral-700); letter-spacing: 0.06em; }
+.tour__title { margin: 0; font-size: var(--fs-md); line-height: 1.35; }
+.tour__body { margin: 0; font-size: var(--fs-sm); line-height: 1.6; color: var(--color-neutral-800); }
+.tour__foot { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-1); }
+.tour__dots { display: flex; gap: 4px; margin-right: auto; }
+.tour__dot { width: 6px; height: 6px; border-radius: 999px; background: var(--color-neutral-300); transition: width var(--motion-fast) var(--ease-out); }
+.tour__dot--on { width: 18px; background: var(--color-accent); }
+.tour__next {
+  min-height: 40px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-accent);
+  color: var(--color-bg);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tour__next:focus-visible { outline: 2px solid var(--color-text); outline-offset: 2px; }
+.app__help { margin-left: auto; font-size: var(--fs-sm); }
