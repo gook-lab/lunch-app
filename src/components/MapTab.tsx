@@ -537,7 +537,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       <section className="map map--trouble">
         {/* 지도가 없어도 GPS 로는 회사 위치를 정할 수 있다. */}
         <OfficeCard onSaved={onOfficeChanged} />
-        {/* 지도 자리에 같은 크기의 점선 상자를 두고 안에서 알린다(handoff 6 · 5e). */}
+        {/* 지도 자리에 같은 크기의 점선 상자를 두고 안에서 알린다(docs/handoff/6 · 5e). */}
         <div className="map__troubleBox" role="alert">
           <span className="map__troubleArt" aria-hidden="true">🗺️</span>
           <p className="map__troubleTitle">{trouble.title}</p>
