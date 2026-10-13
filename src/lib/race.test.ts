@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildRace, progress } from './race';
+import { SLICE, buildRace, progress } from './race';
 import { seededRandom } from './random';
 
 describe('픽셀 경주 — 당첨이 1등', () => {
@@ -70,5 +70,26 @@ describe('픽셀 경주 — 당첨이 1등', () => {
       }
     }
     expect(twice).toBeGreaterThan(100);
+  });
+
+  it('충돌은 그 순간 붙어 있던 두 주자에게 같이 나고, 맞바꾼 뒤에도 서로를 가리킨다', () => {
+    let hits = 0;
+    for (let seed = 0; seed < 200; seed += 1) {
+      const r = buildRace(10, 7, seededRandom(seed), { maxEvents: 3, eventChance: 0.5, collisions: true });
+      expect(r.order[0]).toBe(7);
+      r.events.forEach((evs, a) =>
+        evs.forEach((e) => {
+          if (e.hit === undefined) return;
+          const other = r.events[e.hit].find((x) => x.slice === e.slice && x.hit === a);
+          expect(other?.kind).toBe(e.kind === 'crash' ? 'bump' : 'crash');
+          if (e.kind === 'crash') {
+            hits += 1;
+            const at = e.slice * SLICE;
+            expect(Math.abs(progress(r.paces[a], at) - progress(r.paces[e.hit], at))).toBeLessThan(0.05);
+          }
+        }),
+      );
+    }
+    expect(hits).toBeGreaterThan(50);
   });
 });

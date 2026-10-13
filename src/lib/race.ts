@@ -17,13 +17,15 @@
 export const SLICE = 0.125;
 export const SLICES = 18;
 
-/** 사고(크게 느려짐) · 부스트(크게 빨라짐) · 휘청(조금 느려짐). */
-export type RaceEventKind = 'crash' | 'boost' | 'wobble';
+/** 사고(크게 느려짐) · 부스트(크게 빨라짐) · 휘청(조금 느려짐) · 부딪힘(옆 주자와 충돌, 반으로 느려짐). */
+export type RaceEventKind = 'crash' | 'boost' | 'wobble' | 'bump';
 
 export interface RaceEvent {
   /** 몇 번째 구간에서 일어나나. 시작 시간은 slice * SLICE. */
   slice: number;
   kind: RaceEventKind;
+  /** 충돌이면 상대 주자 번호. 사고 낸 쪽(crash)과 받힌 쪽(bump) 둘 다 서로를 가리킨다. */
+  hit?: number;
 }
 
 export interface Race {
@@ -64,13 +66,15 @@ export interface RaceOptions {
   maxEvents?: number;
   /** 각 기회에 사건이 일어날 확률(기본 0.38). */
   eventChance?: number;
+  /** 사고(crash)가 날 때 가장 가까운 주자를 같이 받게 할지. 레이싱 전용. */
+  collisions?: boolean;
 }
 
 export function buildRace(
   count: number,
   winnerIndex: number,
   random: () => number = Math.random,
-  { maxEvents = 1, eventChance = 0.38 }: RaceOptions = {},
+  { maxEvents = 1, eventChance = 0.38, collisions = false }: RaceOptions = {},
 ): Race {
   const runners = Array.from({ length: count }, () => {
     // 기본 속도에 구간마다 흔들림. 막판 스퍼트를 하는 주자가 섞여 역전이 생긴다.
@@ -95,10 +99,38 @@ export function buildRace(
     }
     return { pace, events };
   });
+  // 충돌 — 사고 난 구간 시작 때 가장 가까이 있던 주자가 같이 받힌다(그 구간 반 속도).
+  // 앞 구간 속도는 안 바뀌므로 두 주자는 그 순간 실제로 붙어 있다.
+  if (collisions && count > 1) {
+    // 앞 구간부터 처리한다 — 뒤 구간 충돌을 먼저 정하면 앞 구간 받힘이 그 거리를 바꿔 버린다.
+    const crashes = runners
+      .flatMap((a, ai) => a.events.filter((e) => e.kind === 'crash').map((e) => ({ ai, e })))
+      .sort((x, y) => x.e.slice - y.e.slice);
+    for (const { ai, e } of crashes) {
+      const at = e.slice * SLICE;
+      const da = progress(runners[ai].pace, at);
+      let best = -1;
+      let gap = 0.05;
+      runners.forEach((b, bi) => {
+        if (bi === ai || b.events.some((x) => x.slice === e.slice)) return;
+        const g = Math.abs(progress(b.pace, at) - da);
+        if (g < gap) [best, gap] = [bi, g];
+      });
+      if (best < 0) continue;
+      e.hit = best;
+      const b = runners[best];
+      b.pace[e.slice] *= 0.5;
+      b.events.push({ slice: e.slice, kind: 'bump', hit: ai });
+      b.events.sort((x, y) => x.slice - y.slice);
+    }
+  }
   let finish = runners.map((r) => finishTime(r.pace));
   const fastest = finish.indexOf(Math.min(...finish));
   if (fastest !== winnerIndex) {
     [runners[fastest], runners[winnerIndex]] = [runners[winnerIndex], runners[fastest]];
+    // 충돌 상대 번호도 같이 바꿔 단다.
+    const swap = (i: number) => (i === fastest ? winnerIndex : i === winnerIndex ? fastest : i);
+    runners.forEach((r) => r.events.forEach((e) => e.hit !== undefined && (e.hit = swap(e.hit))));
     finish = runners.map((r) => finishTime(r.pace));
   }
   // 동시 도착이면 당첨을 살짝 앞당겨 단독 1등으로.

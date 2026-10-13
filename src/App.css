@@ -3157,3 +3157,12 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .rc__pos--win { color: oklch(0.9 0.16 95); font-weight: 700; }
 .rc__posNo { font-weight: 800; color: var(--color-bg); font-variant-numeric: tabular-nums; }
 .rc__posDot { width: 8px; height: 8px; border-radius: 50%; }
+.rc__laneLine {
+  position: absolute;
+  border: 1px dashed color-mix(in oklch, var(--color-bg) 55%, transparent);
+  border-radius: 50%;
+  pointer-events: none;
+}
+/* 받힘 — 옆 차에 부딪혀 제자리에서 한 바퀴 돈다 */
+.rc__car--bump .rc__body { animation: rc-spin 800ms var(--ease-out) both; }
+@keyframes rc-spin { to { rotate: 360deg; } }

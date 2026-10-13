@@ -18,13 +18,10 @@ export type RaceTheme = 'horse' | 'car';
 
 const COUNT_STEP_MS = 400;
 const COUNTDOWN = ['3', '2', '1', '출발!'];
-/** 당첨이 결승하는 데 걸리는 실제 시간. 레이싱은 두 바퀴라 길다. */
-const RACE_MS: Record<RaceTheme, number> = { horse: 6500, car: 9000 };
-/** 레이싱은 두 바퀴 동안 사건이 둘까지 — 부스터·펑크·전복이 더 자주 보이게. */
-const RACE_OPTIONS = {
-  horse: {},
-  car: { maxEvents: 2, eventChance: 0.55 },
-} as const;
+/** 당첨이 결승하는 데 걸리는 실제 시간. 레이싱은 세 바퀴라 길다. */
+const RACE_MS: Record<RaceTheme, number> = { horse: 6500, car: 12000 };
+/** 레이싱은 세 바퀴 동안 사건이 셋까지, 사고는 옆 차와 부딪혀 같이 난다. */
+const RACE_OPTIONS = { horse: {}, car: { maxEvents: 3, eventChance: 0.5, collisions: true } } as const;
 const AFTER_MS = 500;
 
 const HORSE: string[][] = [
@@ -74,9 +71,10 @@ const EVENT_ICON: Record<RaceEventKind, string> = {
   crash: '💥',
   boost: '🥕',
   wobble: '💫',
+  bump: '💢',
 };
 
-function eventLine(theme: RaceTheme, kind: RaceEventKind, name: string): string {
+function eventLine(theme: RaceTheme, kind: RaceEventKind, name: string, other: string | null): string {
   if (theme === 'horse') {
     return kind === 'crash'
       ? `${name} 말이 넘어졌어요!`
@@ -84,12 +82,15 @@ function eventLine(theme: RaceTheme, kind: RaceEventKind, name: string): string 
         ? `${name} 당근 먹고 질주해요!`
         : `${name} 말이 휘청해요`;
   }
-  // 레이싱: 사고 = 전복, 휘청 = 타이어 펑크, 부스트 = 부스터.
+  // 레이싱: 사고 = 전복(옆 차와 부딪혀 났으면 충돌), 휘청 = 타이어 펑크, 부스트 = 부스터.
+  if (kind === 'crash' && other) return `쾅! ${name} 차가 ${other} 차와 부딪혀 뒤집혔어요!`;
   return kind === 'crash'
     ? `${name} 차가 뒤집혔어요!`
     : kind === 'boost'
       ? `${name} 부스터 점화!`
-      : `${name} 타이어가 터졌어요!`;
+      : kind === 'bump'
+        ? `${name} 차가 받혀서 휘청해요!`
+        : `${name} 타이어가 터졌어요!`;
 }
 
 interface View {
@@ -170,30 +171,35 @@ export function PixelRace({
     race && live ? (race.events[i].find((e) => t >= e.slice * SLICE && t < (e.slice + 1) * SLICE)?.kind ?? null) : null,
   );
   // 지금 일어나는 사건(가장 최근 것 하나를 알림 줄에).
-  let latest: { i: number; kind: RaceEventKind; at: number } | null = null;
+  let latest: { i: number; kind: RaceEventKind; at: number; hit?: number } | null = null;
   if (race && live) {
-    race.events.forEach((evs, i) =>
-      evs.forEach((e) => {
+    race.events.forEach((evs, i) => {
+      for (const e of evs) {
         const at = e.slice * SLICE;
         // 일어난 뒤 한 구간 반 동안만 알린다. 그 뒤엔 선두 소식으로 돌아간다.
-        if (at <= t && t < at + SLICE * 1.5 && (!latest || at > latest.at)) latest = { i, kind: e.kind, at };
-      }),
-    );
+        // 충돌은 사고 낸 쪽(crash)으로 한 번만 알린다.
+        if (e.kind === 'bump' || at > t || t >= at + SLICE * 1.5) continue;
+        if (!latest || at > latest.at) latest = { i, kind: e.kind, at, hit: e.hit };
+      }
+    });
   }
+  const news = latest as { i: number; kind: RaceEventKind; at: number; hit?: number } | null;
+
   const counting = live && view.count >= 0;
   const winner = winnerIndex === null ? null : candidates[winnerIndex];
   const line = counting
     ? '곧 출발해요'
     : (rankOf.get(winnerIndex ?? -1) ?? 0) === 1 && winner
       ? `${shortName(winner.name, 10)} 1등으로 들어왔어요!`
-      : latest
+      : news
         ? eventLine(
             theme,
-            (latest as { kind: RaceEventKind }).kind,
-            shortName(candidates[(latest as { i: number }).i].name, 8),
+            news.kind,
+            shortName(candidates[news.i].name, 8),
+            news.hit === undefined ? null : shortName(candidates[news.hit].name, 8),
           )
         : live
-          ? `${theme === 'car' && dist[leader] >= 0.5 ? '마지막 바퀴! ' : ''}선두 ${shortName(candidates[leader].name, 8)}`
+          ? `${theme === 'car' && dist[leader] >= 2 / 3 ? '마지막 바퀴! ' : ''}선두 ${shortName(candidates[leader].name, 8)}`
           : theme === 'horse'
             ? `말 ${count}마리가 출발선에 섰어요`
             : `차 ${count}대가 출발선에 섰어요`;
@@ -208,7 +214,13 @@ export function PixelRace({
       </p>
       <div className="prace__board">
         {theme === 'car' ? (
-          <RaceCircuit candidates={candidates} dist={dist} rankOf={rankOf} active={active} px={expanded ? 4 : count > 8 ? 2 : 3} />
+          <RaceCircuit
+            candidates={candidates}
+            dist={dist}
+            rankOf={rankOf}
+            active={active}
+            px={expanded ? 4 : count > 8 ? 2 : 3}
+          />
         ) : (
           candidates.map((p, i) => {
             const hue = categoryHue(p.category);

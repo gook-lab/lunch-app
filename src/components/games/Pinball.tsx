@@ -831,7 +831,8 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
         )}
       </label>
       {onBallCounts && (
-        <details className="pinball__balls">
+        // 처음부터 펼쳐 둔다 — 시작 전에 공 개수를 고르는 게 이 판의 재미라 접혀 있으면 지나쳤다(10/13 사용자).
+        <details className="pinball__balls" open>
           <summary>
             공 개수 · 확률 <span className="pinball__total">공 {total}개</span>
           </summary>

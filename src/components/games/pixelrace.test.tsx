@@ -45,7 +45,7 @@ describe.each([
       expect(r.container.querySelectorAll(runner)).toHaveLength(n);
       run(500);
       expect(r.container.querySelector('.prace__count')).toBeTruthy();
-      run(12_000);
+      run(15_000);
       expect(onSpinEnd).toHaveBeenCalledTimes(1);
       r.rerender(<Race {...props} spinning={false} />);
       const win = r.container.querySelectorAll(winName);
@@ -69,16 +69,16 @@ describe.each([
 });
 
 describe('레이싱 연출', () => {
-  it('두 바퀴 동안 부스터·펑크·전복이 화면에 나온다', () => {
+  it('세 바퀴 동안 부스터·펑크·전복·받힘이 화면에 나온다', () => {
     const seen = new Set<string>();
-    for (let k = 0; k < 6 && seen.size < 3; k += 1) {
+    for (let k = 0; k < 8 && seen.size < 4; k += 1) {
       const r = render(<CarRace candidates={places(10)} winnerIndex={k} spinning run={40 + k} onSpinEnd={() => {}} />);
-      for (let t = 0; t < 12_000; t += 100) {
+      for (let t = 0; t < 15_000; t += 100) {
         act(() => { vi.advanceTimersByTime(100); });
-        for (const kind of ['boost', 'wobble', 'crash']) if (r.container.querySelector(`.rc__car--${kind}`)) seen.add(kind);
+        for (const kind of ['boost', 'wobble', 'crash', 'bump']) if (r.container.querySelector(`.rc__car--${kind}`)) seen.add(kind);
       }
       r.unmount();
     }
-    expect([...seen].sort()).toEqual(['boost', 'crash', 'wobble']);
+    expect([...seen].sort()).toEqual(['boost', 'bump', 'crash', 'wobble']);
   }, 30_000);
 });
