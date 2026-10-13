@@ -83,7 +83,7 @@ body {
   height: 2px;
   background: var(--color-text);
   transform: scaleX(0);
-  transition: transform 160ms var(--ease-out);
+  transition: transform var(--motion-fast) var(--ease-out);
 }
 
 .tabs button.on { color: var(--color-text); font-weight: 600; }
@@ -198,14 +198,14 @@ body {
   font-size: var(--fs-sm);
   color: var(--color-neutral-700);
   cursor: pointer;
-  transition: background 120ms var(--ease-out), color 120ms var(--ease-out);
+  transition: background var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
 }
 
 .segmented button + button { border-left: 1px solid var(--color-neutral-400); }
 .segmented button.on { background: var(--color-text); color: var(--color-bg); font-weight: 600; }
 .segmented button:disabled { opacity: 0.4; cursor: default; }
 
-.chip { position: relative; cursor: pointer; transition: background 120ms var(--ease-out); }
+.chip { position: relative; cursor: pointer; transition: background var(--motion-fast) var(--ease-out); }
 
 /*
  * 터치 영역. 칩·도보 알약·카테고리 라벨은 보이는 크기가 작다(390px 실측:
@@ -435,7 +435,7 @@ body {
   font-size: var(--fs-xs);
   font-weight: 700;
   cursor: pointer;
-  transition: background 120ms var(--ease-out), transform 120ms var(--ease-out);
+  transition: background var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out);
 }
 
 /* 누르는 영역은 44px 근처까지. 열이 촘촘하면 이웃과 반씩 나눈다. */
@@ -490,7 +490,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  transition: color 200ms var(--ease-out);
+  transition: color var(--motion-base) var(--ease-out);
 }
 
 .ladder__label--win {
@@ -889,7 +889,7 @@ footer.muted { text-align: center; }
   border: 1px solid var(--color-neutral-300);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: border-color 120ms var(--ease-out);
+  transition: border-color var(--motion-fast) var(--ease-out);
 }
 
 .add__hit:hover { border-color: var(--color-neutral-600); }
@@ -1063,7 +1063,7 @@ footer.muted { text-align: center; }
 /* 조각 전체가 과녁이다. 라벨만 누르게 하면 손가락으로는 못 맞힌다. */
 .rm__hit { fill: transparent; cursor: pointer; }
 
-.rm__dot { transition: r 160ms var(--ease-out); }
+.rm__dot { transition: r var(--motion-fast) var(--ease-out); }
 .rm__dot--candidate { fill: var(--color-text); }
 .rm__dot--released {
   fill: var(--color-bg);
@@ -1408,7 +1408,7 @@ footer.muted { text-align: center; }
   font-size: var(--fs-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: background 160ms var(--ease-out), color 160ms var(--ease-out);
+  transition: background var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
 }
 .modebar__item:hover:not(:disabled) { background: var(--color-neutral-100); }
 .modebar__item--on,
