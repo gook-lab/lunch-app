@@ -22,7 +22,7 @@ import {
   assertFails,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, setDoc, updateDoc, deleteDoc, getDoc, getDocs, collection, query, where, documentId, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, deleteDoc, getDoc, getDocs, collection, collectionGroup, query, where, documentId, serverTimestamp } from 'firebase/firestore';
 import { todayKST, dayIdBefore } from '../../lib/date';
 
 const hasEmulator = !!process.env.FIRESTORE_EMULATOR_HOST;
@@ -307,6 +307,39 @@ d('firestore.rules', () => {
       await assertSucceeds(setDoc(doc(db(ALICE), `predictions/${TODAY}/votes/${ALICE}`), vote()));
       await assertFails(deleteDoc(doc(db(BOB), `predictions/${TODAY}/votes/${ALICE}`)));
       await assertSucceeds(deleteDoc(doc(db(ALICE), `predictions/${TODAY}/votes/${ALICE}`)));
+    });
+  });
+
+  describe('ratings — 사람마다 별점', () => {
+    const ref = (uid: string, as = uid) => doc(db(as), 'places', 'p1', 'ratings', uid);
+
+    it('S1 — 자기 uid 문서에 1~5 정수·한줄평·이름·서버 시각이면 허용', async () => {
+      await assertSucceeds(setDoc(ref(ALICE), { score: 4, review: '국물이 진해요', name: '앨리스', at: serverTimestamp() }));
+      await assertSucceeds(setDoc(ref(ALICE), { score: 5, at: serverTimestamp() }));
+    });
+
+    it('S2 — 남의 uid 문서·인증 없음은 거부', async () => {
+      await assertFails(setDoc(ref(BOB, ALICE), { score: 4, at: serverTimestamp() }));
+      await assertFails(setDoc(doc(anon(), 'places', 'p1', 'ratings', ALICE), { score: 4, at: serverTimestamp() }));
+    });
+
+    it('S3 — 점수 범위·정수·한줄평 길이·허용 외 필드·클라이언트 시각은 거부', async () => {
+      await assertFails(setDoc(ref(ALICE), { score: 0, at: serverTimestamp() }));
+      await assertFails(setDoc(ref(ALICE), { score: 6, at: serverTimestamp() }));
+      await assertFails(setDoc(ref(ALICE), { score: 3.5, at: serverTimestamp() }));
+      await assertFails(setDoc(ref(ALICE), { score: 3, review: 'ㄱ'.repeat(41), at: serverTimestamp() }));
+      await assertFails(setDoc(ref(ALICE), { score: 3, extra: 1, at: serverTimestamp() }));
+      await assertFails(setDoc(ref(ALICE), { score: 3, at: new Date() }));
+    });
+
+    it('S4 — 자기 표는 지울 수 있고 남의 표는 못 지운다, 모든 가게 별점을 한 번에 읽는다', async () => {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore(), 'places', 'p1', 'ratings', BOB), { score: 3, at: new Date() });
+      });
+      await assertFails(deleteDoc(ref(BOB, ALICE)));
+      await assertSucceeds(getDocs(collectionGroup(db(ALICE), 'ratings')));
+      await assertFails(getDocs(collectionGroup(anon(), 'ratings')));
+      await assertSucceeds(deleteDoc(ref(BOB)));
     });
   });
 

@@ -32,6 +32,12 @@ vi.mock('./services/predictions', () => ({
 vi.mock('./hooks/useLunchData', () => ({
   useLunchData: () => ({ state: 'ready', error: null, places: fx.places, visits: [], today: null, refreshing: false, reload: () => {} }),
 }));
+vi.mock('./services/ratings', () => ({
+  subscribeRatings: () => () => {},
+  ratingUid: async () => 'me',
+  rate: vi.fn(async () => {}),
+  unrate: vi.fn(async () => {}),
+}));
 vi.mock('./services/lunch', () => ({ decideToday: vi.fn(async () => {}) }));
 vi.mock('./components/MapTab', () => ({ default: () => null }));
 // 끝을 알리지 않는 돌림판.

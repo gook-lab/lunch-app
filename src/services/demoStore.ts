@@ -8,7 +8,7 @@
  */
 import type { Place } from '../lib/candidates';
 import { dayIdBefore, todayKST, type DayId } from '../lib/date';
-import type { Vote } from './types';
+import type { PlaceVote, Vote } from './types';
 
 const KEY = 'lunch-app:demo-v1';
 
@@ -19,6 +19,8 @@ export interface DemoState {
   office: { lat: number; lng: number } | null;
   /** 날짜 → 그날 예측 표. */
   votes: Record<DayId, Vote[]>;
+  /** 가게별 사람별 별점. 예전 저장분에는 없을 수 있다. */
+  ratings?: PlaceVote[];
 }
 
 export const DEMO_UID = 'demo-me';
@@ -66,7 +68,17 @@ function seed(): DemoState {
       { uid: 'demo-b', placeId: 'demo-7', name: '준호' },
     ],
   };
-  return { places, visits, office: { ...ORIGIN }, votes };
+  // 동료 별점 — 평균과 한줄평이 바로 보이게 몇 곳에만.
+  const ratings: PlaceVote[] = [
+    { placeId: 'demo-1', uid: 'demo-a', score: 5, name: '민지', review: '국물이 진해요' },
+    { placeId: 'demo-1', uid: 'demo-b', score: 4, name: '준호' },
+    { placeId: 'demo-2', uid: 'demo-a', score: 4, name: '민지', review: '김치찌개 맛집' },
+    { placeId: 'demo-3', uid: 'demo-b', score: 5, name: '준호', review: '해장엔 여기' },
+    { placeId: 'demo-3', uid: 'demo-c', score: 4, name: '서연' },
+    { placeId: 'demo-5', uid: 'demo-c', score: 3, name: '서연', review: '양이 조금 적어요' },
+    { placeId: 'demo-7', uid: 'demo-a', score: 4, name: '민지' },
+  ];
+  return { places, visits, office: { ...ORIGIN }, votes, ratings };
 }
 
 let memory: DemoState | null = null;
@@ -81,6 +93,8 @@ export function readDemo(): DemoState {
     // 막힌 창이면 아래 씨앗으로 시작한다.
   }
   memory ??= seed();
+  // 별점이 생기기 전에 저장된 데모라면 동료 별점만 씨앗에서 채운다.
+  memory.ratings ??= seed().ratings;
   return memory;
 }
 

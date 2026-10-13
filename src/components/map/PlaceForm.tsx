@@ -18,6 +18,8 @@ import { findDuplicate } from '../../lib/duplicate';
 import { josa } from '../../lib/josa';
 import { walkMinutesBetween } from '../../lib/walk';
 import { addPlace } from '../../services/lunch';
+import { rate } from '../../services/ratings';
+import { savedName } from '../../lib/predictions';
 
 /** 규칙(firestore.rules)과 같은 값이다. 어긋나면 저장이 규칙에서 막힌다. */
 const MAX_WALK_MIN = 60;
@@ -131,14 +133,14 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
         kakaoPlaceId: draft.kakaoPlaceId ?? '',
         active: true,
         price: price ?? undefined,
-        rating: rating ?? undefined,
-        review: review.trim() || undefined,
         memo: memo.trim() || undefined,
       });
       if (!result.added) {
         setProblem('방금 다른 기기에서 같은 가게가 등록됐어요.');
         return;
       }
+      // 별점·한줄평은 가게 문서가 아니라 내 표로 남긴다(사람마다 한 표). 실패해도 가게는 이미 들어갔다.
+      if (rating !== null && result.id) await rate(result.id, rating, review, savedName()).catch(() => {});
       onSaved();
     } catch (error) {
       // 원인은 영어 개발자 문구일 수 있다. 안내를 앞에 두고 원문은 괄호로.
@@ -204,7 +206,7 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
         </div>
       </div>
 
-      <Input label="한줄평 (선택)" fieldProps={{ className: 'pf__field' }} value={review} onChange={(e) => setReview(e.target.value)} maxLength={MAX_REVIEW} placeholder="김치찌개가 진함" />
+      <Input label="한줄평 (별점을 고르면 같이 남아요)" fieldProps={{ className: 'pf__field' }} value={review} onChange={(e) => setReview(e.target.value)} maxLength={MAX_REVIEW} placeholder="김치찌개가 진함" />
 
       <Textarea label="메모 (선택)" fieldProps={{ className: 'pf__field' }} value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={MAX_MEMO} rows={2} placeholder="12시 전에 가야 자리 있음" />
 

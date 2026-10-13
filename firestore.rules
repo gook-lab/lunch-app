@@ -151,6 +151,32 @@ service cloud.firestore {
       allow delete: if signedIn() && request.auth.uid == uid && isTodayKST(dayId);
     }
 
+    // 별점 — 사람(익명 uid)마다 가게당 한 표. 자기 표만 쓰고 지운다. 평균은 화면이 낸다.
+    // 예전엔 가게 문서의 rating 하나를 마지막에 고친 사람이 덮어썼다.
+    match /places/{placeId}/ratings/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['score', 'review', 'name', 'at'])
+        && request.resource.data.keys().hasAll(['score', 'at'])
+        && request.resource.data.score is int
+        && request.resource.data.score >= 1
+        && request.resource.data.score <= 5
+        && (!('review' in request.resource.data)
+               || (request.resource.data.review is string && request.resource.data.review.size() <= 40))
+        && (!('name' in request.resource.data)
+               || (request.resource.data.name is string
+                   && request.resource.data.name.size() > 0
+                   && request.resource.data.name.size() <= 12))
+        && request.resource.data.at == request.time;
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
+
+    // 목록·지도가 모든 가게 별점을 한 번에 읽는다(컬렉션 그룹 쿼리).
+    match /{path=**}/ratings/{uid} {
+      allow read: if signedIn();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

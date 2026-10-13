@@ -13,3 +13,12 @@ export interface Vote {
 }
 
 export type Unsubscribe = () => void;
+
+/** 한 사람(익명 uid)이 한 가게에 남긴 별점. places/{placeId}/ratings/{uid}. */
+export interface PlaceVote {
+  placeId: string;
+  uid: string;
+  score: number;
+  review?: string;
+  name?: string;
+}

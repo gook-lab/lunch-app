@@ -44,6 +44,12 @@ vi.mock('./hooks/useLunchData', () => ({
     today: fx.decision, refreshing: false, reload: () => {},
   }),
 }));
+vi.mock('./services/ratings', () => ({
+  subscribeRatings: () => () => {},
+  ratingUid: async () => 'me',
+  rate: vi.fn(async () => {}),
+  unrate: vi.fn(async () => {}),
+}));
 vi.mock('./services/lunch', () => ({ decideToday: vi.fn(async () => {}) }));
 vi.mock('./components/MapTab', () => ({
   default: ({ focusId }: { focusId?: string | null }) => <p data-testid="map-focus">{focusId ?? 'none'}</p>,

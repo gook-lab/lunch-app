@@ -21,6 +21,8 @@ import { RECENT_WINDOW_DAYS } from '../lib/candidates';
 import { daysBetween, type DayId } from '../lib/date';
 import { walkMinutesBetween } from '../lib/walk';
 import { updatePlace } from '../services/lunch';
+import type { RatingSummary } from '../lib/ratings';
+import { RatingBadge, RatingEditor, RatingReviews } from './Rating';
 
 interface Props {
   places: Place[];
@@ -33,6 +35,8 @@ interface Props {
   onShowOnMap?: (placeId: string) => void;
   /** 지도 탭으로 가서 새 가게를 넣는다. 추가 경로는 지도 하나뿐이다. */
   onAdd?: () => void;
+  /** 가게별 별점 요약(사람마다 한 표의 평균). */
+  ratings?: Map<string, RatingSummary>;
 }
 
 interface LastVisit {
@@ -214,8 +218,10 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
   );
 }
 
-export function PlaceList({ places, visits, today, onChanged, excludeRecent, onShowOnMap, onAdd }: Props) {
+export function PlaceList({ places, visits, today, onChanged, excludeRecent, onShowOnMap, onAdd, ratings }: Props) {
   const [editing, setEditing] = useState<string | null>(null);
+  // 별점 칸을 연 가게. 고치기와 같은 자리에 펼친다.
+  const [rating, setRating] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [toggleProblem, setToggleProblem] = useState<string | null>(null);
 
@@ -258,6 +264,12 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
             <div className="list__meta">
               {place.category} · 도보 {place.walkMin}분 ·{' '}
               <span className={visit.recent ? 'list__recent' : undefined}>{visit.label}</span>
+              {ratings?.get(place.id) && (
+                <>
+                  {' · '}
+                  <RatingBadge summary={ratings.get(place.id)} />
+                </>
+              )}
             </div>
           </div>
           {/*
@@ -289,7 +301,20 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
                 </button>
               }
               items={[
-                { label: '고치기', onSelect: () => setEditing(editing === place.id ? null : place.id) },
+                {
+                  label: ratings?.get(place.id)?.mine ? '내 별점 고치기' : '별점 남기기',
+                  onSelect: () => {
+                    setEditing(null);
+                    setRating(rating === place.id ? null : place.id);
+                  },
+                },
+                {
+                  label: '고치기',
+                  onSelect: () => {
+                    setRating(null);
+                    setEditing(editing === place.id ? null : place.id);
+                  },
+                },
                 {
                   label: place.active ? '끄기' : '켜기',
                   tone: place.active ? 'danger' : 'default',
@@ -299,6 +324,15 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
             />
           </div>
         </div>
+        {rating === place.id && (
+          <div className="list__rate">
+            <RatingReviews summary={ratings?.get(place.id)} />
+            <RatingEditor key={place.id} placeId={place.id} summary={ratings?.get(place.id)} />
+            <button type="button" className="linkish" onClick={() => setRating(null)}>
+              닫기
+            </button>
+          </div>
+        )}
         {editing === place.id && (
           <EditRow
             place={place}

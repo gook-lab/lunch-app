@@ -43,6 +43,9 @@ import { officeSource } from './lib/walk';
 import { emptyMessage, noticeMessage } from './lib/messages';
 import { decideToday } from './services/lunch';
 import { DemoNote } from './components/DemoNote';
+import { RatingBadge } from './components/Rating';
+import { useRatings } from './hooks/useRatings';
+import { CategoryChips } from './components/CategoryChips';
 import './App.css';
 // 종이 식권 테마는 App.css 뒤에 — 같은 명시도로 덮는다.
 import './theme.css';
@@ -93,6 +96,7 @@ function dayOfYear(day: string): number {
 export default function App() {
   const today = useTodayKST();
   const { state, error, places, visits, today: decision, refreshing, reload, officeKey } = useLunchData(today);
+  const ratings = useRatings(places);
   // 동료 예측. 오늘 표를 실시간으로 받는다. 당첨에는 쓰지 않는다 — spin() 은 이 값을 보지 않는다.
   const [votes, setVotes] = useState<Vote[]>([]);
   const [uid, setUid] = useState<string | null>(null);
@@ -514,6 +518,7 @@ export default function App() {
           {winner.category}
         </span>
         <span>도보 {winner.walkMin}분</span>
+        <RatingBadge summary={ratings.get(winner.id)} />
       </div>
       {odds && (
         <p className="muted small ticket__odds">
@@ -614,6 +619,7 @@ export default function App() {
             excludeRecent={filters.excludeRecent}
             onShowOnMap={showOnMap}
             onAdd={() => goTab('map')}
+            ratings={ratings}
           />
         </div>
       )}
@@ -635,6 +641,7 @@ export default function App() {
               onOfficeChanged={reload}
               todayId={decidedPlace?.id ?? null}
               focusId={mapFocus}
+              ratings={ratings}
             />
           </Suspense>
         </div>
@@ -697,6 +704,15 @@ export default function App() {
               바꾸기<span aria-hidden="true"> ▾</span>
             </span>
           </button>
+        )}
+        {!expanded && (
+          <CategoryChips
+            places={places}
+            selected={filters.categories}
+            onToggle={toggleCategory}
+            onClear={() => updateFilters((f) => ({ ...f, categories: [] }))}
+            disabled={spinning}
+          />
         )}
         <div className="modebar" role="group" aria-label="방식">
           {GAME_MODES.map((m) => (

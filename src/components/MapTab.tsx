@@ -14,12 +14,14 @@ import { Spinner } from '@gook-lab/motion';
 import { ChipPicker } from './ChipPicker';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Checkbox, Input, Textarea } from '@gook-lab/ui';
-import { PRICE_BANDS, WALK_STEPS, type Place, type PriceBand, type Rating } from '../lib/candidates';
+import { PRICE_BANDS, WALK_STEPS, type Place, type PriceBand } from '../lib/candidates';
 import { DirectionsLink } from './DirectionsLink';
 import { CATEGORIES, categoryIcon, type Category } from '../lib/category';
 import { metersForWalkMinutes, officeCoord, type Coord } from '../lib/walk';
 import { OfficeCard } from './map/OfficeCard';
 import { pinElement } from './map/pin';
+import type { RatingSummary } from '../lib/ratings';
+import { RatingBadge, RatingEditor, RatingReviews } from './Rating';
 import {
   clearKakaoLoadFailure,
   KakaoLoadError,
@@ -37,7 +39,6 @@ const DRAG_TOLERANCE_PX = 10;
 /** 회사 기준 검색 반경. 도보 60분(직선 약 3.1km)보다 넉넉하게 둔다. */
 const SEARCH_RADIUS_M = 5000;
 const MAX_RESULTS = 10;
-const RATINGS: Rating[] = [1, 2, 3, 4, 5];
 
 interface Props {
   places: Place[];
@@ -48,6 +49,8 @@ interface Props {
   todayId?: string | null;
   /** 목록에서 "지도" 를 눌러 들어왔으면 그 가게. 처음 한 번 그 핀으로 간다. */
   focusId?: string | null;
+  /** 가게별 별점 요약. 핀·카드·옆 목록에 평균을 단다. */
+  ratings?: Map<string, RatingSummary>;
 }
 
 /** 이 배율보다 멀리 보면 핀에서 이름을 빼고 그림만 남긴다. 이름끼리 겹친다. */
@@ -96,19 +99,7 @@ function troubleOf(error: unknown): Trouble {
   };
 }
 
-function Stars({ value }: { value: Rating }) {
-  return (
-    <span className="mp__stars" aria-label={`별점 ${value}점`}>
-      {RATINGS.map((n) => (
-        <span key={n} className={n <= value ? 'mp__star mp__star--on' : 'mp__star'}>
-          ★
-        </span>
-      ))}
-    </span>
-  );
-}
-
-export default function MapTab({ places, onChanged, onOfficeChanged, todayId = null, focusId = null }: Props) {
+export default function MapTab({ places, onChanged, onOfficeChanged, todayId = null, focusId = null, ratings }: Props) {
   const [phase, setPhase] = useState<Phase>('loading');
   const [trouble, setTrouble] = useState<Trouble | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -281,7 +272,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       const position = new maps.LatLng(place.lat, place.lng);
       if (place.active || showOff) bounds.extend(position);
       const today = place.id === todayId;
-      const el = pinElement(place, today);
+      const el = pinElement(place, today, ratings?.get(place.id)?.average);
       el.addEventListener('click', () => {
         setSelectedId(place.id);
         setEditing(false);
@@ -318,7 +309,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       fittedRef.current = true;
       map.setBounds(bounds, 48, 32, 48, 32);
     }
-  }, [places, phase, todayId, showOff, focusId, mapCategory]);
+  }, [places, phase, todayId, showOff, focusId, mapCategory, ratings]);
 
   /* 고른 가게 핀을 강조하고 맨 위로 올린다. */
   useEffect(() => {
@@ -328,7 +319,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       pin.el.setAttribute('aria-pressed', String(on));
       pin.overlay.setZIndex(on ? 6 : pin.zIndex);
     }
-  }, [selectedId, places, phase, todayId, showOff, mapCategory]);
+  }, [selectedId, places, phase, todayId, showOff, mapCategory, ratings]);
 
   /* 3. 길게 눌러 핀 꽂기. */
   useEffect(() => {
@@ -683,8 +674,8 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
                   닫기
                 </button>
               </div>
-              {selected.rating && <Stars value={selected.rating} />}
-              {selected.review && <p className="small">{selected.review}</p>}
+              <RatingBadge summary={ratings?.get(selected.id)} />
+              <RatingReviews summary={ratings?.get(selected.id)} />
               {selected.memo && <p className="muted small">{selected.memo}</p>}
               {!selected.active && <span className="badge">꺼짐</span>}
               {toggleProblem === selected.id && (
@@ -711,6 +702,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
                 </Button>
               </div>
               <DirectionsLink place={selected} />
+              <RatingEditor key={selected.id} placeId={selected.id} summary={ratings?.get(selected.id)} />
             </>
           )}
         </div>
@@ -743,7 +735,15 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
                     {p.name}
                     {p.id === todayId && <span className="badge">오늘</span>}
                   </span>
-                  <span className="muted small">도보 {p.walkMin}분</span>
+                  <span className="muted small">
+                    {ratings?.get(p.id) && (
+                      <>
+                        <RatingBadge summary={ratings.get(p.id)} />
+                        {' · '}
+                      </>
+                    )}
+                    도보 {p.walkMin}분
+                  </span>
                 </button>
               </li>
             ))}
@@ -809,8 +809,6 @@ function PlaceEdit({
       : null,
   );
   const [price, setPrice] = useState<PriceBand | null>(place.price ?? null);
-  const [rating, setRating] = useState<Rating | null>(place.rating ?? null);
-  const [review, setReview] = useState(place.review ?? '');
   const [memo, setMemo] = useState(place.memo ?? '');
   const [saving, setSaving] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -826,8 +824,6 @@ function PlaceEdit({
         name: trimmed,
         category,
         price: price ?? undefined,
-        rating: rating ?? undefined,
-        review: review.trim() || undefined,
         memo: memo.trim() || undefined,
       });
       onDone();
@@ -849,24 +845,6 @@ function PlaceEdit({
         <span className="filters__label">가격대</span>
         <ChipPicker label="가격대" options={PRICE_BANDS} value={price} onPick={setPrice} allowNone />
       </div>
-      <div className="pf__field">
-        <span className="filters__label">별점</span>
-        <div className="pf__stars" role="group" aria-label="별점">
-          {RATINGS.map((n) => (
-            <button
-              key={n}
-              type="button"
-              aria-pressed={rating !== null && rating >= n}
-              aria-label={`${n}점`}
-              className={rating !== null && rating >= n ? 'pf__star pf__star--on' : 'pf__star'}
-              onClick={() => setRating(rating === n ? null : n)}
-            >
-              ★
-            </button>
-          ))}
-        </div>
-      </div>
-      <Input label="한줄평" fieldProps={{ className: 'pf__field' }} value={review} onChange={(e) => setReview(e.target.value)} maxLength={40} />
       <Textarea label="메모" fieldProps={{ className: 'pf__field' }} value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={120} rows={2} />
       <p className="muted small">좌표와 도보 시간은 목록 탭에서 고칠 수 있어요.</p>
       {problem && <p className="notice notice--empty" role="alert">{problem}</p>}

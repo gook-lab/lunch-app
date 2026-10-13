@@ -6,7 +6,8 @@ import type { Place } from '../../lib/candidates';
  * 그림(카테고리)·이름·도보 시간을 핀에 바로 쓴다. textContent 로만 넣는다 —
  * 가게 이름은 사람이 입력한 값이다.
  */
-export function pinElement(place: Place, today: boolean): HTMLButtonElement {
+/** average 가 있으면 도보 시간 앞에 ★ 평균을 붙인다. */
+export function pinElement(place: Place, today: boolean, average?: number): HTMLButtonElement {
   const el = document.createElement('button');
   el.type = 'button';
   el.className = 'map__pin';
@@ -21,11 +22,12 @@ export function pinElement(place: Place, today: boolean): HTMLButtonElement {
   name.textContent = place.name;
   const walk = document.createElement('span');
   walk.className = 'map__pinWalk';
-  walk.textContent = `${place.walkMin}분`;
+  walk.textContent = (average ? `★${average.toFixed(1)} · ` : '') + `${place.walkMin}분`;
   el.append(icon, name, walk);
   el.setAttribute(
     'aria-label',
     `${place.name}, ${place.category}, 도보 ${place.walkMin}분` +
+      (average ? `, 별점 ${average.toFixed(1)}점` : '') +
       (today ? ', 오늘 정한 곳' : '') +
       (place.active ? '' : ', 꺼 둔 가게'),
   );
