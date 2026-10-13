@@ -2708,3 +2708,110 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   cursor: pointer;
 }
 .stage__sound:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+/* 이번 달 점심 */
+.stats + .history, .stats + * { margin-top: var(--space-6); }
+.stats {
+  padding: var(--space-3);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.stats__total {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+}
+
+.stats__totalNumber {
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.stats__totalLabel {
+  margin: 0;
+  font-size: var(--fs-md);
+  color: var(--color-neutral-700);
+}
+
+.stats__subheading {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-neutral-700);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stats__topPlaces {
+  margin: var(--space-3) 0;
+}
+
+.stats__topList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stats__topItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--space-2);
+  align-items: baseline;
+}
+.stats__topName { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: var(--fs-sm); font-weight: 600; }
+.stats__topCount { font-size: var(--fs-xs); color: var(--color-neutral-700); }
+.stats__topBar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--color-neutral-200); overflow: hidden; }
+.stats__topFill { display: block; height: 100%; border-radius: 3px; background: var(--color-accent-400); }
+
+.stats__badges {
+  margin: var(--space-3) 0 0;
+}
+
+.stats__badgeList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.stats__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  font-size: var(--fs-xs);
+  color: var(--color-neutral-700);
+  opacity: 0.7;
+}
+
+.stats__badge--earned {
+  border-color: var(--color-accent-300);
+  background: var(--color-accent-100);
+  color: var(--color-text);
+  font-weight: 600;
+  opacity: 1;
+}
+
+.stats__badgeIcon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.stats__badgeLabel {
+  font-weight: 600;
+}
+
+.stats__badgeProgress {
+  margin-left: var(--space-1);
+  font-size: 10px;
+  opacity: 0.8;
+}
