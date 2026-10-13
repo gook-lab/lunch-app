@@ -3,11 +3,10 @@
  *
  * 당첨은 App 이 정했다(winnerIndex). 경기를 무작위로 만든 뒤 1등 기록을 당첨에게
  * 맞바꾼다 — 사고·부스트도 기록과 함께 옮겨 가므로 공정성은 그대로다.
- * 3·2·1 카운트다운 → 경주(당첨이 결승하는 데 약 6.5초) → 1등 들어오면 끝.
- * 주자 그림은 box-shadow 픽셀 아트라 카테고리 색 토큰을 그대로 쓴다.
+ * 3·2·1 카운트다운 → 경주(경마 6.5초 한 바퀴, 레이싱 12초 세 바퀴) → 1등 들어오면 끝.
+ * 그리기는 RaceCircuit(기울인 타원 트랙)이 맡는다.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { categoryHue } from '../../lib/category';
 import { shortName } from '../../lib/name';
 import { buildRace, progress, SLICE, type RaceEventKind } from '../../lib/race';
 import { seededRandom } from '../../lib/random';
@@ -24,63 +23,15 @@ const RACE_MS: Record<RaceTheme, number> = { horse: 6500, car: 12000 };
 const RACE_OPTIONS = { horse: {}, car: { maxEvents: 3, eventChance: 0.5, collisions: true } } as const;
 const AFTER_MS = 500;
 
-const HORSE: string[][] = [
-  [
-    '......cc......',
-    '.....jjjj.....',
-    '......jj...mb.',
-    '..bbbbbbbbbbbb',
-    '.bbbbbbbbbbbb.',
-    'm.bbbbbbbbb...',
-    '..b.b....b.b..',
-    '.b...b..b...b.',
-  ],
-  [
-    '......cc......',
-    '.....jjjj.....',
-    '......jj...mb.',
-    '..bbbbbbbbbbbb',
-    '.bbbbbbbbbbbb.',
-    '.mbbbbbbbbb...',
-    '...bb....bb...',
-    '...b.b..b.b...',
-  ],
-];
-
-function palette(hue: number): Record<string, string> {
-  return {
-    b: 'oklch(0.48 0.08 55)',
-    m: 'var(--color-neutral-900)',
-    j: `oklch(0.66 0.17 ${hue})`,
-    c: `oklch(0.48 0.16 ${hue})`,
-  };
-}
-
-/** 그림 한 장을 box-shadow 한 줄로. 픽셀 하나 = px. */
-function sprite(rows: string[], colors: Record<string, string>, px: number): string {
-  const out: string[] = [];
-  rows.forEach((row, y) =>
-    [...row].forEach((ch, x) => {
-      if (colors[ch]) out.push(`${(x + 1) * px}px ${(y + 1) * px}px 0 ${colors[ch]}`);
-    }),
-  );
-  return out.join(',');
-}
-
-const EVENT_ICON: Record<RaceEventKind, string> = {
-  crash: '💥',
-  boost: '🥕',
-  wobble: '💫',
-  bump: '💢',
-};
-
 function eventLine(theme: RaceTheme, kind: RaceEventKind, name: string, other: string | null): string {
   if (theme === 'horse') {
     return kind === 'crash'
       ? `${name} 말이 넘어졌어요!`
       : kind === 'boost'
         ? `${name} 당근 먹고 질주해요!`
-        : `${name} 말이 휘청해요`;
+        : kind === 'bump'
+          ? `${name} 말이 부딪혀 주춤해요`
+          : `${name} 말이 휘청해요`;
   }
   // 레이싱: 사고 = 전복(옆 차와 부딪혀 났으면 충돌), 휘청 = 타이어 펑크, 부스트 = 부스터.
   if (kind === 'crash' && other) return `쾅! ${name} 차가 ${other} 차와 부딪혀 뒤집혔어요!`;
@@ -119,6 +70,8 @@ export function PixelRace({
     [count, winnerIndex, run, theme],
   );
   const [view, setView] = useState<View>({ run: -1, count: -1, t: 0 });
+  // 순위표에서 고른 주자 — 카메라가 당겨 따라간다. 판이 바뀌어도 그대로 둔다(같은 가게를 응원).
+  const [focus, setFocus] = useState<number | null>(null);
   const live = view.run === run && race !== null;
   const settled = !live && race !== null && !spinning;
   const t = live ? view.t : settled && race ? race.finish[winnerIndex!] : 0;
@@ -213,51 +166,17 @@ export function PixelRace({
         {line}
       </p>
       <div className="prace__board">
-        {theme === 'car' ? (
-          <RaceCircuit
-            candidates={candidates}
-            dist={dist}
-            rankOf={rankOf}
-            active={active}
-            px={expanded ? 4 : count > 8 ? 2 : 3}
-          />
-        ) : (
-          candidates.map((p, i) => {
-            const hue = categoryHue(p.category);
-            const ev = active[i];
-            const rank = rankOf.get(i);
-            return (
-              <div key={p.id} className={rank === 1 ? 'prace__lane prace__lane--win' : 'prace__lane'}>
-                <span className="prace__name" title={p.name}>
-                  {shortName(p.name, count > 10 ? 4 : 6)}
-                </span>
-                <span className="prace__track">
-                  <span
-                    className={['prace__runner', ev ? `prace__runner--${ev}` : ''].filter(Boolean).join(' ')}
-                    style={
-                      {
-                        left: `calc((100% - ${16 * px}px) * ${dist[i]})`,
-                      } as React.CSSProperties
-                    }
-                    aria-hidden="true"
-                  >
-                    <span
-                      className="prace__sprite"
-                      style={{
-                        width: px,
-                        height: px,
-                        boxShadow: sprite(HORSE[frame], palette(hue), px),
-                      }}
-                    />
-                    {ev && <span className="prace__fx">{EVENT_ICON[ev]}</span>}
-                  </span>
-                  <span className="prace__finish" aria-hidden="true" />
-                </span>
-                <span className="prace__rank">{rank ? `${rank}등` : ''}</span>
-              </div>
-            );
-          })
-        )}
+        <RaceCircuit
+          theme={theme}
+          candidates={candidates}
+          dist={dist}
+          rankOf={rankOf}
+          active={active}
+          px={expanded ? 4 : count > 8 ? 2 : 3}
+          frame={frame}
+          focus={focus !== null && focus < count ? focus : null}
+          onFocus={setFocus}
+        />
         {counting && (
           <span className="prace__count" aria-hidden="true">
             {COUNTDOWN[view.count]}

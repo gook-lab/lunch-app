@@ -2872,68 +2872,9 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   border-radius: var(--radius-md);
   background: oklch(0.42 0.09 145);
 }
-.prace--car .prace__board { padding: var(--space-2) var(--space-1); background: oklch(0.26 0.03 260); }
-.prace__lane {
-  display: grid;
-  grid-template-columns: 4.5em 1fr 2.6em;
-  align-items: center;
-  gap: var(--space-2);
-}
-.prace__name, .prace__rank {
-  overflow: hidden;
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  white-space: nowrap;
-  color: var(--color-bg);
-}
-.prace__rank { text-align: right; }
-.prace__lane--win .prace__name,
-.prace__lane--win .prace__rank { color: oklch(0.9 0.16 95); }
-.prace__track {
-  position: relative;
-  display: block;
-  height: calc(var(--px) * 11);
-  border-radius: var(--radius-sm);
-  background: repeating-linear-gradient(90deg, oklch(0.6 0.13 140) 0 24px, oklch(0.56 0.13 140) 24px 48px);
-}
-.prace__finish {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 6px;
-  background: repeating-conic-gradient(var(--color-neutral-900) 0 25%, var(--color-bg) 0 50%) 0 0 / 6px 6px;
-}
-.prace__runner {
-  position: absolute;
-  top: 50%;
-  width: calc(var(--px) * 16);
-  height: calc(var(--px) * 10);
-  translate: 0 -50%;
-  z-index: 1;
-}
-.prace__sprite { position: absolute; top: calc(var(--px) * -1); left: calc(var(--px) * -1); display: block; }
-.prace__runner--crash .prace__sprite { animation: prace-crash 360ms steps(4) infinite; }
-.prace__runner--wobble .prace__sprite { animation: prace-wobble 240ms steps(2) infinite; }
-.prace__runner--boost::before {
-  content: '';
-  position: absolute;
-  top: 30%;
-  right: 100%;
-  width: calc(var(--px) * 10);
-  height: 40%;
-  border-radius: var(--radius-sm);
-  background: linear-gradient(to left, color-mix(in oklch, var(--color-bg) 80%, transparent), transparent);
-}
-.prace__fx {
-  position: absolute;
-  bottom: 70%;
-  left: 50%;
-  translate: -50% 0;
-  font-size: 14px;
-  line-height: 1;
-  animation: pop var(--motion-base) var(--ease-out);
-}
+.prace--car .prace__board,
+.prace--horse .prace__board { padding: var(--space-2) var(--space-1); background: oklch(0.26 0.03 260); }
+.prace--horse .prace__board { background: oklch(0.32 0.05 240); }
 .prace__count {
   position: absolute;
   inset: 0;
@@ -2946,8 +2887,6 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   z-index: 2;
   animation: pop var(--motion-slow) var(--ease-out);
 }
-@keyframes prace-crash { 50% { rotate: 90deg; } to { rotate: 180deg; } }
-@keyframes prace-wobble { 50% { translate: 0 calc(var(--px) * -2); } }
 
 /* 핀볼 확률 — 휴대폰은 판 위 띠, 넓으면 판 왼쪽 칸 */
 .pinball__odds {
@@ -3050,7 +2989,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   letter-spacing: 0.06em;
   line-height: 1.8;
 }
-.rc__car {
+.rc__runner {
   position: absolute;
   width: calc(var(--px) * 13);
   height: calc(var(--px) * 7);
@@ -3065,10 +3004,10 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 }
 .rc__body { position: absolute; inset: 0; transform: translateZ(calc(var(--px) * 2)); transform-style: preserve-3d; }
 .rc__sprite { position: absolute; top: calc(var(--px) * -1); left: calc(var(--px) * -1); display: block; }
-.rc__car--win .rc__body { filter: drop-shadow(0 0 3px oklch(0.9 0.16 95)); }
+.rc__runner--win .rc__body { filter: drop-shadow(0 0 3px oklch(0.9 0.16 95)); }
 
 /* 전복 — 긴 축으로 한 바퀴 구르며 튀어 오른다 */
-.rc__car--crash .rc__body { animation: rc-roll 900ms var(--ease-inout) both; }
+.rc__runner--crash .rc__body { animation: rc-roll 900ms var(--ease-inout) both; }
 @keyframes rc-roll {
   50% { transform: translateZ(calc(var(--px) * 9)) rotateX(180deg); }
   to { transform: translateZ(calc(var(--px) * 2)) rotateX(360deg); }
@@ -3096,7 +3035,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   animation: rc-flame 90ms steps(2) infinite;
 }
 @keyframes rc-flame { 50% { scale: 0.6 0.8; } }
-.rc__car--boost::after {
+.rc__runner--boost::after {
   content: '';
   position: absolute;
   top: -30%;
@@ -3108,7 +3047,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 }
 
 /* 타이어 펑크 — 차가 떨리고, 불꽃이 튀고, 바퀴가 굴러 나간다 */
-.rc__car--wobble .rc__body { animation: rc-shake 110ms steps(2) infinite; }
+.rc__runner--wobble .rc__body { animation: rc-shake 110ms steps(2) infinite; }
 @keyframes rc-shake { 50% { rotate: 12deg; } }
 .rc__spark {
   position: absolute;
@@ -3164,5 +3103,61 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   pointer-events: none;
 }
 /* 받힘 — 옆 차에 부딪혀 제자리에서 한 바퀴 돈다 */
-.rc__car--bump .rc__body { animation: rc-spin 800ms var(--ease-out) both; }
+.rc__runner--bump .rc__body { animation: rc-spin 800ms var(--ease-out) both; }
 @keyframes rc-spin { to { rotate: 360deg; } }
+
+/* 경마장 — 흙 주로, 흰 난간, 차선 대신 옅은 주로선 */
+.rc--horse .rc__track {
+  border: 3px solid var(--color-bg);
+  background: linear-gradient(oklch(0.6 0.08 60), oklch(0.55 0.08 60)) padding-box, var(--color-bg) border-box;
+}
+.rc--horse .rc__infield { border: 3px solid var(--color-bg); }
+.rc--horse .rc__laneLine { border-color: color-mix(in oklch, var(--color-bg) 25%, transparent); }
+/* 말은 판 기울기만큼 되세운다(billboard). 왼쪽으로 달리면 좌우를 뒤집는다 */
+.rc--horse .rc__runner { width: calc(var(--px) * 15); height: calc(var(--px) * 9); }
+.rc--horse .rc__shadow { inset: auto 10% -6% 10%; height: 30%; border-radius: 50%; translate: none; }
+.rc--horse .rc__body {
+  transform-origin: 50% 100%;
+  transform: rotateX(-48deg) scaleX(var(--flip, 1));
+}
+.rc--horse .rc__runner--crash .rc__body { animation: rc-tumble 900ms var(--ease-inout) both; }
+@keyframes rc-tumble {
+  40% { transform: rotateX(-48deg) scaleX(var(--flip, 1)) rotate(-80deg); }
+  to { transform: rotateX(-48deg) scaleX(var(--flip, 1)); }
+}
+.rc--horse .rc__runner--wobble .rc__body,
+.rc--horse .rc__runner--bump .rc__body { animation: rc-hop 220ms steps(2) infinite; }
+@keyframes rc-hop { 50% { transform: rotateX(-48deg) scaleX(var(--flip, 1)) translateY(calc(var(--px) * -3)); } }
+.rc--horse .rc__flame {
+  top: 55%;
+  right: auto;
+  left: -40%;
+  height: 40%;
+  border-radius: 50%;
+  background: radial-gradient(color-mix(in oklch, oklch(0.8 0.06 70) 90%, transparent), transparent 70%);
+  animation: rc-puff 400ms var(--ease-out) infinite;
+}
+.rc--horse .rc__runner--boost::after { display: none; }
+
+/* 따라가기 — 고른 주자 쪽으로 당기고 나머지는 흐리게 */
+.rc__stage { overflow: hidden; }
+.rc__plane { transition: scale var(--motion-slow) var(--ease-out); }
+.rc__runner--dim { opacity: 0.45; }
+.rc__runner--focus .rc__shadow { box-shadow: 0 0 0 2px oklch(0.9 0.16 95); }
+.rc__tag {
+  position: absolute;
+  top: 0;
+  right: var(--space-2);
+  z-index: 1;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-neutral-900);
+  color: oklch(0.9 0.16 95);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  line-height: 1.8;
+  white-space: nowrap;
+}
+button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--fs-xs); cursor: pointer; }
+.rc__pos[aria-pressed='true'] { border-color: oklch(0.9 0.16 95); color: var(--color-bg); }
+.rc__pos:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }

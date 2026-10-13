@@ -34,8 +34,8 @@ const places = (n: number): Place[] =>
   }));
 
 describe.each([
-  ['경마', HorseRace, '.prace__lane', '.prace__lane--win .prace__name'],
-  ['레이싱', CarRace, '.rc__car', '.rc__pos--win'],
+  ['경마', HorseRace, '.rc__runner', '.rc__pos--win'],
+  ['레이싱', CarRace, '.rc__runner', '.rc__pos--win'],
 ] as const)('%s', (_, Race, runner, winName) => {
   it('카운트다운 뒤 달려서 당첨이 1등으로 들어온다', () => {
     for (const [n, winner] of [[1, 0], [5, 3], [12, 0], [20, 19]]) {
@@ -75,10 +75,24 @@ describe('레이싱 연출', () => {
       const r = render(<CarRace candidates={places(10)} winnerIndex={k} spinning run={40 + k} onSpinEnd={() => {}} />);
       for (let t = 0; t < 15_000; t += 100) {
         act(() => { vi.advanceTimersByTime(100); });
-        for (const kind of ['boost', 'wobble', 'crash', 'bump']) if (r.container.querySelector(`.rc__car--${kind}`)) seen.add(kind);
+        for (const kind of ['boost', 'wobble', 'crash', 'bump']) if (r.container.querySelector(`.rc__runner--${kind}`)) seen.add(kind);
       }
       r.unmount();
     }
     expect([...seen].sort()).toEqual(['boost', 'bump', 'crash', 'wobble']);
   }, 30_000);
+});
+
+describe('따라가기', () => {
+  it('순위표 이름을 누르면 그 주자를 당겨 따라가고, 다시 누르면 풀린다', () => {
+    const r = render(<CarRace candidates={places(5)} winnerIndex={1} spinning={false} run={1} onSpinEnd={() => {}} />);
+    const pick = [...r.container.querySelectorAll<HTMLButtonElement>('.rc__pos')].find((b) => b.textContent?.includes('가게4'))!;
+    act(() => pick.click());
+    expect(pick.getAttribute('aria-pressed')).toBe('true');
+    expect(r.container.querySelector('.rc__plane--follow')).toBeTruthy();
+    expect(r.container.querySelector('.rc__tag')?.textContent).toContain('가게4');
+    expect(r.container.querySelectorAll('.rc__runner--dim')).toHaveLength(4);
+    act(() => pick.click());
+    expect(r.container.querySelector('.rc__plane--follow')).toBeNull();
+  });
 });
