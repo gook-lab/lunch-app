@@ -61,30 +61,90 @@ const HORSE: string[][] = [
 ];
 
 /** 그림 한 장을 box-shadow 한 줄로. 픽셀 하나 = px. */
-function sprite(rows: string[], colors: Record<string, string>, px: number): string {
+/** 그림 한 장을 box-shadow 한 줄로. 픽셀 하나 = px. 색은 글자·자리로 정한다(무늬용). */
+function sprite(rows: string[], color: (ch: string, x: number, y: number) => string | undefined, px: number): string {
   const out: string[] = [];
   rows.forEach((row, y) =>
     [...row].forEach((ch, x) => {
-      if (colors[ch]) out.push(`${(x + 1) * px}px ${(y + 1) * px}px 0 ${colors[ch]}`);
+      const c = color(ch, x, y);
+      if (c) out.push(`${(x + 1) * px}px ${(y + 1) * px}px 0 ${c}`);
     }),
   );
   return out.join(',');
 }
 
-function paint(theme: TrackTheme, i: number, n: number, frame: number, px: number): string {
+const INK = 'var(--color-neutral-900)';
+const SNOW = 'oklch(0.96 0.01 90)';
+
+/**
+ * 말 품종 — 기수 옷 색만으론 말이 다 똑같아 보였다(10/13 사용자). 순번으로 돌아가며
+ * 정하니 여덟 마리까지는 모두 다르다. body·mane 은 (x, y) 를 받아 무늬를 그린다.
+ */
+interface Breed {
+  name: string;
+  body: (x: number, y: number) => string;
+  mane: (x: number, y: number) => string;
+  /** 머리 위에 더 찍을 점(유니콘 뿔). */
+  extra?: [number, number, string][];
+}
+const BREEDS: Breed[] = [
+  { name: '밤색말', body: () => 'oklch(0.48 0.09 50)', mane: () => INK },
+  { name: '얼룩말', body: (x) => (x % 2 ? INK : SNOW), mane: () => INK },
+  { name: '흑마', body: () => 'oklch(0.27 0.01 260)', mane: () => 'oklch(0.45 0.01 260)' },
+  { name: '백마', body: () => SNOW, mane: () => 'oklch(0.78 0.01 260)' },
+  {
+    name: '점박이말',
+    body: (x, y) => ((x * 7 + y * 3) % 5 === 0 || y >= 6 ? 'oklch(0.35 0.06 50)' : SNOW),
+    mane: () => 'oklch(0.35 0.06 50)',
+  },
+  { name: '팔로미노', body: () => 'oklch(0.76 0.12 80)', mane: () => SNOW },
+  {
+    name: '회색 얼룩말',
+    body: (x, y) => ((x + y) % 3 === 0 ? 'oklch(0.82 0.01 260)' : 'oklch(0.6 0.01 260)'),
+    mane: () => 'oklch(0.4 0.01 260)',
+  },
+  {
+    name: '유니콘',
+    body: () => SNOW,
+    mane: (_, y) => `oklch(0.72 0.17 ${(y * 70) % 360})`,
+    extra: [
+      [12, 1, 'oklch(0.85 0.15 90)'],
+      [13, 0, 'oklch(0.85 0.15 90)'],
+    ],
+  },
+];
+// 판(run)마다 한 칸씩 돌려 준다 — 가게가 다섯 곳이어도 판이 바뀌면 유니콘이 나온다. 한 판 안에선 여덟 마리까지 다 다르다.
+const breedOf = (i: number, round: number) => BREEDS[(i + round) % BREEDS.length];
+
+function paint(theme: TrackTheme, i: number, n: number, frame: number, px: number, round: number): string {
   if (theme === 'car') {
-    return sprite(
-      CAR,
-      { b: runnerColor(i, n), g: 'oklch(0.86 0.04 230)', k: 'var(--color-neutral-900)', w: 'oklch(0.95 0.12 95)' },
-      px,
-    );
+    const colors: Record<string, string> = {
+      b: runnerColor(i, n),
+      g: 'oklch(0.86 0.04 230)',
+      k: INK,
+      w: 'oklch(0.95 0.12 95)',
+    };
+    return sprite(CAR, (ch) => colors[ch], px);
   }
-  // 말은 갈색 그대로, 기수 옷(모자·윗옷) 색으로 가른다.
-  return sprite(
+  const breed = breedOf(i, round);
+  const jockey = runnerColor(i, n);
+  const cap = runnerColor(i, n, true);
+  const body = sprite(
     HORSE[frame],
-    { b: 'oklch(0.48 0.08 55)', m: 'var(--color-neutral-900)', j: runnerColor(i, n), c: runnerColor(i, n, true) },
+    (ch, x, y) =>
+      ch === 'b'
+        ? breed.body(x, y)
+        : ch === 'm'
+          ? breed.mane(x, y)
+          : ch === 'j'
+            ? jockey
+            : ch === 'c'
+              ? cap
+              : undefined,
     px,
   );
+  const extra = (breed.extra ?? []).map(([x, y, c]) => `${(x + 1) * px}px ${(y + 1) * px}px 0 ${c}`);
+  return [body, ...extra].join(',');
 }
 
 /** 거리 d(0~1, 전체 바퀴) → 판 위 위치(%)와 진행 방향(도). 출발선은 아래 가운데. */
@@ -116,9 +176,23 @@ interface Props {
   frame: number;
   focus: number | null;
   onFocus: (i: number | null) => void;
+  /** 몇 번째 판인지 — 말 품종을 판마다 돌린다. */
+  round: number;
 }
 
-export function RaceCircuit({ theme, candidates, dist, rankOf, active, bubbles, px, frame, focus, onFocus }: Props) {
+export function RaceCircuit({
+  theme,
+  candidates,
+  dist,
+  rankOf,
+  active,
+  bubbles,
+  px,
+  frame,
+  focus,
+  onFocus,
+  round,
+}: Props) {
   const n = candidates.length;
   const laps = LAPS[theme];
   const lanes = Math.min(n, MAX_LANES);
@@ -147,6 +221,7 @@ export function RaceCircuit({ theme, candidates, dist, rankOf, active, bubbles, 
         {focus !== null && (
           <span className="rc__tag">
             📍 {shortName(candidates[focus].name, 8)}
+            {theme === 'horse' ? ` · ${breedOf(focus, round).name}` : ''}
             {rankOf.get(focus) ? ` ${rankOf.get(focus)}등` : ` ${standing.indexOf(focus) + 1}위`}
           </span>
         )}
@@ -188,6 +263,7 @@ export function RaceCircuit({ theme, candidates, dist, rankOf, active, bubbles, 
             return (
               <span
                 key={p.id}
+                data-breed={theme === 'horse' ? breedOf(i, round).name : undefined}
                 className={[
                   'rc__runner',
                   ev ? `rc__runner--${ev}` : '',
@@ -212,7 +288,7 @@ export function RaceCircuit({ theme, candidates, dist, rankOf, active, bubbles, 
                 <span className="rc__body">
                   <span
                     className="rc__sprite"
-                    style={{ width: px, height: px, boxShadow: paint(theme, i, n, frame, px) }}
+                    style={{ width: px, height: px, boxShadow: paint(theme, i, n, frame, px, round) }}
                   />
                 </span>
                 {(ev === 'wobble' || ev === 'bump') && (
@@ -237,6 +313,7 @@ export function RaceCircuit({ theme, candidates, dist, rankOf, active, bubbles, 
             <button
               type="button"
               className={rankOf.get(i) === 1 ? 'rc__pos rc__pos--win' : 'rc__pos'}
+              title={theme === 'horse' ? `${candidates[i].name} · ${breedOf(i, round).name}` : candidates[i].name}
               aria-pressed={focus === i}
               onClick={() => onFocus(focus === i ? null : i)}
             >

@@ -115,3 +115,18 @@ describe('경마 연출', () => {
   }, 30_000);
 });
 
+describe('말 품종', () => {
+  it('여덟 마리까지 품종이 다 다르고, 따라가면 품종 이름이 보인다', () => {
+    const r = render(<HorseRace candidates={places(8)} winnerIndex={0} spinning={false} run={1} onSpinEnd={() => {}} />);
+    const breeds = [...r.container.querySelectorAll<HTMLElement>('.rc__runner')].map((el) => el.dataset.breed);
+    expect(new Set(breeds).size).toBe(8);
+    const names = [...r.container.querySelectorAll<HTMLButtonElement>('.rc__pos')].map((b) => b.title.split(' · ')[1]);
+    expect(new Set(names).size).toBe(8);
+    expect(names).toContain('얼룩말');
+    expect(names).toContain('유니콘');
+    const pick = r.container.querySelector<HTMLButtonElement>('.rc__pos')!;
+    act(() => pick.click());
+    expect(r.container.querySelector('.rc__tag')?.textContent).toContain(pick.title.split(' · ')[1]);
+  });
+});
+

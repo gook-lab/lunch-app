@@ -211,6 +211,7 @@ export function PixelRace({
           frame={frame}
           focus={focus !== null && focus < count ? focus : null}
           onFocus={setFocus}
+          round={run}
         />
         {counting && (
           <span className="prace__count" aria-hidden="true">
