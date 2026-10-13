@@ -109,6 +109,8 @@ interface Props {
   dist: number[];
   rankOf: Map<number, number>;
   active: (RaceEventKind | null)[];
+  /** 경마 장면 말풍선(이모지). 레이싱은 그림으로 보여 줘서 없다. */
+  bubbles?: (string | null)[];
   px: number;
   /** 그림 칸(말 달리기 두 장). */
   frame: number;
@@ -116,7 +118,7 @@ interface Props {
   onFocus: (i: number | null) => void;
 }
 
-export function RaceCircuit({ theme, candidates, dist, rankOf, active, px, frame, focus, onFocus }: Props) {
+export function RaceCircuit({ theme, candidates, dist, rankOf, active, bubbles, px, frame, focus, onFocus }: Props) {
   const n = candidates.length;
   const laps = LAPS[theme];
   const lanes = Math.min(n, MAX_LANES);
@@ -222,6 +224,8 @@ export function RaceCircuit({ theme, candidates, dist, rankOf, active, px, frame
                   </>
                 )}
                 {ev === 'crash' && <span className="rc__smoke" />}
+                {bubbles?.[i] && <span className="rc__bubble">{bubbles[i]}</span>}
+                {theme === 'horse' && (ev === 'boost' || ev === 'crash') && <span className="rc__dust" />}
               </span>
             );
           })}

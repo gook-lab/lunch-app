@@ -96,3 +96,22 @@ describe('따라가기', () => {
     expect(r.container.querySelector('.rc__plane--follow')).toBeNull();
   });
 });
+
+describe('경마 연출', () => {
+  it('질주·넘어짐·멈칫·부딪힘이 말풍선과 함께 나온다', () => {
+    const seen = new Set<string>();
+    let bubbles = 0;
+    for (let k = 0; k < 8 && seen.size < 4; k += 1) {
+      const r = render(<HorseRace candidates={places(10)} winnerIndex={k} spinning run={70 + k} onSpinEnd={() => {}} />);
+      for (let t = 0; t < 11_000; t += 100) {
+        act(() => { vi.advanceTimersByTime(100); });
+        for (const kind of ['boost', 'wobble', 'crash', 'bump']) if (r.container.querySelector(`.rc__runner--${kind}`)) seen.add(kind);
+        bubbles += r.container.querySelectorAll('.rc__bubble').length;
+      }
+      r.unmount();
+    }
+    expect([...seen].sort()).toEqual(['boost', 'bump', 'crash', 'wobble']);
+    expect(bubbles).toBeGreaterThan(0);
+  }, 30_000);
+});
+

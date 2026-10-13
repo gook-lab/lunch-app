@@ -18,21 +18,47 @@ export type RaceTheme = 'horse' | 'car';
 const COUNT_STEP_MS = 400;
 const COUNTDOWN = ['3', '2', '1', '출발!'];
 /** 당첨이 결승하는 데 걸리는 실제 시간. 레이싱은 세 바퀴라 길다. */
-const RACE_MS: Record<RaceTheme, number> = { horse: 6500, car: 12000 };
-/** 레이싱은 세 바퀴 동안 사건이 셋까지, 사고는 옆 차와 부딪혀 같이 난다. */
-const RACE_OPTIONS = { horse: {}, car: { maxEvents: 3, eventChance: 0.5, collisions: true } } as const;
+const RACE_MS: Record<RaceTheme, number> = { horse: 8000, car: 12000 };
+/** 사건은 경마 둘·레이싱 셋까지. 넘어지거나 뒤집히면 옆 주자도 같이 받는다. */
+const RACE_OPTIONS = {
+  horse: { maxEvents: 2, eventChance: 0.5, collisions: true },
+  car: { maxEvents: 3, eventChance: 0.5, collisions: true },
+} as const;
+
+/** 경마 사건은 같은 종류도 두 가지 장면 중 하나로 — 주자·구간으로 고르니 판마다 섞인다. */
+const HORSE_SCENES: Record<RaceEventKind, { icon: string; line: (name: string, other: string | null) => string }[]> = {
+  crash: [
+    { icon: '💥', line: (n, o) => (o ? `${n} 말이 ${o} 말과 부딪혀 넘어졌어요!` : `${n} 말이 넘어졌어요!`) },
+    {
+      icon: '😵',
+      line: (n, o) => (o ? `${n} 말이 ${o} 말과 엉켜 기수가 떨어질 뻔했어요!` : `${n} 기수가 떨어질 뻔했어요!`),
+    },
+  ],
+  boost: [
+    { icon: '🥕', line: (n) => `${n} 당근 먹고 질주해요!` },
+    { icon: '⚡', line: (n) => `${n} 채찍 한 번에 날아가요!` },
+  ],
+  wobble: [
+    { icon: '🌿', line: (n) => `${n} 말이 풀 뜯느라 멈췄어요` },
+    { icon: '👀', line: (n) => `${n} 말이 갑자기 뒤를 돌아봐요` },
+  ],
+  bump: [
+    { icon: '💢', line: (n) => `${n} 말이 부딪혀 주춤해요` },
+    { icon: '💢', line: (n) => `${n} 말이 밀려서 휘청해요` },
+  ],
+};
+const horseScene = (kind: RaceEventKind, i: number, slice: number) => HORSE_SCENES[kind][(i + slice) % 2];
 const AFTER_MS = 500;
 
-function eventLine(theme: RaceTheme, kind: RaceEventKind, name: string, other: string | null): string {
-  if (theme === 'horse') {
-    return kind === 'crash'
-      ? `${name} 말이 넘어졌어요!`
-      : kind === 'boost'
-        ? `${name} 당근 먹고 질주해요!`
-        : kind === 'bump'
-          ? `${name} 말이 부딪혀 주춤해요`
-          : `${name} 말이 휘청해요`;
-  }
+function eventLine(
+  theme: RaceTheme,
+  kind: RaceEventKind,
+  name: string,
+  other: string | null,
+  i: number,
+  slice: number,
+): string {
+  if (theme === 'horse') return horseScene(kind, i, slice).line(name, other);
   // 레이싱: 사고 = 전복(옆 차와 부딪혀 났으면 충돌), 휘청 = 타이어 펑크, 부스트 = 부스터.
   if (kind === 'crash' && other) return `쾅! ${name} 차가 ${other} 차와 부딪혀 뒤집혔어요!`;
   return kind === 'crash'
@@ -123,6 +149,12 @@ export function PixelRace({
   const active = candidates.map((_, i) =>
     race && live ? (race.events[i].find((e) => t >= e.slice * SLICE && t < (e.slice + 1) * SLICE)?.kind ?? null) : null,
   );
+  // 경마는 사건 중인 말 머리 위에 장면 말풍선.
+  const bubbles = candidates.map((_, i) => {
+    if (theme !== 'horse' || !race || !live) return null;
+    const e = race.events[i].find((x) => t >= x.slice * SLICE && t < (x.slice + 1) * SLICE);
+    return e ? horseScene(e.kind, i, e.slice).icon : null;
+  });
   // 지금 일어나는 사건(가장 최근 것 하나를 알림 줄에).
   let latest: { i: number; kind: RaceEventKind; at: number; hit?: number } | null = null;
   if (race && live) {
@@ -150,6 +182,8 @@ export function PixelRace({
             news.kind,
             shortName(candidates[news.i].name, 8),
             news.hit === undefined ? null : shortName(candidates[news.hit].name, 8),
+            news.i,
+            Math.round(news.at / SLICE),
           )
         : live
           ? `${theme === 'car' && dist[leader] >= 2 / 3 ? '마지막 바퀴! ' : ''}선두 ${shortName(candidates[leader].name, 8)}`
@@ -172,6 +206,7 @@ export function PixelRace({
           dist={dist}
           rankOf={rankOf}
           active={active}
+          bubbles={bubbles}
           px={expanded ? 4 : count > 8 ? 2 : 3}
           frame={frame}
           focus={focus !== null && focus < count ? focus : null}

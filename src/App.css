@@ -3161,3 +3161,35 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--fs-xs); cursor: pointer; }
 .rc__pos[aria-pressed='true'] { border-color: oklch(0.9 0.16 95); color: var(--color-bg); }
 .rc__pos:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+
+/* 경마 장면 말풍선 — 말 머리 위, 말처럼 되세운다 */
+.rc__bubble {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  box-shadow: 0 1px 0 var(--color-neutral-900);
+  font-size: 13px;
+  line-height: 1;
+  transform: translateX(-50%) rotateX(-48deg) translateY(-10px);
+  transform-origin: 50% 100%;
+  animation: rc-bubble var(--motion-slow) var(--ease-out) both;
+}
+@keyframes rc-bubble { from { opacity: 0; scale: 0.4; } }
+.prace--big .rc__bubble { width: 30px; height: 30px; font-size: 18px; }
+/* 흙먼지 — 질주·넘어짐 때 발밑에서 뒤로 */
+.rc__dust {
+  position: absolute;
+  bottom: -10%;
+  left: -30%;
+  width: 60%;
+  height: 50%;
+  border-radius: 50%;
+  background: radial-gradient(color-mix(in oklch, oklch(0.75 0.06 65) 85%, transparent), transparent 70%);
+  animation: rc-puff 450ms var(--ease-out) infinite;
+}
