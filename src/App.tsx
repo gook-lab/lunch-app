@@ -57,6 +57,7 @@ import { officeSource } from './lib/walk';
 import { emptyMessage, noticeMessage } from './lib/messages';
 import { decideToday } from './services/lunch';
 import { DemoNote } from './components/DemoNote';
+import { DevHostNote, isDevHost } from './components/DevHostNote';
 import { Tour, tourSeen } from './components/Tour';
 import { RatingBadge } from './components/Rating';
 import { useRatings } from './hooks/useRatings';
@@ -651,6 +652,7 @@ export default function App() {
             </button>
           </div>
           {import.meta.env.VITE_DEMO === '1' && <DemoNote />}
+          {import.meta.env.VITE_DEMO !== '1' && isDevHost(window.location.hostname) && <DevHostNote />}
         </header>
 
         <nav className="tabs" role="tablist" aria-label="화면" onKeyDown={onTabKey}>

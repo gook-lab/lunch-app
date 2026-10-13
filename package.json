@@ -15,7 +15,7 @@
     "seed:write": "node scripts/seed.mjs --write",
     "dev:demo": "VITE_DEMO=1 VITE_OFFICE_LAT=37.5663 VITE_OFFICE_LNG=126.9779 vite --port 5173",
     "build:demo": "tsc -b && VITE_DEMO=1 VITE_OFFICE_LAT=37.5663 VITE_OFFICE_LNG=126.9779 vite build",
-    "dev:emu": "firebase emulators:exec --only firestore,auth \"node scripts/seed-fixture.mjs && vite --port 5173 --strictPort\""
+    "dev:emu": "firebase emulators:exec --only firestore,auth \"vite --port 5173 --strictPort\""
   },
   "dependencies": {
     "@gook-lab/motion": "0.2.7",
