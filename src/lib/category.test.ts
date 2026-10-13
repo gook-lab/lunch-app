@@ -22,7 +22,7 @@ describe('categoryFromKakao', () => {
   });
 
   it('애매하면 null — 지어내지 않는다', () => {
-    expect(categoryFromKakao('음식점 > 일식 > 초밥,롤')).toBeNull();
+    expect(categoryFromKakao('음식점 > 치킨')).toBeNull();
     expect(categoryFromKakao('음식점 > 치킨')).toBeNull();
     expect(categoryFromKakao('음식점 > 아시아음식 > 베트남음식')).toBeNull();
     expect(categoryFromKakao('카페 > 커피전문점')).toBeNull();
@@ -47,5 +47,12 @@ describe('categoryFromKakao', () => {
       expect(got).not.toBeNull();
       expect(CATEGORIES).toContain(got!);
     }
+  });
+
+  it('일식은 일곱 번째 칩 — 돈까스집은 일식, 우동·소바 전문점은 면', () => {
+    expect(categoryFromKakao('음식점 > 일식 > 초밥,롤')).toBe('일식');
+    expect(categoryFromKakao('음식점 > 일식 > 돈까스,우동')).toBe('일식');
+    expect(categoryFromKakao('음식점 > 일식 > 우동,소바')).toBe('면');
+    expect(categoryFromKakao('음식점 > 일식')).toBe('일식');
   });
 });

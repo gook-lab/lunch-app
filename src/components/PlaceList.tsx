@@ -222,6 +222,8 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
   const [editing, setEditing] = useState<string | null>(null);
   // 별점 칸을 연 가게. 고치기와 같은 자리에 펼친다.
   const [rating, setRating] = useState<string | null>(null);
+  // 가까운 순(기본) 또는 별점 순. 별점이 없는 가게는 별점 순에서 맨 뒤로.
+  const [sortBy, setSortBy] = useState<'walk' | 'rating'>('walk');
   const [busy, setBusy] = useState<string | null>(null);
   const [toggleProblem, setToggleProblem] = useState<string | null>(null);
 
@@ -231,6 +233,10 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
 
   const sorted = [...places].sort((a, b) => {
     if (a.active !== b.active) return a.active ? -1 : 1;
+    if (sortBy === 'rating') {
+      const diff = (ratings?.get(b.id)?.average ?? 0) - (ratings?.get(a.id)?.average ?? 0);
+      if (diff !== 0) return diff;
+    }
     return a.walkMin - b.walkMin;
   });
 
@@ -379,7 +385,17 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
               </Button>
             )}
           </div>
-          <p className="muted small">도보 가까운 순 · {recentNote(recentCount, excludeRecent)}</p>
+          <div className="list__sortRow">
+            <div className="list__sort" role="group" aria-label="정렬">
+              <button type="button" aria-pressed={sortBy === 'walk'} onClick={() => setSortBy('walk')}>
+                가까운 순
+              </button>
+              <button type="button" aria-pressed={sortBy === 'rating'} onClick={() => setSortBy('rating')}>
+                별점 순
+              </button>
+            </div>
+            <p className="muted small">{recentNote(recentCount, excludeRecent)}</p>
+          </div>
           {on.length > 0 ? (
             <ul className="list">{on.map(renderRow)}</ul>
           ) : (

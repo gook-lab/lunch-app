@@ -10,7 +10,8 @@ import type { Place } from '../lib/candidates';
 import { dayIdBefore, todayKST, type DayId } from '../lib/date';
 import type { PlaceVote, Vote } from './types';
 
-const KEY = 'lunch-app:demo-v1';
+// 씨앗을 바꾸면 판 번호를 올린다 — 예전 데모 저장분은 새 씨앗으로 다시 시작한다.
+const KEY = 'lunch-app:demo-v2';
 
 export interface DemoState {
   places: Place[];
@@ -25,7 +26,7 @@ export interface DemoState {
 
 export const DEMO_UID = 'demo-me';
 
-/** 서울시청 기준 [이름, 카테고리, 북쪽 m, 동쪽 m]. 이름은 지어냈다. */
+/** 서울시청 기준 [이름, 카테고리, 북쪽 m, 동쪽 m]. 이름은 지어냈다. 마지막 곳은 꺼 둔 가게. */
 const SEED: [string, string, number, number][] = [
   ['골목 칼국수', '면', 180, -120],
   ['할머니 김치찌개', '한식', -150, 90],
@@ -38,7 +39,8 @@ const SEED: [string, string, number, number][] = [
   ['만두 공방', '중식', 350, -420],
   ['우동 한 판', '면', -260, 470],
   ['소금 덮밥', '한식', 610, -210],
-  ['돈가스 식당', '양식', -650, -330],
+  ['스시 한 접시', '일식', -120, 560],
+  ['돈가스 식당', '일식', -650, -330],
 ];
 const ORIGIN = { lat: 37.5663, lng: 126.9779 };
 

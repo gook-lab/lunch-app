@@ -824,6 +824,12 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
             {followRank === 1 ? '🎉 ' : '📍 '}
             {shortName(candidates[follow].name, 10)} {followRank}등으로 들어왔어요
           </span>
+        ) : follow !== null && followMarbles && race && t >= 1 ? (
+          // 1등이 들어오면 바로 끝낸다(빨리감기 없음). 따라가던 공이 아직 판 위면 그때 자리를 알려 준다.
+          <span className="pinball__tip pinball__tip--done" role="status">
+            📍 {shortName(candidates[follow].name, 10)}{' '}
+            {Math.min(...followMarbles.map((m) => standing.indexOf(m) + 1).filter((r) => r > 0))}위에서 끝났어요
+          </span>
         ) : (
           <span className="pinball__tip" aria-hidden="true">
             공을 누르면 그 가게 공을 따라가요

@@ -1381,7 +1381,11 @@ footer.muted { text-align: center; }
 /* 방식 고르기 — 휴대폰은 한 줄 가로 스크롤. 두 줄 세그먼트 바가 게임판을 120px 밀어냈다
    (10/12 와이어프레임 개선). 오른쪽 끝을 흐리게 해 더 있다는 걸 알린다. */
 .modebar {
-  display: flex;
+  /* 휴대폰: 두 줄로 쌓아 가로로 넘긴다. 한 줄일 땐 열두 개 중 네 개 반만 보여 뒤쪽 게임을 몰랐다(10/13 점검). */
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(2, auto);
+  grid-auto-columns: 72px;
   gap: 2px;
   padding: 2px;
   overflow-x: auto;
@@ -1628,6 +1632,8 @@ html:has(dialog[open]:modal) { overflow: hidden; }
     position: sticky;
     top: var(--space-6);
     display: grid;
+    grid-auto-flow: row;
+    grid-template-rows: none;
     grid-template-columns: 1fr 1fr;
     gap: var(--space-1);
     padding: var(--space-2);
@@ -1915,7 +1921,7 @@ html:has(.stage--full) { overflow: hidden; }
 }
 
 @media (min-width: 560px) {
-  .modebar { mask-image: none; }
+  .modebar { mask-image: none; grid-auto-columns: minmax(72px, 1fr); }
   .modebar__item { flex: 1 0 auto; }
 }
 
@@ -3253,3 +3259,26 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 .catbar__chip[aria-pressed='true'] { background: var(--color-text); color: var(--color-bg); border-color: var(--color-text); }
 .catbar__chip:disabled { cursor: not-allowed; opacity: 0.5; }
 .catbar__chip:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+/* 결과 티켓의 길찾기·알리기 높이를 맞춘다 — 알리기(sm 단추)만 낮아 보였다 */
+.ticket .share button { min-height: 36px; }
+
+/* 목록 정렬 — 가까운 순 · 별점 순 */
+.list__sortRow { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.list__sortRow p { margin: 0; }
+.list__sort { display: inline-flex; border: 1px solid var(--color-neutral-400); border-radius: var(--radius-lg); overflow: hidden; }
+.list__sort button {
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.list__sort button[aria-pressed='true'] { background: var(--color-text); color: var(--color-bg); }
+.list__sort button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -2px; }
+.list__rate { display: grid; gap: var(--space-2); padding: var(--space-2) 0; }
+.demo-note .linkish { margin-left: var(--space-1); }

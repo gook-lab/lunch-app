@@ -556,6 +556,8 @@ export default function App() {
           <p className="muted small">
             누르면 방문 기록이 남고, 1주 동안 후보에서 빠져요.
           </p>
+          {/* 정하기 전에도 얼마나 걸리는지 길을 먼저 볼 수 있게(10/13 점검). 기록은 남지 않는다. */}
+          <DirectionsLink place={winner} />
           {/* 확인 시트가 떠 있으면 시트 쪽에만 띄운다. 두 곳에서 읽히면 두 번 들린다. */}
           {saveProblem && !confirming && (
             <p className="notice notice--empty" role="alert">
