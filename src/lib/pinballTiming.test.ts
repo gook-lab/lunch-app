@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FRAME_MS, SLOW_RATE, frameAtMs, timingFor } from './pinballTiming';
+import { FRAME_MS, HOLD_FRAMES, SLOW_RATE, frameAtMs, timingFor } from './pinballTiming';
 
 /** 화면 한 프레임(16.7ms)마다 시뮬레이션이 몇 프레임 나아가는지. 이게 곧 체감 배속이다. */
 function screenRates(frames: number, winner: number): number[] {
@@ -38,13 +38,16 @@ describe('핀볼 재생 속도 곡선', () => {
     expect(t.at[300]).toBeLessThan(realtime + 1500);
   });
 
-  it('실측 최장급 꼬리(1등 뒤 300프레임)도 2초 안에 감는다', () => {
+  it('1등이 들어오면 나머지를 빨리감지 않고 1초 안에 끝낸다', () => {
     const t = timingFor(600, 300);
-    expect(t.playMs - t.at[300]).toBeLessThan(2000);
+    expect(t.at.length).toBe(300 + HOLD_FRAMES + 1);
+    expect(t.playMs - t.at[300]).toBeLessThan(1000);
+    // 1등 뒤 마지막 화면 프레임 배속이 1배를 넘지 않는다(빨리감기 없음).
+    expect(t.at[t.at.length - 1] - t.at[t.at.length - 2]).toBeGreaterThanOrEqual(FRAME_MS - 1e-9);
   });
 
   it('frameAtMs 는 표를 정확히 되찾는다', () => {
     const t = timingFor(500, 250);
-    for (const f of [0, 10, 200, 250, 499]) expect(frameAtMs(t, t.at[f])).toBeCloseTo(f, 6);
+    for (const f of [0, 10, 200, 250, 250 + HOLD_FRAMES]) expect(frameAtMs(t, t.at[f])).toBeCloseTo(f, 6);
   });
 });

@@ -1,6 +1,6 @@
 /**
- * 경주 트랙 — 기울인(perspective) 타원 위를 달린다. 레이싱은 아스팔트 서킷 세 바퀴,
- * 경마는 흙 주로 한 바퀴.
+ * 경주 트랙 — 기울인(perspective) 타원 위를 달린다. 레이싱은 아스팔트 서킷,
+ * 경마는 흙 주로. 바퀴 수는 PixelRace 가 정한다(기본 세 바퀴).
  *
  * 차는 위에서 본 그림이라 판 위에 눕고 살짝 떠서 그림자를 둔다. 말은 옆에서 본
  * 그림이라 판의 기울기만큼 되세워(billboard) 서 있게 하고, 왼쪽으로 달릴 땐 뒤집는다.
@@ -12,8 +12,6 @@ import type { RaceEventKind } from '../../lib/race';
 import { shortName } from '../../lib/name';
 
 type TrackTheme = 'horse' | 'car';
-
-const LAPS: Record<TrackTheme, number> = { horse: 1, car: 3 };
 
 /** 트랙 판 좌표(가로 100 × 세로 PLANE_H). 타원 중심과 반지름. */
 const PLANE_H = 64;
@@ -159,8 +157,8 @@ function trackPoint(d: number, lane: number, laps: number): { x: number; y: numb
 }
 
 const STAND_ICON: Record<TrackTheme, Record<RaceEventKind, string>> = {
-  car: { boost: ' 🔥', crash: ' 💫', bump: ' 💢', wobble: ' 💥' },
-  horse: { boost: ' 🥕', crash: ' 💥', bump: ' 💢', wobble: ' 💫' },
+  car: { boost: ' 🔥', crash: ' 💫', bump: ' 💢', wobble: ' 💥', slip: ' 🍌' },
+  horse: { boost: ' 🥕', crash: ' 💥', bump: ' 💢', wobble: ' 💫', slip: ' 🍌' },
 };
 
 interface Props {
@@ -178,6 +176,13 @@ interface Props {
   onFocus: (i: number | null) => void;
   /** 몇 번째 판인지 — 말 품종을 판마다 돌린다. */
   round: number;
+  laps: number;
+  /** 주자 i 가 선 출발 자리. 차선은 자리 번호로 정한다. */
+  slots: number[];
+  /** 자리 섞는 중 — 주자가 새 차선으로 미끄러져 옮겨 간다. */
+  shuffling: boolean;
+  /** 관중이 던져 바닥에 떨어진 것. d 는 떨어진 거리, runner 는 밟은 주자(차선). */
+  hazards: { key: string; runner: number; d: number; icon: string }[];
 }
 
 export function RaceCircuit({
@@ -192,13 +197,17 @@ export function RaceCircuit({
   focus,
   onFocus,
   round,
+  laps,
+  slots,
+  shuffling,
+  hazards,
 }: Props) {
   const n = candidates.length;
-  const laps = LAPS[theme];
   const lanes = Math.min(n, MAX_LANES);
+  const laneOf = (i: number) => laneOffset((slots[i] ?? i) % lanes, lanes);
   const lead = Math.max(...dist);
   const lap = Math.min(laps, 1 + Math.floor(lead * laps + 1e-9));
-  const points = candidates.map((_, i) => trackPoint(dist[i], laneOffset(i % lanes, lanes), laps));
+  const points = candidates.map((_, i) => trackPoint(dist[i], laneOf(i), laps));
   const cam = focus === null ? null : points[focus];
   // 지금 순서(들어온 주자는 등수, 나머지는 달린 거리 순).
   const standing = candidates
@@ -215,7 +224,7 @@ export function RaceCircuit({
           ? 'FINAL LAP'
           : `LAP ${lap}/${laps}`;
   return (
-    <div className={`rc rc--${theme}`}>
+    <div className={['rc', `rc--${theme}`, shuffling ? 'rc--shuffle' : ''].filter(Boolean).join(' ')}>
       <div className="rc__stage" aria-hidden="true">
         {lapText && <span className="rc__lap">{lapText}</span>}
         {focus !== null && (
@@ -255,6 +264,29 @@ export function RaceCircuit({
             );
           })}
           <span className="rc__start" />
+          {hazards.map((h) => {
+            const p = trackPoint(h.d, laneOf(h.runner), laps);
+            // 트랙 바깥(관중석) 쪽에서 날아온다 — 타원 중심에서 그 자리로 향하는 방향의 연장선.
+            const dx = p.x - CX;
+            const dy = ((p.y / 100) * PLANE_H - CY) * 1.6;
+            const len = Math.hypot(dx, dy) || 1;
+            return (
+              <span
+                key={h.key}
+                className="rc__hazard"
+                style={
+                  {
+                    left: `${p.x}%`,
+                    top: `${p.y}%`,
+                    '--tx': `${((dx / len) * 70).toFixed(1)}px`,
+                    '--ty': `${((dy / len) * 70).toFixed(1)}px`,
+                  } as React.CSSProperties
+                }
+              >
+                {h.icon}
+              </span>
+            );
+          })}
           {candidates.map((p, i) => {
             const { x, y, deg } = points[i];
             const ev = active[i];

@@ -45,7 +45,7 @@ describe('뽑기 기계', () => {
       expect(r.container.querySelectorAll('.gacha__dome .gacha__capsule')).toHaveLength(Math.min(n, MAX_CAPSULES));
       run(4_000);
       expect(onSpinEnd).toHaveBeenCalledTimes(1);
-      expect(r.container.querySelector('.gacha__prize')?.textContent).toContain(`가게${n}`);
+      expect(r.container.querySelector('.gacha__hint')?.textContent).toContain(`가게${n}`);
       // 나온 캡슐만큼 돔이 하나 줄었다.
       expect(r.container.querySelectorAll('.gacha__dome .gacha__capsule')).toHaveLength(Math.min(n, MAX_CAPSULES) - 1);
       r.unmount();
@@ -63,7 +63,7 @@ describe('뽑기 기계', () => {
     const r = render(<Gacha candidates={places(5)} winnerIndex={2} spinning run={1} onSpinEnd={onSpinEnd} />);
     act(() => { vi.advanceTimersByTime(1); });
     expect(onSpinEnd).toHaveBeenCalledTimes(1);
-    expect(r.container.querySelector('.gacha__prize')?.textContent).toContain('가게3');
+    expect(r.container.querySelector('.gacha__hint')?.textContent).toContain('가게3');
   });
 });
 

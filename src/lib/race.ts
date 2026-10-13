@@ -8,7 +8,7 @@
  *
  * 시간 단위: 경기 시간 t. 주자는 구간(SLICE)마다 속도 v 로 달린다(거리 1 이 결승).
  *
- * 돌발 상황(사고·부스트·휘청)은 그 주자 기록의 일부다 — 구간 속도를 바꿔 넣고
+ * 돌발 상황(사고·부스트·휘청·미끄러짐)은 그 주자 기록의 일부다 — 구간 속도를 바꿔 넣고
  * 화면에 알릴 사건으로 남긴다. 기록을 맞바꿀 때 사건도 같이 옮겨 가므로, 넘어진
  * 말이 끝내 1등 하는 역전도 그대로 공정하다.
  */
@@ -17,8 +17,9 @@
 export const SLICE = 0.125;
 export const SLICES = 18;
 
-/** 사고(크게 느려짐) · 부스트(크게 빨라짐) · 휘청(조금 느려짐) · 부딪힘(옆 주자와 충돌, 반으로 느려짐). */
-export type RaceEventKind = 'crash' | 'boost' | 'wobble' | 'bump';
+/** 사고(크게 느려짐) · 부스트(크게 빨라짐) · 휘청(조금 느려짐) · 부딪힘(옆 주자와 충돌, 반으로 느려짐)
+ *  · 미끄러짐(관중이 던진 것을 밟아 미끄러짐, 많이 느려짐). */
+export type RaceEventKind = 'crash' | 'boost' | 'wobble' | 'bump' | 'slip';
 
 export interface RaceEvent {
   /** 몇 번째 구간에서 일어나나. 시작 시간은 slice * SLICE. */
@@ -93,8 +94,15 @@ export function buildRace(
       if (random() >= eventChance) continue;
       const slice = Math.min(6, 1 + e * span + Math.floor(random() * span));
       const roll = random();
-      const kind: RaceEventKind = roll < 0.4 ? 'crash' : roll < 0.75 ? 'boost' : 'wobble';
-      pace[slice] = kind === 'crash' ? 0.15 : kind === 'boost' ? pace[slice] + 0.75 : pace[slice] * 0.6;
+      const kind: RaceEventKind = roll < 0.32 ? 'crash' : roll < 0.6 ? 'boost' : roll < 0.8 ? 'wobble' : 'slip';
+      pace[slice] =
+        kind === 'crash'
+          ? 0.15
+          : kind === 'boost'
+            ? pace[slice] + 0.75
+            : kind === 'slip'
+              ? pace[slice] * 0.35
+              : pace[slice] * 0.6;
       events.push({ slice, kind });
     }
     return { pace, events };
@@ -139,6 +147,9 @@ export function buildRace(
     runners[winnerIndex].pace = runners[winnerIndex].pace.map((v) => v * 1.01);
     finish = runners.map((r) => finishTime(r.pace));
   }
-  const order = finish.map((f, i) => [f, i]).sort((a, b) => a[0] - b[0]).map(([, i]) => i);
+  const order = finish
+    .map((f, i) => [f, i])
+    .sort((a, b) => a[0] - b[0])
+    .map(([, i]) => i);
   return { paces: runners.map((r) => r.pace), events: runners.map((r) => r.events), finish, order };
 }

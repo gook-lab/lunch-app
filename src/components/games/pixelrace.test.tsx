@@ -103,7 +103,7 @@ describe('경마 연출', () => {
     let bubbles = 0;
     for (let k = 0; k < 8 && seen.size < 4; k += 1) {
       const r = render(<HorseRace candidates={places(10)} winnerIndex={k} spinning run={70 + k} onSpinEnd={() => {}} />);
-      for (let t = 0; t < 11_000; t += 100) {
+      for (let t = 0; t < 15_000; t += 100) {
         act(() => { vi.advanceTimersByTime(100); });
         for (const kind of ['boost', 'wobble', 'crash', 'bump']) if (r.container.querySelector(`.rc__runner--${kind}`)) seen.add(kind);
         bubbles += r.container.querySelectorAll('.rc__bubble').length;
@@ -130,3 +130,70 @@ describe('말 품종', () => {
   });
 });
 
+describe('관중 방해', () => {
+  it.each([
+    ['경마', HorseRace],
+    ['레이싱', CarRace],
+  ] as const)(
+    '%s — 관중이 던진 것이 트랙에 떨어지고 주자가 미끄러진다',
+    (_, Race) => {
+      let thrown = 0;
+      let slipped = 0;
+      for (let k = 0; k < 8 && !(thrown && slipped); k += 1) {
+        const r = render(<Race candidates={places(10)} winnerIndex={k} spinning run={90 + k} onSpinEnd={() => {}} />);
+        for (let t = 0; t < 15_000; t += 100) {
+          act(() => {
+            vi.advanceTimersByTime(100);
+          });
+          thrown += r.container.querySelectorAll('.rc__hazard').length;
+          slipped += r.container.querySelectorAll('.rc__runner--slip').length;
+        }
+        r.unmount();
+      }
+      expect(thrown).toBeGreaterThan(0);
+      expect(slipped).toBeGreaterThan(0);
+    },
+    30_000,
+  );
+});
+
+describe('경주 설정', () => {
+  it('바퀴 수를 고르면 저장되고, 고른 바퀴 수만큼 돌아도 당첨이 1등이다', () => {
+    localStorage.clear();
+    const onSpinEnd = vi.fn();
+    const props = { candidates: places(5), winnerIndex: 2, run: 7, onSpinEnd };
+    const r = render(<CarRace {...props} spinning={false} />);
+    const chips = [...r.container.querySelectorAll<HTMLButtonElement>('.prace__laps button')];
+    expect(chips.map((b) => b.textContent)).toEqual(['1바퀴', '3바퀴', '5바퀴']);
+    expect(chips[1].getAttribute('aria-pressed')).toBe('true');
+    act(() => chips[2].click());
+    expect(localStorage.getItem('lunch-app:race-laps-car')).toBe('5');
+    r.rerender(<CarRace {...props} spinning />);
+    expect(r.container.querySelector<HTMLButtonElement>('.prace__laps button')!.disabled).toBe(true);
+    run(15_000);
+    expect(onSpinEnd).not.toHaveBeenCalled();
+    run(6_000);
+    expect(onSpinEnd).toHaveBeenCalledTimes(1);
+    r.rerender(<CarRace {...props} spinning={false} />);
+    expect(r.container.querySelector('.rc__pos--win')?.textContent).toContain('가게3');
+    localStorage.clear();
+  }, 30_000);
+
+  it('자리 섞기를 누르면 주자들이 다른 차선으로 옮겨 선다', () => {
+    const r = render(
+      <HorseRace candidates={places(6)} winnerIndex={0} spinning={false} run={1} onSpinEnd={() => {}} />,
+    );
+    const spots = () => [...r.container.querySelectorAll<HTMLElement>('.rc__runner')].map((el) => el.style.top);
+    const before = spots();
+    const btn = [...r.container.querySelectorAll<HTMLButtonElement>('button')].find((b) =>
+      b.textContent?.includes('자리 섞기'),
+    )!;
+    act(() => btn.click());
+    expect(r.container.querySelector('.rc--shuffle')).toBeTruthy();
+    expect(spots()).not.toEqual(before);
+    act(() => {
+      vi.advanceTimersByTime(800);
+    });
+    expect(r.container.querySelector('.rc--shuffle')).toBeNull();
+  });
+});

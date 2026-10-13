@@ -55,6 +55,23 @@ describe('픽셀 경주 — 당첨이 1등', () => {
     expect(comeback).toBeGreaterThan(0);
   });
 
+  it('관중이 던진 것에 미끄러지는 사건도 나오고, 그 구간엔 크게 느려진다', () => {
+    let slips = 0;
+    for (let seed = 0; seed < 200; seed += 1) {
+      const r = buildRace(6, 1, seededRandom(seed), { maxEvents: 2, eventChance: 0.5 });
+      expect(r.order[0]).toBe(1);
+      r.events.forEach((evs, i) =>
+        evs
+          .filter((e) => e.kind === 'slip')
+          .forEach((e) => {
+            slips += 1;
+            expect(r.paces[i][e.slice]).toBeLessThan(0.5);
+          }),
+      );
+    }
+    expect(slips).toBeGreaterThan(50);
+  });
+
   it('레이싱처럼 사건을 둘까지 주면 겹치지 않고, 당첨은 그대로 1등이다', () => {
     let twice = 0;
     for (let seed = 0; seed < 200; seed += 1) {
@@ -85,7 +102,8 @@ describe('픽셀 경주 — 당첨이 1등', () => {
           if (e.kind === 'crash') {
             hits += 1;
             const at = e.slice * SLICE;
-            expect(Math.abs(progress(r.paces[a], at) - progress(r.paces[e.hit], at))).toBeLessThan(0.05);
+            // 0.05 안에서 고른다. 동시 도착을 막는 당첨 1% 가속이 그 뒤에 거리를 조금 벌릴 수 있다.
+            expect(Math.abs(progress(r.paces[a], at) - progress(r.paces[e.hit], at))).toBeLessThan(0.06);
           }
         }),
       );

@@ -8,8 +8,7 @@
  * 순서: 흔들기(2.2초, 손잡이 한 바퀴) → 출구로 떨어짐 → 0.5초 뒤 열림 → 끝.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { categoryHue, categoryIcon } from '../../lib/category';
-import { shortName } from '../../lib/name';
+import { categoryHue } from '../../lib/category';
 import { withJosa } from '../../lib/josa';
 import { seededRandom } from '../../lib/random';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
@@ -134,15 +133,6 @@ export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expan
         <span className="gacha__base" />
       </div>
       {count > MAX_CAPSULES && <p className="muted small gacha__more">캡슐이 {count - MAX_CAPSULES}개 더 있어요</p>}
-      {winner && phase === 'open' && (
-        <p className="gacha__prize" style={{ '--cat-hue': categoryHue(winner.category) } as React.CSSProperties}>
-          <span className="gacha__prizeIcon" aria-hidden="true">{categoryIcon(winner.category)}</span>
-          <strong>{shortName(winner.name, 12)}</strong>
-          <span className="gacha__prizeMeta">
-            {winner.category} · 도보 {winner.walkMin}분
-          </span>
-        </p>
-      )}
     </div>
   );
 }

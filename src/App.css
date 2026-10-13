@@ -2499,21 +2499,6 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   background: linear-gradient(to bottom, oklch(0.55 0.08 var(--cat-hue)) 0 12%, oklch(0.8 0.13 var(--cat-hue)) 12%, oklch(0.6 0.13 var(--cat-hue)));
 }
 .gacha--open .gacha__half--top { transform: translate(-6px, -10px) rotate(-55deg); }
-.gacha__prize {
-  display: grid;
-  justify-items: center;
-  gap: 2px;
-  margin: 0;
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--color-neutral-300);
-  border-top: 4px solid oklch(0.75 0.12 var(--cat-hue));
-  border-radius: var(--radius-md);
-  background: var(--color-bg);
-  box-shadow: var(--shadow-md);
-  animation: gacha-open var(--motion-slow) var(--ease-out) both;
-}
-.gacha__prizeIcon { font-size: 22px; }
-.gacha__prizeMeta { font-size: var(--fs-xs); color: var(--color-neutral-700); }
 @keyframes gacha-tumble {
   0%, 100% { translate: -50% -50%; rotate: var(--tilt); }
   40% { translate: calc(-50% + var(--dx)) calc(-50% + var(--dy)); rotate: calc(var(--tilt) + 180deg); }
@@ -2610,7 +2595,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 @keyframes dice-roll { 50% { rotate: 200deg; scale: 0.85; } to { rotate: 360deg; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .gacha__capsule, .gacha__handle, .gacha__prize, .gacha__out, .dice__die--rolling { animation: none !important; }
+  .gacha__capsule, .gacha__handle, .gacha__out, .dice__die--rolling { animation: none !important; }
   .gacha__half { transition: none; }
 }
 
@@ -3192,4 +3177,43 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
   border-radius: 50%;
   background: radial-gradient(color-mix(in oklch, oklch(0.75 0.06 65) 85%, transparent), transparent 70%);
   animation: rc-puff 450ms var(--ease-out) infinite;
+}
+
+/* 경주 설정 — 바퀴 수 · 자리 섞기(핀볼 칩과 같은 모양) */
+.prace__opts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-1);
+  padding: 0 var(--space-1) var(--space-1);
+}
+.prace__laps { display: flex; gap: var(--space-1); }
+/* 자리 섞기 — 주자가 새 차선으로 미끄러져 옮겨 간다 */
+.rc--shuffle .rc__runner { transition: left 600ms var(--ease-inout), top 600ms var(--ease-inout); }
+.rc--shuffle .rc__body { animation: rc-hop 220ms steps(2) 3; }
+.rc--car.rc--shuffle .rc__body { animation: rc-shake 110ms steps(2) 5; }
+
+/* 관중이 던진 것 — 트랙 밖에서 포물선으로 날아와 떨어지고, 바닥에 남는다 */
+.rc__hazard {
+  position: absolute;
+  z-index: 1;
+  font-size: 14px;
+  line-height: 1;
+  transform: translate(-50%, -80%) rotateX(-48deg);
+  transform-origin: 50% 100%;
+  animation: rc-throw 420ms var(--ease-out) both;
+}
+.prace--big .rc__hazard { font-size: 20px; }
+@keyframes rc-throw {
+  from { translate: var(--tx) var(--ty) 0; rotate: -200deg; }
+  55% { translate: calc(var(--tx) * 0.4) calc(var(--ty) * 0.4) 48px; }
+  to { translate: 0 0 0; rotate: 0deg; }
+}
+/* 미끄러짐 — 차는 두 바퀴 빙글, 말은 좌우로 미끄러진다. 던진 게 떨어진 뒤에 */
+.rc__runner--slip .rc__body { animation: rc-skid 900ms var(--ease-out) 300ms both; }
+@keyframes rc-skid { to { rotate: 720deg; } }
+.rc--horse .rc__runner--slip .rc__body { animation: rc-slide 900ms var(--ease-inout) 300ms both; }
+@keyframes rc-slide {
+  25% { translate: calc(var(--px) * -3) 0; rotate: -14deg; }
+  60% { translate: calc(var(--px) * 3) 0; rotate: 12deg; }
 }
