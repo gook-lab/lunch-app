@@ -54,7 +54,7 @@ describe('뽑기 기계', () => {
 
   it('20곳이 넘으면 나머지 수를 적는다', () => {
     const r = render(<Gacha candidates={places(26)} winnerIndex={null} spinning={false} run={0} onSpinEnd={() => {}} />);
-    expect(r.container.querySelector('.gacha__more')?.textContent).toBe('…외 6개');
+    expect(r.container.querySelector('.gacha__more')?.textContent).toBe('캡슐이 6개 더 있어요');
   });
 
   it('움직임 줄이기면 바로 연다', () => {
@@ -117,7 +117,7 @@ describe('주사위', () => {
       const onSpinEnd = vi.fn();
       const r = render(<Dice candidates={places(n)} winnerIndex={n - 1} spinning run={n} onSpinEnd={onSpinEnd} />);
       run(100);
-      expect(r.container.querySelector('.dice__status')?.textContent).toMatch(/^1번째 굴림/);
+      expect(r.container.querySelector('.dice__status')?.textContent).toMatch(/^1번째 (굴림|주사위)/);
       run(15_000);
       expect(onSpinEnd).toHaveBeenCalledTimes(1);
       expect(r.container.querySelector('.dice__status')?.textContent).toBe(`가게${n} 칸에 도착했어요`);

@@ -100,7 +100,9 @@ export function Dice({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
     ? '주사위를 굴리면 말이 칸을 따라가요'
     : done && winner
       ? `${shortName(winner.name, 10)} 칸에 도착했어요`
-      : `${view.roll}번째 굴림${view.rolling ? '…' : ` · ${view.face}`}`;
+      : view.rolling
+        ? `${view.roll}번째 주사위를 굴리고 있어요…`
+        : `${view.roll}번째 굴림 · ${view.face}칸 가요`;
 
   return (
     <div className={expanded ? 'dice dice--big' : 'dice'}>

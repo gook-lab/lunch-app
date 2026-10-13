@@ -10,6 +10,7 @@ import type { Place } from '../lib/candidates';
 import { categoryIcon } from '../lib/category';
 import { saveName, savedName, tally } from '../lib/predictions';
 import { shortName } from '../lib/name';
+import { withJosa } from '../lib/josa';
 import type { Vote } from '../services/predictions';
 
 interface Props {
@@ -80,7 +81,7 @@ export function Predictions({ candidates, votes, myUid, locked, onVote, onClear 
       </div>
       {mine && !open && (
         <p className="muted small predict__mine">
-          {mine.name} 님은 {byId.get(mine.placeId)?.name ?? '목록에 없는 가게'}에 걸었어요
+          {mine.name} 님은 {withJosa(byId.get(mine.placeId)?.name ?? '목록에 없는 가게', '으로/로')} 예측했어요
         </p>
       )}
       {open && !locked && (
@@ -94,7 +95,7 @@ export function Predictions({ candidates, votes, myUid, locked, onVote, onClear 
               onChange={(e) => setName(e.target.value)}
             />
           </label>
-          <div className="predict__picks" role="group" aria-label="어디 나올까요">
+          <div className="predict__picks" role="group" aria-label="나올 것 같은 가게">
             {candidates.map((p) => (
               <button
                 key={p.id}
@@ -110,7 +111,7 @@ export function Predictions({ candidates, votes, myUid, locked, onVote, onClear 
           </div>
           <div className="predict__actions">
             <Button onClick={submit} disabled={!ready} loading={busy}>
-              {mine ? '예측 바꾸기' : '예측할게요'}
+              {mine ? '예측 바꾸기' : '예측하기'}
             </Button>
             {mine && (
               <Button

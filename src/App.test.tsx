@@ -161,7 +161,7 @@ describe('동료 예측', () => {
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
     // 난수 0 → 첫 후보 가집. 표가 많아도 균등 추첨 그대로다.
     expect(card()).toBe('가집');
-    expect(document.querySelector('dialog[open] .ticket__guess')?.textContent).toBe('🎯 맞힌 사람: 민수, 하늘');
+    expect(document.querySelector('dialog[open] .ticket__guess')?.textContent).toBe('🎯 민수·하늘 님이 맞혔어요');
   });
 
   it('게임 중엔 예측을 못 바꾼다', () => {
@@ -325,7 +325,7 @@ describe('접근성', () => {
     const live = document.querySelector('[aria-live="polite"]');
     expect(live?.textContent).toBe('');
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
-    expect(live?.textContent).toMatch(/가집, 도보 \d+분이 뽑혔어요/);
+    expect(live?.textContent).toMatch(/가집이 뽑혔어요\. 도보 \d+분이에요/);
   });
 });
 

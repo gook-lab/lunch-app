@@ -251,7 +251,7 @@ describe('calculateStats', () => {
       expect(stats.badges.find((b) => b.id === 'consecutive')!.current).toBe(3);
     });
 
-    it('🎲 운명대로: 이번 달 10번 이상', () => {
+    it('🎲 점심 열 번: 이번 달 10번 이상', () => {
       const p1 = place('p1', '가게1', '한식');
       const visits = Array.from({ length: 10 }, (_, i) => visit(`202610${String(i + 1).padStart(2, '0')}`, 'p1'));
       const stats = calculateStats(visits, [p1], '20261013');

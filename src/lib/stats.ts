@@ -40,7 +40,7 @@ const BADGE_DEFINITIONS: Record<BadgeId, { icon: string; label: string }> = {
   balanced: { icon: '🌈', label: '골고루' },
   regular: { icon: '💛', label: '단골' },
   consecutive: { icon: '🔥', label: '꾸준함' },
-  prolific: { icon: '🎲', label: '운명대로' },
+  prolific: { icon: '🎲', label: '점심 열 번' },
 };
 
 /**
@@ -282,7 +282,7 @@ export function calculateStats(
     target: 5,
   });
 
-  // 🎲 운명대로: 이번 달 10번 이상
+  // 🎲 점심 열 번: 이번 달 10번 이상
   badges.push({
     id: 'prolific',
     ...BADGE_DEFINITIONS.prolific,

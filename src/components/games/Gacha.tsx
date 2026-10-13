@@ -10,6 +10,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { categoryHue, categoryIcon } from '../../lib/category';
 import { shortName } from '../../lib/name';
+import { withJosa } from '../../lib/josa';
 import { seededRandom } from '../../lib/random';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
 
@@ -17,7 +18,7 @@ type Phase = 'idle' | 'shake' | 'drop' | 'open';
 
 const SHAKE_MS = 2200;
 const OPEN_AT = SHAKE_MS + 500;
-/** 돔에 그리는 캡슐 수 상한. 넘으면 "…외 N개" 로 적는다. */
+/** 돔에 그리는 캡슐 수 상한. 넘으면 "캡슐이 N개 더 있어요" 로 적는다. */
 export const MAX_CAPSULES = 20;
 
 export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
@@ -84,7 +85,7 @@ export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expan
         : phase === 'drop'
           ? '캡슐이 나왔어요. 열어 볼게요…'
           : winner
-            ? `${winner.name} 캡슐이 나왔어요.`
+            ? `${withJosa(winner.name, '이/가')} 나왔어요.`
             : '';
 
   return (
@@ -132,7 +133,7 @@ export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expan
         </div>
         <span className="gacha__base" />
       </div>
-      {count > MAX_CAPSULES && <p className="muted small gacha__more">…외 {count - MAX_CAPSULES}개</p>}
+      {count > MAX_CAPSULES && <p className="muted small gacha__more">캡슐이 {count - MAX_CAPSULES}개 더 있어요</p>}
       {winner && phase === 'open' && (
         <p className="gacha__prize" style={{ '--cat-hue': categoryHue(winner.category) } as React.CSSProperties}>
           <span className="gacha__prizeIcon" aria-hidden="true">{categoryIcon(winner.category)}</span>

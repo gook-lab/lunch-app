@@ -521,8 +521,8 @@ export default function App() {
       {votes.length > 0 && (
         <p className="ticket__guess">
           {winnersOf(votes, winner.id).length > 0
-            ? `🎯 맞힌 사람: ${winnersOf(votes, winner.id).join(', ')}`
-            : `예측한 ${votes.length}명 중 맞힌 사람이 없어요`}
+            ? `🎯 ${winnersOf(votes, winner.id).join('·')} 님이 맞혔어요`
+            : `${votes.length}명이 예측했지만 아무도 못 맞혔어요`}
         </p>
       )}
       <hr className="ticket__perf" aria-hidden="true" />
@@ -819,7 +819,7 @@ export default function App() {
           * 알아채지 못한다. 늘 있는 빈 영역에 글을 채워야 읽힌다.
           */}
         <p className="sr-only" aria-live="polite">
-          {winner && !spinning ? `${winner.name}, 도보 ${winner.walkMin}분이 뽑혔어요` : ''}
+          {winner && !spinning ? `${withJosa(winner.name, '이/가')} 뽑혔어요. 도보 ${winner.walkMin}분이에요` : ''}
         </p>
 
         {/* 모달을 닫으면 게임 아래엔 한 줄만 남긴다. 티켓 전체가 남으면 모달과 같은 카드가
@@ -831,6 +831,7 @@ export default function App() {
             <p className="result-bar__text">
               <span aria-hidden="true">{MODE_ICON[mode]} </span>
               <strong>{winner.name}</strong>
+              <span className="sr-only"> · </span>
               <span className="result-bar__meta">
                 도보 {winner.walkMin}분{confirmed ? ' · 오늘 점심으로 정했어요' : ''}
               </span>
