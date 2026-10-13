@@ -19,7 +19,7 @@ import { Predictions } from './components/Predictions';
 import { winnersOf } from './lib/predictions';
 import { castVote, clearVote, myUid, subscribeVotes, type Vote } from './services/predictions';
 import { buzz, playChime, setSoundOn, soundOn } from './lib/celebrate';
-import { Cards, Dice, Gacha, Ladder, Memory, Pinball, Plinko, Slot, Tournament, Wheel, preloadGames } from './components/games';
+import { CarRace, Cards, Dice, Gacha, HorseRace, Ladder, Memory, Pinball, Plinko, Slot, Tournament, Wheel, preloadGames } from './components/games';
 import { ShareButton } from './components/ShareButton';
 import {
   actionLabel,
@@ -66,7 +66,7 @@ const TAB_TITLE: Record<Tab, string> = {
 };
 
 /** 방식 단추 그림. 글자 이름은 그대로 두고 그림은 보조로만 쓴다. */
-const MODE_ICON: Record<GameMode, string> = { wheel: '🎡', ladder: '🪜', slot: '🎰', pinball: '🎱', cards: '🃏', memory: '🧩', tournament: '🏆', gacha: '🎁', plinko: '🔻', dice: '🎲' };
+const MODE_ICON: Record<GameMode, string> = { wheel: '🎡', ladder: '🪜', slot: '🎰', pinball: '🎱', cards: '🃏', memory: '🧩', tournament: '🏆', gacha: '🎁', plinko: '🔻', dice: '🎲', horse: '🏇', racing: '🏎️' };
 
 const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
 /** "20261008" 을 "10월 8일 목요일" 로. */
@@ -806,6 +806,8 @@ export default function App() {
             }
             if (mode === 'gacha') return <Gacha {...game} />;
             if (mode === 'plinko') return <Plinko {...game} />;
+            if (mode === 'horse') return <HorseRace {...game} />;
+            if (mode === 'racing') return <CarRace {...game} />;
             if (mode === 'dice') {
               const key = game.candidates.map((p) => p.id).join(',');
               return <Dice key={key} {...game} />;

@@ -2851,3 +2851,105 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .predict__pick:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 .predict__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .ticket__guess { margin: var(--space-1) 0 0; font-size: var(--fs-sm); color: var(--color-neutral-800); }
+
+/* 픽셀 경마 · 레이싱 — 주자는 box-shadow 픽셀 그림, 위치는 JS 가 매 프레임 left 로 */
+.prace { display: grid; gap: var(--space-2); width: min(560px, 94vw); }
+.prace--big { width: min(880px, 96vw); }
+.prace--empty { height: 240px; }
+.prace__line {
+  margin: 0;
+  min-height: 1.5em;
+  text-align: center;
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  color: var(--color-text);
+}
+.prace__board {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: oklch(0.42 0.09 145);
+}
+.prace--car .prace__board { background: oklch(0.32 0.01 260); }
+.prace__lane {
+  display: grid;
+  grid-template-columns: 4.5em 1fr 2.6em;
+  align-items: center;
+  gap: var(--space-2);
+}
+.prace__name, .prace__rank {
+  overflow: hidden;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--color-bg);
+}
+.prace__rank { text-align: right; }
+.prace__lane--win .prace__name,
+.prace__lane--win .prace__rank { color: oklch(0.9 0.16 95); }
+.prace__track {
+  position: relative;
+  display: block;
+  height: calc(var(--px) * 11);
+  border-radius: var(--radius-sm);
+  background: repeating-linear-gradient(90deg, oklch(0.6 0.13 140) 0 24px, oklch(0.56 0.13 140) 24px 48px);
+}
+.prace--car .prace__track {
+  background:
+    linear-gradient(to bottom, transparent calc(100% - 2px), color-mix(in oklch, var(--color-bg) 35%, transparent) 0),
+    oklch(0.42 0.01 260);
+}
+.prace__finish {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 6px;
+  background: repeating-conic-gradient(var(--color-neutral-900) 0 25%, var(--color-bg) 0 50%) 0 0 / 6px 6px;
+}
+.prace__runner {
+  position: absolute;
+  top: 50%;
+  width: calc(var(--px) * 16);
+  height: calc(var(--px) * 10);
+  translate: 0 -50%;
+  z-index: 1;
+}
+.prace__sprite { position: absolute; top: calc(var(--px) * -1); left: calc(var(--px) * -1); display: block; }
+.prace__runner--crash .prace__sprite { animation: prace-crash 360ms steps(4) infinite; }
+.prace__runner--wobble .prace__sprite { animation: prace-wobble 240ms steps(2) infinite; }
+.prace__runner--boost::before {
+  content: '';
+  position: absolute;
+  top: 30%;
+  right: 100%;
+  width: calc(var(--px) * 10);
+  height: 40%;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(to left, color-mix(in oklch, var(--color-bg) 80%, transparent), transparent);
+}
+.prace__fx {
+  position: absolute;
+  bottom: 70%;
+  left: 50%;
+  translate: -50% 0;
+  font-size: 14px;
+  line-height: 1;
+  animation: pop var(--motion-base) var(--ease-out);
+}
+.prace__count {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 48px;
+  font-weight: 800;
+  color: var(--color-bg);
+  text-shadow: 0 2px 0 var(--color-neutral-900);
+  z-index: 2;
+  animation: pop var(--motion-slow) var(--ease-out);
+}
+@keyframes prace-crash { 50% { rotate: 90deg; } to { rotate: 180deg; } }
+@keyframes prace-wobble { 50% { translate: 0 calc(var(--px) * -2); } }

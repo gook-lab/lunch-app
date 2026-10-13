@@ -13,10 +13,12 @@ export const Tournament = lazyGame(() => import('./Tournament').then((m) => m.To
 export const Gacha = lazyGame(() => import('./Gacha').then((m) => m.Gacha));
 export const Plinko = lazyGame(() => import('./Plinko').then((m) => m.Plinko));
 export const Dice = lazyGame(() => import('./Dice').then((m) => m.Dice));
+export const HorseRace = lazyGame(() => import('./PixelRace').then((m) => m.HorseRace));
+export const CarRace = lazyGame(() => import('./PixelRace').then((m) => m.CarRace));
 
 /** 나머지 게임을 미리 받는다. 첫 화면을 그린 뒤 쉬는 시간에, 테스트는 시작 전에 부른다. */
 export function preloadGames(): Promise<void> {
   return Promise.all(
-    [Ladder, Slot, Pinball, Cards, Memory, Tournament, Gacha, Plinko, Dice].map((g) => g.preload()),
+    [Ladder, Slot, Pinball, Cards, Memory, Tournament, Gacha, Plinko, Dice, HorseRace, CarRace].map((g) => g.preload()),
   ).then(() => undefined);
 }
