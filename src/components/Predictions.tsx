@@ -5,7 +5,7 @@
  * 기억한다. 게임 중엔 잠근다 — 결과를 보고 바꾸면 내기가 아니다. 당첨에는 아무 영향이 없다.
  */
 import { useState } from 'react';
-import { Button } from '@gook-lab/ui';
+import { Button, Input } from '@gook-lab/ui';
 import type { Place } from '../lib/candidates';
 import { categoryIcon } from '../lib/category';
 import { saveName, savedName, tally } from '../lib/predictions';
@@ -86,15 +86,14 @@ export function Predictions({ candidates, votes, myUid, locked, onVote, onClear 
       )}
       {open && !locked && (
         <div className="predict__form">
-          <label className="predict__name">
-            <span className="small">이름</span>
-            <input
-              value={name}
-              maxLength={12}
-              placeholder="동료가 알아볼 이름"
-              onChange={(e) => setName(e.target.value)}
-            />
-          </label>
+          <Input
+            label="이름"
+            fieldProps={{ className: 'predict__name' }}
+            value={name}
+            maxLength={12}
+            placeholder="동료가 알아볼 이름"
+            onChange={(e) => setName(e.target.value)}
+          />
           <div className="predict__picks" role="group" aria-label="나올 것 같은 가게">
             {candidates.map((p) => (
               <button

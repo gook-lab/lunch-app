@@ -13,7 +13,7 @@
 import { Spinner } from '@gook-lab/motion';
 import { ChipPicker } from './ChipPicker';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button } from '@gook-lab/ui';
+import { Button, Checkbox, Input, Textarea } from '@gook-lab/ui';
 import { PRICE_BANDS, WALK_STEPS, type Place, type PriceBand, type Rating } from '../lib/candidates';
 import { CATEGORIES, categoryIcon, type Category } from '../lib/category';
 import { metersForWalkMinutes, officeCoord, type Coord } from '../lib/walk';
@@ -561,16 +561,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
         onSaved={onOfficeChanged}
       />
       <div className="add__search">
-        <input
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') void search();
-          }}
-          placeholder="가게 이름으로 찾기"
-          maxLength={40}
-          aria-label="가게 이름으로 찾기"
-        />
+        <Input value={keyword} onChange={(e) => setKeyword(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void search(); }} placeholder="가게 이름으로 찾기" maxLength={40} aria-label="가게 이름으로 찾기" />
         <Button onClick={() => void search()} loading={searching} disabled={!keyword.trim()}>
           찾기
         </Button>
@@ -627,10 +618,13 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
           </div>
         )}
         {phase === 'ready' && places.some((p) => !p.active) && (
-          <label className="map__toggle">
-            <input type="checkbox" checked={showOff} onChange={(e) => setShowOff(e.target.checked)} />
-            꺼 둔 가게도 보기
-          </label>
+          <Checkbox
+            className="map__toggle"
+            layout="inline"
+            label="꺼 둔 가게도 보기"
+            checked={showOff}
+            onCheckedChange={(v) => setShowOff(v === true)}
+          />
         )}
         <div
           className={[
@@ -841,10 +835,7 @@ function PlaceEdit({
 
   return (
     <div className="pf">
-      <label className="pf__field">
-        이름
-        <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} aria-required="true" autoFocus />
-      </label>
+      <Input label="이름" fieldProps={{ className: 'pf__field' }} value={name} onChange={(e) => setName(e.target.value)} maxLength={40} aria-required="true" autoFocus />
       <div className="pf__field">
         <span className="filters__label">카테고리</span>
         <ChipPicker label="카테고리" options={CATEGORIES} value={category} onPick={setCategory} />
@@ -870,14 +861,8 @@ function PlaceEdit({
           ))}
         </div>
       </div>
-      <label className="pf__field">
-        한줄평
-        <input value={review} onChange={(e) => setReview(e.target.value)} maxLength={40} />
-      </label>
-      <label className="pf__field">
-        메모
-        <textarea value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={120} rows={2} />
-      </label>
+      <Input label="한줄평" fieldProps={{ className: 'pf__field' }} value={review} onChange={(e) => setReview(e.target.value)} maxLength={40} />
+      <Textarea label="메모" fieldProps={{ className: 'pf__field' }} value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={120} rows={2} />
       <p className="muted small">좌표와 도보 시간은 목록 탭에서 고칠 수 있어요.</p>
       {problem && <p className="notice notice--empty" role="alert">{problem}</p>}
       <div className="row">

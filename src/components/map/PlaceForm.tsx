@@ -11,7 +11,7 @@
  */
 import { ChipPicker } from '../ChipPicker';
 import { useEffect, useMemo, useId, useRef, useState } from 'react';
-import { Button } from '@gook-lab/ui';
+import { Button, Input, Textarea } from '@gook-lab/ui';
 import { PRICE_BANDS, type Place, type PriceBand, type Rating } from '../../lib/candidates';
 import { CATEGORIES, categoryFromKakao, type Category } from '../../lib/category';
 import { findDuplicate } from '../../lib/duplicate';
@@ -166,20 +166,7 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
         </div>
       )}
 
-      <label className="pf__field">
-        이름
-        <input
-          ref={nameRef}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          maxLength={MAX_NAME}
-          aria-required="true"
-          aria-invalid={problem === '이름을 넣어 주세요.' || undefined}
-          aria-describedby={problem ? errId : undefined}
-          placeholder="가게 이름"
-          autoFocus={draft.name === ''}
-        />
-      </label>
+      <Input label="이름" fieldProps={{ className: 'pf__field' }} ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} maxLength={MAX_NAME} aria-required="true" aria-invalid={problem === '이름을 넣어 주세요.' || undefined} aria-describedby={problem ? errId : undefined} placeholder="가게 이름" autoFocus={draft.name === ''} state={problem === '이름을 넣어 주세요.' ? 'error' : 'default'} />
       {draft.address && <p className="muted small">{draft.address}</p>}
 
       <p className={tooFar ? 'notice notice--empty' : 'muted small'}>
@@ -217,26 +204,9 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
         </div>
       </div>
 
-      <label className="pf__field">
-        한줄평 (선택)
-        <input
-          value={review}
-          onChange={(e) => setReview(e.target.value)}
-          maxLength={MAX_REVIEW}
-          placeholder="김치찌개가 진함"
-        />
-      </label>
+      <Input label="한줄평 (선택)" fieldProps={{ className: 'pf__field' }} value={review} onChange={(e) => setReview(e.target.value)} maxLength={MAX_REVIEW} placeholder="김치찌개가 진함" />
 
-      <label className="pf__field">
-        메모 (선택)
-        <textarea
-          value={memo}
-          onChange={(e) => setMemo(e.target.value)}
-          maxLength={MAX_MEMO}
-          rows={2}
-          placeholder="12시 전에 가야 자리 있음"
-        />
-      </label>
+      <Textarea label="메모 (선택)" fieldProps={{ className: 'pf__field' }} value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={MAX_MEMO} rows={2} placeholder="12시 전에 가야 자리 있음" />
 
       {problem && <p id={errId} className="notice notice--empty" role="alert">{problem}</p>}
 

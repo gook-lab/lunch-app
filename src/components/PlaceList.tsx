@@ -11,7 +11,7 @@
  */
 import { recentNote } from '../lib/messages';
 import { useId, useRef, useState } from 'react';
-import { Button, Menu } from '@gook-lab/ui';
+import { Button, Input, Menu } from '@gook-lab/ui';
 import { ChipPicker } from './ChipPicker';
 import { LunchStats } from './LunchStats';
 import { CATEGORIES, categoryIcon, type Category } from '../lib/category';
@@ -189,19 +189,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
         }
       }}
     >
-      <label>
-        이름
-        <input
-          ref={nameRef}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          maxLength={40}
-          aria-required="true"
-          aria-invalid={problem === '이름을 넣어 주세요.' || undefined}
-          aria-describedby={problem ? errId : undefined}
-          autoFocus
-        />
-      </label>
+      <Input label="이름" ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} maxLength={40} aria-required="true" aria-invalid={problem === '이름을 넣어 주세요.' || undefined} aria-describedby={problem ? errId : undefined} autoFocus state={problem === '이름을 넣어 주세요.' ? 'error' : 'default'} />
       {/* 지도에서 넣을 때와 같은 칩. 글자로 받으면 목록에 없는 카테고리("국밥")가
           들어가 로드맵 조각·그림·카테고리 필터에서 길을 잃었다(20회차). */}
       <div ref={catRef}>
@@ -209,14 +197,8 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
         <ChipPicker label="카테고리" options={CATEGORIES} value={category} onPick={setCategory} />
       </div>
       <div className="edit__coords">
-        <label>
-          위도
-          <input ref={latRef} value={lat} onChange={(e) => setLat(e.target.value)} inputMode="decimal" aria-invalid={!Number.isFinite(Number(lat)) || undefined} aria-describedby={problem ? errId : undefined} />
-        </label>
-        <label>
-          경도
-          <input ref={lngRef} value={lng} onChange={(e) => setLng(e.target.value)} inputMode="decimal" aria-invalid={!Number.isFinite(Number(lng)) || undefined} aria-describedby={problem ? errId : undefined} />
-        </label>
+        <Input label="위도" ref={latRef} value={lat} onChange={(e) => setLat(e.target.value)} inputMode="decimal" aria-invalid={!Number.isFinite(Number(lat)) || undefined} aria-describedby={problem ? errId : undefined} state={!Number.isFinite(Number(lat)) ? 'error' : 'default'} />
+        <Input label="경도" ref={lngRef} value={lng} onChange={(e) => setLng(e.target.value)} inputMode="decimal" aria-invalid={!Number.isFinite(Number(lng)) || undefined} aria-describedby={problem ? errId : undefined} state={!Number.isFinite(Number(lng)) ? 'error' : 'default'} />
       </div>
       <p className="muted small">좌표를 고치면 도보 시간도 다시 계산돼요.</p>
       {problem && <p id={errId} className="notice notice--empty" role="alert">{problem}</p>}
