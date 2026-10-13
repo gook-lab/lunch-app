@@ -1,0 +1,279 @@
+import { describe, it, expect } from 'vitest';
+import { calculateStats } from './stats';
+import type { Place, Visit } from './candidates';
+
+/**
+ * 테스트용 더미 Place.
+ */
+function place(id: string, name: string, category: string): Place {
+  return {
+    id,
+    name,
+    category,
+    lat: 37.4979,
+    lng: 127.0276,
+    walkMin: 10,
+    kakaoPlaceId: `kakao_${id}`,
+    active: true,
+    createdBy: 'test_user',
+  };
+}
+
+/**
+ * 테스트용 더미 Visit.
+ */
+function visit(dayId: string, placeId: string): Visit {
+  return { id: dayId as any, placeId };
+}
+
+describe('calculateStats', () => {
+  describe('empty visits', () => {
+    it('빈 기록이면 모든 통계가 0', () => {
+      const stats = calculateStats([], [], '20261013');
+      expect(stats.totalCount).toBe(0);
+      expect(stats.topPlaces).toEqual([]);
+      expect(stats.categoryCount).toEqual({});
+      expect(stats.newPlaceCount).toBe(0);
+      expect(stats.badges.every((b) => !b.earned)).toBe(true);
+    });
+  });
+
+  describe('monthly filtering', () => {
+    it('이번 달(10월)만 계산하고 지난 달은 제외', () => {
+      const p1 = place('p1', '가게1', '한식');
+      const visits = [
+        visit('20260930', 'p1'), // 9월
+        visit('20261001', 'p1'), // 10월
+        visit('20261005', 'p1'), // 10월
+        visit('20261110', 'p1'), // 11월
+      ];
+      const stats = calculateStats(visits, [p1], '20261013');
+      expect(stats.totalCount).toBe(2);
+    });
+  });
+
+  describe('top places', () => {
+    it('상위 3개를 횟수 많은 순으로, 동률은 최근 방문 우선', () => {
+      const places = [
+        place('p1', '가게1', '한식'),
+        place('p2', '가게2', '면'),
+        place('p3', '가게3', '고기'),
+        place('p4', '가게4', '분식'),
+      ];
+      const visits = [
+        visit('20261001', 'p1'),
+        visit('20261002', 'p1'),
+        visit('20261003', 'p1'), // p1: 3회
+        visit('20261004', 'p2'),
+        visit('20261005', 'p2'), // p2: 2회
+        visit('20261006', 'p3'),
+        visit('20261007', 'p3'), // p3: 2회 (최근)
+        visit('20261008', 'p4'),
+      ];
+      const stats = calculateStats(visits, places, '20261013');
+      expect(stats.topPlaces).toHaveLength(3);
+      expect(stats.topPlaces[0]).toEqual({ place: places[0], count: 3 });
+      expect(stats.topPlaces[1]).toEqual({ place: places[2], count: 2 }); // p3가 p2보다 최근
+      expect(stats.topPlaces[2]).toEqual({ place: places[1], count: 2 });
+    });
+
+    it('상위 3개를 초과하면 자른다', () => {
+      const places = [
+        place('p1', '가게1', '한식'),
+        place('p2', '가게2', '면'),
+        place('p3', '가게3', '고기'),
+        place('p4', '가게4', '분식'),
+      ];
+      const visits = [
+        visit('20261001', 'p1'),
+        visit('20261002', 'p2'),
+        visit('20261003', 'p3'),
+        visit('20261004', 'p4'),
+      ];
+      const stats = calculateStats(visits, places, '20261013');
+      expect(stats.topPlaces).toHaveLength(3);
+    });
+  });
+
+  describe('category count', () => {
+    it('카테고리별 방문 횟수를 센다', () => {
+      const places = [
+        place('p1', '가게1', '한식'),
+        place('p2', '가게2', '한식'),
+        place('p3', '가게3', '면'),
+      ];
+      const visits = [
+        visit('20261001', 'p1'),
+        visit('20261002', 'p1'),
+        visit('20261003', 'p2'),
+        visit('20261004', 'p3'),
+        visit('20261005', 'p3'),
+        visit('20261006', 'p3'),
+      ];
+      const stats = calculateStats(visits, places, '20261013');
+      expect(stats.categoryCount).toEqual({ '한식': 3, '면': 3 });
+    });
+  });
+
+  describe('new places', () => {
+    it('31일 창 안에서 처음 나타나면서 이번 달 방문인 가게만 센다', () => {
+      const p1 = place('p1', '가게1', '한식');
+      const p2 = place('p2', '가게2', '면');
+      const p3 = place('p3', '가게3', '고기');
+      // 10월 13일 기준, 31일 창은 9월 13일 ~ 10월 13일
+      const visits = [
+        visit('20260913', 'p1'), // 9월 13일: p1 첫 방문, 하지만 이번 달(10월)이 아님
+        visit('20261001', 'p2'), // 10월 1일: p2 첫 방문, 이번 달
+        visit('20261005', 'p3'), // 10월 5일: p3 첫 방문, 이번 달
+        visit('20261010', 'p1'), // 10월 10일: p1 이번 달 방문 (하지만 이미 9월에 처음 나타남)
+      ];
+      const stats = calculateStats(visits, [p1, p2, p3], '20261013');
+      expect(stats.newPlaceCount).toBe(2); // p2, p3
+    });
+
+    it('31일 창 밖의 가게는 새 가게로 안 센다', () => {
+      const p1 = place('p1', '가게1', '한식');
+      const p2 = place('p2', '가게2', '면');
+      // 10월 13일 기준, 31일 창은 9월 13일 ~ 10월 13일
+      const visits = [
+        visit('20260910', 'p1'), // 9월 10일: 31일 창 밖
+        visit('20261001', 'p2'), // 10월 1일: 새 가게
+      ];
+      const stats = calculateStats(visits, [p1, p2], '20261013');
+      expect(stats.newPlaceCount).toBe(1); // p2만
+    });
+  });
+
+  describe('badges', () => {
+    it('모든 뱃지가 존재하고 earned/current/target을 가진다', () => {
+      const stats = calculateStats([], [], '20261013');
+      expect(stats.badges).toHaveLength(5);
+      for (const badge of stats.badges) {
+        expect(badge.id).toBeDefined();
+        expect(badge.icon).toBeDefined();
+        expect(badge.label).toBeDefined();
+        expect(typeof badge.earned).toBe('boolean');
+        expect(typeof badge.current).toBe('number');
+        expect(typeof badge.target).toBe('number');
+      }
+    });
+
+    it('🧭 개척자: 새 가게 3곳 이상', () => {
+      const places = [place('p1', '가게1', '한식'), place('p2', '가게2', '면'), place('p3', '가게3', '고기')];
+      const visits = [
+        visit('20261001', 'p1'),
+        visit('20261002', 'p2'),
+        visit('20261003', 'p3'),
+      ];
+      const stats = calculateStats(visits, places, '20261013');
+      const explorer = stats.badges.find((b) => b.id === 'explorer')!;
+      expect(explorer.earned).toBe(true);
+      expect(explorer.current).toBe(3);
+    });
+
+    it('🌈 골고루: 카테고리 4종 이상', () => {
+      const places = [
+        place('p1', '가게1', '한식'),
+        place('p2', '가게2', '면'),
+        place('p3', '가게3', '고기'),
+        place('p4', '가게4', '분식'),
+      ];
+      const visits = [
+        visit('20261001', 'p1'),
+        visit('20261002', 'p2'),
+        visit('20261003', 'p3'),
+        visit('20261004', 'p4'),
+      ];
+      const stats = calculateStats(visits, places, '20261013');
+      const balanced = stats.badges.find((b) => b.id === 'balanced')!;
+      expect(balanced.earned).toBe(true);
+      expect(balanced.current).toBe(4);
+    });
+
+    it('💛 단골: 같은 곳 3번 이상', () => {
+      const p1 = place('p1', '가게1', '한식');
+      const visits = [
+        visit('20261001', 'p1'),
+        visit('20261002', 'p1'),
+        visit('20261003', 'p1'),
+      ];
+      const stats = calculateStats(visits, [p1], '20261013');
+      const regular = stats.badges.find((b) => b.id === 'regular')!;
+      expect(regular.earned).toBe(true);
+      expect(regular.current).toBe(3);
+    });
+
+    it('🔥 꾸준함: 평일 연속 5일 (주말 건너뜀)', () => {
+      const p1 = place('p1', '가게1', '한식');
+      // 2026년 10월
+      // 10월 5일(월) ~ 10월 9일(금): 연속 5 평일
+      // (10월 10~11일은 토일, 건너뜀)
+      const visits = [
+        visit('20261005', 'p1'), // 월
+        visit('20261006', 'p1'), // 화
+        visit('20261007', 'p1'), // 수
+        visit('20261008', 'p1'), // 목
+        visit('20261009', 'p1'), // 금
+      ];
+      const stats = calculateStats(visits, [p1], '20261013');
+      const consecutive = stats.badges.find((b) => b.id === 'consecutive')!;
+      expect(consecutive.earned).toBe(true);
+      expect(consecutive.current).toBe(5);
+    });
+
+    it('🔥 꾸준함: 주말 사이 끊기면 리셋', () => {
+      const p1 = place('p1', '가게1', '한식');
+      // 2026년 10월
+      // 10월 5일(월) ~ 10월 9일(금): 평일 5일
+      // 10월 10~11일(토일): 주말 건너뜀
+      // 10월 12일(월): 또 다른 연속
+      const visits = [
+        visit('20261005', 'p1'), // 월
+        visit('20261006', 'p1'), // 화
+        visit('20261007', 'p1'), // 수
+        visit('20261008', 'p1'), // 목
+        visit('20261009', 'p1'), // 금
+        // 토일 건너뜀
+        visit('20261012', 'p1'), // 월
+      ];
+      const stats = calculateStats(visits, [p1], '20261013');
+      const consecutive = stats.badges.find((b) => b.id === 'consecutive')!;
+      expect(consecutive.earned).toBe(true);
+      expect(consecutive.current).toBe(5);
+    });
+
+    it('🎲 운명대로: 이번 달 10번 이상', () => {
+      const p1 = place('p1', '가게1', '한식');
+      const visits = Array.from({ length: 10 }, (_, i) => visit(`2026100${String(i + 1).padStart(2, '0')}`, 'p1'));
+      const stats = calculateStats(visits, [p1], '20261013');
+      const prolific = stats.badges.find((b) => b.id === 'prolific')!;
+      expect(prolific.earned).toBe(true);
+      expect(prolific.current).toBe(10);
+    });
+  });
+
+  describe('month boundary', () => {
+    it('9월 30일 기록은 10월 통계에 포함되지 않음', () => {
+      const p1 = place('p1', '가게1', '한식');
+      const visits = [
+        visit('20260930', 'p1'), // 9월
+        visit('20261001', 'p1'), // 10월
+      ];
+      const stats = calculateStats(visits, [p1], '20261001');
+      expect(stats.totalCount).toBe(1);
+    });
+  });
+
+  describe('progress tracking', () => {
+    it('뱃지 미달 시 current/target이 진행도를 보여준다', () => {
+      const places = [place('p1', '가게1', '한식'), place('p2', '가게2', '면')];
+      const visits = [visit('20261001', 'p1'), visit('20261002', 'p2')];
+      const stats = calculateStats(visits, places, '20261013');
+
+      const explorer = stats.badges.find((b) => b.id === 'explorer')!;
+      expect(explorer.earned).toBe(false);
+      expect(explorer.current).toBe(2);
+      expect(explorer.target).toBe(3);
+    });
+  });
+});

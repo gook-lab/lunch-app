@@ -13,6 +13,7 @@ import { recentNote } from '../lib/messages';
 import { useId, useRef, useState } from 'react';
 import { Button, Menu } from '@gook-lab/ui';
 import { ChipPicker } from './ChipPicker';
+import { LunchStats } from './LunchStats';
 import { CATEGORIES, categoryIcon, type Category } from '../lib/category';
 import type { Place, Visit } from '../lib/candidates';
 import { withJosa } from '../lib/josa';
@@ -346,6 +347,7 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
         </p>
       )}
       <div className="lt__side">
+        <LunchStats places={places} visits={visits} today={today} />
         <History places={places} visits={visits} today={today} onShowOnMap={onShowOnMap} />
       </div>
       <div className="lt__main">
