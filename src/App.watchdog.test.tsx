@@ -7,8 +7,9 @@
  * 만들고, 상한(20초)이 지나면 잠금만 풀리고 결과는 안 생기는지 본다.
  */
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import App from './App';
+import { preloadGames } from './components/games';
 
 const fx = vi.hoisted(() => ({
   places: ['a', 'b', 'c'].map((id) => ({
@@ -25,6 +26,9 @@ vi.mock('./services/lunch', () => ({ decideToday: vi.fn(async () => {}) }));
 vi.mock('./components/MapTab', () => ({ default: () => null }));
 // 끝을 알리지 않는 돌림판.
 vi.mock('./components/games/Wheel', () => ({ Wheel: () => <div data-testid="wheel-stub" /> }));
+
+// 게임은 나눠 받는다(games/lazy.tsx). 테스트는 시작 전에 다 받아 두어 바로 그려지게 한다.
+beforeAll(() => preloadGames());
 
 beforeEach(() => {
   vi.useFakeTimers();

@@ -10,20 +10,11 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Modal, Sheet } from '@gook-lab/ui';
 import { Spinner } from '@gook-lab/motion';
-import { Wheel } from './components/games/Wheel';
-import { Ladder } from './components/games/Ladder';
-import { Slot } from './components/games/Slot';
-import { Pinball } from './components/games/Pinball';
-import { Cards } from './components/games/Cards';
-import { Memory } from './components/games/Memory';
-import { Gacha } from './components/games/Gacha';
-import { Plinko } from './components/games/Plinko';
-import { Dice } from './components/games/Dice';
 import { ballCountsFor, pickWeighted } from './lib/weights';
 import { CandidateChips } from './components/CandidateChips';
 import { useMedia } from './hooks/useMedia';
 import { StatusScreen } from './components/StatusScreen';
-import { Tournament } from './components/games/Tournament';
+import { Cards, Dice, Gacha, Ladder, Memory, Pinball, Plinko, Slot, Tournament, Wheel, preloadGames } from './components/games';
 import { ShareButton } from './components/ShareButton';
 import {
   actionLabel,
@@ -401,6 +392,15 @@ export default function App() {
         ? f.categories.filter((x) => x !== c)
         : [...f.categories, c],
     }));
+
+  // 첫 화면을 그린 뒤 쉬는 시간에 나머지 게임 코드를 받아 둔다 — 방식을 바꿀 때 기다리지 않게.
+  useEffect(() => {
+    if (state !== 'ready') return;
+    const idle = window.requestIdleCallback ?? ((fn: () => void) => window.setTimeout(fn, 1500));
+    const cancel = window.cancelIdleCallback ?? window.clearTimeout;
+    const id = idle(() => void preloadGames());
+    return () => cancel(id);
+  }, [state]);
 
   if (state === 'loading') {
     return (

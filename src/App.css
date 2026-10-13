@@ -2665,3 +2665,14 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   animation: mdl-shimmer 1.4s linear infinite;
 }
 @media (prefers-reduced-motion: reduce) { .map__loading { animation: none; } }
+
+/* 게임 코드를 받는 동안 — 판 자리를 비워 두지 않고 반짝인다 */
+.game-loading {
+  width: min(320px, 84vw);
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  background: linear-gradient(90deg, var(--color-neutral-100) 25%, var(--color-neutral-200) 50%, var(--color-neutral-100) 75%);
+  background-size: 200% 100%;
+  animation: mdl-shimmer 1.4s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) { .game-loading { animation: none; } }

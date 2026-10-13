@@ -10,8 +10,9 @@
  * 는 호출만 기록한다. 난수는 0 으로 고정해 당첨이 항상 첫 후보가 되게 한다.
  */
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
+import { preloadGames } from './components/games';
 import { decideToday } from './services/lunch';
 import { RESULT_DELAY_MS, SPIN_MS, setForceMotion } from './components/games/types';
 
@@ -44,6 +45,9 @@ const card = () =>
   (document.querySelector('dialog[open] .ticket__name') ?? document.querySelector('.result-bar strong'))?.textContent?.trim() ?? null;
 const lockedButtons = () =>
   [...document.querySelectorAll('button')].filter((b) => b.disabled).map((b) => b.textContent?.trim());
+
+// 게임은 나눠 받는다(games/lazy.tsx). 테스트는 시작 전에 다 받아 두어 바로 그려지게 한다.
+beforeAll(() => preloadGames());
 
 beforeEach(() => {
   vi.useFakeTimers();
