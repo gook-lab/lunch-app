@@ -775,15 +775,36 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
           <span aria-hidden="true">🔀 </span>자리 섞기
         </button>
       </div>
-      <canvas
-        ref={canvasRef}
-        style={{ aspectRatio: `${CANVAS_W} / ${viewH}` }}
-        role="img"
-        aria-label={`${PINBALL_THEMES.find((th) => th.id === theme)?.label ?? ''} 판, 구슬 ${total}개 핀볼${
-          follow === null ? '' : `, ${candidates[follow].name} 구슬을 따라가는 중`
-        }`}
-        onClick={onCanvasClick}
-      />
+      <div className="pinball__play">
+        {/* 확률은 판 옆에 늘 보인다. 공 개수 설정은 접혀 있어 확률이 안 보였다(10/13 사용자).
+            누르면 그 공을 따라간다 — 캔버스·카메라 고르기와 같은 상태다. */}
+        <ul className="pinball__odds" aria-label="가게별 당첨 확률">
+          {candidates.map((p, i) => (
+            <li key={p.id}>
+              <button
+                type="button"
+                className="pinball__odd"
+                aria-pressed={follow === i}
+                title={`${p.name} 공 따라가기`}
+                onClick={() => setFollow(follow === i ? null : i)}
+              >
+                <span className="pinball__dot" style={{ background: marbleColor(i) }} aria-hidden="true" />
+                <span className="pinball__oddName">{shortName(p.name, 5)}</span>
+                <span className="pinball__oddPct">{Math.round((ballsOf(i) / Math.max(1, total)) * 100)}%</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+        <canvas
+          ref={canvasRef}
+          style={{ aspectRatio: `${CANVAS_W} / ${viewH}` }}
+          role="img"
+          aria-label={`${PINBALL_THEMES.find((th) => th.id === theme)?.label ?? ''} 판, 구슬 ${total}개 핀볼${
+            follow === null ? '' : `, ${candidates[follow].name} 구슬을 따라가는 중`
+          }`}
+          onClick={onCanvasClick}
+        />
+      </div>
       {/* 키보드·화면낭독기로도 고를 수 있게. 캔버스 클릭과 같은 상태를 쓴다. */}
       <label className="pinball__follow">
         <span>카메라</span>
