@@ -71,17 +71,20 @@ function troubleOf(error: unknown): Trouble {
   if (error instanceof KakaoLoadError) {
     if (error.kind === 'no-key') {
       return {
-        title: '카카오 JS 키가 없어요',
-        detail:
-          '.env.local 의 VITE_KAKAO_JS_KEY 를 채우고 개발 서버를 다시 띄워 주세요. 지도만 막히고 오늘·목록 탭은 그대로 쓸 수 있어요.',
+        title: '지도를 쓸 수 없어요',
+        // 설정 방법은 개발 중에만 보여 준다. 배포 화면에 환경변수 이름이 뜨면 사용자는 할 수 있는 게 없다.
+        detail: import.meta.env.DEV
+          ? '.env.local 의 VITE_KAKAO_JS_KEY 를 채우고 개발 서버를 다시 띄워 주세요. 오늘·목록 탭은 그대로 쓸 수 있어요.'
+          : '지도 설정이 아직 안 돼 있어요. 오늘·목록 탭은 그대로 쓸 수 있어요.',
         retryable: false,
       };
     }
     return {
-      title: '지도 SDK 를 받지 못했어요',
-      detail:
-        '가장 흔한 원인은 도메인 미등록이에요. 카카오 개발자 콘솔 > 앱 > 플랫폼 > Web 사이트 도메인에 ' +
-        `${window.location.origin} 이 있는지 확인해 주세요.`,
+      title: '지도를 불러오지 못했어요',
+      detail: import.meta.env.DEV
+        ? '가장 흔한 원인은 도메인 미등록이에요. 카카오 개발자 콘솔 > 앱 > 플랫폼 > Web 사이트 도메인에 ' +
+          `${window.location.origin} 이 있는지 확인해 주세요.`
+        : '잠시 뒤 다시 시도해 주세요. 오늘·목록 탭은 그대로 쓸 수 있어요.',
       retryable: true,
     };
   }

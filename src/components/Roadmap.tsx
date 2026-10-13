@@ -139,7 +139,7 @@ export function Roadmap({
           </button>
         ))}
 
-        <span className="rm__here">사무실</span>
+        <span className="rm__here">회사</span>
       </div>
 
       <div className="rm__summary">

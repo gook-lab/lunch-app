@@ -481,7 +481,7 @@ export default function App() {
       {/* officeKey 가 바뀌면 다시 그려진다(회사 위치 저장 → 다시 읽기). */}
       <div className={officeSource() === 'saved' ? 'today__office' : 'today__office today__office--temp'} data-office={officeKey}>
         <span>
-          🏢 {officeSource() === 'saved' ? '정해 둔 회사 위치에서 잰 도보 시간이에요' : '회사 위치가 아직 임시값이에요'}
+          🏢 {officeSource() === 'saved' ? '정해 둔 회사 위치에서 잰 도보 시간이에요' : '회사 위치를 아직 안 정했어요 · 지도 탭에서 정해 주세요'}
         </span>
         <button type="button" className="linkish" onClick={() => goTab('map')}>
           {officeSource() === 'saved' ? '바꾸기' : '정하기'}
@@ -665,7 +665,7 @@ export default function App() {
           art={
             <span className="status__office">
               <span className="status__dot" />
-              <span className="status__officeLabel">사무실</span>
+              <span className="status__officeLabel">회사</span>
             </span>
           }
           title="아직 등록된 가게가 없어요"
