@@ -34,28 +34,27 @@ const places = (n: number): Place[] =>
   }));
 
 describe.each([
-  ['경마', HorseRace],
-  ['레이싱', CarRace],
-] as const)('%s', (_, Race) => {
+  ['경마', HorseRace, '.prace__lane', '.prace__lane--win .prace__name'],
+  ['레이싱', CarRace, '.rc__car', '.rc__pos--win'],
+] as const)('%s', (_, Race, runner, winName) => {
   it('카운트다운 뒤 달려서 당첨이 1등으로 들어온다', () => {
     for (const [n, winner] of [[1, 0], [5, 3], [12, 0], [20, 19]]) {
       const onSpinEnd = vi.fn();
       const props = { candidates: places(n), winnerIndex: winner, run: n + winner, onSpinEnd };
       const r = render(<Race {...props} spinning />);
-      expect(r.container.querySelectorAll('.prace__lane')).toHaveLength(n);
+      expect(r.container.querySelectorAll(runner)).toHaveLength(n);
       run(500);
       expect(r.container.querySelector('.prace__count')).toBeTruthy();
-      run(9_000);
+      run(12_000);
       expect(onSpinEnd).toHaveBeenCalledTimes(1);
       r.rerender(<Race {...props} spinning={false} />);
-      const win = r.container.querySelectorAll('.prace__lane--win');
+      const win = r.container.querySelectorAll(winName);
       expect(win).toHaveLength(1);
-      expect(win[0].querySelector('.prace__name')?.textContent).toBe(`가게${winner + 1}`);
-      expect(win[0].querySelector('.prace__rank')?.textContent).toBe('1등');
+      expect(win[0].textContent).toContain(`가게${winner + 1}`);
       expect(r.container.querySelector('.prace__line')?.textContent).toContain('1등으로 들어왔어요');
       r.unmount();
     }
-  }, 20_000);
+  }, 30_000);
 
   it('움직임 줄이기면 바로 끝낸다', () => {
     reduced = true;
@@ -65,6 +64,21 @@ describe.each([
     act(() => { vi.advanceTimersByTime(1); });
     expect(onSpinEnd).toHaveBeenCalledTimes(1);
     r.rerender(<Race {...props} spinning={false} />);
-    expect(r.container.querySelector('.prace__lane--win .prace__name')?.textContent).toBe('가게3');
+    expect(r.container.querySelector(winName)?.textContent).toContain('가게3');
   });
+});
+
+describe('레이싱 연출', () => {
+  it('두 바퀴 동안 부스터·펑크·전복이 화면에 나온다', () => {
+    const seen = new Set<string>();
+    for (let k = 0; k < 6 && seen.size < 3; k += 1) {
+      const r = render(<CarRace candidates={places(10)} winnerIndex={k} spinning run={40 + k} onSpinEnd={() => {}} />);
+      for (let t = 0; t < 12_000; t += 100) {
+        act(() => { vi.advanceTimersByTime(100); });
+        for (const kind of ['boost', 'wobble', 'crash']) if (r.container.querySelector(`.rc__car--${kind}`)) seen.add(kind);
+      }
+      r.unmount();
+    }
+    expect([...seen].sort()).toEqual(['boost', 'crash', 'wobble']);
+  }, 30_000);
 });

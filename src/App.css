@@ -2872,7 +2872,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   border-radius: var(--radius-md);
   background: oklch(0.42 0.09 145);
 }
-.prace--car .prace__board { background: oklch(0.32 0.01 260); }
+.prace--car .prace__board { padding: var(--space-2) var(--space-1); background: oklch(0.26 0.03 260); }
 .prace__lane {
   display: grid;
   grid-template-columns: 4.5em 1fr 2.6em;
@@ -2895,11 +2895,6 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   height: calc(var(--px) * 11);
   border-radius: var(--radius-sm);
   background: repeating-linear-gradient(90deg, oklch(0.6 0.13 140) 0 24px, oklch(0.56 0.13 140) 24px 48px);
-}
-.prace--car .prace__track {
-  background:
-    linear-gradient(to bottom, transparent calc(100% - 2px), color-mix(in oklch, var(--color-bg) 35%, transparent) 0),
-    oklch(0.42 0.01 260);
 }
 .prace__finish {
   position: absolute;
@@ -3007,3 +3002,158 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 }
 .dir-link:hover { background: var(--color-neutral-100); }
 .dir-link:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+/* 레이싱 서킷 — 판을 뒤로 눕혀(perspective) 입체로. 차는 판에서 살짝 떠 그림자를 둔다 */
+.rc { display: grid; gap: var(--space-2); }
+.rc__stage { position: relative; perspective: 760px; perspective-origin: 50% 0%; padding-top: var(--space-2); }
+.rc__plane {
+  position: relative;
+  width: 100%;
+  transform: rotateX(48deg);
+  transform-origin: 50% 70%;
+  transform-style: preserve-3d;
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(ellipse at 50% 50%, oklch(0.56 0.13 145), oklch(0.44 0.11 145));
+}
+.rc__track, .rc__infield {
+  position: absolute;
+  border: 3px dashed oklch(0.6 0.2 25);
+  border-radius: 50%;
+}
+.rc__track {
+  left: 5.5%; width: 89%; top: 7%; height: 86%;
+  background: linear-gradient(oklch(0.38 0.01 260), oklch(0.34 0.01 260)) padding-box, var(--color-bg) border-box;
+}
+.rc__infield {
+  left: 18.5%; width: 63%; top: 27.3%; height: 45.4%;
+  background:
+    repeating-linear-gradient(90deg, oklch(0.56 0.13 145) 0 12px, oklch(0.52 0.13 145) 12px 24px) padding-box,
+    var(--color-bg) border-box;
+}
+.rc__start {
+  position: absolute;
+  left: 49%; width: 2.4%; top: 72.6%; height: 20.4%;
+  background: repeating-conic-gradient(var(--color-neutral-900) 0 25%, var(--color-bg) 0 50%) 0 0 / 6px 6px;
+}
+.rc__lap {
+  position: absolute;
+  top: 0;
+  left: var(--space-2);
+  z-index: 1;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-neutral-900);
+  color: oklch(0.9 0.16 95);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.8;
+}
+.rc__car {
+  position: absolute;
+  width: calc(var(--px) * 13);
+  height: calc(var(--px) * 7);
+  transform-style: preserve-3d;
+}
+.rc__shadow {
+  position: absolute;
+  inset: 12% 4%;
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklch, var(--color-neutral-900) 45%, transparent);
+  translate: 1px 2px;
+}
+.rc__body { position: absolute; inset: 0; transform: translateZ(calc(var(--px) * 2)); transform-style: preserve-3d; }
+.rc__sprite { position: absolute; top: calc(var(--px) * -1); left: calc(var(--px) * -1); display: block; }
+.rc__car--win .rc__body { filter: drop-shadow(0 0 3px oklch(0.9 0.16 95)); }
+
+/* 전복 — 긴 축으로 한 바퀴 구르며 튀어 오른다 */
+.rc__car--crash .rc__body { animation: rc-roll 900ms var(--ease-inout) both; }
+@keyframes rc-roll {
+  50% { transform: translateZ(calc(var(--px) * 9)) rotateX(180deg); }
+  to { transform: translateZ(calc(var(--px) * 2)) rotateX(360deg); }
+}
+.rc__smoke {
+  position: absolute;
+  inset: -40%;
+  border-radius: 50%;
+  background: radial-gradient(color-mix(in oklch, var(--color-neutral-300) 80%, transparent), transparent 70%);
+  animation: rc-puff 900ms var(--ease-out) both;
+}
+@keyframes rc-puff { from { scale: 0.3; opacity: 1; } to { scale: 1.6; opacity: 0; } }
+
+/* 부스터 — 꽁무니 불꽃이 깜빡이고 속도선이 뒤로 */
+.rc__flame {
+  position: absolute;
+  top: 22%;
+  right: 96%;
+  width: calc(var(--px) * 9);
+  height: 56%;
+  border-radius: 50% 0 0 50%;
+  background: linear-gradient(to left, oklch(0.95 0.15 95), oklch(0.75 0.2 55) 45%, transparent);
+  transform: translateZ(calc(var(--px) * 2));
+  transform-origin: right center;
+  animation: rc-flame 90ms steps(2) infinite;
+}
+@keyframes rc-flame { 50% { scale: 0.6 0.8; } }
+.rc__car--boost::after {
+  content: '';
+  position: absolute;
+  top: -30%;
+  right: 110%;
+  width: calc(var(--px) * 16);
+  height: 160%;
+  background: repeating-linear-gradient(to bottom, transparent 0 3px, color-mix(in oklch, var(--color-bg) 60%, transparent) 3px 4px);
+  mask-image: linear-gradient(to left, black, transparent);
+}
+
+/* 타이어 펑크 — 차가 떨리고, 불꽃이 튀고, 바퀴가 굴러 나간다 */
+.rc__car--wobble .rc__body { animation: rc-shake 110ms steps(2) infinite; }
+@keyframes rc-shake { 50% { rotate: 12deg; } }
+.rc__spark {
+  position: absolute;
+  top: 80%;
+  left: 20%;
+  width: var(--px);
+  height: var(--px);
+  background: oklch(0.92 0.17 95);
+  animation: rc-spark 420ms var(--ease-out) infinite;
+}
+.rc__spark--2 { left: 35%; animation-delay: 140ms; --sx: -14px; }
+.rc__spark--3 { left: 10%; animation-delay: 280ms; --sx: 8px; }
+@keyframes rc-spark { to { translate: var(--sx, -8px) 14px; opacity: 0; } }
+.rc__tire {
+  position: absolute;
+  top: 85%;
+  left: 15%;
+  width: calc(var(--px) * 3);
+  height: calc(var(--px) * 3);
+  border-radius: 50%;
+  border: var(--px) solid var(--color-neutral-900);
+  animation: rc-tire 900ms var(--ease-out) both;
+}
+@keyframes rc-tire { to { translate: -26px 30px; rotate: 540deg; opacity: 0; } }
+
+.rc__standing {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rc__pos {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklch, var(--color-bg) 10%, transparent);
+  color: var(--color-neutral-300);
+  font-size: var(--fs-xs);
+  line-height: 1.8;
+  white-space: nowrap;
+}
+.rc__pos--win { color: oklch(0.9 0.16 95); font-weight: 700; }
+.rc__posNo { font-weight: 800; color: var(--color-bg); font-variant-numeric: tabular-nums; }
+.rc__posDot { width: 8px; height: 8px; border-radius: 50%; }

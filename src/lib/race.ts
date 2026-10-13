@@ -59,7 +59,19 @@ export function progress(pace: number[], t: number): number {
   return Math.min(1, d);
 }
 
-export function buildRace(count: number, winnerIndex: number, random: () => number = Math.random): Race {
+export interface RaceOptions {
+  /** 주자마다 일어날 수 있는 돌발 상황 수(기본 1). 레이싱은 두 바퀴라 2. */
+  maxEvents?: number;
+  /** 각 기회에 사건이 일어날 확률(기본 0.38). */
+  eventChance?: number;
+}
+
+export function buildRace(
+  count: number,
+  winnerIndex: number,
+  random: () => number = Math.random,
+  { maxEvents = 1, eventChance = 0.38 }: RaceOptions = {},
+): Race {
   const runners = Array.from({ length: count }, () => {
     // 기본 속도에 구간마다 흔들림. 막판 스퍼트를 하는 주자가 섞여 역전이 생긴다.
     const base = 0.86 + random() * 0.16;
@@ -70,9 +82,12 @@ export function buildRace(count: number, winnerIndex: number, random: () => numb
       return Math.max(0.72, base + wobble + late);
     });
     // 돌발 상황 — 주자 셋 중 하나꼴. 결승 직전(7구간~)엔 안 일으킨다: 끝 장면이 어수선해진다.
+    // 사건이 여럿이면 구간을 나눠 겹치지 않게 한다(1~6구간을 maxEvents 칸으로).
     const events: RaceEvent[] = [];
-    if (random() < 0.38) {
-      const slice = 1 + Math.floor(random() * 5);
+    const span = Math.max(1, Math.floor(6 / maxEvents));
+    for (let e = 0; e < maxEvents; e += 1) {
+      if (random() >= eventChance) continue;
+      const slice = Math.min(6, 1 + e * span + Math.floor(random() * span));
       const roll = random();
       const kind: RaceEventKind = roll < 0.4 ? 'crash' : roll < 0.75 ? 'boost' : 'wobble';
       pace[slice] = kind === 'crash' ? 0.15 : kind === 'boost' ? pace[slice] + 0.75 : pace[slice] * 0.6;

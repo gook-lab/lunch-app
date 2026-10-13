@@ -54,4 +54,21 @@ describe('픽셀 경주 — 당첨이 1등', () => {
     expect(crashes).toBeGreaterThan(50);
     expect(comeback).toBeGreaterThan(0);
   });
+
+  it('레이싱처럼 사건을 둘까지 주면 겹치지 않고, 당첨은 그대로 1등이다', () => {
+    let twice = 0;
+    for (let seed = 0; seed < 200; seed += 1) {
+      const r = buildRace(8, 5, seededRandom(seed), { maxEvents: 2, eventChance: 0.55 });
+      expect(r.order[0]).toBe(5);
+      for (const evs of r.events) {
+        expect(evs.length).toBeLessThanOrEqual(2);
+        if (evs.length === 2) {
+          twice += 1;
+          expect(evs[0].slice).toBeLessThan(evs[1].slice);
+        }
+        evs.forEach((e) => expect(e.slice).toBeLessThan(7));
+      }
+    }
+    expect(twice).toBeGreaterThan(100);
+  });
 });
