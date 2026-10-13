@@ -14,6 +14,8 @@ import { ballCountsFor, pickWeighted } from './lib/weights';
 import { CandidateChips } from './components/CandidateChips';
 import { useMedia } from './hooks/useMedia';
 import { StatusScreen } from './components/StatusScreen';
+import { Confetti } from './components/Confetti';
+import { buzz, playChime, setSoundOn, soundOn } from './lib/celebrate';
 import { Cards, Dice, Gacha, Ladder, Memory, Pinball, Plinko, Slot, Tournament, Wheel, preloadGames } from './components/games';
 import { ShareButton } from './components/ShareButton';
 import {
@@ -128,12 +130,16 @@ export default function App() {
   const [confirming, setConfirming] = useState<Place | null>(null);
   // 게임이 끝나면 결과를 모달로 띄운다. 닫으면 같은 결과 카드가 게임 아래에 남는다.
   const [resultOpen, setResultOpen] = useState(false);
+  // 꽃가루 판 번호. 게임이 끝나 결과가 처음 뜰 때만 올리고, 모달을 닫으면 0 — "결과 보기" 로 다시 열 땐 안 터진다.
+  const [burst, setBurst] = useState(0);
+  const [sound, setSound] = useState(soundOn);
   // "여기로 결정" 저장 실패. 다시 돌리면 지운다.
   const [saveProblem, setSaveProblem] = useState(false);
   const resultTimer = useRef(0);
   const closeResult = useCallback(() => {
     window.clearTimeout(resultTimer.current);
     setResultOpen(false);
+    setBurst(0);
   }, []);
   useEffect(() => () => window.clearTimeout(resultTimer.current), []);
   const [saving, setSaving] = useState(false);
@@ -261,7 +267,15 @@ export default function App() {
     if (winnerIndex !== null) {
       window.clearTimeout(resultTimer.current);
       resultTimer.current = window.setTimeout(
-        () => setResultOpen(true),
+        () => {
+          setResultOpen(true);
+          if (prefersReducedMotion()) return;
+          setBurst(Date.now()); // 판마다 다른 모양
+          if (soundOn()) {
+            playChime();
+            buzz();
+          }
+        },
         prefersReducedMotion() ? 0 : RESULT_DELAY_MS,
       );
     }
@@ -683,6 +697,19 @@ export default function App() {
           )}
           <button
             type="button"
+            className="stage__sound"
+            aria-pressed={sound}
+            onClick={() => {
+              setSoundOn(!sound);
+              setSound(!sound);
+              if (!sound) playChime();
+            }}
+          >
+            <span aria-hidden="true">{sound ? '🔔 ' : '🔕 '}</span>
+            {sound ? '소리 켬' : '소리 끔'}
+          </button>
+          <button
+            type="button"
             className="stage__expand"
             aria-pressed={expanded}
             onClick={() => setExpanded((v) => !v)}
@@ -848,6 +875,7 @@ export default function App() {
         aria-label="오늘의 점심 결과"
       >
         {/* 닫힌 dialog 도 자식을 그린다. 그러면 카드가 두 벌이 되어 초점·ref 가 닫힌 쪽으로 간다. */}
+        {resultOpen && burst > 0 && <Confetti key={burst} seed={burst} />}
         {resultOpen && ticket}
         <button type="button" className="linkish result-modal__close" onClick={closeResult}>
           닫고 게임 보기

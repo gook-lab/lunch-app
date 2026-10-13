@@ -110,6 +110,26 @@ describe('결과 모달', () => {
     expect(screen.getByRole('button', { name: '여기로 결정' })).toBeTruthy();
   });
 
+  it('꽃가루는 게임이 끝나 처음 뜰 때만 터지고, "결과 보기" 로 다시 열 땐 안 터진다', () => {
+    startWheel();
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
+    expect(document.querySelector('dialog[open] .confetti')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '닫고 게임 보기' }));
+    fireEvent.click(screen.getByRole('button', { name: '결과 보기' }));
+    expect(document.querySelector('dialog[open] .confetti')).toBeNull();
+  });
+
+  it('소리는 기본으로 꺼져 있고, 켜면 기억한다', () => {
+    window.localStorage.removeItem('lunch-app:sound');
+    render(<App />);
+    const toggle = screen.getByRole('button', { name: /소리 끔/ });
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(toggle);
+    expect(screen.getByRole('button', { name: /소리 켬/ }).getAttribute('aria-pressed')).toBe('true');
+    expect(window.localStorage.getItem('lunch-app:sound')).toBe('1');
+    window.localStorage.removeItem('lunch-app:sound');
+  });
+
   it('모달이 뜨기 전에도 한 줄 결과의 "결과 보기" 로 바로 연다', () => {
     startWheel();
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
