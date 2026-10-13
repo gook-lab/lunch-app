@@ -9,7 +9,7 @@
  * Firebase 는 전부 가짜다. useLunchData 가 고정 목록을 돌려주고 decideToday
  * 는 호출만 기록한다. 난수는 0 으로 고정해 당첨이 항상 첫 후보가 되게 한다.
  */
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import { preloadGames } from './components/games';
@@ -181,8 +181,12 @@ describe('연출 한 판', () => {
 
     // 난수 0 → 첫 후보. 끝나면 하단 실행 버튼은 결과 카드의 버튼들로 바뀐다.
     expect(card()).toBe('가집');
-    expect(screen.getByRole('button', { name: '여기로 결정' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: '다시 하기' })).toBeTruthy();
+    // 모달 안엔 결정·다시 하기, 뒤엔 한 줄 결과(모달이 떠 있는 동안 뒤는 inert 라 둘이 겹쳐 읽히지 않는다).
+    const dialog = screen.getByRole('dialog', { name: '오늘의 점심 결과' });
+    expect(within(dialog).getByRole('button', { name: '여기로 결정' })).toBeTruthy();
+    expect(within(dialog).getByRole('button', { name: '다시 하기' })).toBeTruthy();
+    expect(document.querySelector('.stage .result-bar strong')?.textContent).toBe('가집');
+    expect(document.querySelector('.stage__run')).toBeNull();
     expect(lockedButtons()).toEqual([]);
   });
 });

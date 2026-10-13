@@ -824,7 +824,9 @@ export default function App() {
 
         {/* 모달을 닫으면 게임 아래엔 한 줄만 남긴다. 티켓 전체가 남으면 모달과 같은 카드가
             화면 아래를 계속 차지했다(10/13 사용자). 결정·공유는 "결과 보기" 로 다시 연다. */}
-        {winner && !resultOpen ? (
+        {/* 모달이 떠 있을 때도 뒤엔 한 줄 결과를 둔다. 예전엔 모달이 열린 동안 이 자리에 "돌리기" 가
+            다시 나타나, 결과가 나왔는데 뒤에선 또 돌리라고 했다(10/13 플로우 점검). */}
+        {winner ? (
           <div className="result-bar">
             <p className="result-bar__text">
               <span aria-hidden="true">{MODE_ICON[mode]} </span>
