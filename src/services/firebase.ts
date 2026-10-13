@@ -41,8 +41,12 @@ export const auth = getAuth(app);
  * 데이터는 에뮬레이터를 끄면 사라진다.
  */
 if (import.meta.env.VITE_FIREBASE_EMULATOR === '1') {
-  connectFirestoreEmulator(db, '127.0.0.1', 8080);
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  // 앱을 연 주소의 호스트로 붙는다. 사내망 IP(예: http://20.0.10.34:6173)로 동료 폰에서
+  // 열면 127.0.0.1 은 그 폰 자신이라 데이터가 비었다. localhost 는 IPv6(::1)로 풀려
+  // 에뮬레이터(IPv4)에 안 닿을 수 있어 127.0.0.1 로 둔다.
+  const host = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
+  connectFirestoreEmulator(db, host, 8080);
+  connectAuthEmulator(auth, `http://${host}:9099`, { disableWarnings: true });
   console.info('[lunch-app] Firebase 에뮬레이터에 붙었습니다 (firestore 8080 / auth 9099)');
 }
 
