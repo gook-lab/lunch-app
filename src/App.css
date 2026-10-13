@@ -2630,3 +2630,38 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .result-bar__text strong { font-size: var(--fs-lg); }
 .result-bar__meta { color: var(--color-neutral-700); font-size: var(--fs-sm); }
 .result-bar__actions { display: flex; gap: var(--space-2); }
+
+/* 화면 진입 — 탭을 열 때 살짝 올라오며 나타난다(MODUL reveal 프리셋: slow · decel).
+   fill 은 backwards — 끝난 뒤 transform 이 남으면 크게 보기(position: fixed)가 패널에 갇힌다. */
+.panel:not([hidden]) { animation: panel-in var(--motion-slow) var(--ease-decel) backwards; }
+@keyframes panel-in { from { opacity: 0; translate: 0 8px; } }
+/* 목록 줄은 차례로(앞 8줄까지만 늦춘다 — 길면 기다리게 된다) */
+.list__item, .history__item { animation: panel-in var(--motion-slow) var(--ease-decel) backwards; }
+.list__item:nth-child(2), .history__item:nth-child(2) { animation-delay: 40ms; }
+.list__item:nth-child(3), .history__item:nth-child(3) { animation-delay: 80ms; }
+.list__item:nth-child(4), .history__item:nth-child(4) { animation-delay: 120ms; }
+.list__item:nth-child(5), .history__item:nth-child(5) { animation-delay: 160ms; }
+.list__item:nth-child(6) { animation-delay: 200ms; }
+.list__item:nth-child(7) { animation-delay: 240ms; }
+.list__item:nth-child(n + 8) { animation-delay: 280ms; }
+@media (prefers-reduced-motion: reduce) {
+  .panel:not([hidden]), .list__item, .history__item { animation-name: panel-fade; animation-delay: 0ms; }
+}
+@keyframes panel-fade { from { opacity: 0; } }
+
+/* 로딩 — 지도 코드 받는 중(Suspense) · 지도 SDK 받는 중 */
+/* 높이는 지도 칸만큼 잡아 둔다 — 비어 있으면 바닥글이 올라왔다 내려가며 화면이 튄다. */
+.panel-loading { display: grid; place-content: center; justify-items: center; gap: var(--space-2); min-height: max(360px, calc(100svh - 400px)); }
+.map__loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--space-2);
+  background: linear-gradient(90deg, var(--color-neutral-100) 25%, var(--color-neutral-200) 50%, var(--color-neutral-100) 75%);
+  background-size: 200% 100%;
+  animation: mdl-shimmer 1.4s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) { .map__loading { animation: none; } }

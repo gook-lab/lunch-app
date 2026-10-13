@@ -10,6 +10,7 @@
  * 실패는 이 탭에서 끝난다. 좌표 env 누락까지 전부 잡아 화면 상태로 바꾼다.
  * 여기서 던지면 로드맵까지 같이 죽는다.
  */
+import { Spinner } from '@gook-lab/motion';
 import { ChipPicker } from './ChipPicker';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@gook-lab/ui';
@@ -643,9 +644,14 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
           <div className="map__canvas" ref={containerRef} aria-label="우리 도보권 지도" />
           {/* "지도 가운데로" 의 가운데가 어디인지 보여 주는 십자. 지도 조작은 막지 않는다. */}
           <span className="map__crosshair" aria-hidden="true" />
+          {/* SDK·타일을 받는 동안 빈 회색 칸만 보이면 고장 난 것 같았다 — 스피너를 지도 위에 띄운다. */}
+          {phase === 'loading' && (
+            <div className="map__loading">
+              <Spinner size={32} style={{ borderRadius: "50%" }} aria-label="지도를 불러오고 있어요" />
+              <span className="muted small">지도를 불러오고 있어요</span>
+            </div>
+          )}
         </div>
-
-        {phase === 'loading' && <p className="muted small">지도를 불러오고 있어요</p>}
 
         {phase === 'ready' && (
           <p className="muted small">

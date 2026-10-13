@@ -9,6 +9,7 @@
  */
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Modal, Sheet } from '@gook-lab/ui';
+import { Spinner } from '@gook-lab/motion';
 import { Wheel } from './components/games/Wheel';
 import { Ladder } from './components/games/Ladder';
 import { Slot } from './components/games/Slot';
@@ -579,7 +580,14 @@ export default function App() {
 
       {tab === 'map' && (
         <div role="tabpanel" id="panel-map" aria-labelledby="tab-map" className="panel">
-          <Suspense fallback={<p className="muted small">지도를 준비하고 있어요</p>}>
+          <Suspense
+            fallback={
+              <div className="panel-loading">
+                <Spinner size={28} style={{ borderRadius: "50%" }} aria-label="지도를 준비하고 있어요" />
+                <p className="muted small">지도를 준비하고 있어요</p>
+              </div>
+            }
+          >
             <MapTab
               key={officeKey}
               places={places}
