@@ -3217,3 +3217,10 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
   25% { translate: calc(var(--px) * -3) 0; rotate: -14deg; }
   60% { translate: calc(var(--px) * 3) 0; rotate: 12deg; }
 }
+
+/* 공개 데모 안내 */
+.demo-note {
+  margin: var(--space-1) 0 0;
+  font-size: var(--fs-xs);
+  color: var(--color-neutral-700);
+}

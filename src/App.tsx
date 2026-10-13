@@ -42,6 +42,7 @@ import { josa, withJosa } from './lib/josa';
 import { officeSource } from './lib/walk';
 import { emptyMessage, noticeMessage } from './lib/messages';
 import { decideToday } from './services/lunch';
+import { DemoNote } from './components/DemoNote';
 import './App.css';
 // 종이 식권 테마는 App.css 뒤에 — 같은 명시도로 덮는다.
 import './theme.css';
@@ -575,6 +576,7 @@ export default function App() {
             {refreshing ? '새로고침 중' : `가게 ${places.filter((p) => p.active).length}곳`}
           </span>
         </div>
+        {import.meta.env.VITE_DEMO === '1' && <DemoNote />}
       </header>
 
       <nav className="tabs" role="tablist" aria-label="화면" onKeyDown={onTabKey}>

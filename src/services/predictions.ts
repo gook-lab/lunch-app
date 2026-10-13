@@ -1,34 +1,16 @@
-/**
- * 동료 예측 — predictions/{오늘}/votes/{익명 uid}.
- *
- * 게임 전에 링크로 들어온 사람들이 "어디 나올까" 를 찍고, 결과에 맞힌 사람을 단다.
- * 당첨에는 아무 영향이 없다 — 표는 읽기만 하고 spin() 은 보지 않는다.
- * 기기(익명 uid)당 하루 한 표. 규칙이 자기 문서·오늘·이름 1~12자를 지킨다.
- */
-import {
-  collection,
-  deleteDoc,
-  doc,
-  onSnapshot,
-  serverTimestamp,
-  setDoc,
-  type Unsubscribe,
-} from 'firebase/firestore';
-import { auth, authReady, db } from './firebase';
+/** 동료 예측 입구. lunch.ts 와 같은 방식으로 Firebase 와 데모 중 하나를 쓴다. */
 import type { DayId } from '../lib/date';
+import type { Unsubscribe, Vote } from './types';
 
-export interface Vote {
-  uid: string;
-  placeId: string;
-  name: string;
-}
+export type { Vote } from './types';
 
-const votes = (day: DayId) => collection(db, 'predictions', day, 'votes');
+const impl = () =>
+  import.meta.env.VITE_DEMO === '1' ? import('./predictions.demo') : import('./predictions.firebase');
 
-export async function myUid(): Promise<string> {
-  const user = await authReady;
-  return user.uid;
-}
+export const myUid = async (): Promise<string> => (await impl()).myUid();
+export const castVote = async (day: DayId, placeId: string, name: string) =>
+  (await impl()).castVote(day, placeId, name);
+export const clearVote = async (day: DayId) => (await impl()).clearVote(day);
 
 export function subscribeVotes(
   day: DayId,
@@ -37,35 +19,13 @@ export function subscribeVotes(
 ): Unsubscribe {
   let stopped = false;
   let inner: Unsubscribe | undefined;
-  authReady
-    .then(() => {
-      if (stopped) return;
-      inner = onSnapshot(
-        votes(day),
-        (snap) =>
-          onChange(
-            snap.docs.map((d) => {
-              const v = d.data() as { placeId: string; name: string };
-              return { uid: d.id, placeId: v.placeId, name: v.name };
-            }),
-          ),
-        onError,
-      );
+  impl()
+    .then((m) => {
+      if (!stopped) inner = m.subscribeVotes(day, onChange, onError);
     })
     .catch(onError);
   return () => {
     stopped = true;
     inner?.();
   };
-}
-
-export async function castVote(day: DayId, placeId: string, name: string): Promise<void> {
-  await authReady;
-  const uid = auth.currentUser!.uid;
-  await setDoc(doc(votes(day), uid), { placeId, name: name.trim().slice(0, 12), at: serverTimestamp() });
-}
-
-export async function clearVote(day: DayId): Promise<void> {
-  await authReady;
-  await deleteDoc(doc(votes(day), auth.currentUser!.uid));
 }
