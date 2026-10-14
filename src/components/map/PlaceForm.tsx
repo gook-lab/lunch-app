@@ -13,7 +13,8 @@ import { ChipPicker } from '../ChipPicker';
 import { useEffect, useMemo, useId, useRef, useState } from 'react';
 import { Button, Input, Textarea } from '@gook-lab/ui';
 import { PRICE_BANDS, type Place, type PriceBand, type Rating } from '../../lib/candidates';
-import { CATEGORIES, categoryFromKakao, type Category } from '../../lib/category';
+import { categoryFromKakao } from '../../lib/category';
+import { CategoryPicker } from '../CategoryPicker';
 import { findDuplicate } from '../../lib/duplicate';
 import { josa } from '../../lib/josa';
 import { walkMinutesBetween } from '../../lib/walk';
@@ -52,7 +53,7 @@ interface Props {
 
 export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
   const [name, setName] = useState(draft.name);
-  const [category, setCategory] = useState<Category | null>(
+  const [category, setCategory] = useState<string | null>(
     draft.kakaoCategory ? categoryFromKakao(draft.kakaoCategory) : null,
   );
   const [price, setPrice] = useState<PriceBand | null>(null);
@@ -174,12 +175,12 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
       <p className={tooFar ? 'notice notice--empty' : 'muted small'}>
         {walk.error
           ? walk.error
-          : `회사에서 도보 ${walk.min}분 (추정값 · 직선거리 기준)`}
+          : `회사에서 도보 ${walk.min}분이에요. 직선거리로 계산한 예상 시간이에요.`}
       </p>
 
       <div className="pf__field" ref={catRef}>
         <span className="filters__label">카테고리</span>
-        <ChipPicker label="카테고리" options={CATEGORIES} value={category} onPick={setCategory} />
+        <CategoryPicker value={category} onPick={setCategory} />
       </div>
 
       <div className="pf__field">

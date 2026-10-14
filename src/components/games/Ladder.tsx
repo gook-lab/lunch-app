@@ -8,11 +8,12 @@
  * (lib/ladder.ts revealSlots). 바닥이 끝까지 가려져 있으므로 미리 섞어 숨겨
  * 둔 것과 확률이 같다. 출발점이나 가로줄을 어떻게 고르든 당첨 확률은 그대로다.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildLadder, ladderPace, ladderPath, revealSlots, toggleRung, walkLadder, type Rung } from '../../lib/ladder';
 import { shortName } from '../../lib/name';
 import { seededRandom } from '../../lib/random';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
+import { sfx } from '../../lib/sfx';
 
 const ROWS = 9;
 const VIEW_W = 320;
@@ -49,17 +50,25 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
   const stale = winnerIndex !== null && editedAtRun === run;
 
   // 출발점을 안 고르고 실행 버튼을 누른 판은 판 번호로 하나 고른다.
-  const effectiveStart =
-    start ?? (winnerIndex === null ? null : Math.floor(seededRandom(run)() * columns));
+  const effectiveStart = start ?? (winnerIndex === null ? null : Math.floor(seededRandom(run)() * columns));
   const dest = effectiveStart === null ? null : walkLadder(ladder, effectiveStart);
   const path = effectiveStart === null || winnerIndex === null || stale ? [] : ladderPath(ladder, effectiveStart);
   const slots =
     dest === null || winnerIndex === null ? null : revealSlots(count, dest, winnerIndex, seededRandom(run + 1));
   const revealed = slots !== null && !stale && drawn >= 1;
 
-  const colX = (col: number) =>
-    count <= 1 ? VIEW_W / 2 : PAD_X + (col * (VIEW_W - PAD_X * 2)) / (count - 1);
+  const colX = (col: number) => (count <= 1 ? VIEW_W / 2 : PAD_X + (col * (VIEW_W - PAD_X * 2)) / (count - 1));
   const rowY = (row: number) => PAD_TOP + (row * (VIEW_H - PAD_TOP - PAD_BOTTOM)) / ROWS;
+
+  // 경로가 꺾이는 지점(전체 길이 중 몇 %인지). 지날 때마다 발소리를 낸다.
+  const cornersRef = useRef<number[]>([]);
+  useEffect(() => {
+    const pts = path.map((p) => ({ x: colX(p.col), y: rowY(p.row) }));
+    const lens = pts.slice(1).map((p, i) => Math.hypot(p.x - pts[i].x, p.y - pts[i].y));
+    const total = lens.reduce((a, b) => a + b, 0);
+    let acc = 0;
+    cornersRef.current = total > 0 ? lens.slice(0, -1).map((l) => (acc += l) / total) : [];
+  });
 
   useEffect(() => {
     if (!spinning || winnerIndex === null || count === 0) return;
@@ -73,11 +82,17 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
 
     const started = performance.now();
     let frame = 0;
+    let corners = 0;
+    sfx('step');
     const tick = (now: number) => {
       // now 는 프레임 시작 시각이라 started 보다 이전일 수 있다. 음수 진행도를
       // 그대로 흘리면 인덱스가 -1 이 된다 (Pinball.tsx 에서 실제로 터졌다).
       const t = Math.min(1, Math.max(0, (now - started) / SPIN_MS.ladder));
-      setProgress({ run, t: ladderPace(t) });
+      const pace = ladderPace(t);
+      const passed = cornersRef.current.filter((c) => c <= pace).length;
+      if (passed > corners) sfx('step');
+      corners = passed;
+      setProgress({ run, t: pace });
       if (t < 1) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -188,14 +203,7 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
         >
           {/* 세로줄 */}
           {candidates.map((place, i) => (
-            <line
-              key={place.id}
-              x1={colX(i)}
-              y1={rowY(0)}
-              x2={colX(i)}
-              y2={rowY(ROWS)}
-              className="ladder__rail"
-            />
+            <line key={place.id} x1={colX(i)} y1={rowY(0)} x2={colX(i)} y2={rowY(ROWS)} className="ladder__rail" />
           ))}
           {/* 가로줄 */}
           {rungs.map((r) => (
@@ -227,7 +235,11 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
           <button
             key={place.id}
             type="button"
-            className={effectiveStart === i && winnerIndex !== null && !stale ? 'ladder__start ladder__start--on' : 'ladder__start'}
+            className={
+              effectiveStart === i && winnerIndex !== null && !stale
+                ? 'ladder__start ladder__start--on'
+                : 'ladder__start'
+            }
             style={{ left: `${(colX(i) / VIEW_W) * 100}%` }}
             onClick={() => pickStart(i)}
             disabled={spinning}
@@ -239,14 +251,18 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
       </div>
 
       {/*
-        * 바닥 칸. 경로가 닿을 때까지 "?" 로 덮어 둔다. 줄과 같은 colX 로
-        * 자리를 잡아야 당첨 강조가 옆 줄 밑에 뜬 것처럼 보이지 않는다.
-        */}
+       * 바닥 칸. 경로가 닿을 때까지 "?" 로 덮어 둔다. 줄과 같은 colX 로
+       * 자리를 잡아야 당첨 강조가 옆 줄 밑에 뜬 것처럼 보이지 않는다.
+       */}
       <div className={tall ? 'ladder__labels ladder__labels--tall' : 'ladder__labels'}>
         {candidates.map((_, slot) => {
           const place = revealed && slots ? candidates[slots[slot]] : null;
           const win = revealed && slot === dest;
-          const cls = ['ladder__label', place ? 'ladder__label--open' : 'ladder__label--hidden', win ? 'ladder__label--win' : '']
+          const cls = [
+            'ladder__label',
+            place ? 'ladder__label--open' : 'ladder__label--hidden',
+            win ? 'ladder__label--win' : '',
+          ]
             .filter(Boolean)
             .join(' ');
           return (

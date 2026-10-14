@@ -12,9 +12,9 @@
 import { recentNote } from '../lib/messages';
 import { useId, useRef, useState } from 'react';
 import { Button, Input, Menu } from '@gook-lab/ui';
-import { ChipPicker } from './ChipPicker';
 import { LunchStats } from './LunchStats';
-import { CATEGORIES, categoryIcon, type Category } from '../lib/category';
+import { CATEGORIES, categoryIcon, categoryLabel } from '../lib/category';
+import { CategoryPicker } from './CategoryPicker';
 import type { Place, Visit } from '../lib/candidates';
 import { withJosa } from '../lib/josa';
 import { RECENT_WINDOW_DAYS } from '../lib/candidates';
@@ -103,7 +103,7 @@ function History({
             <span className="history__when">{ago(visit.id, today)}</span>
             <strong className="history__name">{place.name}</strong>
             <span className="muted small">
-              {place.category} · 도보 {place.walkMin}분
+              {categoryLabel(place)} · 도보 {place.walkMin}분
             </span>
             {onShowOnMap && (
               <button
@@ -126,8 +126,8 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
   const [name, setName] = useState(place.name);
   // 목록에 없는 옛 카테고리는 고르지 않은 것으로 시작한다. 그대로 두면 칩은 하나도
   // 안 켜졌는데 저장은 옛 값으로 되어 칩으로 바꾼 의미가 없다.
-  const [category, setCategory] = useState<Category | null>(
-    (CATEGORIES as readonly string[]).includes(place.category) ? (place.category as Category) : null,
+  const [category, setCategory] = useState<string | null>(
+    (CATEGORIES as readonly string[]).includes(place.category) ? (place.sub ?? place.category) : null,
   );
   const [lat, setLat] = useState(String(place.lat));
   const [lng, setLng] = useState(String(place.lng));
@@ -198,7 +198,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
           들어가 로드맵 조각·그림·카테고리 필터에서 길을 잃었다(20회차). */}
       <div ref={catRef}>
         <span className="filters__label">카테고리</span>
-        <ChipPicker label="카테고리" options={CATEGORIES} value={category} onPick={setCategory} />
+        <CategoryPicker value={category} onPick={setCategory} />
       </div>
       <div className="edit__coords">
         <Input label="위도" ref={latRef} value={lat} onChange={(e) => setLat(e.target.value)} inputMode="decimal" aria-invalid={!Number.isFinite(Number(lat)) || undefined} aria-describedby={problem ? errId : undefined} state={!Number.isFinite(Number(lat)) ? 'error' : 'default'} />
@@ -261,14 +261,14 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
     return (
       <li key={place.id} className={place.active ? 'list__item' : 'list__item list__off'}>
         <div className="list__main">
-          <span className="list__icon" aria-hidden="true">{categoryIcon(place.category)}</span>
+          <span className="list__icon" aria-hidden="true">{categoryIcon(place.sub ?? place.category)}</span>
           <div className="list__text">
             <div className="list__name">
               <strong>{place.name}</strong>
               {!place.active && <span className="badge">꺼짐</span>}
             </div>
             <div className="list__meta">
-              {place.category} · 도보 {place.walkMin}분 ·{' '}
+              {categoryLabel(place)} · 도보 {place.walkMin}분 ·{' '}
               <span className={visit.recent ? 'list__recent' : undefined}>{visit.label}</span>
               {ratings?.get(place.id) && (
                 <>

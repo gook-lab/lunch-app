@@ -8,7 +8,7 @@
  * 카피는 "1주", 스펙·구현은 "7일" 로 쓴다 (설계 Success Criteria).
  */
 import type { CandidateResult } from './candidates';
-import { HEALTHY_POOL_SIZE, MIN_CANDIDATES } from './candidates';
+import { HEALTHY_POOL_SIZE } from './candidates';
 
 /** 후보가 0곳일 때 원인을 짚는다. 칩을 대신 풀어주지는 않는다. */
 export function emptyMessage(result: CandidateResult): string | null {
@@ -25,7 +25,7 @@ export function emptyMessage(result: CandidateResult): string | null {
         ? `도보 ${reason.widerWalkMin}분으로 넓히면 ${reason.countAtWiderWalk}곳이에요.`
         : `도보 ${reason.widerWalkMin}분으로 넓혀도 갈 만한 곳이 없어요. 회사 위치가 맞는지 확인해 보세요.`;
     case 'category':
-      return `고른 카테고리에 맞는 곳이 없어요. 카테고리를 풀면 ${reason.countWithoutCategory}곳이에요.`;
+      return `고른 카테고리에는 갈 만한 곳이 없어요. 카테고리를 전체로 바꾸면 ${reason.countWithoutCategory}곳이에요.`;
   }
 }
 
@@ -44,7 +44,7 @@ export function noticeMessage(result: CandidateResult): string | null {
     // 모자란 까닭이 사용자가 좁힌 도보·카테고리면 그걸 짚는다. 이때 "가게가
     // 20곳은 돼야" 는 엉뚱한 처방이다 — 양식 1곳만 골라도 그 문구가 떴다(10/8).
     if (afterCategoryCount < result.activeCount) {
-      return `조건에 맞는 곳이 ${result.candidates.length}곳뿐이에요. 도보 시간이나 카테고리를 넓히면 더 많아져요.`;
+      return `지금 고른 범위에는 ${result.candidates.length}곳만 있어요. 도보 시간이나 카테고리를 넓혀 보세요.`;
     }
     // "최근 방문 제외가 제대로 돌아가요" 는 처음 온 사람에게 고장 안내처럼 읽혔다(10/9).
     // 숫자(20곳)는 실측 근거가 있어 남기고, 할 일(가게 더 넣기)과 이득으로 바꿔 말한다.
@@ -59,7 +59,7 @@ export function noticeMessage(result: CandidateResult): string | null {
   }
 
   if (releasedCount > 0) {
-    return `${afterCategoryCount}곳 중 ${recentlyVisitedCount}곳은 최근 1주 안에 갔어요. 후보 ${MIN_CANDIDATES}곳을 채우려고 그중 오래된 ${releasedCount}곳을 다시 넣었어요.`;
+    return `${afterCategoryCount}곳 중 ${recentlyVisitedCount}곳은 최근 1주 안에 갔어요. 선택지가 너무 적지 않게 그중 오래된 ${releasedCount}곳을 다시 넣었어요.`;
   }
 
   if (recentlyVisitedCount > 0) {

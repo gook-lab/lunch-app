@@ -8,7 +8,7 @@ export function DemoNote() {
   return (
     <p className="demo-note">
       <span aria-hidden="true">🧪 </span>
-      데모예요. 가게와 기록은 지어낸 것이고, 누른 결과는 이 브라우저에만 남아요.{' '}
+      데모예요. 가게와 기록은 예시이고, 여기서 정한 결과는 이 브라우저에만 남아요.{' '}
       <button
         type="button"
         className="linkish"

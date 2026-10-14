@@ -14,6 +14,7 @@ import { MAX_ROLLS, boardSide, diceRolls, distanceTo, perimeterCell, placeCell, 
 import { shortName } from '../../lib/name';
 import { seededRandom } from '../../lib/random';
 import { prefersReducedMotion, type GameProps } from './types';
+import { sfx } from '../../lib/sfx';
 
 const ROLL_MS = 550;
 const STEP_MS = 180;
@@ -75,10 +76,19 @@ export function Dice({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
     setView({ run, pos, face: 1, roll: 0, rolling: false, done: false });
     rolls.forEach((eyes, i) => {
       const startPos = pos;
-      at(t, () => setView((v) => ({ ...v, roll: i + 1, rolling: true })));
-      at(t + ROLL_MS, () => setView((v) => ({ ...v, face: eyes, rolling: false })));
+      at(t, () => {
+        sfx('rattle');
+        setView((v) => ({ ...v, roll: i + 1, rolling: true }));
+      });
+      at(t + ROLL_MS, () => {
+        sfx('tap');
+        setView((v) => ({ ...v, face: eyes, rolling: false }));
+      });
       for (let s = 1; s <= eyes; s += 1) {
-        at(t + ROLL_MS + s * STEP_MS, () => setView((v) => ({ ...v, pos: (startPos + s) % track })));
+        at(t + ROLL_MS + s * STEP_MS, () => {
+          sfx('step');
+          setView((v) => ({ ...v, pos: (startPos + s) % track }));
+        });
       }
       pos = (pos + eyes) % track;
       t += ROLL_MS + eyes * STEP_MS + GAP_MS;
@@ -96,17 +106,24 @@ export function Dice({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
   const winner = winnerIndex === null ? null : candidates[winnerIndex];
   // 둘레 칸 → 그 칸의 가게 번호.
   const places = new Map(candidates.map((_, k) => [placeCell(k, count), k]));
-  const status = !live && !done
-    ? '주사위를 굴리면 말이 칸을 따라가요'
-    : done && winner
-      ? `${shortName(winner.name, 10)} 칸에 도착했어요`
-      : view.rolling
-        ? `${view.roll}번째 주사위를 굴리고 있어요…`
-        : `${view.roll}번째 굴림 · ${view.face}칸 가요`;
+  const status =
+    !live && !done
+      ? '주사위를 굴리면 말이 칸을 따라가요'
+      : done && winner
+        ? `${shortName(winner.name, 10)} 칸에 도착했어요`
+        : view.rolling
+          ? `${view.roll}번째 주사위를 굴리고 있어요…`
+          : `${view.roll}번째 굴림 · ${view.face}칸 가요`;
 
   return (
     <div className={expanded ? 'dice dice--big' : 'dice'}>
-      <div className="dice__board" style={{ gridTemplateColumns: `repeat(${side}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${side}, minmax(0, 1fr))` }}>
+      <div
+        className="dice__board"
+        style={{
+          gridTemplateColumns: `repeat(${side}, minmax(0, 1fr))`,
+          gridTemplateRows: `repeat(${side}, minmax(0, 1fr))`,
+        }}
+      >
         {Array.from({ length: track }, (_, t) => {
           const cell = perimeterCell(t, side);
           const here = t === pos;
@@ -115,7 +132,11 @@ export function Dice({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
           const style = { gridRow: cell.row, gridColumn: cell.col } as React.CSSProperties;
           if (!p) {
             return (
-              <div key={`blank-${t}`} className={here ? 'dice__cell dice__cell--blank dice__cell--here' : 'dice__cell dice__cell--blank'} style={style}>
+              <div
+                key={`blank-${t}`}
+                className={here ? 'dice__cell dice__cell--blank dice__cell--here' : 'dice__cell dice__cell--blank'}
+                style={style}
+              >
                 {here && <span className="dice__pawn" aria-hidden="true" />}
               </div>
             );
@@ -124,12 +145,16 @@ export function Dice({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
           return (
             <div
               key={p.id}
-              className={['dice__cell', here ? 'dice__cell--here' : '', win ? 'dice__cell--win' : ''].filter(Boolean).join(' ')}
+              className={['dice__cell', here ? 'dice__cell--here' : '', win ? 'dice__cell--win' : '']
+                .filter(Boolean)
+                .join(' ')}
               style={{ ...style, '--cat-hue': categoryHue(p.category) } as React.CSSProperties}
               title={p.name}
             >
               <span className="dice__num">{k! + 1}</span>
-              <span className="dice__icon" aria-hidden="true">{categoryIcon(p.category)}</span>
+              <span className="dice__icon" aria-hidden="true">
+                {categoryIcon(p.sub ?? p.category)}
+              </span>
               <span className="dice__name">{shortName(p.name, side > 4 ? 3 : 5)}</span>
               {here && <span className="dice__pawn" aria-hidden="true" />}
             </div>
@@ -138,10 +163,15 @@ export function Dice({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
         <div className="dice__center" style={{ gridRow: `2 / ${side}`, gridColumn: `2 / ${side}` }}>
           <span className={live && view.rolling ? 'dice__die dice__die--rolling' : 'dice__die'} aria-hidden="true">
             {Array.from({ length: 9 }, (_, i) => (
-              <span key={i} className={PIPS[live ? view.face : 1].includes(i) ? 'dice__pip dice__pip--on' : 'dice__pip'} />
+              <span
+                key={i}
+                className={PIPS[live ? view.face : 1].includes(i) ? 'dice__pip dice__pip--on' : 'dice__pip'}
+              />
             ))}
           </span>
-          <p className="dice__status" aria-live="polite">{status}</p>
+          <p className="dice__status" aria-live="polite">
+            {status}
+          </p>
         </div>
       </div>
     </div>

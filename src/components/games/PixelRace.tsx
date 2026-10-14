@@ -15,6 +15,7 @@ import { buildRace, progress, SLICE, type RaceEventKind } from '../../lib/race';
 import { seededRandom } from '../../lib/random';
 import { RaceCircuit } from './RaceCircuit';
 import { prefersReducedMotion, type GameProps } from './types';
+import { sfxLater, type SfxName } from '../../lib/sfx';
 
 export type RaceTheme = 'horse' | 'car';
 
@@ -188,9 +189,28 @@ export function PixelRace({
       }, startAt),
     );
     timers.push(window.setTimeout(onSpinEnd, startAt + raceMs(laps) + AFTER_MS));
+    // 카운트다운 삐·삐·삐·빵, 경주 중 사건마다 효과음. 관중이 던지면 휙 하고 날아가 밟는 순간 미끄러진다.
+    const atT = (tt: number) => startAt + tt * msPerT;
+    const plan: [number, SfxName][] = COUNTDOWN.map((_, i) => [
+      i * COUNT_STEP_MS,
+      i < COUNTDOWN.length - 1 ? 'beep' : 'go',
+    ]);
+    race.events.forEach((evs) =>
+      evs.forEach((e) => {
+        const tt = e.slice * SLICE;
+        if (e.kind === 'bump' || tt > lastT) return;
+        if (e.kind === 'slip') {
+          plan.push([atT(tt), 'whoosh'], [atT((e.slice + LAND) * SLICE), 'slip']);
+        } else {
+          plan.push([atT(tt), e.kind]);
+        }
+      }),
+    );
+    const stopSfx = sfxLater(plan);
     return () => {
       timers.forEach((x) => window.clearTimeout(x));
       cancelAnimationFrame(raf);
+      stopSfx();
     };
   }, [spinning, race, winnerIndex, run, onSpinEnd, laps]);
 

@@ -46,6 +46,7 @@ import {
   drawWall,
 } from './pinballDraw';
 import { prefersReducedMotion, type GameProps } from './types';
+import { sfx } from '../../lib/sfx';
 import { FRAME_MS, SLOW_RATE, frameAtMs, timingFor, type Timing } from '../../lib/pinballTiming';
 
 /** 캔버스 = 코스 창 + 오른쪽 패널(미니맵, 순위판). */
@@ -261,6 +262,7 @@ export function Pinball({
   // 그리기가 남긴 값. 클릭이 어느 구슬을 눌렀는지 계산하는 데 쓴다.
   const drawnRef = useRef<{ cam: number; positions: { x: number; y: number }[] }>({ cam: 0, positions: [] });
   const camRef = useRef<{ run: number; y: number } | null>(null);
+  const touchedRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     if (!shuffling) return;
@@ -304,6 +306,7 @@ export function Pinball({
         return;
       }
       const started = performance.now();
+      sfx('go'); // 게이트가 열린다
       const tick = (now: number) => {
         if (cancelled) return;
         // now 는 프레임 시작 시각이라 started 보다 이전일 수 있다.
@@ -477,11 +480,21 @@ export function Pinball({
     for (const wl of course.walls) drawWall(ctx, wl, frame, theme);
     for (const sp of course.spinners) drawSpinner(ctx, spinnerEnds(sp, step), sp.x, sp.y, theme);
     for (const o of course.orbiters) drawOrbiter(ctx, o, step, theme, touching);
-    for (const peg of course.pegs) {
+    // 구슬이 새로 닿은 범퍼·핀만 소리를 낸다(닿아 있는 동안 매 프레임 울리지 않게).
+    const touchedNow = new Set<number>();
+    course.pegs.forEach((peg, k) => {
       const hit = touching(peg.x, peg.y, peg.r);
+      if (hit) {
+        touchedNow.add(k);
+        if (playing && !touchedRef.current.has(k)) {
+          if (peg.bumper) sfx('bump');
+          else sfx('peg', clamp(peg.y / BOARD_H, 0, 1));
+        }
+      }
       if (peg.bumper) drawBumper(ctx, peg.x, peg.y, peg.r, hit, theme);
       else drawPost(ctx, peg.x, peg.y, peg.r, hit, theme);
-    }
+    });
+    touchedRef.current = touchedNow;
 
     // 출발 게이트 — 경기가 준비되기 전까지 닫혀 있다. 맨 아래 출발 줄 바로 밑.
     if (!frame) {

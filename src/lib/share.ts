@@ -7,8 +7,8 @@
  */
 import type { Place } from './candidates';
 
-export function shareText(place: Pick<Place, 'name' | 'category' | 'walkMin'>, url: string): string {
-  return `🍱 오늘 점심은 ${place.name} (${place.category} · 도보 ${place.walkMin}분)\n${url}`;
+export function shareText(place: Pick<Place, 'name' | 'category' | 'sub' | 'walkMin'>, url: string): string {
+  return `🍱 오늘 점심은 ${place.name} (${place.sub ?? place.category} · 도보 ${place.walkMin}분)\n${url}`;
 }
 
 export type ShareResult = 'shared' | 'copied' | 'failed';

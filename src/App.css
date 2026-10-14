@@ -1714,6 +1714,7 @@ html:has(dialog[open]:modal) { overflow: hidden; }
   padding: 0 var(--space-3);
   /* 테두리 상자 대신 글자 버튼. 테두리 상자가 겹겹이라 와이어프레임처럼 보였다. */
   flex-shrink: 0;
+  margin-left: auto;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -3358,3 +3359,13 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
   color: var(--color-neutral-700);
   text-align: center;
 }
+
+/* 설정 팝오버 — 효과음 · 화면 테마 */
+.settings { display: grid; gap: var(--space-3); min-width: 240px; }
+.settings__row { display: grid; gap: var(--space-1); }
+.settings__label { font-size: var(--fs-sm); font-weight: 600; }
+
+/* 카테고리 칩 두 줄 — 메뉴, 그 아래 세부 */
+.catbar-wrap { display: grid; gap: var(--space-1); }
+.catbar--sub { padding-left: var(--space-3); border-left: 2px solid var(--color-neutral-400); }
+.catbar--sub .catbar__chip { min-height: 32px; font-size: var(--fs-sm); }

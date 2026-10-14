@@ -52,7 +52,7 @@ describe('데모 저장소', () => {
 
 /** 메모리만 비우고 저장소는 둔다 — 새로고침과 같다. */
 function resetDemoMemoryOnly() {
-  const saved = localStorage.getItem('lunch-app:demo-v2');
+  const saved = localStorage.getItem('lunch-app:demo-v3');
   resetDemo();
-  if (saved) localStorage.setItem('lunch-app:demo-v2', saved);
+  if (saved) localStorage.setItem('lunch-app:demo-v3', saved);
 }

@@ -10,10 +10,20 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { categoryIcon } from '../../lib/category';
-import { assignCard, autoFirst, autoSecond, isSettled, memoryPlaces, MEMORY_PAIRS, settle, type Faces } from '../../lib/memory';
+import {
+  assignCard,
+  autoFirst,
+  autoSecond,
+  isSettled,
+  memoryPlaces,
+  MEMORY_PAIRS,
+  settle,
+  type Faces,
+} from '../../lib/memory';
 import { shortName } from '../../lib/name';
 import { seededRandom } from '../../lib/random';
 import { prefersReducedMotion, type GameProps } from './types';
+import { sfx } from '../../lib/sfx';
 
 interface Board {
   run: number;
@@ -44,7 +54,16 @@ function columns(cards: number): number {
   return cards === 2 ? 2 : 3;
 }
 
-export function Memory({ candidates, winnerIndex, spinning, run, onSpinEnd, onRequestSpin, onActivity, expanded = false }: GameProps) {
+export function Memory({
+  candidates,
+  winnerIndex,
+  spinning,
+  run,
+  onSpinEnd,
+  onRequestSpin,
+  onActivity,
+  expanded = false,
+}: GameProps) {
   const count = candidates.length;
   const cardCount = Math.min(count, MEMORY_PAIRS) * 2;
   const [board, setBoard] = useState<Board | null>(null);
@@ -72,9 +91,13 @@ export function Memory({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
   const flip = (i: number) => {
     const b = ref.current;
     if (!b || b.done || winnerIndex === null || b.open.length >= 2 || b.out[i] || b.open.includes(i)) return;
-    const faces = b.faces[i] === null ? b.faces.map((f, k) => (k === i ? assignCard(b.faces, b.places, winnerIndex, random.current) : f)) : b.faces;
+    const faces =
+      b.faces[i] === null
+        ? b.faces.map((f, k) => (k === i ? assignCard(b.faces, b.places, winnerIndex, random.current) : f))
+        : b.faces;
     const name = candidates[faces[i] as number]?.name ?? '';
     commit({ ...b, faces, open: [...b.open, i], say: `${i + 1}번 카드는 ${name}이에요.` });
+    sfx('flip');
     onActivity?.();
   };
 
@@ -112,15 +135,24 @@ export function Memory({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
     if (!board || board.done || board.open.length < 2) return;
     const [a, c] = board.open;
     const hit = board.faces[a] === board.faces[c];
-    const t = window.setTimeout(() => {
-      const b = ref.current;
-      if (!b) return;
-      const name = candidates[b.faces[a] as number]?.name ?? '';
-      const out = hit ? b.out.map((o, i) => o || i === a || i === c) : b.out;
-      const next = { ...b, out, open: [], say: hit ? `${name} 짝을 맞췄어요. 탈락이에요.` : '짝이 아니에요. 다시 덮을게요.' };
-      if (isSettled(next.faces)) finish(next);
-      else commit(next);
-    }, hit ? MATCH_MS : MISS_MS);
+    const t = window.setTimeout(
+      () => {
+        const b = ref.current;
+        if (!b) return;
+        const name = candidates[b.faces[a] as number]?.name ?? '';
+        const out = hit ? b.out.map((o, i) => o || i === a || i === c) : b.out;
+        sfx(hit ? 'match' : 'tap');
+        const next = {
+          ...b,
+          out,
+          open: [],
+          say: hit ? `${name} 짝을 맞췄어요. 탈락이에요.` : '짝이 아니에요. 다시 덮을게요.',
+        };
+        if (isSettled(next.faces)) finish(next);
+        else commit(next);
+      },
+      hit ? MATCH_MS : MISS_MS,
+    );
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [board]);
@@ -131,7 +163,11 @@ export function Memory({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
     const t = window.setTimeout(() => {
       const b = ref.current;
       if (!b) return;
-      flip(b.open.length === 0 ? autoFirst(b.faces, b.out, random.current) : autoSecond(b.faces, b.out, b.open[0], random.current));
+      flip(
+        b.open.length === 0
+          ? autoFirst(b.faces, b.out, random.current)
+          : autoSecond(b.faces, b.out, b.open[0], random.current),
+      );
     }, AUTO_MS);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -178,7 +214,12 @@ export function Memory({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
             const gone = board.faces.some((f, i) => f === p && board.out[i]);
             const win = board.done && p === winnerIndex;
             return (
-              <li key={p} className={win ? 'memory__chip memory__chip--win' : gone ? 'memory__chip memory__chip--out' : 'memory__chip'}>
+              <li
+                key={p}
+                className={
+                  win ? 'memory__chip memory__chip--win' : gone ? 'memory__chip memory__chip--out' : 'memory__chip'
+                }
+              >
                 {shortName(candidates[p]?.name ?? '', 8)}
                 {gone && <span className="sr-only">, 탈락</span>}
               </li>
@@ -197,8 +238,14 @@ export function Memory({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
           const out = live && board.out[i];
           const win = live && board.done && face === winnerIndex;
           // 끝난 판의 카드를 누르면 새 판이 시작된다.
-          const locked = spinning && live && (board.auto || board.done || out || board.open.includes(i) || board.open.length >= 2);
-          const cls = ['memory__card', shown ? 'memory__card--open' : '', out ? 'memory__card--out' : '', win ? 'memory__card--win' : '']
+          const locked =
+            spinning && live && (board.auto || board.done || out || board.open.includes(i) || board.open.length >= 2);
+          const cls = [
+            'memory__card',
+            shown ? 'memory__card--open' : '',
+            out ? 'memory__card--out' : '',
+            win ? 'memory__card--win' : '',
+          ]
             .filter(Boolean)
             .join(' ');
           return (
@@ -220,7 +267,7 @@ export function Memory({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
                 <span className="memory__face memory__face--front" aria-hidden="true">
                   {place && (
                     <>
-                      <span className="memory__icon">{categoryIcon(place.category)}</span>
+                      <span className="memory__icon">{categoryIcon(place.sub ?? place.category)}</span>
                       <strong>{shortName(place.name, 8)}</strong>
                       {out && !win && <span className="memory__tag">탈락</span>}
                     </>
@@ -232,7 +279,11 @@ export function Memory({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
         })}
       </ul>
       {live && !board.done && !board.auto && (
-        <button type="button" className="linkish memory__auto" onClick={() => ref.current && commit({ ...ref.current, auto: true })}>
+        <button
+          type="button"
+          className="linkish memory__auto"
+          onClick={() => ref.current && commit({ ...ref.current, auto: true })}
+        >
           나머지 자동으로
         </button>
       )}

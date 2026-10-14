@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { DayId } from '../lib/date';
 import type { Place, Visit } from '../lib/candidates';
 import { setOfficeOverride, walkMinutesBetween } from '../lib/walk';
+import { classify } from '../lib/category';
 import {
   fetchOffice,
   fetchPlaces,
@@ -53,6 +54,12 @@ function withCurrentWalk(place: Place): Place {
   }
 }
 
+/** 저장된 카테고리 문자열을 메뉴·세부로 나눈다. 모르는 값은 그대로 둔다(lib/category.ts). */
+function withMenu(place: Place): Place {
+  const { menu, sub } = classify(place.category, place.name);
+  return menu ? { ...place, category: menu, sub } : { ...place, sub: null };
+}
+
 export function useLunchData(day: DayId): LunchData {
   const [state, setState] = useState<LoadState>('loading');
   const [error, setError] = useState<unknown>(null);
@@ -78,7 +85,7 @@ export function useLunchData(day: DayId): LunchData {
         if (!alive) return;
         setOfficeOverride(office);
         setOfficeKey(office ? `${office.lat},${office.lng}` : 'env');
-        setPlaces(p.map(withCurrentWalk));
+        setPlaces(p.map((x) => withMenu(withCurrentWalk(x))));
         setHistory(v);
         setState('ready');
       })

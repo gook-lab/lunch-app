@@ -11,6 +11,7 @@ import { shortName } from '../../lib/name';
 import { pinHits, plinkoPath } from '../../lib/plinko';
 import { seededRandom } from '../../lib/random';
 import { prefersReducedMotion, type GameProps } from './types';
+import { sfxLater, type SfxName } from '../../lib/sfx';
 
 /** 핀 한 줄을 지나는 시간. 후보 20곳이면 19줄 × 170ms ≈ 3.2초. */
 export const PLINKO_STEP_MS = 170;
@@ -58,9 +59,20 @@ export function Plinko({ candidates, winnerIndex, spinning, run, onSpinEnd, expa
       setProg({ run, t: 1 });
       onSpinEnd();
     }, total);
+    // 줄마다 핀에 닿을 때 똑(아래로 갈수록 낮게), 칸에 들어가면 쿵.
+    const rowCount = Math.max(0, count - 1);
+    const stopSfx = sfxLater([
+      ...Array.from({ length: rowCount }, (_, r): [number, SfxName, number] => [
+        (r + 1) * PLINKO_STEP_MS,
+        'peg',
+        rowCount <= 1 ? 0.5 : r / (rowCount - 1),
+      ]),
+      [count * PLINKO_STEP_MS, 'thunk'],
+    ]);
     return () => {
       cancelAnimationFrame(raf);
       window.clearTimeout(end);
+      stopSfx();
     };
   }, [spinning, winnerIndex, count, run, onSpinEnd]);
 
@@ -70,17 +82,22 @@ export function Plinko({ candidates, winnerIndex, spinning, run, onSpinEnd, expa
   const pinX = (r: number, j: number) => cx + (j - r / 2) * S;
   const pinY = (r: number) => TOP + r * H;
   // 공이 거치는 점: 맨 위 → 줄마다 맞는 핀 → 도착 칸.
-  const points = [{ x: cx, y: -4 }, ...hits.map((j, r) => ({ x: pinX(r, j), y: pinY(r) - 5 })), {
-    x: (winnerIndex ?? 0) * S + S / 2,
-    y: boardH - S / 2,
-  }];
+  const points = [
+    { x: cx, y: -4 },
+    ...hits.map((j, r) => ({ x: pinX(r, j), y: pinY(r) - 5 })),
+    {
+      x: (winnerIndex ?? 0) * S + S / 2,
+      y: boardH - S / 2,
+    },
+  ];
   // 지금 몇 번째 구간인지. 구간 수 = 줄 수 + 1, 마지막 SETTLE 는 칸 안에서 멈춰 있다.
   const moving = Math.max(0, Math.min(1, (t * plinkoDuration(count)) / (count * PLINKO_STEP_MS)));
   const seg = Math.min(points.length - 2, Math.floor(moving * (points.length - 1)));
   const f = moving * (points.length - 1) - seg;
   const a = points[Math.max(0, seg)];
   const b = points[Math.max(0, seg) + 1] ?? a;
-  const ball = t < 0 ? { x: cx, y: -S } : { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f - Math.sin(f * Math.PI) * BOUNCE };
+  const ball =
+    t < 0 ? { x: cx, y: -S } : { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f - Math.sin(f * Math.PI) * BOUNCE };
   const hitUpTo = t < 0 ? -1 : seg - 1;
   const landed = t >= 1 && winnerIndex !== null;
 

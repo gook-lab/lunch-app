@@ -16,7 +16,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Checkbox, Input, Textarea } from '@gook-lab/ui';
 import { PRICE_BANDS, WALK_STEPS, type Place, type PriceBand } from '../lib/candidates';
 import { DirectionsLink } from './DirectionsLink';
-import { CATEGORIES, categoryIcon, type Category } from '../lib/category';
+import { CATEGORIES, categoryIcon, categoryLabel } from '../lib/category';
+import { CategoryPicker } from './CategoryPicker';
 import { metersForWalkMinutes, officeCoord, type Coord } from '../lib/walk';
 import { OfficeCard } from './map/OfficeCard';
 import { pinElement } from './map/pin';
@@ -31,6 +32,8 @@ import {
 import { updatePlace } from '../services/lunch';
 import type { KakaoCustomOverlay, KakaoMap, KakaoMaps, KakaoMarker, KakaoPlace } from '../types/kakao';
 import { PlaceForm, type PlaceDraft } from './map/PlaceForm';
+import { MapAddMenu } from './map/MapAddMenu';
+import { nearbyHits, TAP_RADIUS_M, type NearbyHit } from './map/nearbyHits';
 
 /** 이만큼 누르고 있으면 핀을 꽂는다. */
 const LONG_PRESS_MS = 500;
@@ -77,7 +80,7 @@ function troubleOf(error: unknown): Trouble {
         title: '지도를 쓸 수 없어요',
         // 설정 방법은 개발 중에만 보여 준다. 배포 화면에 환경변수 이름이 뜨면 사용자는 할 수 있는 게 없다.
         detail: import.meta.env.DEV
-          ? '.env.local 의 VITE_KAKAO_JS_KEY 를 채우고 개발 서버를 다시 띄워 주세요. 오늘·목록 탭은 그대로 쓸 수 있어요.'
+          ? '.env.local 파일에 VITE_KAKAO_JS_KEY를 넣고 개발 서버를 다시 실행해 주세요. 오늘과 목록 탭은 그대로 쓸 수 있어요.'
           : '지도 설정이 아직 안 돼 있어요. 오늘·목록 탭은 그대로 쓸 수 있어요.',
         retryable: false,
       };
@@ -85,7 +88,7 @@ function troubleOf(error: unknown): Trouble {
     return {
       title: '지도를 불러오지 못했어요',
       detail: import.meta.env.DEV
-        ? '가장 흔한 원인은 도메인 미등록이에요. 카카오 개발자 콘솔 > 앱 > 플랫폼 > Web 사이트 도메인에 ' +
+        ? '도메인이 등록되지 않았을 수 있어요. 카카오 개발자 콘솔의 앱 > 플랫폼 > Web 사이트 도메인에 ' +
           `${window.location.origin} 이 있는지 확인해 주세요.`
         : '잠시 뒤 다시 시도해 주세요. 오늘·목록 탭은 그대로 쓸 수 있어요.',
       retryable: true,
@@ -118,6 +121,12 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
   const [toggleProblem, setToggleProblem] = useState<string | null>(null);
   const [draft, setDraft] = useState<PlaceDraft | null>(null);
   const [editing, setEditing] = useState(false);
+  /** 지도를 한 번 누른 자리의 메뉴. hits 가 null 이면 근처를 찾는 중. */
+  const [tapMenu, setTapMenu] = useState<{ at: Coord; hits: NearbyHit[] | null; host: HTMLElement } | null>(null);
+  const tapOverlayRef = useRef<KakaoCustomOverlay | null>(null);
+  const tapMenuOpenRef = useRef(false);
+  // 리스너 effect 는 phase 로만 다시 걸린다. 최신 가게 목록·여는 함수는 ref 로 읽는다.
+  const openTapMenuRef = useRef<(at: Coord, px: number, py: number) => void>(() => {});
 
   const [keyword, setKeyword] = useState('');
   const [results, setResults] = useState<KakaoPlace[]>([]);
@@ -132,6 +141,8 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
   const officePinRef = useRef<{ setMap: (map: KakaoMap | null) => void } | null>(null);
   const [picking, setPicking] = useState(false);
   const markersRef = useRef<Map<string, Pin>>(new Map());
+  const placesRef = useRef(places);
+  placesRef.current = places;
   const tempMarkerRef = useRef<KakaoMarker | null>(null);
   const fittedRef = useRef(false);
   const resizeRef = useRef<ResizeObserver | null>(null);
@@ -274,6 +285,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       const today = place.id === todayId;
       const el = pinElement(place, today, ratings?.get(place.id)?.average);
       el.addEventListener('click', () => {
+        closeTapMenuRef.current();
         setSelectedId(place.id);
         setEditing(false);
       });
@@ -340,7 +352,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       const map = mapRef.current;
       if (!maps || !map) return;
       // 핀을 누른 건 가게 고르기다. 길게 눌러도 새 가게를 꽂지 않는다.
-      if (e.target instanceof Element && e.target.closest('.map__pin')) return;
+      if (e.target instanceof Element && e.target.closest('.map__pin, .map-add')) return;
       start = { x: e.clientX, y: e.clientY };
       const rect = el.getBoundingClientRect();
       const px = e.clientX - rect.left;
@@ -362,6 +374,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
 
         setSelectedId(null);
         setDraft({ lat, lng, name: '' });
+        closeTapMenuRef.current();
         clear();
       }, LONG_PRESS_MS);
     };
@@ -396,6 +409,17 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
         pickRef.current = null;
         setPicking(false);
         pick({ lat: coords.getLat(), lng: coords.getLng() });
+      } else if (start && timer && maps && map) {
+        // 끌지 않고 짧게 누르고 뗐다. 메뉴가 떠 있으면 닫기만, 아니면 그 자리에 메뉴를 연다.
+        if (tapMenuOpenRef.current) {
+          closeTapMenuRef.current();
+        } else {
+          const rect = el.getBoundingClientRect();
+          const coords = map
+            .getProjection()
+            .coordsFromContainerPoint(new maps.Point(e.clientX - rect.left, e.clientY - rect.top));
+          openTapMenuRef.current({ lat: coords.getLat(), lng: coords.getLng() }, e.clientX - rect.left, e.clientY - rect.top);
+        }
       }
       clear();
     };
@@ -413,6 +437,68 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       el.removeEventListener('pointerleave', clear, { capture: true });
     };
   }, [phase]);
+
+  const closeTapMenu = useCallback(() => {
+    tapOverlayRef.current?.setMap(null);
+    tapOverlayRef.current = null;
+    tapMenuOpenRef.current = false;
+    setTapMenu(null);
+  }, []);
+  const closeTapMenuRef = useRef(closeTapMenu);
+  closeTapMenuRef.current = closeTapMenu;
+
+  openTapMenuRef.current = (at: Coord, px: number, py: number) => {
+    const maps = mapsRef.current;
+    const map = mapRef.current;
+    if (!maps || !map) return;
+    tapOverlayRef.current?.setMap(null);
+    // 빈 상자로 만들어 두고 React 가 채운다. 카카오는 만들 때 크기로 anchor 를 잡으므로
+    // 상자는 크기 0 인 점으로 두고, 메뉴는 CSS 로 그 점 위에 띄운다(mapAdd.css).
+    const host = document.createElement('div');
+    host.className = 'map-add__anchor';
+    const position = new maps.LatLng(at.lat, at.lng);
+    tapOverlayRef.current = new maps.CustomOverlay({ position, content: host, map, clickable: true, zIndex: 10 });
+    // 메뉴(폭 220, 높이 최대 약 250)가 지도 밖으로 나가지 않게 지도를 살짝 민다.
+    const box = containerRef.current?.getBoundingClientRect();
+    if (box) {
+      const dx = px < 120 ? px - 120 : px > box.width - 120 ? px - (box.width - 120) : 0;
+      const dy = py < 260 ? py - 260 : 0;
+      if (dx || dy) (map as KakaoMap & { panBy?: (x: number, y: number) => void }).panBy?.(dx, dy);
+    }
+    tapMenuOpenRef.current = true;
+    setTapMenu({ at, hits: null, host });
+    // 데모 등 장소 검색이 없으면 "직접 넣기" 만 남긴다.
+    const Places = maps.services?.Places;
+    if (!Places) return setTapMenu((m) => (m?.host === host ? { ...m, hits: [] } : m));
+    const places = new Places() as InstanceType<typeof Places> & {
+      categorySearch?: (
+        code: string,
+        cb: (data: KakaoPlace[], status: string) => void,
+        opts: { location: unknown; radius: number; sort?: string },
+      ) => void;
+    };
+    if (!places.categorySearch) return setTapMenu((m) => (m?.host === host ? { ...m, hits: [] } : m));
+    places.categorySearch(
+      'FD6',
+      (data, status) => {
+        const hits = status === maps.services.Status.OK ? nearbyHits(placesRef.current, at, data) : [];
+        setTapMenu((m) => (m?.host === host ? { ...m, hits } : m));
+      },
+      { location: position, radius: TAP_RADIUS_M, sort: 'distance' },
+    );
+  };
+
+  // 메뉴가 떠 있으면 Esc 로 닫는다.
+  useEffect(() => {
+    if (!tapMenu) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeTapMenu();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [tapMenu, closeTapMenu]);
+  // 지도가 다시 만들어지거나 탭을 떠나면 메뉴도 걷는다.
+  useEffect(() => () => tapOverlayRef.current?.setMap(null), [attempt]);
 
   const dropTempPin = useCallback(() => {
     tempMarkerRef.current?.setMap(null);
@@ -540,7 +626,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
           )}
         </div>
         <p className="muted small">
-          {kakaoJsKey() ? '지도가 없어도 오늘·목록 탭은 그대로 쓸 수 있어요.' : '키가 없어도 오늘·목록 탭은 잘 돌아가요. 지도는 나중에 붙이면 돼요.'}
+          {kakaoJsKey() ? '지도가 없어도 오늘·목록 탭은 그대로 쓸 수 있어요.' : '지도 키가 없어도 오늘과 목록 탭은 쓸 수 있어요. 지도는 나중에 설정해도 돼요.'}
         </p>
       </section>
     );
@@ -644,7 +730,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
 
         {phase === 'ready' && (
           <p className="muted small">
-            원은 도보 {WALK_STEPS.join('·')}분이에요 · 핀을 누르면 정보, 빈 곳을 꾹 누르면 새 가게
+            원은 도보 {WALK_STEPS.join('·')}분 거리예요. 지도를 누르면 가게를 넣을 수 있어요.
           </p>
         )}
       </div>
@@ -666,7 +752,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
                 <div>
                   <strong>{selected.name}</strong>
                   <p className="muted small">
-                    {selected.category} · 도보 {selected.walkMin}분
+                    {categoryLabel(selected)} · 도보 {selected.walkMin}분
                     {selected.price ? ` · ${selected.price}` : ''}
                   </p>
                 </div>
@@ -731,7 +817,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
                   }}
                 >
                   <span className="mp__nearName">
-                    <span aria-hidden="true">{categoryIcon(p.category)} </span>
+                    <span aria-hidden="true">{categoryIcon(p.sub ?? p.category)} </span>
                     {p.name}
                     {p.id === todayId && <span className="badge">오늘</span>}
                   </span>
@@ -784,6 +870,33 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
           />
         </section>
       )}
+      {tapMenu && (
+        <MapAddMenu
+          host={tapMenu.host}
+          hits={tapMenu.hits}
+          onClose={closeTapMenu}
+          onPick={(hit) => {
+            closeTapMenu();
+            pickResult(hit);
+          }}
+          onGoTo={(place) => {
+            closeTapMenu();
+            goTo(place);
+          }}
+          onDirect={() => {
+            const { at } = tapMenu;
+            closeTapMenu();
+            const maps = mapsRef.current;
+            const map = mapRef.current;
+            if (maps && map) {
+              tempMarkerRef.current?.setMap(null);
+              tempMarkerRef.current = new maps.Marker({ position: new maps.LatLng(at.lat, at.lng), map, zIndex: 9 });
+            }
+            setSelectedId(null);
+            setDraft({ lat: at.lat, lng: at.lng, name: '' });
+          }}
+        />
+      )}
     </section>
   );
 }
@@ -803,9 +916,9 @@ function PlaceEdit({
   onCancel: () => void;
 }) {
   const [name, setName] = useState(place.name);
-  const [category, setCategory] = useState<Category | null>(
+  const [category, setCategory] = useState<string | null>(
     (CATEGORIES as readonly string[]).includes(place.category)
-      ? (place.category as Category)
+      ? (place.sub ?? place.category)
       : null,
   );
   const [price, setPrice] = useState<PriceBand | null>(place.price ?? null);
@@ -839,7 +952,7 @@ function PlaceEdit({
       <Input label="이름" fieldProps={{ className: 'pf__field' }} value={name} onChange={(e) => setName(e.target.value)} maxLength={40} aria-required="true" autoFocus />
       <div className="pf__field">
         <span className="filters__label">카테고리</span>
-        <ChipPicker label="카테고리" options={CATEGORIES} value={category} onPick={setCategory} />
+        <CategoryPicker value={category} onPick={setCategory} />
       </div>
       <div className="pf__field">
         <span className="filters__label">가격대</span>

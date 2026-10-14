@@ -17,7 +17,7 @@ export function CandidateChips({ result, winnerId }: { result: CandidateResult; 
             .filter(Boolean)
             .join(' ')}
         >
-          <span aria-hidden="true">{categoryIcon(p.category)}</span>
+          <span aria-hidden="true">{categoryIcon(p.sub ?? p.category)}</span>
           <span className="cands__name">{p.name}</span>
           <span className="cands__walk">{p.walkMin}분</span>
           {released.has(p.id) && <span className="sr-only">, 최근에 갔지만 다시 넣음</span>}

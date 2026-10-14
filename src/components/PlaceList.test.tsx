@@ -10,7 +10,7 @@ import { updatePlace } from '../services/lunch';
 vi.mock('../services/lunch', () => ({ updatePlace: vi.fn(async () => {}) }));
 
 const place = (id: string, name: string): Place => ({
-  id, name, category: '한식', lat: 37.56, lng: 126.97, walkMin: 5, kakaoPlaceId: id, active: true, createdBy: 'u',
+  id, name, category: '밥', lat: 37.56, lng: 126.97, walkMin: 5, kakaoPlaceId: id, active: true, createdBy: 'u',
 });
 
 /** 줄의 ⋯ 메뉴를 연다(Radix 는 키보드 Enter 로도 열린다). */
@@ -58,17 +58,20 @@ describe('끄기 실패', () => {
 });
 
 describe('고치기 — 카테고리', () => {
-  it('카테고리는 글자 대신 칩으로 고르고, 고른 값 그대로 저장한다', async () => {
+  it('메뉴를 고르고 세부까지 고르면 세부를 저장한다', async () => {
     vi.mocked(updatePlace).mockClear();
     render(<PlaceList places={[place('a', '가집')]} visits={[]} today="20261009" onChanged={() => {}} excludeRecent />);
     openMenu();
     fireEvent.click(screen.getByRole('menuitem', { name: '고치기' }));
-    const group = screen.getByRole('group', { name: '카테고리' });
-    expect(within(group).getByRole('button', { name: '한식' }).getAttribute('aria-pressed')).toBe('true');
-    fireEvent.click(within(group).getByRole('button', { name: '면' }));
-    expect(within(group).getByRole('button', { name: '면' }).getAttribute('aria-pressed')).toBe('true');
+    const menus = screen.getByRole('group', { name: '메뉴' });
+    expect(within(menus).getByRole('button', { name: '밥' }).getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(within(menus).getByRole('button', { name: '면' }));
+    expect(within(menus).getByRole('button', { name: '면' }).getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(within(screen.getByRole('group', { name: '면 세부' })).getByRole('button', { name: '라멘·우동' }));
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
-    await vi.waitFor(() => expect(updatePlace).toHaveBeenCalledWith('a', expect.objectContaining({ category: '면' })));
+    await vi.waitFor(() =>
+      expect(updatePlace).toHaveBeenCalledWith('a', expect.objectContaining({ category: '라멘·우동' })),
+    );
   });
 });
 
@@ -78,7 +81,7 @@ describe('고치기 — 목록에 없는 옛 카테고리', () => {
     render(<PlaceList places={[{ ...place('a', '가집'), category: '국밥' }]} visits={[]} today="20261009" onChanged={() => {}} excludeRecent />);
     openMenu();
     fireEvent.click(screen.getByRole('menuitem', { name: '고치기' }));
-    const group = screen.getByRole('group', { name: '카테고리' });
+    const group = screen.getByRole('group', { name: '메뉴' });
     expect(within(group).queryAllByRole('button', { pressed: true })).toHaveLength(0);
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
     expect(screen.getByRole('alert').textContent).toBe('카테고리를 골라 주세요.');

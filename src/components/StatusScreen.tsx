@@ -52,7 +52,7 @@ export function NotFound() {
           </span>
         }
         title="이런 주소는 없어요"
-        lines={['점심은 한 화면에서 정해요.', '링크 뒤에 붙은 경로는 필요 없어요.']}
+        lines={['점심은 한 화면에서 정해요.', '링크 뒤에 다른 주소가 붙어 있어요.']}
         action={
           <a className="status__btn" href="/">
             오늘 점심으로 가기

@@ -9,11 +9,13 @@
  *
  * 순서: 섞기(흔들림) → 고른 카드가 뒤집힘 → 나머지가 차례로 뒤집힘.
  */
+import { categoryLabel } from '../../lib/category';
 import { useEffect, useState } from 'react';
 import { revealSlots } from '../../lib/ladder';
 import { shortName } from '../../lib/name';
 import { seededRandom } from '../../lib/random';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
+import { sfxLater } from '../../lib/sfx';
 
 type Phase = 'idle' | 'shuffle' | 'lift' | 'picked' | 'all';
 
@@ -31,14 +33,21 @@ const LIFT_AT = 0.25;
 const PICKED_AT = 0.5;
 const ALL_AT = 0.75;
 
-export function Cards({ candidates, winnerIndex, spinning, run, onSpinEnd, onRequestSpin, expanded = false }: GameProps) {
+export function Cards({
+  candidates,
+  winnerIndex,
+  spinning,
+  run,
+  onSpinEnd,
+  onRequestSpin,
+  expanded = false,
+}: GameProps) {
   const count = candidates.length;
   const [picked, setPicked] = useState<number | null>(null);
   const [shown, setShown] = useState<Shown>({ run: -1, phase: 'idle' });
 
   // 실행 단추로 시작해 카드를 안 골랐으면 판 번호로 한 장 고른다.
-  const effectivePick =
-    picked ?? (winnerIndex === null ? null : Math.floor(seededRandom(run)() * Math.max(count, 1)));
+  const effectivePick = picked ?? (winnerIndex === null ? null : Math.floor(seededRandom(run)() * Math.max(count, 1)));
   const slots =
     effectivePick === null || winnerIndex === null
       ? null
@@ -59,7 +68,18 @@ export function Cards({ candidates, winnerIndex, spinning, run, onSpinEnd, onReq
       window.setTimeout(() => setShown({ run, phase: 'all' }), SPIN_MS.cards * ALL_AT),
       window.setTimeout(onSpinEnd, SPIN_MS.cards),
     ];
-    return () => timers.forEach((t) => window.clearTimeout(t));
+    // 섞기 → 고른 카드 들기 → 뒤집기 → 나머지 뒤집기.
+    const stopSfx = sfxLater([
+      [0, 'shuffle'],
+      [SPIN_MS.cards * LIFT_AT, 'tap'],
+      [SPIN_MS.cards * PICKED_AT, 'flip'],
+      [SPIN_MS.cards * ALL_AT, 'flip'],
+      [SPIN_MS.cards * ALL_AT + 90, 'flip'],
+    ]);
+    return () => {
+      timers.forEach((t) => window.clearTimeout(t));
+      stopSfx();
+    };
   }, [spinning, winnerIndex, count, run, onSpinEnd]);
 
   if (count === 0) return <div className="cards cards--empty" />;
@@ -70,8 +90,7 @@ export function Cards({ candidates, winnerIndex, spinning, run, onSpinEnd, onReq
     onRequestSpin?.();
   };
 
-  const isOpen = (i: number) =>
-    slots !== null && (phase === 'all' || (phase === 'picked' && i === effectivePick));
+  const isOpen = (i: number) => slots !== null && (phase === 'all' || (phase === 'picked' && i === effectivePick));
 
   return (
     <div className={expanded ? 'cards cards--big' : 'cards'}>
@@ -84,7 +103,7 @@ export function Cards({ candidates, winnerIndex, spinning, run, onSpinEnd, onReq
               ? '고른 카드를 뒤집었어요. 나머지도 뒤집어 볼게요.'
               : phase === 'lift'
                 ? '고른 카드를 뒤집을게요…'
-              : '카드를 섞고 있어요…'}
+                : '카드를 섞고 있어요…'}
       </p>
       <ul
         className={
@@ -101,7 +120,13 @@ export function Cards({ candidates, winnerIndex, spinning, run, onSpinEnd, onReq
           const mine = i === effectivePick && winnerIndex !== null;
           const win = open && slots !== null && slots[i] === winnerIndex;
           const lift = mine && phase === 'lift';
-          const cls = ['cards__card', open ? 'cards__card--open' : '', mine ? 'cards__card--mine' : '', lift ? 'cards__card--lift' : '', win ? 'cards__card--win' : '']
+          const cls = [
+            'cards__card',
+            open ? 'cards__card--open' : '',
+            mine ? 'cards__card--mine' : '',
+            lift ? 'cards__card--lift' : '',
+            win ? 'cards__card--win' : '',
+          ]
             .filter(Boolean)
             .join(' ');
           return (
@@ -121,7 +146,7 @@ export function Cards({ candidates, winnerIndex, spinning, run, onSpinEnd, onReq
                     <>
                       <strong>{shortName(place.name, 10)}</strong>
                       <span>
-                        {place.category} · {place.walkMin}분
+                        {categoryLabel(place)} · {place.walkMin}분
                       </span>
                     </>
                   )}

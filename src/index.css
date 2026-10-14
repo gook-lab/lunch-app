@@ -6,8 +6,8 @@
  * 당첨 이름이 거의 안 보였다(사용자 화면, 2026-10-08). 화면 양옆 세로 테두리,
  * 18px 기본 글꼴, 가운데 정렬도 그 템플릿에서 왔다.
  *
- * MODUL 은 라이트가 기본이고 다크는 data-theme 로 켠다. 앱은 아직 라이트만
- * 쓰므로 브라우저 기본 컨트롤도 라이트로 맞춘다.
+ * MODUL 은 라이트가 기본이고 다크는 data-theme 로 켠다. 설정의 "화면" 이
+ * lib/theme.ts 로 <html> 에 data-theme 와 color-scheme 을 붙인다.
  */
 :root {
   color-scheme: light;

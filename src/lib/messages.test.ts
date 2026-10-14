@@ -73,13 +73,13 @@ describe('noticeMessage — 공개 숫자가 실제와 일치한다', () => {
   it('카테고리로 좁혀서 모자라면 가게 수가 아니라 조건을 넓히라고 말한다', () => {
     const places = pool(12, (i) => ({ category: i === 0 ? '양식' : '한식' }));
     const r = selectCandidates(places, [], filters({ categories: ['양식'] }), TODAY);
-    expect(noticeMessage(r)).toBe('조건에 맞는 곳이 1곳뿐이에요. 도보 시간이나 카테고리를 넓히면 더 많아져요.');
+    expect(noticeMessage(r)).toBe('지금 고른 범위에는 1곳만 있어요. 도보 시간이나 카테고리를 넓혀 보세요.');
   });
 
   it('도보로 좁혀서 모자라도 조건을 넓히라고 말한다', () => {
     const places = pool(12, (i) => ({ walkMin: i < 2 ? 4 : 12 }));
     const r = selectCandidates(places, [], filters({ maxWalkMin: 5 }), TODAY);
-    expect(noticeMessage(r)).toContain('조건에 맞는 곳이 2곳뿐이에요');
+    expect(noticeMessage(r)).toContain('지금 고른 범위에는 2곳만 있어요');
     expect(noticeMessage(r)).not.toContain('20곳');
   });
 
@@ -107,7 +107,7 @@ describe('emptyMessage — 원인을 짚되 칩을 대신 풀지 않는다', () 
 
   it('카테고리가 원인이면 풀었을 때의 수를 말한다', () => {
     const r = selectCandidates(pool(6), [], filters({ categories: ['면'] }), TODAY);
-    expect(emptyMessage(r)).toBe('고른 카테고리에 맞는 곳이 없어요. 카테고리를 풀면 6곳이에요.');
+    expect(emptyMessage(r)).toBe('고른 카테고리에는 갈 만한 곳이 없어요. 카테고리를 전체로 바꾸면 6곳이에요.');
   });
 
   it('가게가 없으면 추가를 권한다', () => {

@@ -16,7 +16,10 @@ import { daysBetween, type DayId } from './date';
 export interface Place {
   id: string;
   name: string;
+  /** 메뉴(대분류). 읽을 때 저장값을 classify 로 나눈 결과다 — lib/category.ts. */
   category: string;
+  /** 세부(중분류). 모르면 없음. 저장할 때는 sub ?? category 를 쓴다. */
+  sub?: string | null;
   lat: number;
   lng: number;
   /** 저장 필드. lat/lng 를 고치면 같이 재계산해서 쓴다. */
@@ -58,8 +61,16 @@ export interface Filters {
   maxWalkMin: number;
   /** 켜진 카테고리 칩. 비어 있으면 카테고리로 거르지 않는다. */
   categories: string[];
+  /** 켜진 세부 칩. 메뉴 하나를 골랐을 때만 생긴다. 비어 있으면 메뉴로만 거른다. */
+  subs?: string[];
   /** 최근 방문 제외 칩. 끌 수 있다. */
   excludeRecent: boolean;
+}
+
+/** 카테고리 조건에 맞는가. 세부를 골랐으면 세부로, 아니면 메뉴로 본다. */
+export function matchesCategory(place: Pick<Place, 'category' | 'sub'>, filters: Filters): boolean {
+  if (filters.subs && filters.subs.length > 0) return filters.subs.includes(place.sub ?? '');
+  return filters.categories.length === 0 || filters.categories.includes(place.category);
 }
 
 export type EmptyReason =
@@ -171,10 +182,7 @@ export function selectCandidates(
 ): CandidateResult {
   const active = places.filter((p) => p.active);
   const afterWalk = active.filter((p) => p.walkMin <= filters.maxWalkMin);
-  const afterCategory =
-    filters.categories.length === 0
-      ? afterWalk
-      : afterWalk.filter((p) => filters.categories.includes(p.category));
+  const afterCategory = afterWalk.filter((p) => matchesCategory(p, filters));
 
   const base = {
     excludedRecent: filters.excludeRecent,
@@ -276,9 +284,7 @@ export function placeStatus(
 ): PlaceStatus {
   if (!place.active) return 'off';
   if (place.walkMin > filters.maxWalkMin) return 'out';
-  if (filters.categories.length > 0 && !filters.categories.includes(place.category)) {
-    return 'out';
-  }
+  if (!matchesCategory(place, filters)) return 'out';
   // released 를 먼저 본다. released 는 candidates 안에도 들어 있다.
   if (result.released.some((p) => p.id === place.id)) return 'released';
   if (result.candidates.some((p) => p.id === place.id)) return 'candidate';

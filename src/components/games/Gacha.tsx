@@ -12,6 +12,7 @@ import { categoryHue } from '../../lib/category';
 import { withJosa } from '../../lib/josa';
 import { seededRandom } from '../../lib/random';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
+import { sfxLater, type SfxName } from '../../lib/sfx';
 
 type Phase = 'idle' | 'shake' | 'drop' | 'open';
 
@@ -70,7 +71,16 @@ export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expan
       window.setTimeout(() => setShown({ run, phase: 'open' }), OPEN_AT),
       window.setTimeout(onSpinEnd, SPIN_MS.gacha),
     ];
-    return () => timers.forEach((t) => window.clearTimeout(t));
+    // 흔드는 동안 달그락, 캡슐이 떨어지면 쿵, 열리면 뽁.
+    const rattles = Array.from({ length: Math.max(1, Math.floor(SHAKE_MS / 260)) }, (_, k): [number, SfxName] => [
+      k * 260,
+      'rattle',
+    ]);
+    const stopSfx = sfxLater([...rattles, [SHAKE_MS + 120, 'thunk'], [OPEN_AT, 'pop']]);
+    return () => {
+      timers.forEach((t) => window.clearTimeout(t));
+      stopSfx();
+    };
   }, [spinning, winnerIndex, count, run, onSpinEnd]);
 
   if (count === 0) return <div className="gacha gacha--empty" />;
@@ -89,30 +99,34 @@ export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expan
 
   return (
     <div className={['gacha', expanded ? 'gacha--big' : '', `gacha--${phase}`].filter(Boolean).join(' ')}>
-      <p className="muted small gacha__hint" aria-live="polite">{hint}</p>
+      <p className="muted small gacha__hint" aria-live="polite">
+        {hint}
+      </p>
       <div className="gacha__machine" aria-hidden="true">
         <div className="gacha__dome">
           {/* 하나가 나오면 돔에서도 하나(맨 위)가 빠진다. */}
-          {capsules.slice(0, phase === 'drop' || phase === 'open' ? capsules.length - 1 : capsules.length).map((c, i) => (
-            <span
-              key={i}
-              className="gacha__capsule"
-              style={
-                {
-                  '--cat-hue': c.hue,
-                  '--tilt': `${c.tilt}deg`,
-                  '--dx': `${c.dx}%`,
-                  '--dy': `${c.dy}%`,
-                  '--i': i,
-                  left: `${c.x}%`,
-                  top: `${c.y}%`,
-                  zIndex: 10 - c.depth,
-                  scale: `${1 - c.depth * 0.04}`,
-                  filter: `brightness(${1 - c.depth * 0.05})`,
-                } as React.CSSProperties
-              }
-            />
-          ))}
+          {capsules
+            .slice(0, phase === 'drop' || phase === 'open' ? capsules.length - 1 : capsules.length)
+            .map((c, i) => (
+              <span
+                key={i}
+                className="gacha__capsule"
+                style={
+                  {
+                    '--cat-hue': c.hue,
+                    '--tilt': `${c.tilt}deg`,
+                    '--dx': `${c.dx}%`,
+                    '--dy': `${c.dy}%`,
+                    '--i': i,
+                    left: `${c.x}%`,
+                    top: `${c.y}%`,
+                    zIndex: 10 - c.depth,
+                    scale: `${1 - c.depth * 0.04}`,
+                    filter: `brightness(${1 - c.depth * 0.05})`,
+                  } as React.CSSProperties
+                }
+              />
+            ))}
           <span className="gacha__glare" />
         </div>
         <div className="gacha__body">
@@ -120,10 +134,7 @@ export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expan
           <span className="gacha__handle" />
           <span className="gacha__chute">
             {winner && phase !== 'idle' && phase !== 'shake' && (
-              <span
-                className="gacha__out"
-                style={{ '--cat-hue': categoryHue(winner.category) } as React.CSSProperties}
-              >
+              <span className="gacha__out" style={{ '--cat-hue': categoryHue(winner.category) } as React.CSSProperties}>
                 <span className="gacha__half gacha__half--top" />
                 <span className="gacha__half gacha__half--bottom" />
               </span>

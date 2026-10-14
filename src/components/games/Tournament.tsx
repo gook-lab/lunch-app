@@ -11,12 +11,14 @@
  * 순서: 판마다 대진을 보여 주고(match) → 승패를 가른다(result). 마지막에 우승.
  * 뒤 판일수록 오래 보여 준다(stepStarts) — 결승에서 긴장이 쌓이게.
  */
+import { categoryLabel } from '../../lib/category';
 import { useEffect, useMemo, useState } from 'react';
 import { withJosa } from '../../lib/josa';
 import { shortName } from '../../lib/name';
 import { seededRandom } from '../../lib/random';
 import { buildBracket, reachedRound, roundName, stepStarts, type Entry } from '../../lib/tournament';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
+import { sfxLater, type SfxName } from '../../lib/sfx';
 
 interface Shown {
   run: number;
@@ -53,7 +55,17 @@ export function Tournament({ candidates, winnerIndex, spinning, run, onSpinEnd, 
       timers.push(window.setTimeout(() => setShown({ run, step: s }), starts[s]));
     }
     timers.push(window.setTimeout(onSpinEnd, SPIN_MS.tournament));
-    return () => timers.forEach((t) => window.clearTimeout(t));
+    // 경기가 붙을 때 챙, 이긴 쪽이 올라갈 때 발소리.
+    const stopSfx = sfxLater(
+      Array.from({ length: lastStep }, (_, k): [number, SfxName] => [
+        starts[k + 1],
+        (k + 1) % 2 === 1 ? 'clash' : 'step',
+      ]),
+    );
+    return () => {
+      timers.forEach((t) => window.clearTimeout(t));
+      stopSfx();
+    };
   }, [spinning, winnerIndex, count, run, onSpinEnd, bracket, matchRounds, lastStep]);
 
   if (count === 0) return <div className="tour tour--empty" />;
@@ -109,7 +121,9 @@ export function Tournament({ candidates, winnerIndex, spinning, run, onSpinEnd, 
         {bracket.rounds.slice(0, -1).map((rd, i) => (
           <li
             key={i}
-            className={i < r || done ? 'tour__step tour__step--past' : i === r ? 'tour__step tour__step--now' : 'tour__step'}
+            className={
+              i < r || done ? 'tour__step tour__step--past' : i === r ? 'tour__step tour__step--now' : 'tour__step'
+            }
             aria-current={i === r && !done ? 'step' : undefined}
           >
             {roundName(rd.length)}
@@ -123,7 +137,7 @@ export function Tournament({ candidates, winnerIndex, spinning, run, onSpinEnd, 
           <span aria-hidden="true">🏆</span>
           <strong>{champion.name}</strong>
           <span className="muted small">
-            {matchRounds}판 전승 · {champion.category} · 도보 {champion.walkMin}분
+            {matchRounds}판 전승 · {categoryLabel(champion)} · 도보 {champion.walkMin}분
           </span>
         </div>
       ) : (
@@ -157,7 +171,11 @@ export function Tournament({ candidates, winnerIndex, spinning, run, onSpinEnd, 
       )}
 
       <p className="muted small tour__hint">
-        {done ? cheerLine || `${count}곳 토너먼트가 끝났어요.` : resolved ? '이긴 가게가 다음 판으로 가요.' : `${roundName(round.length)} 시작!`}
+        {done
+          ? cheerLine || `${count}곳 토너먼트가 끝났어요.`
+          : resolved
+            ? '이긴 가게가 다음 판으로 가요.'
+            : `${roundName(round.length)} 시작!`}
       </p>
     </div>
   );

@@ -135,13 +135,15 @@ describe('결과 모달', () => {
     expect(document.querySelector('dialog[open] .confetti')).toBeNull();
   });
 
-  it('소리는 기본으로 꺼져 있고, 켜면 기억한다', () => {
+  it('소리는 설정에서 켜고, 기본으로 꺼져 있고, 켜면 기억한다', () => {
     window.localStorage.removeItem('lunch-app:sound');
     render(<App />);
-    const toggle = screen.getByRole('button', { name: /소리/ });
-    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(screen.queryByRole('button', { name: /^소리/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /설정/ }));
+    const toggle = screen.getByRole('switch', { name: /효과음/ });
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
     fireEvent.click(toggle);
-    expect(screen.getByRole('button', { name: /소리/ }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('switch', { name: /효과음/ }).getAttribute('aria-checked')).toBe('true');
     expect(window.localStorage.getItem('lunch-app:sound')).toBe('1');
     window.localStorage.removeItem('lunch-app:sound');
   });
@@ -539,7 +541,7 @@ describe('핀볼 — 공 개수가 곧 확률', () => {
     for (let k = 0; k < 400; k += 1) act(() => { vi.advanceTimersByTime(100); });
     const dialog = screen.getByRole('dialog', { name: '오늘의 점심 결과' });
     expect(dialog.querySelector('.ticket__name')?.textContent).toBe('마집');
-    expect(dialog.querySelector('.ticket__odds')?.textContent).toBe('공 8개 중 4개였어요 · 확률 50%');
+    expect(dialog.querySelector('.ticket__odds')?.textContent).toBe('공 8개 중 4개였어요. 당첨 확률은 50%였어요.');
   });
 
   it('공 개수를 안 건드리면 다른 게임과 같은 균등 추첨이고, 확률 줄을 안 쓴다', () => {

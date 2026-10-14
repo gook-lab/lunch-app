@@ -1,0 +1,106 @@
+/* 지도를 눌렀을 때 뜨는 가게 넣기 메뉴 — 누른 자리 바로 위에 말풍선처럼.
+   오버레이 상자는 크기 0 인 점이고, 메뉴는 그 점 위로 띄운다. */
+.map-add__anchor {
+  position: relative;
+  width: 0;
+  height: 0;
+}
+.map-add {
+  position: absolute;
+  left: -110px;
+  bottom: 12px;
+  width: 220px;
+  padding: var(--space-2);
+  border: 1px solid var(--color-text);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--color-text) 18%, transparent);
+  font-size: var(--fs-sm);
+  text-align: left;
+  white-space: normal;
+}
+.map-add::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  translate: -50% 0;
+  rotate: 45deg;
+  border-right: 1px solid var(--color-text);
+  border-bottom: 1px solid var(--color-text);
+  background: var(--color-bg);
+}
+.map-add__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.map-add__close {
+  min-width: 32px;
+  min-height: 32px;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+.map-add__muted {
+  margin: var(--space-1) 0;
+  color: var(--color-neutral-700);
+  font-size: var(--fs-xs);
+}
+.map-add__list {
+  list-style: none;
+  margin: var(--space-1) 0;
+  padding: 0;
+}
+.map-add__hit {
+  display: flex;
+  width: 100%;
+  min-height: 36px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 0 var(--space-1);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.map-add__hit:hover {
+  background: var(--color-neutral-200);
+}
+.map-add__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.map-add__meta {
+  flex: none;
+  color: var(--color-neutral-700);
+  font-size: var(--fs-xs);
+}
+.map-add__direct {
+  width: 100%;
+  min-height: 40px;
+  margin-top: var(--space-1);
+  border: 1px dashed var(--color-text);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.map-add button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}

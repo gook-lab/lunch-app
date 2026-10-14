@@ -9,6 +9,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { slotReelCopies, slotStops } from '../../lib/spin';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
+import { followTicks, readTranslateY } from '../../lib/sfx';
 
 const ITEM_H = 56;
 /** 크게 보기에서 한 줄 높이. 창은 늘 세 줄이라 창 높이도 같이 바뀐다. */
@@ -41,6 +42,7 @@ export function Slot({ candidates, winnerIndex, spinning, onSpinEnd, expanded = 
   /** 가운데 칸에 보이는, 이어 붙인 목록에서의 인덱스. */
   const [idx, setIdx] = useState(0);
   const idxRef = useRef(0);
+  const reelRef = useRef<HTMLDivElement>(null);
   const [animating, setAnimating] = useState(false);
 
   const put = (v: number) => {
@@ -74,10 +76,14 @@ export function Slot({ candidates, winnerIndex, spinning, onSpinEnd, expanded = 
     // 되감은 위치가 화면에 한 번 반영된 뒤에 애니메이션을 걸어야 한다.
     // 같은 프레임에 둘 다 바꾸면 브라우저가 되감기를 건너뛰고 이어서 돈다.
     let second = 0;
+    let stopTicks = () => {};
     const first = requestAnimationFrame(() => {
       second = requestAnimationFrame(() => {
         setAnimating(true);
         put(target);
+        // 칸이 창 가운데를 지날 때마다 딸깍. 릴의 실제 위치를 따라가 점점 느려진다.
+        const step = reelRef.current?.firstElementChild?.getBoundingClientRect().height || ITEM_H;
+        stopTicks = followTicks(reelRef.current, readTranslateY, step, SPIN_MS.slot);
       });
     });
 
@@ -90,6 +96,7 @@ export function Slot({ candidates, winnerIndex, spinning, onSpinEnd, expanded = 
       cancelAnimationFrame(first);
       cancelAnimationFrame(second);
       window.clearTimeout(timer);
+      stopTicks();
     };
   }, [spinning, winnerIndex, count, onSpinEnd]);
 
@@ -106,6 +113,7 @@ export function Slot({ candidates, winnerIndex, spinning, onSpinEnd, expanded = 
     <div className={big ? 'slot slot--wide' : 'slot'} role="img" aria-label={`후보 ${count}곳`}>
       <div className="slot__window" style={{ height: itemH * rows }}>
         <div
+          ref={reelRef}
           aria-hidden="true"
           className="slot__reel"
           style={{

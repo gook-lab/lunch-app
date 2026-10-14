@@ -103,7 +103,7 @@ export function Predictions({ candidates, votes, myUid, locked, onVote, onClear 
                 aria-pressed={chosen === p.id}
                 onClick={() => setPick(p.id)}
               >
-                <span aria-hidden="true">{categoryIcon(p.category)} </span>
+                <span aria-hidden="true">{categoryIcon(p.sub ?? p.category)} </span>
                 {p.name}
               </button>
             ))}
@@ -124,7 +124,7 @@ export function Predictions({ candidates, votes, myUid, locked, onVote, onClear 
               </Button>
             )}
           </div>
-          <p className="muted small">예측은 결과에 영향이 없어요. 맞힌 사람은 결과에 나와요.</p>
+          <p className="muted small">예측해도 결과는 바뀌지 않아요. 맞힌 사람 이름은 결과에 나와요.</p>
           {problem && (
             <p className="notice notice--empty" role="alert">
               저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.

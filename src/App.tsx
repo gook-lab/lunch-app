@@ -18,7 +18,8 @@ import { Confetti } from './components/Confetti';
 import { Predictions } from './components/Predictions';
 import { winnersOf } from './lib/predictions';
 import { castVote, clearVote, myUid, subscribeVotes, type Vote } from './services/predictions';
-import { buzz, playChime, setSoundOn, soundOn } from './lib/celebrate';
+import { buzz, playChime, soundOn } from './lib/celebrate';
+import { sfx } from './lib/sfx';
 import {
   CarRace,
   Cards,
@@ -57,6 +58,8 @@ import { officeSource } from './lib/walk';
 import { emptyMessage, noticeMessage } from './lib/messages';
 import { decideToday } from './services/lunch';
 import { DemoNote } from './components/DemoNote';
+import { categorySummary } from './lib/category';
+import { Settings } from './components/Settings';
 import { GameBoundary } from './components/games/GameBoundary';
 import { DevHostNote, isDevHost } from './components/DevHostNote';
 import { Tour, tourSeen } from './components/Tour';
@@ -185,7 +188,6 @@ export default function App() {
   const [resultOpen, setResultOpen] = useState(false);
   // 꽃가루 판 번호. 게임이 끝나 결과가 처음 뜰 때만 올리고, 모달을 닫으면 0 — "결과 보기" 로 다시 열 땐 안 터진다.
   const [burst, setBurst] = useState(0);
-  const [sound, setSound] = useState(soundOn);
   // "여기로 결정" 저장 실패. 다시 돌리면 지운다.
   const [saveProblem, setSaveProblem] = useState(false);
   const resultTimer = useRef(0);
@@ -291,6 +293,8 @@ export default function App() {
     setWinner(null);
     setRun((r) => r + 1 + Math.floor(Math.random() * 1_000_000));
     setSpinning(true);
+    // 시작음. 경주·핀볼은 카운트다운·게이트 소리가 따로 있어 겹치지 않게 뺀다.
+    if (!prefersReducedMotion() && !['horse', 'racing', 'pinball'].includes(mode)) sfx('start');
 
     // 게임 영역은 실행 전까지 없다. 나타난 다음 프레임에 화면 안으로 끌어온다 —
     // 안 하면 눌렀는데 아무 일도 안 일어난 것처럼 보인다.
@@ -481,11 +485,18 @@ export default function App() {
     requestAnimationFrame(() => setTourOpen(true));
   };
 
+  // 메뉴를 바꾸면 세부 고른 것은 버린다. 세부 줄은 메뉴 하나를 골랐을 때만 있다.
   const toggleCategory = (c: string) =>
     updateFilters((f) => ({
       ...f,
       categories: f.categories.includes(c) ? f.categories.filter((x) => x !== c) : [...f.categories, c],
+      subs: [],
     }));
+  const toggleSub = (sub: string) =>
+    updateFilters((f) => {
+      const subs = f.subs ?? [];
+      return { ...f, subs: subs.includes(sub) ? subs.filter((x) => x !== sub) : [...subs, sub] };
+    });
 
   // 첫 화면을 그린 뒤 쉬는 시간에 나머지 게임 코드를 받아 둔다 — 방식을 바꿀 때 기다리지 않게.
   useEffect(() => {
@@ -517,7 +528,7 @@ export default function App() {
           art={<span className="status__bang">!</span>}
           title="목록을 불러오지 못했어요"
           code={String((error as Error)?.message ?? error)}
-          lines={['네트워크를 확인하고 다시 시도해 주세요.', '계속 안 되면 링크를 새로 받아 열어 주세요.']}
+          lines={['네트워크를 확인하고 다시 시도해 주세요.', '계속 안 되면 새 링크로 다시 들어와 주세요.']}
           action={<Button onClick={reload}>다시 시도</Button>}
         />
       </main>
@@ -550,7 +561,7 @@ export default function App() {
           🏢{' '}
           {officeSource() === 'saved'
             ? '정해 둔 회사 위치에서 잰 도보 시간이에요'
-            : '회사 위치를 아직 안 정했어요 · 지도 탭에서 정해 주세요'}
+            : '회사 위치를 아직 안 정했어요. 지도 탭에서 정해 주세요.'}
         </span>
         <button type="button" className="linkish" onClick={() => goTab('map')}>
           {officeSource() === 'saved' ? '바꾸기' : '정하기'}
@@ -589,7 +600,7 @@ export default function App() {
       </div>
       {odds && (
         <p className="muted small ticket__odds">
-          공 {odds.total}개 중 {odds.mine}개였어요 · 확률 {Math.round((odds.mine / odds.total) * 100)}%
+          공 {odds.total}개 중 {odds.mine}개였어요. 당첨 확률은 {Math.round((odds.mine / odds.total) * 100)}%였어요.
         </p>
       )}
       {votes.length > 0 && (
@@ -651,6 +662,7 @@ export default function App() {
             <button type="button" className="linkish app__help" onClick={openTour} disabled={spinning}>
               <span aria-hidden="true">❓ </span>사용법
             </button>
+            <Settings />
           </div>
           {import.meta.env.VITE_DEMO === '1' && <DemoNote />}
           {import.meta.env.VITE_DEMO !== '1' && isDevHost(window.location.hostname) && <DevHostNote />}
@@ -786,7 +798,7 @@ export default function App() {
                   <span className="today__summaryMain">후보 {result.candidates.length}곳</span>
                   <span className="today__summaryRest">
                     도보 {filters.maxWalkMin}분 ·{' '}
-                    {filters.categories.length > 0 ? filters.categories.join('·') : '카테고리 전체'}
+                    {categorySummary(filters)}
                     {filters.excludeRecent ? ' · 최근 1주 제외' : ''}
                   </span>
                   <span className="today__summaryGo">
@@ -798,8 +810,11 @@ export default function App() {
                 <CategoryChips
                   places={places}
                   selected={filters.categories}
+                  subs={filters.subs ?? []}
                   onToggle={toggleCategory}
-                  onClear={() => updateFilters((f) => ({ ...f, categories: [] }))}
+                  onToggleSub={toggleSub}
+                  onClear={() => updateFilters((f) => ({ ...f, categories: [], subs: [] }))}
+                  onClearSubs={() => updateFilters((f) => ({ ...f, subs: [] }))}
                   disabled={spinning}
                 />
               )}
@@ -825,24 +840,8 @@ export default function App() {
                 {expanded ? (
                   <span className="stage__label">크게 보는 중</span>
                 ) : (
-                  <p className="muted small stage__hint">
-                    {weighted ? '핀볼은 공이 많은 가게일수록 잘 걸려요' : '방식은 보여주는 것만 달라요 · 확률은 같아요'}
-                  </p>
+                  weighted && <p className="muted small stage__hint">핀볼은 공이 많은 가게일수록 잘 걸려요</p>
                 )}
-                <button
-                  type="button"
-                  className="stage__sound"
-                  aria-pressed={sound}
-                  onClick={() => {
-                    setSoundOn(!sound);
-                    setSound(!sound);
-                    if (!sound) playChime();
-                  }}
-                >
-                  {/* 켬/끔은 aria-pressed 로 읽힌다. 글자를 줄여야 휴대폰에서 한 줄에 든다. */}
-                  <span aria-hidden="true">{sound ? '🔔 ' : '🔕 '}</span>
-                  소리
-                </button>
                 <button
                   type="button"
                   className="stage__expand"
@@ -1013,7 +1012,7 @@ export default function App() {
         )}
       </div>
 
-      <footer className="muted small">로그인 없음 · 링크만 있으면 누구나</footer>
+      <footer className="muted small">로그인 없이, 링크만 있으면 누구나 쓸 수 있어요.</footer>
 
       <Sheet
         open={filtersOpen && !wide && tab === 'roadmap'}

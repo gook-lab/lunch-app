@@ -7,6 +7,7 @@
  * 필터 로직은 여기 없다. selectCandidates 의 결과를 받아 그리기만 한다 —
  * 화면이 자기만의 필터를 들고 있으면 후보 수와 그림이 어긋난다.
  */
+import { categorySummary } from '../lib/category';
 import { Tag } from '@gook-lab/ui';
 import type { CandidateResult, Filters, Place } from '../lib/candidates';
 import { VIEW, buildRoadmap } from '../lib/roadmap';
@@ -46,7 +47,7 @@ export function Roadmap({
   // 후보 수가 먼저다. 조건은 그 뒤에 붙인다. "→" 는 상태 변화로 읽혀 뺐다.
   const summary =
     `후보 ${result.candidates.length}곳 · 도보 ${filters.maxWalkMin}분 · ` +
-    `${filters.categories.length > 0 ? filters.categories.join('·') : '카테고리 전체'}`;
+    categorySummary(filters);
 
   return (
     <section className="rm">

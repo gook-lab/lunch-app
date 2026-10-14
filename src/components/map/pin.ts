@@ -1,4 +1,4 @@
-import { categoryIcon } from '../../lib/category';
+import { categoryIcon, categoryLabel } from '../../lib/category';
 import type { Place } from '../../lib/candidates';
 
 /**
@@ -16,7 +16,7 @@ export function pinElement(place: Place, today: boolean, average?: number): HTML
   const icon = document.createElement('span');
   icon.className = 'map__pinIcon';
   icon.setAttribute('aria-hidden', 'true');
-  icon.textContent = today ? '⭐' : categoryIcon(place.category);
+  icon.textContent = today ? '⭐' : categoryIcon(place.sub ?? place.category);
   const name = document.createElement('span');
   name.className = 'map__pinName';
   name.textContent = place.name;
@@ -26,7 +26,7 @@ export function pinElement(place: Place, today: boolean, average?: number): HTML
   el.append(icon, name, walk);
   el.setAttribute(
     'aria-label',
-    `${place.name}, ${place.category}, 도보 ${place.walkMin}분` +
+    `${place.name}, ${categoryLabel(place)}, 도보 ${place.walkMin}분` +
       (average ? `, 별점 ${average.toFixed(1)}점` : '') +
       (today ? ', 오늘 정한 곳' : '') +
       (place.active ? '' : ', 꺼 둔 가게'),

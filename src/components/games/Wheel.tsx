@@ -15,6 +15,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { wheelAngle, wheelLabelFlipped } from '../../lib/spin';
 import { shortName } from '../../lib/name';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
+import { followTicks, readRotation } from '../../lib/sfx';
 
 const TURNS = 4;
 
@@ -25,6 +26,7 @@ export function Wheel({ candidates, winnerIndex, spinning, onSpinEnd }: GameProp
   const [angle, setAngle] = useState(0);
   const [landed, setLanded] = useState<number | null>(null);
   const turns = useRef(0);
+  const discRef = useRef<HTMLDivElement>(null);
   const count = candidates.length;
   const slice = count > 0 ? 360 / count : 360;
 
@@ -37,11 +39,19 @@ export function Wheel({ candidates, winnerIndex, spinning, onSpinEnd }: GameProp
     turns.current += reduced ? 0 : TURNS;
     setAngle(wheelAngle(winnerIndex, count, turns.current));
 
-    const timer = window.setTimeout(() => {
-      setLanded(winnerIndex);
-      onSpinEnd();
-    }, reduced ? 0 : SPIN_MS.wheel);
-    return () => window.clearTimeout(timer);
+    // 칸 경계가 바늘을 지날 때마다 딸깍 — 원판의 실제 각도를 따라가므로 점점 느려진다.
+    const stopTicks = reduced ? () => {} : followTicks(discRef.current, readRotation, slice, SPIN_MS.wheel);
+    const timer = window.setTimeout(
+      () => {
+        setLanded(winnerIndex);
+        onSpinEnd();
+      },
+      reduced ? 0 : SPIN_MS.wheel,
+    );
+    return () => {
+      window.clearTimeout(timer);
+      stopTicks();
+    };
   }, [spinning, winnerIndex, count, slice, onSpinEnd]);
 
   const background = useMemo(() => {
@@ -73,6 +83,7 @@ export function Wheel({ candidates, winnerIndex, spinning, onSpinEnd }: GameProp
       />
 
       <div
+        ref={discRef}
         className="wheel__disc"
         style={{
           background,
@@ -97,10 +108,7 @@ export function Wheel({ candidates, winnerIndex, spinning, onSpinEnd }: GameProp
           const upsideDown = wheelLabelFlipped(i, count, angle);
           return (
             <div key={place.id} className="wheel__slice" style={{ transform: `rotate(${mid}deg)` }} aria-hidden="true">
-              <span
-                className={`wheel__label${upsideDown ? ' wheel__label--flip' : ''}`}
-                title={place.name}
-              >
+              <span className={`wheel__label${upsideDown ? ' wheel__label--flip' : ''}`} title={place.name}>
                 {shortName(place.name, radial ? 6 : 12)}
               </span>
             </div>
