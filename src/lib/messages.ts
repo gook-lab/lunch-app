@@ -17,15 +17,15 @@ export function emptyMessage(result: CandidateResult): string | null {
 
   switch (reason.kind) {
     case 'no-places':
-      return '아직 등록된 가게가 없어요. 지도 탭에서 몇 곳 넣어 주세요.';
+      return '아직 가게가 없어요. 지도에서 자주 가는 곳을 넣어 볼까요?';
     case 'all-inactive':
-      return `등록된 ${reason.total}곳이 모두 꺼져 있어요. 목록에서 다시 켜 주세요.`;
+      return `가게 ${reason.total}곳이 모두 꺼져 있어요. 목록에서 켜면 바로 고를 수 있어요.`;
     case 'walk':
       return reason.countAtWiderWalk > 0
-        ? `도보 ${reason.widerWalkMin}분으로 넓히면 ${reason.countAtWiderWalk}곳이에요.`
-        : `도보 ${reason.widerWalkMin}분으로 넓혀도 갈 만한 곳이 없어요. 회사 위치가 맞는지 확인해 보세요.`;
+        ? `도보 ${reason.widerWalkMin}분까지 넓히면 ${reason.countAtWiderWalk}곳이 있어요.`
+        : `걸어서 ${reason.widerWalkMin}분 안에는 아직 가게가 없어요. 회사 근처 가게를 넣어 볼까요?`;
     case 'category':
-      return `고른 카테고리에는 갈 만한 곳이 없어요. 카테고리를 전체로 바꾸면 ${reason.countWithoutCategory}곳이에요.`;
+      return `고른 메뉴에는 아직 가게가 없어요. 메뉴를 전체로 보면 ${reason.countWithoutCategory}곳이 있어요.`;
   }
 }
 
@@ -44,26 +44,26 @@ export function noticeMessage(result: CandidateResult): string | null {
     // 모자란 까닭이 사용자가 좁힌 도보·카테고리면 그걸 짚는다. 이때 "가게가
     // 20곳은 돼야" 는 엉뚱한 처방이다 — 양식 1곳만 골라도 그 문구가 떴다(10/8).
     if (afterCategoryCount < result.activeCount) {
-      return `지금 고른 범위에는 ${result.candidates.length}곳만 있어요. 도보 시간이나 카테고리를 넓혀 보세요.`;
+      return `지금 조건에서는 ${result.candidates.length}곳 중에 골라요. 도보 시간이나 메뉴를 넓히면 더 다양해져요.`;
     }
     // "최근 방문 제외가 제대로 돌아가요" 는 처음 온 사람에게 고장 안내처럼 읽혔다(10/9).
     // 숫자(20곳)는 실측 근거가 있어 남기고, 할 일(가게 더 넣기)과 이득으로 바꿔 말한다.
-    return `후보 ${result.candidates.length}곳에서 골라요. 가게를 ${HEALTHY_POOL_SIZE}곳쯤 넣어 두면 같은 곳이 덜 겹쳐요.`;
+    return `${result.candidates.length}곳 중에 골라요. 가게를 ${HEALTHY_POOL_SIZE}곳쯤 넣어 두면 같은 곳이 덜 나와요.`;
   }
 
   // 제외를 껐으면 최근에 간 곳도 그대로 후보다. "빠졌습니다" 는 거짓이 된다.
   if (!result.excludedRecent) {
     return recentlyVisitedCount > 0
-      ? `최근 1주 제외를 꺼서 최근에 간 ${recentlyVisitedCount}곳도 후보에 들어 있어요.`
+      ? `최근 1주 제외를 꺼 둬서, 최근에 간 ${recentlyVisitedCount}곳도 같이 골라요.`
       : null;
   }
 
   if (releasedCount > 0) {
-    return `${afterCategoryCount}곳 중 ${recentlyVisitedCount}곳은 최근 1주 안에 갔어요. 선택지가 너무 적지 않게 그중 오래된 ${releasedCount}곳을 다시 넣었어요.`;
+    return `${afterCategoryCount}곳 중 ${recentlyVisitedCount}곳은 최근 1주 안에 다녀왔어요. 고를 곳이 너무 줄지 않게 오래전에 간 ${releasedCount}곳은 다시 넣었어요.`;
   }
 
   if (recentlyVisitedCount > 0) {
-    return `최근 1주 안에 간 ${recentlyVisitedCount}곳은 뺐어요.`;
+    return `최근 1주 안에 간 ${recentlyVisitedCount}곳은 빼고 골라요.`;
   }
 
   return null;
@@ -96,28 +96,28 @@ export function gameGate(
 ): GameGate | null {
   const count = result.candidates.length;
   if (count >= MIN_GAME_CANDIDATES) return null;
-  const rule = `게임은 후보가 ${MIN_GAME_CANDIDATES}곳 이상일 때 돌릴 수 있어요.`;
+  const rule = `게임은 ${MIN_GAME_CANDIDATES}곳부터 할 수 있어요.`;
   const wider = WALK_STEPS.find((step) => step > filters.maxWalkMin);
 
   if (count === 0) {
     const reason = result.emptyReason;
     const why = emptyMessage(result);
     const lines = why ? [rule, why] : [rule];
-    if (reason?.kind === 'all-inactive') return { title: '지금은 게임을 돌릴 수 없어요', lines, fix: { kind: 'list' } };
+    if (reason?.kind === 'all-inactive') return { title: '아직 고를 가게가 없어요', lines, fix: { kind: 'list' } };
     if (reason?.kind === 'walk' && reason.countAtWiderWalk > 0) {
-      return { title: '지금은 게임을 돌릴 수 없어요', lines, fix: { kind: 'walk', walkMin: reason.widerWalkMin } };
+      return { title: '아직 고를 가게가 없어요', lines, fix: { kind: 'walk', walkMin: reason.widerWalkMin } };
     }
-    if (reason?.kind === 'category') return { title: '지금은 게임을 돌릴 수 없어요', lines, fix: { kind: 'category' } };
-    return { title: '지금은 게임을 돌릴 수 없어요', lines, fix: { kind: 'add' } };
+    if (reason?.kind === 'category') return { title: '아직 고를 가게가 없어요', lines, fix: { kind: 'category' } };
+    return { title: '아직 고를 가게가 없어요', lines, fix: { kind: 'add' } };
   }
 
   // 1곳. 사용자가 좁힌 범위 탓이면 넓히기를, 아니면 가게 더 넣기를 권한다.
-  const title = '후보가 1곳뿐이에요';
+  const title = '고를 곳이 한 곳뿐이에요';
   if (result.afterCategoryCount < result.activeCount && filters.categories.length > 0) {
-    return { title, lines: [rule, '카테고리를 전체로 바꾸면 더 많아져요.'], fix: { kind: 'category' } };
+    return { title, lines: [rule, '메뉴를 전체로 보면 더 많아져요.'], fix: { kind: 'category' } };
   }
   if (result.activeCount > count && wider) {
-    return { title, lines: [rule, `도보 ${wider}분으로 넓혀 보세요.`], fix: { kind: 'walk', walkMin: wider } };
+    return { title, lines: [rule, `도보 ${wider}분까지 넓혀 볼까요?`], fix: { kind: 'walk', walkMin: wider } };
   }
-  return { title, lines: [rule, '가게를 한 곳 더 넣어 주세요.'], fix: { kind: 'add' } };
+  return { title, lines: [rule, '한 곳만 더 넣으면 바로 할 수 있어요.'], fix: { kind: 'add' } };
 }

@@ -77,8 +77,8 @@ function troubleOf(error: unknown): Trouble {
         title: '지도를 쓸 수 없어요',
         // 설정 방법은 개발 중에만 보여 준다. 배포 화면에 환경변수 이름이 뜨면 사용자는 할 수 있는 게 없다.
         detail: import.meta.env.DEV
-          ? '.env.local 파일에 VITE_KAKAO_JS_KEY를 넣고 개발 서버를 다시 실행해 주세요. 오늘과 목록 탭은 그대로 쓸 수 있어요.'
-          : '지도 설정이 아직 안 돼 있어요. 오늘·목록 탭은 그대로 쓸 수 있어요.',
+          ? '.env.local 파일에 VITE_KAKAO_JS_KEY를 넣고 개발 서버를 다시 실행해 주세요. 점심 고르기와 가게 목록은 그대로 쓸 수 있어요.'
+          : '지도 설정이 아직 안 돼 있어요. 점심 고르기와 가게 목록은 그대로 쓸 수 있어요.',
         retryable: false,
       };
     }
@@ -87,14 +87,15 @@ function troubleOf(error: unknown): Trouble {
       detail: import.meta.env.DEV
         ? '도메인이 등록되지 않았을 수 있어요. 카카오 개발자 콘솔의 앱 > 플랫폼 > Web 사이트 도메인에 ' +
           `${window.location.origin} 이 있는지 확인해 주세요.`
-        : '잠시 뒤 다시 시도해 주세요. 오늘·목록 탭은 그대로 쓸 수 있어요.',
+        : '잠시 뒤 다시 시도해 주세요. 점심 고르기와 가게 목록은 그대로 쓸 수 있어요.',
       retryable: true,
     };
   }
+  console.error(error);
   return {
     title: '지도를 그리지 못했어요',
-    // 원인 문구는 개발자용 영어일 수 있다. 안내를 앞에 두고 원문은 괄호로 남긴다.
-    detail: `잠시 뒤 다시 시도해 주세요. (${String((error as Error)?.message ?? error)})`,
+    // 원인 문구는 개발자용 영어라 화면엔 할 일만 쓰고, 원문은 콘솔에 남긴다(10/14).
+    detail: '잠시 뒤 다시 해 볼까요? 점심 고르기와 가게 목록은 그대로 쓸 수 있어요.',
     retryable: true,
   };
 }
@@ -451,7 +452,6 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
     };
   }, [phase, dropOfficePin]);
 
-
   const closeTapMenu = useCallback(() => {
     tapOverlayRef.current?.setMap(null);
     tapOverlayRef.current = null;
@@ -567,12 +567,14 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
             return;
           }
           if (status === maps.services.Status.ZERO_RESULT) {
-            setSearchProblem('회사 주변에서 못 찾았어요. 지점 이름까지 넣어 보세요.');
+            setSearchProblem('회사 근처에서 찾지 못했어요. 지점 이름까지 넣어 볼까요?');
             return;
           }
-          setSearchProblem(
-            `검색에 실패했어요. 카카오 콘솔의 사이트 도메인에 ${window.location.origin} 이 등록됐는지 확인해 주세요.`,
+          // 대개 카카오 콘솔에 이 도메인이 없어서다. 쓰는 사람에겐 할 일만, 원인은 콘솔에.
+          console.warn(
+            `카카오 장소 검색 실패(${status}). 콘솔 사이트 도메인에 ${window.location.origin} 이 있는지 확인하세요.`,
           );
+          setSearchProblem('지금은 검색이 안 돼요. 잠시 뒤 다시 해 볼까요?');
         },
         {
           location: new maps.LatLng(office.lat, office.lng),
@@ -582,7 +584,8 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       );
     } catch (error) {
       setSearching(false);
-      setSearchProblem(`검색하지 못했어요. 잠시 뒤 다시 해 주세요. (${String((error as Error)?.message ?? error)})`);
+      console.error(error);
+      setSearchProblem('지금은 검색이 안 돼요. 잠시 뒤 다시 해 볼까요?');
     }
   }, [keyword]);
 
@@ -613,7 +616,6 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       address: hit.road_address_name || hit.address_name,
     });
   }, []);
-
 
   const goOffice = () => {
     const maps = mapsRef.current;
@@ -660,8 +662,8 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
         </div>
         <p className="muted small">
           {kakaoJsKey()
-            ? '지도가 없어도 오늘·목록 탭은 그대로 쓸 수 있어요.'
-            : '지도 키가 없어도 오늘과 목록 탭은 쓸 수 있어요. 지도는 나중에 설정해도 돼요.'}
+            ? '지도가 없어도 점심 고르기와 가게 목록은 그대로 쓸 수 있어요.'
+            : '지도 키가 없어도 점심 고르기와 가게 목록은 쓸 수 있어요. 지도는 나중에 설정해도 돼요.'}
         </p>
       </section>
     );
@@ -761,7 +763,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
             .filter(Boolean)
             .join(' ')}
         >
-          <div className="map__canvas" ref={containerRef} aria-label="우리 도보권 지도" />
+          <div className="map__canvas" ref={containerRef} aria-label="점심 지도" />
           {/* "지도 가운데로" 의 가운데가 어디인지 보여 주는 십자. 지도 조작은 막지 않는다. */}
           <span className="map__crosshair" aria-hidden="true" />
           {/* 지도를 끌다 보면 회사가 어디였는지 잃는다. 한 번에 돌아온다. */}
@@ -1019,7 +1021,7 @@ function PlaceEdit({ place, onDone, onCancel }: { place: Place; onDone: () => vo
         maxLength={120}
         rows={2}
       />
-      <p className="muted small">좌표와 도보 시간은 목록 탭에서 고칠 수 있어요.</p>
+      <p className="muted small">좌표와 도보 시간은 가게 목록에서 고칠 수 있어요.</p>
       {problem && (
         <p className="notice notice--empty" role="alert">
           {problem}

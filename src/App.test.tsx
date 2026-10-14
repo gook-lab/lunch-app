@@ -270,16 +270,16 @@ describe('연출 중에 건드리면 잠금이 풀려야 한다 — 영구 고�
 
   it('게임 도중 탭을 옮겨도 판은 계속되고, 돌아오면 결과가 뜬다', () => {
     startWheel();
-    fireEvent.click(screen.getByRole('tab', { name: '목록' }));
-    expect(screen.getByRole('tab', { name: /오늘.*게임 중/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole('tab', { name: '가게 목록' }));
+    expect(screen.getByRole('tab', { name: /점심 고르기.*게임 중/ })).toBeTruthy();
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + RESULT_DELAY_MS + 500); });
     // 딴 탭에서는 결과 모달이 보던 화면을 덮지 않는다. 탭 바에만 알린다.
     expect(screen.queryByRole('dialog', { name: '오늘의 점심 결과' })).toBeNull();
-    fireEvent.click(screen.getByRole('tab', { name: /오늘.*결과/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /점심 고르기.*결과/ }));
     act(() => { vi.advanceTimersByTime(RESULT_DELAY_MS + 50); });
 
     expect((screen.getByRole('dialog', { name: '오늘의 점심 결과' }) as HTMLDialogElement).open).toBe(true);
-    expect(screen.getByRole('tab', { name: '오늘' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: '점심 고르기' })).toBeTruthy();
     expect(lockedButtons()).toEqual([]);
   });
 });
@@ -289,30 +289,30 @@ describe('접근성', () => {
     render(<App />);
     const tabs = screen.getAllByRole('tab');
     expect(tabs.map((t) => t.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false']);
-    fireEvent.click(screen.getByRole('tab', { name: '목록' }));
-    expect(screen.getByRole('tab', { name: '목록' }).getAttribute('aria-selected')).toBe('true');
+    fireEvent.click(screen.getByRole('tab', { name: '가게 목록' }));
+    expect(screen.getByRole('tab', { name: '가게 목록' }).getAttribute('aria-selected')).toBe('true');
   });
 
   it('탭 사이는 화살표·Home·End 로 옮기고, 선택된 탭만 Tab 순서에 든다', () => {
     render(<App />);
-    const roadmap = screen.getByRole('tab', { name: '오늘' });
+    const roadmap = screen.getByRole('tab', { name: '점심 고르기' });
     expect(roadmap.tabIndex).toBe(0);
-    expect(screen.getByRole('tab', { name: '목록' }).tabIndex).toBe(-1);
+    expect(screen.getByRole('tab', { name: '가게 목록' }).tabIndex).toBe(-1);
 
     roadmap.focus();
     fireEvent.keyDown(roadmap, { key: 'ArrowRight' });
-    const list = screen.getByRole('tab', { name: '목록' });
+    const list = screen.getByRole('tab', { name: '가게 목록' });
     expect(list.getAttribute('aria-selected')).toBe('true');
     expect(document.activeElement).toBe(list);
 
     fireEvent.keyDown(list, { key: 'End' });
     expect(screen.getByRole('tab', { name: '지도' }).getAttribute('aria-selected')).toBe('true');
     fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Home' });
-    expect(screen.getByRole('tab', { name: '오늘' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tab', { name: '점심 고르기' }).getAttribute('aria-selected')).toBe('true');
 
     // 지금 탭이 가리키는 패널이 실제로 있고, 패널은 그 탭 이름으로 불린다.
-    const panel = screen.getByRole('tabpanel', { name: '오늘' });
-    expect(screen.getByRole('tab', { name: '오늘' }).getAttribute('aria-controls')).toBe(panel.id);
+    const panel = screen.getByRole('tabpanel', { name: '점심 고르기' });
+    expect(screen.getByRole('tab', { name: '점심 고르기' }).getAttribute('aria-controls')).toBe(panel.id);
   });
 
   it('키보드로 실행하면 초점이 판을 거쳐 결과 이름으로 간다 — <body> 로 떨어지지 않는다', () => {
@@ -342,12 +342,12 @@ describe('목록에서 지도로', () => {
     // 지도 탭은 lazy 라 Suspense 가 풀릴 때까지 기다린다. findBy 의 대기는 진짜 타이머가 필요하다.
     vi.useRealTimers();
     render(<App />);
-    fireEvent.click(screen.getByRole('tab', { name: '목록' }));
+    fireEvent.click(screen.getByRole('tab', { name: '가게 목록' }));
     fireEvent.click(screen.getByRole('button', { name: '나집 지도에서 보기' }));
     expect(screen.getByRole('tab', { name: '지도' }).getAttribute('aria-selected')).toBe('true');
     expect((await screen.findByTestId('map-focus')).textContent).toBe('b');
 
-    fireEvent.click(screen.getByRole('tab', { name: '오늘' }));
+    fireEvent.click(screen.getByRole('tab', { name: '점심 고르기' }));
     fireEvent.click(screen.getByRole('tab', { name: '지도' }));
     expect((await screen.findByTestId('map-focus')).textContent).toBe('none');
   });

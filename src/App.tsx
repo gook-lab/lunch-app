@@ -77,7 +77,8 @@ const MapTab = lazy(() => import('./components/MapTab'));
 
 type Tab = 'roadmap' | 'list' | 'map';
 const TABS: Tab[] = ['roadmap', 'list', 'map'];
-const TAB_LABEL: Record<Tab, string> = { roadmap: '오늘', list: '목록', map: '지도' };
+// '오늘·목록' 은 무엇을 하는 탭인지 안 읽혔다(10/14 사용자). 하는 일로 부른다.
+const TAB_LABEL: Record<Tab, string> = { roadmap: '점심 고르기', list: '가게 목록', map: '지도' };
 const TAB_ICON: Record<Tab, string> = { roadmap: '🍱', list: '📋', map: '🗺️' };
 
 /**
@@ -89,7 +90,7 @@ const SPIN_TIMEOUT_MS = 30_000;
 const TAB_TITLE: Record<Tab, string> = {
   roadmap: '오늘 점심',
   list: '가게 목록',
-  map: '우리 도보권',
+  map: '점심 지도',
 };
 
 const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
@@ -101,15 +102,6 @@ function formatDay(day: string): string {
   if (!y || !m || !d) return '';
   const w = WEEKDAY[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
   return `${m}월 ${d}일 ${w}요일`;
-}
-
-/** "20261013" 이 그해 몇 번째 날인가(1월 1일 = 1). 식권 번호로 쓴다. */
-function dayOfYear(day: string): number {
-  const y = Number(day.slice(0, 4));
-  const m = Number(day.slice(4, 6));
-  const d = Number(day.slice(6, 8));
-  if (!y || !m || !d) return 0;
-  return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(y, 0, 1)) / 86_400_000) + 1;
 }
 
 export default function App() {
@@ -638,11 +630,8 @@ export default function App() {
     <main className="app">
       <div className="topbar">
         <header className="app__header">
-          {/* 종이 식권 테마 — 날마다 번호가 붙는 식권처럼. 번호는 그해 몇 번째 날이다. */}
-          <p className="app__date">
-            <span className="app__ticketNo">NO. {String(dayOfYear(today)).padStart(4, '0')}</span> · {formatDay(today)}{' '}
-            · 사내 점심 식권
-          </p>
+          {/* 식권 번호(NO. 0287)·"사내 점심 식권" 은 무슨 뜻인지 안 읽혔다(10/14 사용자). 날짜와 한마디만. */}
+          <p className="app__date">{formatDay(today)} · 점심 뭐 먹지?</p>
           <div className="app__titleRow">
             <h1>{TAB_TITLE[tab]}</h1>
             <span className="app__count">
@@ -760,7 +749,7 @@ export default function App() {
                 <span className="status__officeLabel">회사</span>
               </span>
             }
-            title="아직 등록된 가게가 없어요"
+            title="아직 가게가 없어요"
             lines={
               // 회사부터 정한다. 지도 탭도 그 전에는 가게 찾기를 숨긴다.
               officeSource() === 'saved'

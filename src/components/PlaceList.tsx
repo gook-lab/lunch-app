@@ -161,7 +161,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
     // 따로 두면 좌표와 도보시간이 어긋난 채로 남는다.
     const walkMin = walkMinutesBetween(nextLat, nextLng);
     if (walkMin <= 0 || walkMin > 60) {
-      return setProblem(`도보 ${walkMin}분으로 계산돼요. 60분이 넘는 곳은 넣을 수 없어요.`);
+      return setProblem(`회사에서 걸어서 ${walkMin}분 거리예요. 60분 안쪽 가게만 넣을 수 있어요.`);
     }
 
     setSaving(true);
@@ -228,7 +228,7 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
   const [toggleProblem, setToggleProblem] = useState<string | null>(null);
 
   if (places.length === 0) {
-    return <p className="muted">아직 등록된 가게가 없어요.</p>;
+    return <p className="muted">아직 가게가 없어요. 지도에서 넣어 볼까요?</p>;
   }
 
   const sorted = [...places].sort((a, b) => {

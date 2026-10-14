@@ -194,7 +194,8 @@ export function OfficeCard({
       setPending(null);
       onSaved();
     } catch (error) {
-      setProblem(`저장하지 못했어요. 잠시 뒤 다시 해 주세요. (${String((error as Error)?.message ?? error)})`);
+      console.error(error);
+      setProblem('저장하지 못했어요. 잠시 뒤 다시 해 볼까요?');
     } finally {
       setSaving(false);
     }

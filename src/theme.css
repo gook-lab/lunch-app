@@ -13,7 +13,6 @@
 /* 머리말 — 일련번호 줄과 자간 넓힌 제목 */
 .app__header h1 { font-family: var(--app-mono); letter-spacing: 0.08em; }
 .app__date { font-family: var(--app-mono); letter-spacing: 0.06em; }
-.app__ticketNo { font-weight: 700; color: var(--color-text); }
 .app__count { font-family: var(--app-mono); }
 
 /* 탭 — 데스크톱은 알약 묶음 대신 점선 위 빨간 밑줄 */

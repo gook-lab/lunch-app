@@ -117,7 +117,7 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
     if (walk.error) return setProblem(walk.error);
     if (walk.min === null) return setProblem('도보 시간을 계산하지 못했어요.');
     if (tooFar) {
-      return setProblem(`도보 ${walk.min}분이에요. ${MAX_WALK_MIN}분이 넘는 곳은 넣을 수 없어요.`);
+      return setProblem(`회사에서 걸어서 ${walk.min}분 거리예요. ${MAX_WALK_MIN}분 안쪽 가게만 넣을 수 있어요.`);
     }
 
     setSaving(true);
@@ -145,7 +145,8 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
       onSaved();
     } catch (error) {
       // 원인은 영어 개발자 문구일 수 있다. 안내를 앞에 두고 원문은 괄호로.
-      setProblem(`저장하지 못했어요. 잠시 뒤 다시 해 주세요. (${String((error as Error)?.message ?? error)})`);
+      console.error(error);
+      setProblem('저장하지 못했어요. 잠시 뒤 다시 해 볼까요?');
     } finally {
       setSaving(false);
     }
