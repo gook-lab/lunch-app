@@ -1985,7 +1985,9 @@ html:has(.stage--full) { overflow: hidden; }
 .cards__card--win .cards__face--front strong { color: var(--color-accent-700); }
 /* 다 뒤집힌 뒤: 나머지는 물러나고 당첨 카드가 앞으로. 뒤집힘이 끝난 다음에 온다. */
 .cards__grid--done .cards__card { transition: opacity 260ms ease-out, translate 260ms var(--ease-decel), scale 260ms var(--ease-decel); transition-delay: 520ms; }
-.cards__grid--done .cards__card:not(.cards__card--win) { opacity: 0.5; }
+.cards__grid--done .cards__card:not(.cards__card--win) .cards__face--front { border-style: dashed; }
+/* 물러난 카드는 투명도 대신 이름 색으로 낮춘다. opacity .5 로 흐리면 11px 메뉴·도보 줄이 다크 3.18:1 로 읽기 힘들었다(10/15). */
+.cards__grid--done .cards__card:not(.cards__card--win) .cards__face--front strong { color: var(--color-neutral-700); }
 .cards__grid--done .cards__card--win { translate: 0 -6px; scale: 1.06; filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.18)); }
 .cards__grid--shuffle li { animation: cards-shuffle 360ms var(--ease-inout) infinite alternate; animation-delay: calc(var(--i) * -70ms); }
 @keyframes cards-shuffle {
@@ -2362,7 +2364,15 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .memory__card--open .memory__face--back { transform: rotateY(-180deg); }
 .memory__card--open .memory__face--front { transform: rotateY(0deg); }
 .memory__card:hover:not(:disabled):not(.memory__card--open) .memory__face--back { transform: translateY(-4px); }
-.memory__card--out { opacity: 0.5; }
+/* 탈락 카드도 투명도로 흐리지 않는다 — 11px '탈락' 표가 다크 3.18:1 이었다(10/15). 점선·회색 이름·한 단계 옅은 뒷면으로 물러나게 한다. */
+.memory__card--out:not(.memory__card--win) .memory__face--front { border-style: dashed; }
+.memory__card--out:not(.memory__card--win) .memory__face--front strong { color: var(--color-neutral-700); }
+.memory__card--out:not(.memory__card--win) .memory__icon { filter: grayscale(1); }
+.memory__card--out:not(.memory__card--win) .memory__face--back {
+  background: var(--color-neutral-300);
+  color: var(--color-neutral-800);
+  outline-color: var(--color-neutral-500);
+}
 .memory__card--win .memory__face--front { border: 2px solid var(--color-accent); background: var(--color-accent-100); }
 .memory__card--win .memory__face--front strong { color: var(--color-accent-700); }
 .memory__grid--done .memory__card--win { scale: 1.08; z-index: 1; }
@@ -2419,6 +2429,17 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
     z-index: 5;
     box-shadow: var(--shadow-md);
   }
+}
+
+/*
+ * '게임 중' 단추는 연출 내내 떠 있는 상태 문구라 MODUL 비활성 투명도(.45)로 흐리지 않는다.
+ * 그대로 두면 다크에서 빨강이 갈색으로 가라앉고 글자 대비가 2:1 대였다(10/15).
+ */
+.stage--busy .stage__run:disabled {
+  opacity: 1;
+  background: var(--color-neutral-200);
+  border-color: var(--color-neutral-300);
+  color: var(--color-text);
 }
 
 /* 후보 가게 칩 */
@@ -3840,6 +3861,32 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 [data-theme='dark'] .gacha__chute {
   --color-neutral-800: #444141;
   --color-neutral-900: #2d2b2b;
+}
+/*
+ * 뽑기 기계 몸통·손잡이·받침도 그림이라 테마를 따라가지 않는다. 다크 토큰은 accent-700→900 이 밝은 쪽으로 뒤집혀
+ * 받침이 흰 띠로, 몸통 끝·안쪽 그림자가 연분홍으로 빛났다(10/15). 밝은 테마 값으로 고정한다.
+ */
+[data-theme='dark'] .gacha__body,
+[data-theme='dark'] .gacha__handle,
+[data-theme='dark'] .gacha__base {
+  --color-accent-400: #ff9783;
+  --color-accent-700: #ae1800;
+  --color-accent-800: #7c1405;
+  --color-accent-900: #4d170e;
+}
+/*
+ * 카드·짝 맞추기 뒷면은 --color-text 로 칠해 다크에선 화면에서 가장 밝은 판이 됐다(10/15). 핀볼·경주판처럼
+ * 늘 밝게 둘 판이 아니라 테마를 따르는 카드라, 다크에선 한 단계 밝은 회색에 밝은 숫자로 둔다.
+ * :where 로 명시도를 낮춰 고른 카드(--mine)·탈락 카드 규칙이 그대로 이긴다.
+ */
+:where([data-theme='dark']) .cards__face--back,
+:where([data-theme='dark']) .memory__face--back {
+  background:
+    repeating-linear-gradient(45deg, transparent 0 6px, color-mix(in srgb, var(--color-text) 8%, transparent) 6px 8px),
+    var(--color-neutral-200);
+  color: var(--color-text);
+  border-color: var(--color-neutral-200);
+  outline-color: var(--color-neutral-500);
 }
 /* MODUL 모달·시트 뒤 가림막도 같은 이유로 다크에서 밝은 회색이 됐다. */
 [data-theme='dark'] dialog::backdrop { background: oklch(0 0 0 / 0.55); }
