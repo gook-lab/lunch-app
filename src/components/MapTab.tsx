@@ -17,6 +17,8 @@ import { Button, Checkbox, Input, Textarea } from '@gook-lab/ui';
 import { PRICE_BANDS, WALK_STEPS, type Place, type PriceBand } from '../lib/candidates';
 import { DirectionsLink } from './DirectionsLink';
 import { CATEGORIES, categoryIcon, categoryLabel } from '../lib/category';
+import { CategoryChips } from './CategoryChips';
+import { matchesCategory } from '../lib/candidates';
 import { CategoryPicker } from './CategoryPicker';
 import { metersForWalkMinutes, officeCoord, type Coord } from '../lib/walk';
 import { OfficeCard } from './map/OfficeCard';
@@ -112,7 +114,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
   // 하나도 없으면 다시 켤 가게를 찾아야 하니 보인다.
   // 목록에서 꺼 둔 가게를 보러 왔으면 그 핀이 보여야 한다.
   // 지도에서만 쓰는 카테고리 거르기. 오늘 탭 조건과는 따로다(보기만 바꾼다).
-  const [mapCategory, setMapCategory] = useState<string | null>(null);
+  const [mapCats, setMapCats] = useState<{ categories: string[]; subs: string[] }>({ categories: [], subs: [] });
   const [showOff, setShowOff] = useState(
     () => !places.some((p) => p.active) || places.some((p) => p.id === focusId && !p.active),
   );
@@ -151,16 +153,22 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
   const nearby = useMemo(
     () =>
       places
-        .filter((p) => (p.active || showOff) && (mapCategory === null || p.category === mapCategory))
+        .filter((p) => (p.active || showOff) && matchesCategory(p, mapCats))
         .sort((a, b) => a.walkMin - b.walkMin || a.name.localeCompare(b.name, 'ko')),
-    [places, showOff, mapCategory],
+    [places, showOff, mapCats],
   );
 
   // 지금 지도에 그릴 수 있는 가게들의 카테고리. 없는 카테고리 칩은 안 만든다.
-  const mapCategories = useMemo(
-    () => [...new Set(places.filter((p) => p.active || showOff).map((p) => p.category))],
+  // 지도에 그릴 수 있는 가게. 칩은 이 가게들이 가진 메뉴·세부만 만든다.
+  const mapPool = useMemo(
+    () => places.filter((p) => p.active || showOff).map((p) => ({ ...p, active: true })),
     [places, showOff],
   );
+  const pickMapCats = (next: { categories: string[]; subs: string[] }) => {
+    setMapCats(next);
+    // 고른 가게 핀이 숨으면 정보 카드만 덩그러니 남는다.
+    if (selected && !matchesCategory(selected, next)) setSelectedId(null);
+  };
 
   const selected = useMemo(
     () => places.find((p) => p.id === selectedId) ?? null,
@@ -295,7 +303,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
         position,
         content: el,
         map:
-          (place.active || showOff) && (mapCategory === null || place.category === mapCategory)
+          (place.active || showOff) && matchesCategory(place, mapCats)
             ? map
             : undefined,
         // 핀 위에서 누른 것은 지도로 넘기지 않는다. 안 그러면 핀을 누르다 지도가 끌린다.
@@ -321,7 +329,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       fittedRef.current = true;
       map.setBounds(bounds, 48, 32, 48, 32);
     }
-  }, [places, phase, todayId, showOff, focusId, mapCategory, ratings]);
+  }, [places, phase, todayId, showOff, focusId, mapCats, ratings]);
 
   /* 고른 가게 핀을 강조하고 맨 위로 올린다. */
   useEffect(() => {
@@ -331,7 +339,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       pin.el.setAttribute('aria-pressed', String(on));
       pin.overlay.setZIndex(on ? 6 : pin.zIndex);
     }
-  }, [selectedId, places, phase, todayId, showOff, mapCategory, ratings]);
+  }, [selectedId, places, phase, todayId, showOff, mapCats, ratings]);
 
   /* 3. 길게 눌러 핀 꽂기. */
   useEffect(() => {
@@ -669,34 +677,29 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
 
       {/* 데스크톱에서는 지도가 왼쪽 큰 칸을 차지하고, 나머지는 오른쪽에 쌓인다. */}
       <div className="map__main">
-        {phase === 'ready' && mapCategories.length > 1 && (
-          <div className="map__cats" role="group" aria-label="지도에 보일 카테고리">
-            <button
-              type="button"
-              className="map__cat"
-              aria-pressed={mapCategory === null}
-              onClick={() => setMapCategory(null)}
-            >
-              전체
-            </button>
-            {mapCategories.map((c) => (
-              <button
-                key={c}
-                type="button"
-                className="map__cat"
-                aria-pressed={mapCategory === c}
-                onClick={() => {
-                  const next = mapCategory === c ? null : c;
-                  setMapCategory(next);
-                  // 고른 가게 핀이 숨으면 정보 카드만 덩그러니 남는다.
-                  if (next && selected && selected.category !== next) setSelectedId(null);
-                }}
-              >
-                <span aria-hidden="true">{categoryIcon(c)} </span>
-                {c}
-              </button>
-            ))}
-          </div>
+        {phase === 'ready' && (
+          // 오늘 탭과 같은 메뉴 > 세부 칩. 지도에서는 보기만 거른다(오늘 후보 조건과 따로다).
+          <CategoryChips
+            places={mapPool}
+            selected={mapCats.categories}
+            subs={mapCats.subs}
+            onToggle={(c) =>
+              pickMapCats({
+                categories: mapCats.categories.includes(c)
+                  ? mapCats.categories.filter((x) => x !== c)
+                  : [...mapCats.categories, c],
+                subs: [],
+              })
+            }
+            onToggleSub={(sub) =>
+              pickMapCats({
+                ...mapCats,
+                subs: mapCats.subs.includes(sub) ? mapCats.subs.filter((x) => x !== sub) : [...mapCats.subs, sub],
+              })
+            }
+            onClear={() => pickMapCats({ categories: [], subs: [] })}
+            onClearSubs={() => pickMapCats({ ...mapCats, subs: [] })}
+          />
         )}
         {phase === 'ready' && places.some((p) => !p.active) && (
           <Checkbox

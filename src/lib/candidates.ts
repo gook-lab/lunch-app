@@ -68,7 +68,10 @@ export interface Filters {
 }
 
 /** 카테고리 조건에 맞는가. 세부를 골랐으면 세부로, 아니면 메뉴로 본다. */
-export function matchesCategory(place: Pick<Place, 'category' | 'sub'>, filters: Filters): boolean {
+export function matchesCategory(
+  place: Pick<Place, 'category' | 'sub'>,
+  filters: Pick<Filters, 'categories' | 'subs'>,
+): boolean {
   if (filters.subs && filters.subs.length > 0) return filters.subs.includes(place.sub ?? '');
   return filters.categories.length === 0 || filters.categories.includes(place.category);
 }

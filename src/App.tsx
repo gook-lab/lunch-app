@@ -58,7 +58,7 @@ import { officeSource } from './lib/walk';
 import { emptyMessage, noticeMessage } from './lib/messages';
 import { decideToday } from './services/lunch';
 import { DemoNote } from './components/DemoNote';
-import { categorySummary } from './lib/category';
+import { categoryLabel } from './lib/category';
 import { Settings } from './components/Settings';
 import { GameBoundary } from './components/games/GameBoundary';
 import { DevHostNote, isDevHost } from './components/DevHostNote';
@@ -593,7 +593,7 @@ export default function App() {
       </h2>
       <div className="ticket__meta">
         <span className="card__cat" style={{ '--cat-hue': categoryHue(winner.category) } as React.CSSProperties}>
-          {winner.category}
+          {categoryLabel(winner)}
         </span>
         <span>도보 {winner.walkMin}분</span>
         <RatingBadge summary={ratings.get(winner.id)} />
@@ -627,11 +627,12 @@ export default function App() {
             <Button block size="lg" onClick={() => onDecide(winner)} loading={saving}>
               여기로 결정
             </Button>
+            {/* "여기로 결정" 의 설명이라 바로 밑에 둔다. 다시 하기 밑에 있으면 그 버튼 얘기로 읽혔다(10/14). */}
+            <p className="muted small">누르면 방문 기록이 남고, 1주 동안 후보에서 빠져요.</p>
             <Button block variant="secondary" onClick={spin} disabled={spinning}>
               다시 하기
             </Button>
           </div>
-          <p className="muted small">누르면 방문 기록이 남고, 1주 동안 후보에서 빠져요.</p>
           {/* 정하기 전에도 얼마나 걸리는지 길을 먼저 볼 수 있게(10/13 점검). 기록은 남지 않는다. */}
           <DirectionsLink place={winner} />
           {/* 확인 시트가 떠 있으면 시트 쪽에만 띄운다. 두 곳에서 읽히면 두 번 들린다. */}
@@ -751,7 +752,7 @@ export default function App() {
                 {josa(decidedPlace.name, '으로/로')} 정했어요
               </p>
               <p className="muted small">
-                {decidedPlace.category} · 도보 {decidedPlace.walkMin}분 · 다시 돌려서 바꿀 수 있어요
+                {categoryLabel(decidedPlace)} · 도보 {decidedPlace.walkMin}분 · 다시 돌려서 바꿀 수 있어요
               </p>
               <DirectionsLink place={decidedPlace} />
               <ShareButton place={decidedPlace} />
@@ -796,10 +797,9 @@ export default function App() {
                   onClick={() => setFiltersOpen(true)}
                 >
                   <span className="today__summaryMain">후보 {result.candidates.length}곳</span>
+                  {/* 카테고리는 바로 아래 칩이 보여 준다. 여기까지 쓰면 휴대폰에서 잘렸다(10/14). */}
                   <span className="today__summaryRest">
-                    도보 {filters.maxWalkMin}분 ·{' '}
-                    {categorySummary(filters)}
-                    {filters.excludeRecent ? ' · 최근 1주 제외' : ''}
+                    도보 {filters.maxWalkMin}분{filters.excludeRecent ? ' · 최근 1주 제외' : ''}
                   </span>
                   <span className="today__summaryGo">
                     바꾸기<span aria-hidden="true"> ▾</span>

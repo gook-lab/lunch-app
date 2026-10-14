@@ -3282,7 +3282,9 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 .list__sort button[aria-pressed='true'] { background: var(--color-text); color: var(--color-bg); }
 .list__sort button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -2px; }
 .list__rate { display: grid; gap: var(--space-2); padding: var(--space-2) 0; }
-.demo-note .linkish { margin-left: var(--space-1); }
+.demo-note { display: flex; flex-wrap: wrap; align-items: center; }
+/* 누를 자리는 44px 그대로 두고, 위아래로 튀어나온 만큼은 줄 높이에 넣지 않는다. */
+.demo-note .linkish { margin: -12px 0 -12px var(--space-1); font-size: var(--fs-xs); }
 
 /* 첫 방문 안내 — 화면을 어둡게 덮고 설명하는 곳만 밝힌다(pig-ma 시작 안내와 같은 구조) */
 .tour { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
@@ -3369,3 +3371,29 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 .catbar-wrap { display: grid; gap: var(--space-1); }
 .catbar--sub { padding-left: var(--space-3); border-left: 2px solid var(--color-neutral-400); }
 .catbar--sub .catbar__chip { min-height: 32px; font-size: var(--fs-sm); }
+
+/*
+ * 다크 모드 — 늘 어두운 판(핀볼·경주)은 밝은 테마 토큰을 그대로 둔다.
+ * 이 판들은 어두운 바탕에 글자를 "--color-bg(밝은 색)" 로 써 왔다. 다크 테마가 토큰을
+ * 뒤집으면 글자까지 어두워져 공 개수 표·바퀴 칩이 안 보였다(10/14 사용자).
+ */
+[data-theme='dark'] .pinball,
+[data-theme='dark'] .prace__board {
+  --color-bg: #f3f2f2;
+  --color-surface: #eae9e9;
+  --color-text: #201e1d;
+  --color-neutral-100: #f8f4f4;
+  --color-neutral-200: #eae7e7;
+  --color-neutral-300: #d7d3d3;
+  --color-neutral-400: #bab6b6;
+  --color-neutral-500: #9b9797;
+  --color-neutral-600: #7d7979;
+  --color-neutral-700: #605d5d;
+  --color-neutral-800: #444141;
+  --color-neutral-900: #2d2b2b;
+}
+/* 핀볼 둘레는 "글자색(어두운 색)" 으로 칠해 판과 이어 보이게 했다. 다크에선 그 색이 밝아지므로 바탕색으로. */
+[data-theme='dark'] .stage .stage__board:has(> .pinball),
+[data-theme='dark'] .stage--full .stage__board:has(> .pinball) {
+  background: var(--color-bg);
+}

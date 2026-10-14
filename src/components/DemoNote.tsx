@@ -8,7 +8,8 @@ export function DemoNote() {
   return (
     <p className="demo-note">
       <span aria-hidden="true">🧪 </span>
-      데모예요. 가게와 기록은 예시이고, 여기서 정한 결과는 이 브라우저에만 남아요.{' '}
+      {/* 휴대폰에서 두 줄을 먹어 첫 화면이 밀렸다(10/14). 한 줄로. 가게가 예시라는 건 "데모" 로 충분하다. */}
+      데모라 정한 결과는 이 브라우저에만 남아요.{' '}
       <button
         type="button"
         className="linkish"
