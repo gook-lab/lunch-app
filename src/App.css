@@ -3610,3 +3610,11 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 .photos img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .photos a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 .ticket__photos { max-width: 264px; margin: var(--space-2) auto 0; }
+
+/* 당첨이 닿는 순간 한 번 톡 튄다 — 사다리 바닥 칸·카드. 색만 바뀌면 어디가 당첨인지 놓쳤다(10/15 게임 리뷰). */
+.ladder__label--win { animation: win-pop 600ms var(--ease-out) both; }
+.cards__card--win { animation: win-pop 600ms var(--ease-out) 450ms both; }
+@keyframes win-pop { 0% { scale: 1; } 40% { scale: 1.18; } 100% { scale: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .ladder__label--win, .cards__card--win { animation: none; }
+}
