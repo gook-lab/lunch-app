@@ -50,7 +50,8 @@ export function noticeMessage(result: CandidateResult): string | null {
     }
     // "최근 방문 제외가 제대로 돌아가요" 는 처음 온 사람에게 고장 안내처럼 읽혔다(10/9).
     // 숫자(20곳)는 실측 근거가 있어 남기고, 할 일(가게 더 넣기)과 이득으로 바꿔 말한다.
-    return `${result.candidates.length}곳 중에 골라요. 가게를 ${HEALTHY_POOL_SIZE}곳쯤 넣어 두면 같은 가게가 덜 나와요.${released}`;
+    // 몇 곳 중에 고르는지는 돌리기 단추·조건 머리말이 이미 말한다. 2곳이면 같은 수를 세 번 말했다(10/15).
+    return `가게를 ${HEALTHY_POOL_SIZE}곳쯤 넣어 두면 같은 가게가 덜 나와요.${released}`;
   }
 
   // 제외를 껐으면 최근에 간 곳도 그대로 후보다. "빠졌습니다" 는 거짓이 된다.

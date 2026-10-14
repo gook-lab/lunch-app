@@ -3882,6 +3882,10 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 }
 .thumb--lg { width: 96px; height: 96px; font-size: 40px; margin: 0 auto var(--space-2); }
 .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* 사진 칸은 메뉴 그림 위에 사진을 겹친다. 다 받기 전엔 투명이라 그림이 보이고, 받으면 덮는다. */
+.thumb--photo { position: relative; }
+.thumb--photo img { position: absolute; inset: 0; opacity: 0; transition: opacity var(--motion-fast) var(--ease-out); }
+.thumb--photo img.is-loaded { opacity: 1; }
 .thumb--photo:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 /* 목록 줄은 기존 아이콘 칸 크기 그대로(.list__icon 이 폭·높이를 정한다). */
 .list__icon.thumb { width: 40px; height: 40px; font-size: var(--fs-lg); }
@@ -3908,8 +3912,11 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 .photos { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-1); }
 .photos a { display: block; aspect-ratio: 1; overflow: hidden; border: 1px solid var(--color-neutral-200); border-radius: var(--radius-sm); background: var(--color-neutral-100); }
 .photos img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* 사진이 오기 전 잡아 두는 자리. 사진 칸(a)과 같은 틀·테두리라 사진이 와도 줄 높이가 그대로다. */
+.photos__slot { display: block; aspect-ratio: 1; border: 1px solid transparent; visibility: hidden; }
 .photos a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
-.ticket__photos { max-width: 264px; margin: var(--space-2) auto 0; }
+/* 폭을 정해 둔다. 가운데 정렬 카드라 사진이 오기 전 빈 자리는 폭이 0으로 줄어 높이도 못 잡았다. */
+.ticket__photos { width: 100%; max-width: 264px; margin: var(--space-2) auto 0; }
 
 /* 당첨이 닿는 순간 한 번 톡 튄다 — 사다리 바닥 칸·카드. 색만 바뀌면 어디가 당첨인지 놓쳤다(10/15 게임 리뷰). */
 .ladder__label--win { animation: win-pop 600ms var(--ease-out) both; }

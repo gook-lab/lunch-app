@@ -415,8 +415,10 @@ export function PlaceList({ places, visits, today, onChanged, recent, onShowOnMa
         <section className="list__group" aria-labelledby="list-on">
           {/* 추가 단추는 후보 제목 줄 끝에. 혼자 한 줄을 먹으면 맨 위가 비어 보였다(10/9 리뷰). */}
           <div className="list__headRow">
+            {/* 고르기 탭의 "고를 가게 N곳" 은 최근 1주·도보·메뉴를 거른 수라 이 수와 다르다.
+                같은 이름에 다른 숫자가 붙어 헷갈렸다(10/15). 여기는 넣어 둔 전부다. */}
             <h2 id="list-on" className="list__heading" tabIndex={-1}>
-              오늘 고를 가게 <span className="list__count">{on.length}곳</span>
+              넣어 둔 가게 <span className="list__count">{on.length}곳</span>
             </h2>
             {onAdd && (
               <Button size="sm" className="list__add" onClick={onAdd}>

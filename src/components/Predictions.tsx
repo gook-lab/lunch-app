@@ -15,6 +15,8 @@ import type { Vote } from '../services/predictions';
 
 interface Props {
   candidates: Place[];
+  /** 오늘 정한 가게. 정하면 후보에서 빠지는데, 그 가게에 건 표도 세야 한다. */
+  decided?: Place | null;
   votes: Vote[];
   myUid: string | null;
   locked: boolean;
@@ -22,15 +24,21 @@ interface Props {
   onClear: () => Promise<void>;
 }
 
-export function Predictions({ candidates, votes, myUid, locked, onVote, onClear }: Props) {
+export function Predictions({ candidates, decided = null, votes, myUid, locked, onVote, onClear }: Props) {
   const mine = votes.find((v) => v.uid === myUid) ?? null;
   const [open, setOpen] = useState(false);
   const [pick, setPick] = useState<string | null>(null);
   const [name, setName] = useState(savedName);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState(false);
-  const rows = tally(votes, candidates.map((p) => p.id));
-  const byId = new Map(candidates.map((p) => [p.id, p]));
+  // 정한 가게는 1주 제외로 후보에서 빠진다. 후보만 세면 결정하자마자 예측 수가 줄고
+  // 맞힌 사람 표가 사라졌다(10/15). 표를 셀 때만 다시 넣고, 고르는 칸에는 넣지 않는다.
+  const tallied = decided && !candidates.some((p) => p.id === decided.id) ? [...candidates, decided] : candidates;
+  const rows = tally(
+    votes,
+    tallied.map((p) => p.id),
+  );
+  const byId = new Map(tallied.map((p) => [p.id, p]));
   const counted = rows.reduce((a, r) => a + r.count, 0);
   const chosen = pick ?? mine?.placeId ?? null;
   const ready = chosen !== null && name.trim().length > 0 && !busy;

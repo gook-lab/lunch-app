@@ -60,6 +60,10 @@ describe('noticeMessage — 공개 숫자가 실제와 일치한다', () => {
     expect(r.shortOfMinimum).toBe(true);
     expect(r.releasedCount).toBeGreaterThan(0);
     expect(noticeMessage(r)).toContain(`최근 1주에 간 ${r.releasedCount}곳도 함께 골라요`);
+    // 할 일 다음에 다시 넣은 곳 안내가 붙는다. "N곳 중에 골라요" 는 단추가 말하므로 빠진다.
+    expect(noticeMessage(r)).toBe(
+      `가게를 20곳쯤 넣어 두면 같은 가게가 덜 나와요. 최근 1주에 간 ${r.releasedCount}곳도 함께 골라요.`,
+    );
   });
 
   it('보정 없이 제외만 있으면 빠진 수만 말한다', () => {
@@ -76,8 +80,9 @@ describe('noticeMessage — 공개 숫자가 실제와 일치한다', () => {
 
   it('보정해도 5곳이 안 되면 풀이 얇다고 말한다', () => {
     const r = selectCandidates(pool(3), [], filters(), TODAY);
-    expect(noticeMessage(r)).toContain('3곳 중에 골라요');
-    expect(noticeMessage(r)).toContain('20곳');
+    // 몇 곳 중인지는 돌리기 단추가 말한다. 안내 줄은 할 일만.
+    expect(noticeMessage(r)).toBe('가게를 20곳쯤 넣어 두면 같은 가게가 덜 나와요.');
+    expect(noticeMessage(r)).not.toContain('3곳 중에');
   });
 
   it('카테고리로 좁혀서 모자라면 가게 수가 아니라 조건을 넓히라고 말한다', () => {

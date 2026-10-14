@@ -125,6 +125,18 @@ export function onDemoChange(fn: () => void): () => void {
   return () => listeners.delete(fn);
 }
 
+/** 처음 상태에서 무엇이라도 바뀌었는가. 지울 게 없으면 "처음부터 다시" 를 숨긴다. */
+export function hasDemoData(): boolean {
+  const s = readDemo();
+  return (
+    s.places.length > 0 ||
+    Object.keys(s.visits).length > 0 ||
+    s.office !== null ||
+    Object.values(s.votes).some((v) => v.length > 0) ||
+    (s.ratings?.length ?? 0) > 0
+  );
+}
+
 /** 데모를 처음 상태로. 화면은 새로 읽어야 하므로 부른 쪽이 새로고침한다. */
 export function resetDemo(): void {
   memory = null;

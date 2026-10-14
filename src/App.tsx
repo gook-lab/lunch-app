@@ -499,17 +499,19 @@ export default function App() {
     [decision, commit],
   );
 
-  // 첫 방문 안내. 가게가 있는 오늘 탭이 처음 다 그려졌을 때 한 번 띄운다(pig-ma 시작 안내와 같은 구조).
-  // 가게가 하나도 없으면 빈 화면 안내가 먼저 길을 알려 주므로 띄우지 않는다.
+  // 첫 방문 안내. 게임을 돌릴 수 있는 오늘 탭이 처음 다 그려졌을 때 한 번 띄운다(pig-ma 시작 안내와 같은 구조).
+  // 후보가 모자라면 무대 안내("한 곳만 더 있으면…")가 먼저 길을 알려 준다. 가게 1곳일 때 띄웠더니
+  // 안내가 "지도에서 가게 넣기" 를 가리고, 짚는 "돌리기" 단추는 아직 없었다(10/15).
+  const canPlay = result.candidates.length >= MIN_GAME_CANDIDATES;
   const [tourOpen, setTourOpen] = useState(false);
   const tourChecked = useRef(false);
   useEffect(() => {
-    if (tourChecked.current || state !== 'ready' || tab !== 'roadmap' || places.length === 0) return;
+    if (tourChecked.current || state !== 'ready' || tab !== 'roadmap' || !canPlay) return;
     tourChecked.current = true;
     if (tourSeen()) return;
     const frame = requestAnimationFrame(() => setTourOpen(true));
     return () => cancelAnimationFrame(frame);
-  }, [state, tab, places.length]);
+  }, [state, tab, canPlay]);
   const openTour = () => {
     closeResult();
     goTab('roadmap');
@@ -577,6 +579,7 @@ export default function App() {
   const predictions = !gate && (
     <Predictions
       candidates={result.candidates}
+      decided={decidedPlace}
       votes={votes}
       myUid={uid}
       locked={spinning}
@@ -1089,8 +1092,9 @@ export default function App() {
                       <Button ref={resultBarRef} onClick={() => setResultOpen(true)}>
                         결과 보기
                       </Button>
+                      {/* 정한 뒤엔 모달과 같은 말로. 여기서만 "다시 하기" 라 오늘 기록이 바뀌는 줄 몰랐다(10/15). */}
                       <Button variant="secondary" onClick={spin} disabled={spinning}>
-                        다시 하기
+                        {confirmed ? '그래도 다시 하기' : '다시 하기'}
                       </Button>
                     </div>
                   </div>

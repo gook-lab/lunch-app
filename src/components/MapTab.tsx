@@ -92,8 +92,8 @@ function troubleOf(error: unknown): Trouble {
         title: '지도를 쓸 수 없어요',
         // 설정 방법은 개발 중에만 보여 준다. 배포 화면에 환경변수 이름이 뜨면 사용자는 할 수 있는 게 없다.
         detail: import.meta.env.DEV
-          ? '.env.local 파일에 VITE_KAKAO_JS_KEY를 넣고 개발 서버를 다시 실행해 주세요. 점심 고르기와 가게 목록은 그대로 쓸 수 있어요.'
-          : '지도 설정이 아직 안 돼 있어요. 점심 고르기와 가게 목록은 그대로 쓸 수 있어요.',
+          ? '.env.local 파일에 VITE_KAKAO_JS_KEY를 넣고 개발 서버를 다시 실행해 주세요.'
+          : '지도 설정이 아직 안 돼 있어요.',
         retryable: false,
       };
     }
@@ -102,7 +102,7 @@ function troubleOf(error: unknown): Trouble {
       detail: import.meta.env.DEV
         ? '도메인이 등록되지 않았을 수 있어요. 카카오 개발자 콘솔의 앱 > 플랫폼 > Web 사이트 도메인에 ' +
           `${window.location.origin} 이 있는지 확인해 주세요.`
-        : '잠시 뒤 다시 시도해 주세요. 점심 고르기와 가게 목록은 그대로 쓸 수 있어요.',
+        : '잠시 뒤 다시 시도해 주세요.',
       retryable: true,
     };
   }
@@ -110,7 +110,7 @@ function troubleOf(error: unknown): Trouble {
   return {
     title: '지도를 그리지 못했어요',
     // 원인 문구는 개발자용 영어라 화면엔 할 일만 쓰고, 원문은 콘솔에 남긴다(10/14).
-    detail: '잠시 뒤 다시 해 볼까요? 점심 고르기와 가게 목록은 그대로 쓸 수 있어요.',
+    detail: '잠시 뒤 다시 해 볼까요?',
     retryable: true,
   };
 }
@@ -801,10 +801,14 @@ export default function MapTab({
             </Button>
           )}
         </div>
+        {/* "다른 탭은 그대로 쓸 수 있어요" 는 여기 한 곳에서만 한다. 위 안내와 두 번 말했다(10/15).
+            가게가 없으면 그 말이 거짓이다 — 가게는 지도에서만 넣으니 고르기·목록 탭도 빈 화면뿐이다. */}
         <p className="muted small">
-          {kakaoJsKey()
-            ? '지도가 없어도 점심 고르기와 가게 목록은 그대로 쓸 수 있어요.'
-            : '지도 키가 없어도 점심 고르기와 가게 목록은 쓸 수 있어요. 지도는 나중에 설정해도 돼요.'}
+          {places.length === 0
+            ? '가게는 지도에서 넣어요. 지도가 뜨면 가게를 넣을 수 있어요.'
+            : kakaoJsKey()
+              ? '지도가 없어도 점심 고르기와 가게 목록은 그대로 쓸 수 있어요.'
+              : '지도 키가 없어도 점심 고르기와 가게 목록은 쓸 수 있어요. 지도는 나중에 설정해도 돼요.'}
         </p>
       </section>
     );
