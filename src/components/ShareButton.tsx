@@ -6,7 +6,7 @@ import { sharePlace, shareText, type ShareResult } from '../lib/share';
 const NOTE: Record<ShareResult, string> = {
   shared: '',
   copied: '복사했어요. 슬랙에 붙여 넣어 주세요.',
-  failed: '복사하지 못했어요. 브라우저 권한을 확인해 주세요.',
+  failed: '복사하지 못했어요. 잠시 뒤 다시 눌러 주세요.',
 };
 
 export function ShareButton({ place }: { place: Pick<Place, 'name' | 'category' | 'walkMin'> }) {

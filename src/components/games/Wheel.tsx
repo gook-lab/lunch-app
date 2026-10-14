@@ -91,7 +91,7 @@ export function Wheel({ candidates, winnerIndex, spinning, onSpinEnd }: GameProp
           transitionDuration: spinning && !prefersReducedMotion() ? `${SPIN_MS.wheel}ms` : '0ms',
         }}
         role="img"
-        aria-label={`후보 ${count}곳: ${candidates.map((p) => p.name).join(', ')}`}
+        aria-label={`고를 가게 ${count}곳: ${candidates.map((p) => p.name).join(', ')}`}
       >
         {candidates.map((place, i) => (
           <span

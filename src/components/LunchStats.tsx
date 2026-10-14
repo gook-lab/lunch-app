@@ -90,21 +90,21 @@ export function LunchStats({ places, visits, today }: Props) {
 
       {/* 뱃지 */}
       <div className="stats__badges">
-        <h3 className="stats__subheading">뱃지</h3>
+        <h3 className="stats__subheading">배지</h3>
         <div className="stats__badgeList">
           {stats.badges.map((badge) => (
             <div
               key={badge.id}
               className={badge.earned ? 'stats__badge stats__badge--earned' : 'stats__badge'}
-              title={`${badge.label} 뱃지, ${badge.current}/${badge.target}`}
+              title={`${badge.label} 배지, ${badge.current}/${badge.target}`}
             >
               <span className="stats__badgeIcon" aria-hidden="true">{badge.icon}</span>
               <span className="stats__badgeLabel">{badge.label}</span>
               {badge.earned ? (
-                <span className="sr-only"> 뱃지, 받았어요</span>
+                <span className="sr-only"> 배지, 받았어요</span>
               ) : (
                 <span className="stats__badgeProgress">
-                  <span className="sr-only"> 뱃지, 달성도 </span>
+                  <span className="sr-only"> 배지, 달성도 </span>
                   {badge.current}/{badge.target}
                 </span>
               )}

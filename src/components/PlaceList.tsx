@@ -46,7 +46,7 @@ interface LastVisit {
 
 function lastVisit(place: Place, visits: Visit[], today: DayId): LastVisit {
   const mine = visits.filter((v) => v.placeId === place.id).map((v) => v.id);
-  if (mine.length === 0) return { label: '기록 없음', recent: false };
+  if (mine.length === 0) return { label: '아직 안 갔어요', recent: false };
 
   const last = mine.reduce((a, b) => (a > b ? a : b));
   const days = daysBetween(last, today);
@@ -161,7 +161,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
     // 따로 두면 좌표와 도보시간이 어긋난 채로 남는다.
     const walkMin = walkMinutesBetween(nextLat, nextLng);
     if (walkMin <= 0 || walkMin > 60) {
-      return setProblem(`회사에서 걸어서 ${walkMin}분 거리예요. 60분 안쪽 가게만 넣을 수 있어요.`);
+      return setProblem(`회사에서 걸어서 ${walkMin}분 걸려요. 60분 안에 갈 수 있는 가게를 넣어 주세요.`);
     }
 
     setSaving(true);
@@ -204,7 +204,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
         <Input label="위도" ref={latRef} value={lat} onChange={(e) => setLat(e.target.value)} inputMode="decimal" aria-invalid={!Number.isFinite(Number(lat)) || undefined} aria-describedby={problem ? errId : undefined} state={!Number.isFinite(Number(lat)) ? 'error' : 'default'} />
         <Input label="경도" ref={lngRef} value={lng} onChange={(e) => setLng(e.target.value)} inputMode="decimal" aria-invalid={!Number.isFinite(Number(lng)) || undefined} aria-describedby={problem ? errId : undefined} state={!Number.isFinite(Number(lng)) ? 'error' : 'default'} />
       </div>
-      <p className="muted small">좌표를 고치면 도보 시간도 다시 계산돼요.</p>
+      <p className="muted small">위치를 바꾸면 도보 시간도 새로 계산해요.</p>
       {problem && <p id={errId} className="notice notice--empty" role="alert">{problem}</p>}
       <div className="row">
         <Button block onClick={() => void save()} loading={saving}>
@@ -228,7 +228,7 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
   const [toggleProblem, setToggleProblem] = useState<string | null>(null);
 
   if (places.length === 0) {
-    return <p className="muted">아직 가게가 없어요. 지도에서 넣어 볼까요?</p>;
+    return <p className="muted">지도에서 자주 가는 가게를 넣어 볼까요?</p>;
   }
 
   const sorted = [...places].sort((a, b) => {
@@ -308,7 +308,7 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
               }
               items={[
                 {
-                  label: ratings?.get(place.id)?.mine ? '내 별점 고치기' : '별점 남기기',
+                  label: ratings?.get(place.id)?.mine ? '내 별점 바꾸기' : '별점 남기기',
                   onSelect: () => {
                     setEditing(null);
                     setRating(rating === place.id ? null : place.id);
@@ -377,11 +377,11 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
           {/* 추가 단추는 후보 제목 줄 끝에. 혼자 한 줄을 먹으면 맨 위가 비어 보였다(10/9 리뷰). */}
           <div className="list__headRow">
             <h2 id="list-on" className="list__heading">
-              후보에 들어가는 가게 <span className="list__count">{on.length}곳</span>
+              오늘 고를 가게 <span className="list__count">{on.length}곳</span>
             </h2>
             {onAdd && (
               <Button size="sm" className="list__add" onClick={onAdd}>
-                지도에서 가게 추가
+                지도에서 가게 넣기
               </Button>
             )}
           </div>
@@ -399,7 +399,7 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
           {on.length > 0 ? (
             <ul className="list">{on.map(renderRow)}</ul>
           ) : (
-            <p className="muted small">켜진 가게가 없어요. 아래에서 다시 켜거나 지도에서 새로 넣어 주세요.</p>
+            <p className="muted small">꺼 둔 가게를 다시 켜거나, 지도에서 새 가게를 넣어 볼까요?</p>
           )}
         </section>
         {off.length > 0 && (

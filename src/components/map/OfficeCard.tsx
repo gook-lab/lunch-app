@@ -61,9 +61,9 @@ function describeMove(next: Coord): string {
 }
 
 const GEO_ERROR: Record<number, string> = {
-  1: '위치 권한이 꺼져 있어요. 브라우저 설정에서 위치를 허용해 주세요.',
-  2: '지금 위치를 찾지 못했어요. 잠시 뒤 다시 해 주세요.',
-  3: '위치를 찾는 데 너무 오래 걸렸어요. 다시 해 주세요.',
+  1: '브라우저 설정에서 위치를 허용하면 지금 위치로 정할 수 있어요.',
+  2: '지금 위치를 찾지 못했어요. 잠시 뒤 다시 눌러 주세요.',
+  3: '위치를 찾는 데 시간이 오래 걸렸어요. 잠시 뒤 다시 눌러 주세요.',
 };
 
 export function OfficeCard({
@@ -89,7 +89,7 @@ export function OfficeCard({
 
   const propose = (coord: Coord, note = '') => {
     if (!inKorea(coord)) {
-      setProblem('한국 안의 위치만 회사로 정할 수 있어요.');
+      setProblem('한국에 있는 위치로 골라 주세요.');
       return;
     }
     setProblem(null);
@@ -120,7 +120,7 @@ export function OfficeCard({
           setSearching(false);
           if (status === maps.services.Status.OK) return setHits(data.slice(0, MAX_HITS));
           if (status === maps.services.Status.ZERO_RESULT) {
-            return setProblem('찾지 못했어요. 건물 이름이나 도로명 주소로 다시 찾아 주세요.');
+            return setProblem('찾지 못했어요. 건물 이름이나 도로명 주소로 찾아 볼까요?');
           }
           setProblem('검색에 실패했어요. 잠시 뒤 다시 해 주세요.');
         },
@@ -145,7 +145,7 @@ export function OfficeCard({
 
   const fromGps = () => {
     if (!('geolocation' in navigator)) {
-      setProblem('이 브라우저는 위치를 알려 주지 않아요. 지도 가운데로 정해 주세요.');
+      setProblem('지도에서 찍거나 건물 이름으로 찾아서 정할 수 있어요.');
       return;
     }
     setLocating(true);
@@ -156,7 +156,7 @@ export function OfficeCard({
         const accuracy = Math.round(pos.coords.accuracy);
         propose(
           { lat: pos.coords.latitude, lng: pos.coords.longitude },
-          accuracy > 100 ? `오차가 약 ${accuracy}m 예요. 실내라면 창가에서 다시 해 보세요.` : '',
+          accuracy > 100 ? `약 ${accuracy}m 차이 날 수 있어요. 창가에서 다시 찾으면 더 정확해져요.` : '',
         );
       },
       (err) => {

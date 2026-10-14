@@ -55,7 +55,7 @@ vi.mock('./components/MapTab', () => ({
   default: ({ focusId }: { focusId?: string | null }) => <p data-testid="map-focus">{focusId ?? 'none'}</p>,
 }));
 
-const runButton = () => screen.getByRole('button', { name: /돌리기 \(후보 \d+곳\)|진행 중/ });
+const runButton = () => screen.getByRole('button', { name: /돌리기 \(\d+곳 중에서\)|^게임 중$/ });
 // 결과는 모달 안 티켓, 모달을 닫았거나 뜨기 전이면 게임 아래 한 줄 결과에 있다.
 const card = () =>
   (document.querySelector('dialog[open] .ticket__name') ?? document.querySelector('.result-bar strong'))?.textContent?.trim() ?? null;
@@ -169,7 +169,7 @@ describe('동료 예측', () => {
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
     // 난수 0 → 첫 후보 가집. 표가 많아도 균등 추첨 그대로다.
     expect(card()).toBe('가집');
-    expect(document.querySelector('dialog[open] .ticket__guess')?.textContent).toBe('🎯 민수·하늘 님이 맞혔어요');
+    expect(document.querySelector('dialog[open] .ticket__guess')?.textContent).toBe('🎯 민수·하늘님이 맞혔어요');
   });
 
   it('게임 중엔 예측을 못 바꾼다', () => {
@@ -182,7 +182,7 @@ describe('동료 예측', () => {
 describe('연출 한 판', () => {
   it('돌리면 잠겼다가 연출 길이만큼 지나면 결과 카드가 뜬다', () => {
     startWheel();
-    expect(runButton().textContent).toBe('진행 중');
+    expect(runButton().textContent).toBe('게임 중');
     expect(card()).toBeNull();
 
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
@@ -228,7 +228,7 @@ describe('방식 바꾸기', () => {
 
     expect(card()).toBeNull();
     expect(screen.queryByRole('button', { name: '여기로 결정' })).toBeNull();
-    const run = screen.getByRole('button', { name: /사다리 타기 \(후보 \d+곳\)/ }) as HTMLButtonElement;
+    const run = screen.getByRole('button', { name: /사다리 타기 \(\d+곳 중에서\)/ }) as HTMLButtonElement;
     expect(run.disabled).toBe(false);
     expect(document.querySelector('.ladder__label--win')).toBeNull();
   });
@@ -238,8 +238,8 @@ describe('연출 중에 건드리면 잠금이 풀려야 한다 — 영구 고�
   it('필터를 바꾸면 연출을 끊고 새 조건으로 돌아온다', () => {
     startWheel();
     // 휴대폰 폭에서는 조건이 요약 한 줄 → 시트 안에 있다.
-    fireEvent.click(screen.getByRole('button', { name: /후보 \d+곳.*바꾸기/ }));
-    fireEvent.click(screen.getByRole('button', { name: '도보 15분 안' }));
+    fireEvent.click(screen.getByRole('button', { name: /고를 가게 \d+곳.*바꾸기/ }));
+    fireEvent.click(screen.getByRole('button', { name: '걸어서 15분까지' }));
     fireEvent.click(screen.getByRole('button', { name: '이대로 할게요' }));
     act(() => { vi.advanceTimersByTime(100); });
 
@@ -249,10 +249,10 @@ describe('연출 중에 건드리면 잠금이 풀려야 한다 — 영구 고�
 
     // 끊긴 뒤에도 다시 돌릴 수 있다.
     fireEvent.click(runButton());
-    expect(runButton().textContent).toBe('진행 중');
+    expect(runButton().textContent).toBe('게임 중');
   });
 
-  it('실행과 같은 순간 들어온 방식 클릭도 "진행 중" 에 가두지 않는다', () => {
+  it('실행과 같은 순간 들어온 방식 클릭도 "게임 중" 에 가두지 않는다', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: '돌림판' }));
     const ladder = screen.getByRole('button', { name: '사다리' });
@@ -263,7 +263,7 @@ describe('연출 중에 건드리면 잠금이 풀려야 한다 — 영구 고�
     });
     act(() => { vi.advanceTimersByTime(100); });
 
-    const run = screen.getByRole('button', { name: /사다리 타기 \(후보 \d+곳\)/ }) as HTMLButtonElement;
+    const run = screen.getByRole('button', { name: /사다리 타기 \(\d+곳 중에서\)/ }) as HTMLButtonElement;
     expect(run.disabled).toBe(false);
     expect(lockedButtons()).toEqual([]);
   });
@@ -306,7 +306,7 @@ describe('접근성', () => {
     expect(document.activeElement).toBe(list);
 
     fireEvent.keyDown(list, { key: 'End' });
-    expect(screen.getByRole('tab', { name: '지도' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tab', { name: '가게 지도' }).getAttribute('aria-selected')).toBe('true');
     fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Home' });
     expect(screen.getByRole('tab', { name: '점심 고르기' }).getAttribute('aria-selected')).toBe('true');
 
@@ -344,11 +344,11 @@ describe('목록에서 지도로', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('tab', { name: '가게 목록' }));
     fireEvent.click(screen.getByRole('button', { name: '나집 지도에서 보기' }));
-    expect(screen.getByRole('tab', { name: '지도' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tab', { name: '가게 지도' }).getAttribute('aria-selected')).toBe('true');
     expect((await screen.findByTestId('map-focus')).textContent).toBe('b');
 
     fireEvent.click(screen.getByRole('tab', { name: '점심 고르기' }));
-    fireEvent.click(screen.getByRole('tab', { name: '지도' }));
+    fireEvent.click(screen.getByRole('tab', { name: '가게 지도' }));
     expect((await screen.findByTestId('map-focus')).textContent).toBe('none');
   });
 });
@@ -409,7 +409,7 @@ describe('사다리 — 사용자가 고르는 출발점', () => {
     expect(hidden().every((t) => t === '?')).toBe(true);
 
     fireEvent.click(screen.getByRole('button', { name: '2번 줄에서 출발' }));
-    expect(screen.getByRole('button', { name: '진행 중' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '게임 중' })).toBeTruthy();
     act(() => { vi.advanceTimersByTime(SPIN_MS.ladder / 2); });
     expect(hidden().every((t) => t === '?')).toBe(true);
 
@@ -499,7 +499,7 @@ describe('기기의 "동작 줄이기"', () => {
   it('켜져 있으면 이유를 알리고, 연출 없이 바로 결과를 낸다', () => {
     reduceMotion();
     render(<App />);
-    expect(screen.getByRole('note').textContent).toContain('연출 없이 결과만');
+    expect(screen.getByRole('note').textContent).toContain('결과만 바로 보여 드려요');
     // CSS 연출도 끈다.
     expect(document.documentElement.dataset.motion).toBe('reduced');
     fireEvent.click(screen.getByRole('button', { name: '돌림판' }));
@@ -512,7 +512,7 @@ describe('기기의 "동작 줄이기"', () => {
     reduceMotion();
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: '연출 켜기' }));
-    expect(screen.getByRole('note').textContent).toContain('연출을 보여 드려요');
+    expect(screen.getByRole('note').textContent).toContain('게임 연출을 켰어요');
     // CSS 연출(바늘 착지·카드 들썩임 등)도 다시 켠다.
     expect(document.documentElement.dataset.motion).toBe('full');
     fireEvent.click(screen.getByRole('button', { name: '돌림판' }));

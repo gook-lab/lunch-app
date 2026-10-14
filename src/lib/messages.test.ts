@@ -49,7 +49,7 @@ describe('noticeMessage — 공개 숫자가 실제와 일치한다', () => {
     // "12곳 중 7곳" 이 아니라 "7곳 중 5곳" 이어야 한다.
     expect(msg).toContain('7곳 중 5곳');
     expect(msg).not.toContain('12곳 중');
-    expect(msg).toContain('3곳은 다시 넣었어요');
+    expect(msg).toContain('3곳은 함께 골라요');
   });
 
   it('보정 없이 제외만 있으면 빠진 수만 말한다', () => {
@@ -73,13 +73,13 @@ describe('noticeMessage — 공개 숫자가 실제와 일치한다', () => {
   it('카테고리로 좁혀서 모자라면 가게 수가 아니라 조건을 넓히라고 말한다', () => {
     const places = pool(12, (i) => ({ category: i === 0 ? '양식' : '한식' }));
     const r = selectCandidates(places, [], filters({ categories: ['양식'] }), TODAY);
-    expect(noticeMessage(r)).toBe('지금 조건에서는 1곳 중에 골라요. 도보 시간이나 메뉴를 넓히면 더 다양해져요.');
+    expect(noticeMessage(r)).toBe('지금은 1곳에서 골라요. 도보 시간이나 메뉴를 넓히면 선택지가 더 많아져요.');
   });
 
   it('도보로 좁혀서 모자라도 조건을 넓히라고 말한다', () => {
     const places = pool(12, (i) => ({ walkMin: i < 2 ? 4 : 12 }));
     const r = selectCandidates(places, [], filters({ maxWalkMin: 5 }), TODAY);
-    expect(noticeMessage(r)).toContain('지금 조건에서는 2곳 중에 골라요');
+    expect(noticeMessage(r)).toContain('지금은 2곳에서 골라요');
     expect(noticeMessage(r)).not.toContain('20곳');
   });
 
@@ -107,7 +107,7 @@ describe('emptyMessage — 원인을 짚되 칩을 대신 풀지 않는다', () 
 
   it('카테고리가 원인이면 풀었을 때의 수를 말한다', () => {
     const r = selectCandidates(pool(6), [], filters({ categories: ['면'] }), TODAY);
-    expect(emptyMessage(r)).toBe('고른 메뉴에는 아직 가게가 없어요. 메뉴를 전체로 보면 6곳이 있어요.');
+    expect(emptyMessage(r)).toBe('다른 메뉴까지 보면 6곳에서 고를 수 있어요.');
   });
 
   it('가게가 없으면 추가를 권한다', () => {

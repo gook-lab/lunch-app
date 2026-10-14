@@ -699,9 +699,9 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
               onKeyDown={(e) => {
                 if (e.key === 'Enter') void search();
               }}
-              placeholder="가게 이름으로 찾기"
+              placeholder="가게 이름이나 지점으로 찾기"
               maxLength={40}
-              aria-label="가게 이름으로 찾기"
+              aria-label="가게 이름이나 지점으로 찾기"
             />
             <Button onClick={() => void search()} loading={searching} disabled={!keyword.trim()}>
               찾기
@@ -865,7 +865,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       {phase === 'ready' && !selected && !draft && results.length === 0 && nearby.length > 0 && (
         <section className="mp__card mp__nearby" aria-labelledby="nearby-title">
           <h3 id="nearby-title" className="mp__title">
-            지도에 있는 가게 {nearby.length}곳
+            이 근처 가게 {nearby.length}곳
           </h3>
           <ul className="mp__nearList">
             {nearby.map((p) => (
@@ -923,7 +923,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
         >
           <div className="mp__head">
             <h3 id="draft-title" className="mp__title">
-              여기 저장할까요?
+              이 위치에 가게를 넣을까요?
             </h3>
             <button type="button" className="linkish" onClick={closeDraft}>
               닫기

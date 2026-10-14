@@ -146,7 +146,7 @@ export function Memory({
           ...b,
           out,
           open: [],
-          say: hit ? `${name} 짝을 맞췄어요. 탈락이에요.` : '짝이 아니에요. 다시 덮을게요.',
+          say: hit ? `${name} 짝을 맞췄어요. 이번 판에서 빠져요.` : '짝이 아니에요. 다시 덮을게요.',
         };
         if (isSettled(next.faces)) finish(next);
         else commit(next);
@@ -196,7 +196,7 @@ export function Memory({
   };
 
   const hint = !live
-    ? `카드를 두 장씩 뒤집어 짝을 맞춰요. 짝을 맞춘 가게는 빠지고, 끝까지 남은 짝이 오늘 점심이에요.`
+    ? `카드를 두 장씩 뒤집어 같은 가게를 찾아요. 찾은 가게는 빠지고, 마지막까지 남은 가게가 오늘 점심이에요.`
     : board.done
       ? '남은 짝이 오늘 점심이에요.'
       : board.auto
@@ -209,7 +209,7 @@ export function Memory({
     <div className={expanded ? 'memory memory--big' : 'memory'}>
       <p className="muted small memory__hint">{hint}</p>
       {live && (
-        <ul className="memory__left" aria-label="이번 판 가게">
+        <ul className="memory__left" aria-label="남아 있는 가게">
           {board.places.map((p) => {
             const gone = board.faces.some((f, i) => f === p && board.out[i]);
             const win = board.done && p === winnerIndex;

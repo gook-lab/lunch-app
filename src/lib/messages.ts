@@ -25,7 +25,7 @@ export function emptyMessage(result: CandidateResult): string | null {
         ? `도보 ${reason.widerWalkMin}분까지 넓히면 ${reason.countAtWiderWalk}곳이 있어요.`
         : `걸어서 ${reason.widerWalkMin}분 안에는 아직 가게가 없어요. 회사 근처 가게를 넣어 볼까요?`;
     case 'category':
-      return `고른 메뉴에는 아직 가게가 없어요. 메뉴를 전체로 보면 ${reason.countWithoutCategory}곳이 있어요.`;
+      return `다른 메뉴까지 보면 ${reason.countWithoutCategory}곳에서 고를 수 있어요.`;
   }
 }
 
@@ -44,7 +44,7 @@ export function noticeMessage(result: CandidateResult): string | null {
     // 모자란 까닭이 사용자가 좁힌 도보·카테고리면 그걸 짚는다. 이때 "가게가
     // 20곳은 돼야" 는 엉뚱한 처방이다 — 양식 1곳만 골라도 그 문구가 떴다(10/8).
     if (afterCategoryCount < result.activeCount) {
-      return `지금 조건에서는 ${result.candidates.length}곳 중에 골라요. 도보 시간이나 메뉴를 넓히면 더 다양해져요.`;
+      return `지금은 ${result.candidates.length}곳에서 골라요. 도보 시간이나 메뉴를 넓히면 선택지가 더 많아져요.`;
     }
     // "최근 방문 제외가 제대로 돌아가요" 는 처음 온 사람에게 고장 안내처럼 읽혔다(10/9).
     // 숫자(20곳)는 실측 근거가 있어 남기고, 할 일(가게 더 넣기)과 이득으로 바꿔 말한다.
@@ -59,7 +59,7 @@ export function noticeMessage(result: CandidateResult): string | null {
   }
 
   if (releasedCount > 0) {
-    return `${afterCategoryCount}곳 중 ${recentlyVisitedCount}곳은 최근 1주 안에 다녀왔어요. 고를 곳이 너무 줄지 않게 오래전에 간 ${releasedCount}곳은 다시 넣었어요.`;
+    return `${afterCategoryCount}곳 중 ${recentlyVisitedCount}곳은 최근 1주 안에 다녀왔어요. 선택지가 너무 적어지지 않게 오래전에 간 ${releasedCount}곳은 함께 골라요.`;
   }
 
   if (recentlyVisitedCount > 0) {
@@ -75,8 +75,8 @@ export function noticeMessage(result: CandidateResult): string | null {
  */
 export function recentNote(recentCount: number, excludeRecent: boolean): string {
   if (recentCount === 0) return '최근 1주에 간 곳이 없어요';
-  if (!excludeRecent) return `최근 1주 제외를 꺼 둬서 최근에 간 ${recentCount}곳도 오늘 후보예요`;
-  return `최근 1주에 간 ${recentCount}곳은 오늘 후보에서 빠져요`;
+  if (!excludeRecent) return `최근 1주 제외를 꺼 둬서 최근에 간 ${recentCount}곳도 오늘 함께 골라요`;
+  return `최근 1주에 간 ${recentCount}곳은 오늘 고르지 않아요`;
 }
 
 /** 게임을 못 돌릴 때 무대에 띄우는 안내와, 바로 풀 수 있는 한 가지 방법. */

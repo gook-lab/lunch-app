@@ -110,7 +110,7 @@ export function Slot({ candidates, winnerIndex, spinning, onSpinEnd, expanded = 
   const landed = !animating && !spinning ? idx + pad : -1;
 
   return (
-    <div className={big ? 'slot slot--wide' : 'slot'} role="img" aria-label={`후보 ${count}곳`}>
+    <div className={big ? 'slot slot--wide' : 'slot'} role="img" aria-label={`고를 가게 ${count}곳`}>
       <div className="slot__window" style={{ height: itemH * rows }}>
         <div
           ref={reelRef}

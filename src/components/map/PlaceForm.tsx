@@ -208,7 +208,7 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
         </div>
       </div>
 
-      <Input label="한줄평 (별점을 고르면 같이 남아요)" fieldProps={{ className: 'pf__field' }} value={review} onChange={(e) => setReview(e.target.value)} maxLength={MAX_REVIEW} placeholder="김치찌개가 진함" />
+      <Input label="한 줄 평 (별점을 고르면 같이 남아요)" fieldProps={{ className: 'pf__field' }} value={review} onChange={(e) => setReview(e.target.value)} maxLength={MAX_REVIEW} placeholder="김치찌개가 진함" />
 
       <Textarea label="메모 (선택)" fieldProps={{ className: 'pf__field' }} value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={MAX_MEMO} rows={2} placeholder="12시 전에 가야 자리 있음" />
 

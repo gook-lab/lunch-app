@@ -65,12 +65,12 @@ afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks(); });
 it('onSpinEnd 가 영영 안 와도 20초 뒤에는 잠금이 풀리고 결과는 생기지 않는다', () => {
   render(<App />);
   fireEvent.click(screen.getByRole('button', { name: '돌림판' }));
-  const run = () => screen.getByRole('button', { name: /돌리기 \(후보 \d+곳\)|진행 중/ });
+  const run = () => screen.getByRole('button', { name: /돌리기 \(\d+곳 중에서\)|^게임 중$/ });
   fireEvent.click(run());
-  expect(run().textContent).toBe('진행 중');
+  expect(run().textContent).toBe('게임 중');
 
   act(() => { vi.advanceTimersByTime(29_000); });
-  expect(run().textContent).toBe('진행 중');           // 아직은 기다린다
+  expect(run().textContent).toBe('게임 중');           // 아직은 기다린다
 
   act(() => { vi.advanceTimersByTime(1_500); });
   expect(run().textContent).toMatch(/돌리기/);          // 풀렸다

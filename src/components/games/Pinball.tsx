@@ -829,7 +829,7 @@ export function Pinball({
                 type="button"
                 className="pinball__odd"
                 aria-pressed={follow === i}
-                title={`${p.name} 공 따라가기`}
+                title={`${p.name} 공을 따라가기`}
                 onClick={() => setFollow(follow === i ? null : i)}
               >
                 <span className="pinball__dot" style={{ background: marbleColor(i) }} aria-hidden="true" />
@@ -884,7 +884,7 @@ export function Pinball({
         // 처음부터 펼쳐 둔다 — 시작 전에 공 개수를 고르는 게 이 판의 재미라 접혀 있으면 지나쳤다(10/13 사용자).
         <details className="pinball__balls" open>
           <summary>
-            공 개수 · 확률 <span className="pinball__total">공 {total}개</span>
+            가게별 공과 당첨 확률 <span className="pinball__total">공 {total}개</span>
           </summary>
           <p className="muted small">
             공이 많은 가게일수록 잘 걸려요. 이번 방문 동안만 쓰고, 다른 게임은 늘 똑같은 확률이에요.

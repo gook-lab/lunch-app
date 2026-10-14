@@ -107,7 +107,7 @@ export function RatingEditor({ placeId, summary }: { placeId: string; summary?: 
         {score !== null && <span className="muted small">{score}점</span>}
       </div>
       <Input
-        label="한줄평 (선택)"
+        label="한 줄 평 (선택)"
         fieldProps={{ className: 'pf__field' }}
         value={review}
         onChange={(e) => setReview(e.target.value)}

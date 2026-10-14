@@ -86,7 +86,7 @@ describe('회사 위치 — 지금 내 위치로', () => {
     render(<OfficeCard onSaved={() => {}} />);
     unfold();
     fireEvent.click(screen.getByRole('button', { name: /지금 내 위치로/ }));
-    expect(screen.getByRole('alert').textContent).toContain('위치 권한이 꺼져 있어요');
+    expect(screen.getByRole('alert').textContent).toContain('위치를 허용하면');
   });
 
   it('한국 밖 좌표는 받지 않는다(규칙과 같은 범위)', () => {
@@ -94,7 +94,7 @@ describe('회사 위치 — 지금 내 위치로', () => {
     render(<OfficeCard onSaved={() => {}} />);
     unfold();
     fireEvent.click(screen.getByRole('button', { name: /지금 내 위치로/ }));
-    expect(screen.getByRole('alert').textContent).toContain('한국 안의 위치만');
+    expect(screen.getByRole('alert').textContent).toContain('한국에 있는 위치로');
     expect(screen.queryByRole('button', { name: '이 위치로 정하기' })).toBeNull();
   });
 
@@ -103,7 +103,7 @@ describe('회사 위치 — 지금 내 위치로', () => {
     render(<OfficeCard onSaved={() => {}} />);
     unfold();
     fireEvent.click(screen.getByRole('button', { name: /지금 내 위치로/ }));
-    expect(screen.getByText(/오차가 약 450m/)).toBeTruthy();
+    expect(screen.getByText(/약 450m 차이 날 수 있어요/)).toBeTruthy();
   });
 });
 

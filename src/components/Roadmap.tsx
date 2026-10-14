@@ -29,9 +29,9 @@ interface Props {
  * "다시 넣음" 이 무슨 뜻인지는 아래 안내 문구가 숫자까지 넣어 풀어 준다.
  */
 const LEGEND: { status: string; label: string }[] = [
-  { status: 'candidate', label: '후보' },
-  { status: 'released', label: '다시 넣음' },
-  { status: 'recent', label: '최근 제외' },
+  { status: 'candidate', label: '고를 가게' },
+  { status: 'released', label: '다시 넣은 곳' },
+  { status: 'recent', label: '최근에 다녀옴' },
 ];
 
 export function Roadmap({
@@ -46,7 +46,7 @@ export function Roadmap({
   const model = buildRoadmap(places, filters, result);
   // 후보 수가 먼저다. 조건은 그 뒤에 붙인다. "→" 는 상태 변화로 읽혀 뺐다.
   const summary =
-    `후보 ${result.candidates.length}곳 · 도보 ${filters.maxWalkMin}분 · ` +
+    `고를 가게 ${result.candidates.length}곳 · 도보 ${filters.maxWalkMin}분 · ` +
     categorySummary(filters);
 
   return (
@@ -100,7 +100,7 @@ export function Roadmap({
             key={w.category}
             type="button"
             aria-pressed={w.on}
-            aria-label={`${w.category} 카테고리`}
+            aria-label={`${w.category} 메뉴`}
             className={
               'rm__wedgeLabel' +
               (w.on ? ' rm__wedgeLabel--on' : '') +
@@ -131,7 +131,7 @@ export function Roadmap({
             type="button"
             aria-pressed={r.on}
             // 보이는 글자는 "10분" 뿐이라 낭독기에선 무엇의 10분인지 몰랐다.
-            aria-label={`도보 ${r.walkMin}분 안`}
+            aria-label={`걸어서 ${r.walkMin}분까지`}
             className={r.on ? 'rm__pill rm__pill--on' : 'rm__pill'}
             style={{ left: r.left, top: r.top }}
             onClick={() => onWalk(r.walkMin)}
@@ -157,7 +157,7 @@ export function Roadmap({
         </Tag>
       </div>
 
-      <div className="rm__legend" role="group" aria-label="점 모양 뜻">
+      <div className="rm__legend" role="group" aria-label="가게 점 안내">
         {LEGEND.map((l) => (
           <span key={l.status}>
             <i className={`rm__key rm__key--${l.status}`} aria-hidden="true" />

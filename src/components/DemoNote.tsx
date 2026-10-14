@@ -9,7 +9,7 @@ export function DemoNote() {
     <p className="demo-note">
       <span aria-hidden="true">🧪 </span>
       {/* 휴대폰에서 두 줄을 먹어 첫 화면이 밀렸다(10/14). 한 줄로. 가게가 예시라는 건 "데모" 로 충분하다. */}
-      체험용이라 넣은 가게와 기록은 이 브라우저에만 저장돼요.{' '}
+      체험 중에 넣은 가게와 기록은 이 브라우저에만 남아요.{' '}
       <button
         type="button"
         className="linkish"

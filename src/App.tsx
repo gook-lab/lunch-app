@@ -78,7 +78,7 @@ const MapTab = lazy(() => import('./components/MapTab'));
 type Tab = 'roadmap' | 'list' | 'map';
 const TABS: Tab[] = ['roadmap', 'list', 'map'];
 // '오늘·목록' 은 무엇을 하는 탭인지 안 읽혔다(10/14 사용자). 하는 일로 부른다.
-const TAB_LABEL: Record<Tab, string> = { roadmap: '점심 고르기', list: '가게 목록', map: '지도' };
+const TAB_LABEL: Record<Tab, string> = { roadmap: '점심 고르기', list: '가게 목록', map: '가게 지도' };
 const TAB_ICON: Record<Tab, string> = { roadmap: '🍱', list: '📋', map: '🗺️' };
 
 /**
@@ -540,8 +540,8 @@ export default function App() {
         <span>
           🏢{' '}
           {officeSource() === 'saved'
-            ? '정해 둔 회사 위치에서 잰 도보 시간이에요'
-            : '회사 위치를 아직 안 정했어요. 지도 탭에서 정해 주세요.'}
+            ? '회사에서 걸어가는 시간이에요'
+            : '회사 위치를 정하면 걸리는 시간을 알려 드려요.'}
         </span>
         <button type="button" className="linkish" onClick={() => goTab('map')}>
           {officeSource() === 'saved' ? '바꾸기' : '정하기'}
@@ -586,7 +586,7 @@ export default function App() {
       {votes.length > 0 && (
         <p className="ticket__guess">
           {winnersOf(votes, winner.id).length > 0
-            ? `🎯 ${winnersOf(votes, winner.id).join('·')} 님이 맞혔어요`
+            ? `🎯 ${winnersOf(votes, winner.id).join('·')}님이 맞혔어요`
             : `${votes.length}명이 예측했지만 아무도 못 맞혔어요`}
         </p>
       )}
@@ -608,7 +608,7 @@ export default function App() {
               여기로 결정
             </Button>
             {/* "여기로 결정" 의 설명이라 바로 밑에 둔다. 다시 하기 밑에 있으면 그 버튼 얘기로 읽혔다(10/14). */}
-            <p className="muted small">누르면 방문 기록이 남고, 1주 동안 후보에서 빠져요.</p>
+            <p className="muted small">누르면 방문 기록에 남고, 1주 동안 고를 가게에서 빠져요.</p>
             <Button block variant="secondary" onClick={spin} disabled={spinning}>
               다시 하기
             </Button>
@@ -760,7 +760,7 @@ export default function App() {
               <>
                 <Button onClick={() => goTab('map')}>
                   <span aria-hidden="true">🗺️ </span>
-                  {officeSource() === 'saved' ? '지도에서 가게 추가' : '회사 위치 정하기'}
+                  {officeSource() === 'saved' ? '지도에서 가게 넣기' : '회사 위치 정하기'}
                 </Button>
                 {/* 데모는 빈 상태로 시작한다. 둘러보기만 할 사람은 지어낸 예시를 깐다. */}
                 {import.meta.env.VITE_DEMO === '1' && (
@@ -796,7 +796,7 @@ export default function App() {
                   aria-haspopup="dialog"
                   onClick={() => setFiltersOpen(true)}
                 >
-                  <span className="today__summaryMain">후보 {result.candidates.length}곳</span>
+                  <span className="today__summaryMain">고를 가게 {result.candidates.length}곳</span>
                   {/* 카테고리는 바로 아래 칩이 보여 준다. 여기까지 쓰면 휴대폰에서 잘렸다(10/14). */}
                   <span className="today__summaryRest">
                     도보 {filters.maxWalkMin}분{filters.excludeRecent ? ' · 최근 1주 제외' : ''}
@@ -840,7 +840,7 @@ export default function App() {
                 {expanded ? (
                   <span className="stage__label">크게 보는 중</span>
                 ) : (
-                  weighted && <p className="muted small stage__hint">핀볼은 공이 많은 가게일수록 잘 걸려요</p>
+                  weighted && <p className="muted small stage__hint">핀볼은 공이 많을수록 뽑힐 확률이 높아요</p>
                 )}
                 <button
                   type="button"
@@ -862,8 +862,8 @@ export default function App() {
                 <div className="motion-note" role="note">
                   <p>
                     {motionOn
-                      ? '기기의 \u2018동작 줄이기\u2019가 켜져 있지만 이 앱에서는 연출을 보여 드려요.'
-                      : '기기의 \u2018동작 줄이기\u2019가 켜져 있어서 연출 없이 결과만 보여 드려요.'}
+                      ? '게임 연출을 켰어요. 기기의 \u2018동작 줄이기\u2019 설정과 다르게 움직여요.'
+                      : '기기의 \u2018동작 줄이기\u2019 설정에 따라 결과만 바로 보여 드려요.'}
                   </p>
                   <button type="button" className="motion-note__toggle" onClick={toggleMotion} disabled={spinning}>
                     {motionOn ? '연출 끄기' : '연출 켜기'}
@@ -901,7 +901,7 @@ export default function App() {
                         <Button onClick={() => goTab('list')}>목록에서 가게 켜기</Button>
                       ) : (
                         <Button onClick={() => goTab('map')}>
-                          <span aria-hidden="true">🗺️ </span>지도에서 가게 추가
+                          <span aria-hidden="true">🗺️ </span>지도에서 가게 넣기
                         </Button>
                       )
                     }
@@ -982,7 +982,7 @@ export default function App() {
                     <strong>{winner.name}</strong>
                     <span className="sr-only"> · </span>
                     <span className="result-bar__meta">
-                      도보 {winner.walkMin}분{confirmed ? ' · 오늘 점심으로 정했어요' : ''}
+                      도보 {winner.walkMin}분{confirmed ? ' · 오늘 점심은 여기예요' : ''}
                     </span>
                   </p>
                   <div className="result-bar__actions">
@@ -1006,8 +1006,8 @@ export default function App() {
                   disabled={spinning}
                 >
                   {spinning
-                    ? '진행 중'
-                    : `${decidedPlace ? '다시 ' : ''}${actionLabel(mode)} (후보 ${result.candidates.length}곳)`}
+                    ? '게임 중'
+                    : `${decidedPlace ? '다시 ' : ''}${actionLabel(mode)} (${result.candidates.length}곳 중에서)`}
                 </Button>
               )}
 
@@ -1028,7 +1028,7 @@ export default function App() {
             {wide && (
               <aside className="today__filters" aria-labelledby="filters-title">
                 <h2 id="filters-title" className="today__title">
-                  후보 <span className="today__count">{result.candidates.length}곳</span>
+                  고를 가게 <span className="today__count">{result.candidates.length}곳</span>
                 </h2>
                 {filtersPanel}
               </aside>
@@ -1040,7 +1040,7 @@ export default function App() {
       <Sheet
         open={filtersOpen && !wide && tab === 'roadmap'}
         onClose={() => setFiltersOpen(false)}
-        title={`후보 ${result.candidates.length}곳`}
+        title={`고를 가게 ${result.candidates.length}곳`}
         className="filters-sheet"
       >
         {filtersPanel}
