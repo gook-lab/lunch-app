@@ -760,11 +760,17 @@ export default function App() {
               </span>
             }
             title="아직 등록된 가게가 없어요"
-            lines={['지도 탭에서 회사 위치를 정하고', '첫 가게를 넣어 주세요. 5곳부터 게임이 돼요.']}
+            lines={
+              // 회사부터 정한다. 지도 탭도 그 전에는 가게 찾기를 숨긴다.
+              officeSource() === 'saved'
+                ? ['지도에서 첫 가게를 넣어 주세요.', '5곳부터 게임이 돼요.']
+                : ['먼저 회사 위치를 정하고', '첫 가게를 넣어 주세요. 5곳부터 게임이 돼요.']
+            }
             action={
               <>
                 <Button onClick={() => goTab('map')}>
-                  <span aria-hidden="true">🗺️ </span>지도에서 가게 추가
+                  <span aria-hidden="true">🗺️ </span>
+                  {officeSource() === 'saved' ? '지도에서 가게 추가' : '회사 위치 정하기'}
                 </Button>
                 {/* 데모는 빈 상태로 시작한다. 둘러보기만 할 사람은 지어낸 예시를 깐다. */}
                 {import.meta.env.VITE_DEMO === '1' && (
