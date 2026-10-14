@@ -11,7 +11,10 @@
  */
 import { initializeApp } from 'firebase/app';
 import {
-  getAuth,
+  initializeAuth,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
   signInAnonymously,
   onAuthStateChanged,
   connectAuthEmulator,
@@ -30,7 +33,16 @@ const config = {
 
 export const app = initializeApp(config);
 export const db = getFirestore(app);
-export const auth = getAuth(app);
+/**
+ * getAuth 대신 initializeAuth 로 popupRedirectResolver 를 뺀다. getAuth 는 팝업·리디렉트
+ * 로그인용 gapi(api.js·gapi_iframes 41KB)와 auth iframe(iframe.js 95KB)을 받고 그 iframe 을
+ * 띄운 뒤에야 signUp 을 보냈다 — Slow 4G·CPU 4배에서 firebase 청크가 끝나고 signUp 까지
+ * 1.1초가 비었다(10/15). 익명 로그인만 쓰니 리졸버가 필요 없다.
+ * 저장 위치(persistence)는 getAuth 기본값과 같게 둬, 이미 로그인한 기기의 uid 를 그대로 읽는다.
+ */
+export const auth = initializeAuth(app, {
+  persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence],
+});
 
 /**
  * 로컬 확인용 에뮬레이터. VITE_FIREBASE_EMULATOR=1 일 때만 붙는다.

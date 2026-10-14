@@ -131,13 +131,34 @@ export const PALETTES: Record<PinballTheme, Palette> = {
   },
 };
 
+/**
+ * 지금 보이는 세로 구간(판 좌표). 판은 1,700px 넘게 긴데 창은 440px 이라, 창 밖은 그리지 않는다.
+ * 매 프레임 판 전체의 그림자(shadowBlur 약 118번)를 그리던 것이 CPU 4·6배 휴대폰 흉내에서
+ * 핀볼만 프레임을 떨궜다(10/15). 범위 판단은 그림자 번짐까지 넉넉히 잡는 쪽이 한다.
+ */
+export interface ViewBand {
+  top: number;
+  bottom: number;
+}
+const WHOLE: ViewBand = { top: -Infinity, bottom: Infinity };
+export function inBand(v: ViewBand, y1: number, y2 = y1): boolean {
+  return y2 >= v.top && y1 <= v.bottom;
+}
+
 /** 판 장식에 쓰는 고정 무늬(별·잎). 판마다 같다. */
 const SPECKS = (() => {
   const r = seededRandom(20261012);
   return Array.from({ length: 140 }, () => ({ x: r() * COURSE_W, y: r() * FUNNEL_Y, s: r(), a: r() * Math.PI * 2 }));
 })();
 
-export function drawTable(ctx: CanvasRenderingContext2D, theme: PinballTheme, course: Course, now: number, still: boolean) {
+export function drawTable(
+  ctx: CanvasRenderingContext2D,
+  theme: PinballTheme,
+  course: Course,
+  now: number,
+  still: boolean,
+  view: ViewBand = WHOLE,
+) {
   const pal = PALETTES[theme];
   const g = ctx.createLinearGradient(0, 0, 0, BOARD_H);
   for (const [at, c] of pal.table) g.addColorStop(at, c);
@@ -148,6 +169,7 @@ export function drawTable(ctx: CanvasRenderingContext2D, theme: PinballTheme, co
   if (theme === 'space') {
     // 별. 반짝인다.
     for (const p of SPECKS) {
+      if (!inBand(view, p.y)) continue;
       const tw = still ? 0.6 : 0.45 + 0.4 * Math.sin(now / 400 + p.a * 3);
       ctx.fillStyle = `oklch(0.95 0.03 ${200 + p.s * 120} / ${tw * (0.4 + p.s * 0.6)})`;
       ctx.fillRect(p.x, p.y, 1 + p.s * 1.4, 1 + p.s * 1.4);
@@ -156,7 +178,7 @@ export function drawTable(ctx: CanvasRenderingContext2D, theme: PinballTheme, co
     // 잎. 판 가장자리에 많다.
     for (const p of SPECKS) {
       const edge = p.x < 30 || p.x > COURSE_W - 30;
-      if (!edge && p.s < 0.6) continue;
+      if ((!edge && p.s < 0.6) || !inBand(view, p.y - 12, p.y + 12)) continue;
       ctx.save();
       ctx.translate(p.x, p.y);
       ctx.rotate(p.a);
@@ -181,9 +203,9 @@ export function drawTable(ctx: CanvasRenderingContext2D, theme: PinballTheme, co
   }
   ctx.restore();
 
-  for (const z of course.zones) drawZone(ctx, z, theme, now, still);
-  for (const w of course.wells) drawWell(ctx, w, now, still);
-  for (const o of course.orbiters) drawOrbitTrack(ctx, o, theme);
+  for (const z of course.zones) if (inBand(view, z.y1, z.y2)) drawZone(ctx, z, theme, now, still);
+  for (const w of course.wells) if (inBand(view, w.y - w.r, w.y + w.r)) drawWell(ctx, w, now, still);
+  for (const o of course.orbiters) if (inBand(view, o.y - o.R - 9, o.y + o.R + 9)) drawOrbitTrack(ctx, o, theme);
 
   // 깔때기 — 아래를 가리키는 경고 화살표
   ctx.save();
@@ -207,7 +229,7 @@ export function drawTable(ctx: CanvasRenderingContext2D, theme: PinballTheme, co
   ctx.font = pal.labelFont;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  for (const l of course.labels) ctx.fillText(l.text, COURSE_W / 2, l.y);
+  for (const l of course.labels) if (inBand(view, l.y - 12, l.y + 12)) ctx.fillText(l.text, COURSE_W / 2, l.y);
   ctx.restore();
 
   // 바깥 테두리 레일. 카지노는 레일에 전구가 깜빡인다.
@@ -222,6 +244,7 @@ export function drawTable(ctx: CanvasRenderingContext2D, theme: PinballTheme, co
   ctx.stroke();
   if (theme === 'casino') {
     for (let y = 12, k = 0; y < FUNNEL_Y; y += 22, k += 1) {
+      if (!inBand(view, y)) continue;
       const on = still ? k % 2 === 0 : (k + Math.floor(now / 260)) % 2 === 0;
       ctx.fillStyle = on ? 'oklch(0.95 0.12 90)' : 'oklch(0.5 0.08 85)';
       ctx.shadowColor = 'oklch(0.95 0.15 90)';

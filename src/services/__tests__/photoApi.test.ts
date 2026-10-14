@@ -59,6 +59,15 @@ describe('/api/photo', () => {
     expect(r.body).toEqual({ thumb: null });
   });
 
+  it('카카오가 실패하면 없음과 구분해 retry 를 붙이고, CDN 은 10분만 기억한다', async () => {
+    vi.stubEnv('KAKAO_REST_KEY', 'k');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 429 })));
+    const r = await call('name=a&lat=37.5&lng=127');
+    expect(r.status).toBe(200);
+    expect(r.body).toEqual({ thumb: null, retry: true });
+    expect(r.headers['Cache-Control']).toBe('public, s-maxage=600');
+  });
+
   it('동 이름을 붙여 검색하고, 넷이 안 차면 다음 지역으로 이어 모으고, 결과는 30일 캐시한다', async () => {
     vi.stubEnv('KAKAO_REST_KEY', 'k');
     const f = vi

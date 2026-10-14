@@ -8,6 +8,7 @@
  * - REST 키는 서버에만 둔다(KAKAO_REST_KEY). 브라우저에 넣으면 누구나 꺼내 할당량을 쓴다.
  * - 원본 이미지 대신 카카오 CDN 썸네일을 준다. 블로그 원본은 다른 사이트에서 직접 불러오면 막힌다.
  * - 같은 가게는 CDN 이 30일 동안 기억한다. 사진이 없거나 키가 없으면 { thumb: null }.
+ *   카카오가 실패하면 { thumb: null, retry: true } — 없음과 달리 10분 뒤 다시 묻게 한다.
  */
 const KAKAO = 'https://dapi.kakao.com';
 const MAX_NAME = 40;
@@ -90,7 +91,9 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control', `public, s-maxage=${30 * DAY}, stale-while-revalidate=${DAY}`);
     res.status(200).json(photo ?? { thumb: null });
   } catch {
+    // 카카오가 잠깐 실패(쿼터·타임아웃)한 것이지 사진이 없는 게 아니다. retry 로 구분해 보내야
+    // 브라우저가 '없음' 으로 하루 기억하지 않고 10분 뒤 다시 묻는다. CDN 도 10분만 기억한다.
     res.setHeader('Cache-Control', 'public, s-maxage=600');
-    res.status(200).json({ thumb: null });
+    res.status(200).json({ thumb: null, retry: true });
   }
 }

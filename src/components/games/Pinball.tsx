@@ -44,6 +44,7 @@ import {
   drawSpinner,
   drawTable,
   drawWall,
+  inBand,
 } from './pinballDraw';
 import { prefersReducedMotion, type GameProps } from './types';
 import { sfx } from '../../lib/sfx';
@@ -52,6 +53,14 @@ import { FRAME_MS, SLOW_RATE, frameAtMs, timingFor, type Timing } from '../../li
 /** 캔버스 = 코스 창 + 오른쪽 패널(미니맵, 순위판). */
 const PANEL_W = 112;
 const CANVAS_W = COURSE_W + PANEL_W;
+/** 창 위아래로 더 그리는 여유(판 좌표). 창 밖에 있어도 그림자가 창 안으로 번지는 것까지 덮는다. */
+const VIEW_PAD = 40;
+/**
+ * 화면 배율 상한. 핀볼은 그림자가 많은 캔버스를 매 프레임 통째로 다시 그려 픽셀 수가 곧 비용이다.
+ * Pixel 7(2.625배)은 840×1155 를 그려 CPU 6배 흉내에서 프레임 10~22% 가 50ms 를 넘었고,
+ * 2배(640×880)면 0.5% 였다(10/15). 2배 위로는 눈에 띄는 차이가 적어 여기서 자른다.
+ */
+const MAX_BASE_DPR = 2;
 /** 화면에 보이는 코스 높이. 판(BOARD_H)은 이보다 길어서 카메라가 따라 내려간다. */
 const VIEW_H = 440;
 /**
@@ -429,7 +438,7 @@ export function Pinball({
     const reducedNow = prefersReducedMotion();
     // 크게 보기면 캔버스가 화면에서 두 배 넘게 늘어난다. 그만큼 해상도를 올려야 흐리지 않다.
     const shown = canvas.clientWidth || CANVAS_W;
-    const dpr = Math.min((window.devicePixelRatio || 1) * Math.max(1, shown / CANVAS_W), 4);
+    const dpr = Math.min(Math.min(window.devicePixelRatio || 1, MAX_BASE_DPR) * Math.max(1, shown / CANVAS_W), 4);
     // 크기가 같으면 다시 넣지 않는다. 넣을 때마다 캔버스가 통째로 다시 잡힌다.
     const w = Math.round(CANVAS_W * dpr);
     const h = Math.round(viewH * dpr);
@@ -481,11 +490,19 @@ export function Pinball({
     ctx.clip();
     ctx.translate(0, -cam);
 
-    drawTable(ctx, theme, course, now, reducedNow);
-    course.portals.forEach((pt, k) => drawPortal(ctx, pt, k, now, reducedNow));
-    for (const wl of course.walls) drawWall(ctx, wl, frame, theme);
-    for (const sp of course.spinners) drawSpinner(ctx, spinnerEnds(sp, step), sp.x, sp.y, theme);
-    for (const o of course.orbiters) drawOrbiter(ctx, o, step, theme, touching);
+    // 창 밖은 그리지 않는다(pinballDraw ViewBand). 여유 40 은 가장 큰 그림자 번짐(22)과 범퍼 반지름을 덮는다.
+    const view = { top: cam - VIEW_PAD, bottom: cam + viewH + VIEW_PAD };
+    drawTable(ctx, theme, course, now, reducedNow, view);
+    course.portals.forEach((pt, k) => {
+      if (inBand(view, pt.from.y - pt.r - 4, pt.from.y + pt.r + 4) || inBand(view, pt.to.y - 9, pt.to.y + 9))
+        drawPortal(ctx, pt, k, now, reducedNow);
+    });
+    for (const wl of course.walls)
+      if (inBand(view, Math.min(wl.y1, wl.y2), Math.max(wl.y1, wl.y2))) drawWall(ctx, wl, frame, theme);
+    for (const sp of course.spinners)
+      if (inBand(view, sp.y - sp.half, sp.y + sp.half)) drawSpinner(ctx, spinnerEnds(sp, step), sp.x, sp.y, theme);
+    for (const o of course.orbiters)
+      if (inBand(view, o.y - o.R - o.r, o.y + o.R + o.r)) drawOrbiter(ctx, o, step, theme, touching);
     // 구슬이 새로 닿은 범퍼·핀만 소리를 낸다(닿아 있는 동안 매 프레임 울리지 않게).
     const touchedNow = new Set<number>();
     course.pegs.forEach((peg, k) => {
@@ -497,6 +514,8 @@ export function Pinball({
           else sfx('peg', clamp(peg.y / BOARD_H, 0, 1));
         }
       }
+      // 소리는 창 밖이어도 낸다. 그리기만 건너뛴다.
+      if (!inBand(view, peg.y - peg.r, peg.y + peg.r)) return;
       if (peg.bumper) drawBumper(ctx, peg.x, peg.y, peg.r, hit, theme);
       else drawPost(ctx, peg.x, peg.y, peg.r, hit, theme);
     });
@@ -524,7 +543,7 @@ export function Pinball({
         const past = at(framePos - k * TRAIL_STEP * (slowMo ? SLOW_RATE : 1));
         if (!past) continue;
         past.forEach((m, i) => {
-          if (m.y >= FINISH_Y) return;
+          if (m.y >= FINISH_Y || !inBand(view, m.y)) return;
           ctx.beginPath();
           ctx.arc(m.x, m.y, MARBLE_R * (1 - k / (TRAIL + 2)), 0, Math.PI * 2);
           const dim = follow !== null && marbles[i] !== follow ? FOLLOW_DIM : 1;
@@ -550,7 +569,7 @@ export function Pinball({
     const followed = lead !== null;
     const dimOthers = follow !== null ? FOLLOW_DIM : 1;
     positions.forEach((m, i) => {
-      if (marbles[i] === follow) return;
+      if (marbles[i] === follow || !inBand(view, m.y)) return;
       ctx.save();
       ctx.globalAlpha = dimOthers;
       drawMarble(ctx, m.x, m.y, marbles[i]);
