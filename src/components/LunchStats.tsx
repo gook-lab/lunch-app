@@ -2,6 +2,7 @@
  * 이번 달 점심 통계와 뱃지 — 목록 탭 좌측 패널 (공정성 무관).
  */
 import { calculateStats } from '../lib/stats';
+import { GAME_MODES, MODE_ICON, type GameMode } from './games/types';
 import type { Place, Visit } from '../lib/candidates';
 import type { DayId } from '../lib/date';
 
@@ -65,6 +66,22 @@ export function LunchStats({ places, visits, today }: Props) {
                 <span className="stats__topBar" aria-hidden="true">
                   <span className="stats__topFill" style={{ width: `${(count / maxCount) * 100}%` }} />
                 </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* 자주 쓴 게임 — 게임을 남기기 시작한 10/14 이후 기록만 있다. 없으면 줄을 안 그린다. */}
+      {stats.topGames.length > 0 && (
+        <div className="stats__games">
+          <h3 className="stats__subheading">자주 쓴 게임</h3>
+          <ul className="stats__gameList">
+            {stats.topGames.map(({ mode, count }) => (
+              <li key={mode} className="stats__game">
+                <span aria-hidden="true">{MODE_ICON[mode as GameMode] ?? '🎮'} </span>
+                {GAME_MODES.find((m) => m.id === mode)?.label ?? mode}
+                <span className="stats__gameCount">{count}번</span>
               </li>
             ))}
           </ul>

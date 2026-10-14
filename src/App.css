@@ -2199,6 +2199,8 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 
 /* 목록 두 칸 묶음 — 휴대폰에선 위에서 아래로 쌓는다. */
 .lt { display: grid; gap: var(--space-4); }
+/* 휴대폰에선 가게 목록을 먼저. 이번 달 기록·최근 다녀온 곳이 위에 있어 목록이 한참 아래였다(10/14). 데스크톱은 칸 위치를 따로 정한다. */
+.lt__side { order: 1; }
 .lt__main { display: grid; gap: var(--space-6); min-width: 0; }
 /* "꺼 둔 가게" 펼치기 줄 전체를 44px 높이로 누르게. */
 .list__group--off > summary { min-height: 44px; display: flex; align-items: center; gap: var(--space-2); }
@@ -3397,3 +3399,17 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 [data-theme='dark'] .stage--full .stage__board:has(> .pinball) {
   background: var(--color-bg);
 }
+
+/* 이번 달 기록 — 자주 쓴 게임 */
+.stats__gameList { display: flex; flex-wrap: wrap; gap: var(--space-1); margin: 0; padding: 0; list-style: none; }
+.stats__game {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-neutral-400);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.stats__gameCount { color: var(--color-neutral-700); font-weight: 500; }

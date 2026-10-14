@@ -67,7 +67,10 @@ export async function fetchRecentVisits(today: DayId): Promise<Visit[]> {
       where(documentId(), '<=', today),
     ),
   );
-  return snap.docs.map((d) => ({ id: d.id, placeId: (d.data() as { placeId: string }).placeId }));
+  return snap.docs.map((d) => {
+    const data = d.data() as { placeId: string; mode?: string };
+    return data.mode ? { id: d.id, placeId: data.placeId, mode: data.mode } : { id: d.id, placeId: data.placeId };
+  });
 }
 
 
@@ -111,9 +114,10 @@ export function subscribeToday(
  * 오늘의 결정을 쓴다. 같은 날 다시 쓰면 덮어쓴다 — 재결정 확인은 화면이 한다.
  * decidedAt 은 서버 시각이다. 규칙이 request.time 과 같은지 검사한다.
  */
-export async function decideToday(today: DayId, placeId: string): Promise<void> {
+export async function decideToday(today: DayId, placeId: string, mode?: string): Promise<void> {
   await authReady;
-  await setDoc(doc(visits(), today), { placeId, decidedAt: serverTimestamp() });
+  // mode 는 어떤 게임으로 뽑았는지 — 이번 달 기록의 "자주 쓴 게임" 에만 쓴다.
+  await setDoc(doc(visits(), today), { placeId, decidedAt: serverTimestamp(), ...(mode ? { mode } : {}) });
 }
 
 /**

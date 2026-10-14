@@ -109,8 +109,11 @@ service cloud.firestore {
       // decidedAt 을 서버 시각으로 못 박아 클라이언트가 임의 시각을 쓰지 못하게 한다.
       allow create, update: if signedIn()
         && isTodayKST(dayId)
-        && request.resource.data.keys().hasOnly(['placeId', 'decidedAt'])
+        && request.resource.data.keys().hasOnly(['placeId', 'decidedAt', 'mode'])
         && request.resource.data.keys().hasAll(['placeId', 'decidedAt'])
+        // 어떤 게임으로 뽑았는지(선택). 이번 달 기록에만 쓴다.
+        && (!('mode' in request.resource.data)
+            || (request.resource.data.mode is string && request.resource.data.mode.size() <= 16))
         && request.resource.data.placeId is string
         && request.resource.data.placeId.size() > 0
         && request.resource.data.placeId.size() <= 64

@@ -41,13 +41,13 @@ import {
   actionLabel,
   RESULT_DELAY_MS,
   GAME_MODES,
+  MODE_ICON,
   motionForced,
   prefersReducedMotion,
   setForceMotion,
   systemReducesMotion,
   type GameMode,
 } from './components/games/types';
-import { PlaceList } from './components/PlaceList';
 import { Roadmap } from './components/Roadmap';
 import { useTodayKST } from './hooks/useTodayKST';
 import { useLunchData } from './hooks/useLunchData';
@@ -59,7 +59,7 @@ import { emptyMessage, noticeMessage } from './lib/messages';
 import { decideToday } from './services/lunch';
 import { DemoNote } from './components/DemoNote';
 import { categoryLabel } from './lib/category';
-import { Settings } from './components/Settings';
+import { PlaceList, Settings } from './components/deferred';
 import { GameBoundary } from './components/games/GameBoundary';
 import { DevHostNote, isDevHost } from './components/DevHostNote';
 import { Tour, tourSeen } from './components/Tour';
@@ -90,21 +90,6 @@ const TAB_TITLE: Record<Tab, string> = {
   map: '우리 도보권',
 };
 
-/** 방식 단추 그림. 글자 이름은 그대로 두고 그림은 보조로만 쓴다. */
-const MODE_ICON: Record<GameMode, string> = {
-  wheel: '🎡',
-  ladder: '🪜',
-  slot: '🎰',
-  pinball: '🎱',
-  cards: '🃏',
-  memory: '🧩',
-  tournament: '🏆',
-  gacha: '🎁',
-  plinko: '🔻',
-  dice: '🎲',
-  horse: '🏇',
-  racing: '🏎️',
-};
 
 const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
 /** "20261008" 을 "10월 8일 목요일" 로. */
@@ -442,7 +427,7 @@ export default function App() {
       setSaving(true);
       setSaveProblem(false);
       try {
-        await decideToday(today, place.id);
+        await decideToday(today, place.id, mode);
         setConfirming(null);
       } catch {
         // 실패하면 스피너만 멈추고 아무 말이 없었다. 결정된 줄 알고 밥 먹으러 간다.
@@ -452,7 +437,7 @@ export default function App() {
         setSaving(false);
       }
     },
-    [today],
+    [today, mode],
   );
 
   const onDecide = useCallback(

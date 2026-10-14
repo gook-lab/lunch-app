@@ -54,6 +54,8 @@ export interface Visit {
   /** 'YYYYMMDD' (KST). 하루 한 건. */
   id: DayId;
   placeId: string;
+  /** 어떤 게임으로 뽑았는지. 10/14 부터 남긴다 — 그 전 기록엔 없다. 후보 산출은 보지 않는다. */
+  mode?: string;
 }
 
 export interface Filters {

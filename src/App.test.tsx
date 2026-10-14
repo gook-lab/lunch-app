@@ -372,7 +372,7 @@ describe('여기로 결정', () => {
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: '여기로 결정' })); });
 
     expect(decideToday).toHaveBeenCalledTimes(1);
-    expect(decideToday).toHaveBeenCalledWith('20261008', 'a');
+    expect(decideToday).toHaveBeenCalledWith('20261008', 'a', 'wheel');
   });
 
   it('같은 순간 두 번 눌러도 기록은 한 번만 쓴다', async () => {
@@ -397,7 +397,7 @@ describe('여기로 결정', () => {
     expect(screen.getByText('나집에서 가집으로 바꿀까요?')).toBeTruthy();
 
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: '바꾸기' })); });
-    expect(decideToday).toHaveBeenCalledWith('20261008', 'a');
+    expect(decideToday).toHaveBeenCalledWith('20261008', 'a', 'wheel');
   });
 });
 

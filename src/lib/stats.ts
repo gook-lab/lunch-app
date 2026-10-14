@@ -17,6 +17,8 @@ export interface MonthlyStats {
   totalCount: number;
   topPlaces: { place: Place; count: number }[];
   categoryCount: Record<string, number>;
+  /** 어떤 게임으로 몇 번 뽑았는지. 게임이 기록된 방문만 센다(10/14 부터). 많은 순. */
+  topGames: { mode: string; count: number }[];
   newPlaceCount: number;
   badges: BadgeStatus[];
 }
@@ -291,10 +293,18 @@ export function calculateStats(
     target: 10,
   });
 
+  const gameCount = new Map<string, number>();
+  for (const v of thisMonth) if (v.mode) gameCount.set(v.mode, (gameCount.get(v.mode) ?? 0) + 1);
+  const topGames = [...gameCount]
+    .map(([mode, count]) => ({ mode, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3);
+
   return {
     totalCount,
     topPlaces,
     categoryCount,
+    topGames,
     newPlaceCount,
     badges,
   };

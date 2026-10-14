@@ -164,16 +164,16 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
     () => places.filter((p) => p.active || showOff).map((p) => ({ ...p, active: true })),
     [places, showOff],
   );
-  const pickMapCats = (next: { categories: string[]; subs: string[] }) => {
-    setMapCats(next);
-    // 고른 가게 핀이 숨으면 정보 카드만 덩그러니 남는다.
-    if (selected && !matchesCategory(selected, next)) setSelectedId(null);
-  };
 
   const selected = useMemo(
     () => places.find((p) => p.id === selectedId) ?? null,
     [places, selectedId],
   );
+  const pickMapCats = (next: { categories: string[]; subs: string[] }) => {
+    setMapCats(next);
+    // 고른 가게 핀이 숨으면 정보 카드만 덩그러니 남는다.
+    if (selected && !matchesCategory(selected, next)) setSelectedId(null);
+  };
 
   const retry = useCallback(() => {
     // 기억한 실패를 여기서만 지운다. 탭 진입은 요청을 다시 내지 않는다.
@@ -453,9 +453,8 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
     setTapMenu(null);
   }, []);
   const closeTapMenuRef = useRef(closeTapMenu);
-  closeTapMenuRef.current = closeTapMenu;
 
-  openTapMenuRef.current = (at: Coord, px: number, py: number) => {
+  const openTapMenu = (at: Coord, px: number, py: number) => {
     const maps = mapsRef.current;
     const map = mapRef.current;
     if (!maps || !map) return;
@@ -495,6 +494,11 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       { location: position, radius: TAP_RADIUS_M, sort: 'distance' },
     );
   };
+  // 지도 이벤트 리스너는 한 번만 걸고, 늘 최신 함수를 부르도록 ref 로 넘긴다. 렌더 중엔 ref 를 바꾸지 않는다.
+  useEffect(() => {
+    closeTapMenuRef.current = closeTapMenu;
+    openTapMenuRef.current = openTapMenu;
+  });
 
   // 메뉴가 떠 있으면 Esc 로 닫는다.
   useEffect(() => {

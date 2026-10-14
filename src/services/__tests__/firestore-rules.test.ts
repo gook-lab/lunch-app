@@ -276,6 +276,12 @@ d('firestore.rules', () => {
         setDoc(doc(db(ALICE), `visits/${TODAY}`), { ...decision, decidedBy: '윤성국' }),
       );
     });
+
+    it('어떤 게임으로 뽑았는지(mode)는 남길 수 있고, 문자열 16자까지', async () => {
+      await assertSucceeds(setDoc(doc(db(ALICE), `visits/${TODAY}`), { ...decision, mode: 'pinball' }));
+      await assertFails(setDoc(doc(db(ALICE), `visits/${TODAY}`), { ...decision, mode: 'x'.repeat(17) }));
+      await assertFails(setDoc(doc(db(ALICE), `visits/${TODAY}`), { ...decision, mode: 3 }));
+    });
   });
 
   describe('predictions — 동료 예측', () => {

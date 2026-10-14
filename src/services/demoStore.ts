@@ -18,6 +18,8 @@ export interface DemoState {
   places: Place[];
   /** 날짜(YYYYMMDD) → 그날 정한 가게. */
   visits: Record<DayId, string>;
+  /** 날짜 → 그날 뽑은 게임. 예전 저장분에는 없을 수 있다. */
+  modes?: Record<DayId, string>;
   office: { lat: number; lng: number } | null;
   /** 날짜 → 그날 예측 표. */
   votes: Record<DayId, Vote[]>;

@@ -24,7 +24,10 @@ export async function fetchRecentVisits(today: DayId): Promise<Visit[]> {
   const from = dayIdBefore(today, VISIT_HISTORY_DAYS);
   return Object.entries(readDemo().visits)
     .filter(([id]) => id >= from && id <= today)
-    .map(([id, placeId]) => ({ id, placeId }));
+    .map(([id, placeId]) => {
+      const mode = readDemo().modes?.[id];
+      return mode ? { id, placeId, mode } : { id, placeId };
+    });
 }
 
 export function subscribeToday(
@@ -40,9 +43,13 @@ export function subscribeToday(
   return onDemoChange(emit);
 }
 
-export async function decideToday(today: DayId, placeId: string): Promise<void> {
+export async function decideToday(today: DayId, placeId: string, mode?: string): Promise<void> {
   await tick();
-  writeDemo((s) => ({ ...s, visits: { ...s.visits, [today]: placeId } }));
+  writeDemo((s) => ({
+    ...s,
+    visits: { ...s.visits, [today]: placeId },
+    modes: mode ? { ...s.modes, [today]: mode } : s.modes,
+  }));
 }
 
 export async function addPlace(input: Omit<Place, 'id' | 'createdBy'>): Promise<{ added: boolean; id?: string }> {

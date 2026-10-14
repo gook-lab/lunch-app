@@ -17,7 +17,8 @@ export const fetchPlaces = async (): Promise<Place[]> => (await impl()).fetchPla
 export const fetchOffice = async () => (await impl()).fetchOffice();
 export const saveOffice = async (coord: { lat: number; lng: number }) => (await impl()).saveOffice(coord);
 export const fetchRecentVisits = async (today: DayId): Promise<Visit[]> => (await impl()).fetchRecentVisits(today);
-export const decideToday = async (today: DayId, placeId: string) => (await impl()).decideToday(today, placeId);
+export const decideToday = async (today: DayId, placeId: string, mode?: string) =>
+  (await impl()).decideToday(today, placeId, mode);
 export const addPlace = async (input: Omit<Place, 'id' | 'createdBy'>) => (await impl()).addPlace(input);
 export const updatePlace = async (id: string, patch: Parameters<typeof import('./lunch.firebase').updatePlace>[1]) =>
   (await impl()).updatePlace(id, patch);

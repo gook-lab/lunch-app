@@ -54,6 +54,22 @@ export const GAME_MODES: { id: GameMode; label: string; action: string }[] = [
   { id: 'racing', label: '레이싱', action: '출발하기' },
 ];
 
+/** 방식 단추 그림. 글자 이름은 그대로 두고 그림은 보조로만 쓴다. */
+export const MODE_ICON: Record<GameMode, string> = {
+  wheel: '🎡',
+  ladder: '🪜',
+  slot: '🎰',
+  pinball: '🎱',
+  cards: '🃏',
+  memory: '🧩',
+  tournament: '🏆',
+  gacha: '🎁',
+  plinko: '🔻',
+  dice: '🎲',
+  horse: '🏇',
+  racing: '🏎️',
+};
+
 export function actionLabel(mode: GameMode): string {
   return GAME_MODES.find((m) => m.id === mode)?.action ?? '돌리기';
 }

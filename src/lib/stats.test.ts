@@ -27,6 +27,23 @@ function visit(dayId: string, placeId: string): Visit {
 }
 
 describe('calculateStats', () => {
+  describe('자주 쓴 게임', () => {
+    it('이번 달 게임이 남은 방문만 많은 순으로 세고, 게임이 없는 예전 기록은 뺀다', () => {
+      const p1 = place('p1', '가게1', '밥');
+      const visits: Visit[] = [
+        { id: '20260930' as any, placeId: 'p1', mode: 'wheel' }, // 지난 달
+        { id: '20261001' as any, placeId: 'p1', mode: 'pinball' },
+        { id: '20261002' as any, placeId: 'p1', mode: 'wheel' },
+        { id: '20261005' as any, placeId: 'p1', mode: 'pinball' },
+        visit('20261006', 'p1'), // 게임 기록 전
+      ];
+      expect(calculateStats(visits, [p1], '20261013').topGames).toEqual([
+        { mode: 'pinball', count: 2 },
+        { mode: 'wheel', count: 1 },
+      ]);
+    });
+  });
+
   describe('empty visits', () => {
     it('빈 기록이면 모든 통계가 0', () => {
       const stats = calculateStats([], [], '20261013');

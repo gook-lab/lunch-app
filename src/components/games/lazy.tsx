@@ -16,7 +16,8 @@ export interface LazyGame<P> {
   preload: () => Promise<void>;
 }
 
-export function lazyGame<P extends object>(load: Loader<P>): LazyGame<P> {
+/** fallback 은 받는 동안 그릴 것. 없으면 게임 자리 표시(빈 판)다. */
+export function lazyGame<P extends object>(load: Loader<P>, fallback?: () => React.JSX.Element): LazyGame<P> {
   let Comp: ComponentType<P> | null = null;
   let pending: Promise<void> | null = null;
   const preload = () =>
@@ -34,6 +35,7 @@ export function lazyGame<P extends object>(load: Loader<P>): LazyGame<P> {
       };
     }, []);
     if (Comp) return <Comp {...props} />;
+    if (fallback) return fallback();
     return <div className="game-loading" aria-busy="true" aria-label="게임을 준비하고 있어요" />;
   }
   Lazy.preload = preload;
