@@ -28,7 +28,7 @@ const rows = (c: HTMLElement) => c.querySelectorAll('li').length;
 describe('사진 줄 자리 잡기', () => {
   it('사진 없는 가게에서 아직 모르는 가게로 바꾸면 그 가게 몫의 자리를 새로 잡는다', async () => {
     // A 는 "사진 없음" 으로 기억돼 있다.
-    localStorage.setItem('lunch-app:photo4:A:A', JSON.stringify({ at: Date.now(), photo: null }));
+    localStorage.setItem('lunch-app:photo5:A:A', JSON.stringify({ at: Date.now(), photo: null }));
     const r = render(<PlacePhotoStrip place={place('A')} />);
     expect(rows(r.container)).toBe(0);
 

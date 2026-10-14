@@ -99,4 +99,18 @@ describe('/api/photo', () => {
     expect(r.body).toEqual({ thumb: 'https://t', source: 'S', photos: ['https://t', 'https://u'] });
     expect(r.headers['Cache-Control']).toContain('s-maxage=2592000');
   });
+  it('결과가 한두 건뿐인 지역 검색은 뒤로 미룬다 — 엉뚱한 한 장이 대표가 되지 않게', async () => {
+    vi.stubEnv('KAKAO_REST_KEY', 'k');
+    const docs = (...ids: string[]) => new Response(JSON.stringify({ documents: ids.map((id) => ({ thumbnail_url: `https://${id}` })) }));
+    const f = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ documents: [{ region_type: 'H', region_2depth_name: '서대문구', region_3depth_name: '신촌동' }] })),
+      )
+      .mockResolvedValueOnce(docs('pizza'))
+      .mockResolvedValueOnce(docs('m1', 'm2', 'm3', 'm4'));
+    vi.stubGlobal('fetch', f);
+    const r = await call('name=%EC%9C%A1%EC%8C%88&lat=37.5&lng=127');
+    expect(r.body).toMatchObject({ thumb: 'https://m1', photos: ['https://m1', 'https://m2', 'https://m3', 'https://m4'] });
+  });
 });

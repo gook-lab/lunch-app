@@ -33,6 +33,12 @@ export function photoQueries(name, regions) {
   return [...new Set(near)];
 }
 
+/**
+ * 결과가 이보다 적은 지역 검색은 뒤로 미룬다. 검색 엔진이 가게와 상관없는 글을 겨우 한두 개 걸러 온
+ * 것일 때가 많다 — "육쌈냉면 이대점 신촌동" 은 1건이었고 그 한 장(같은 블로그의 피자 사진)이 대표가 됐다(10/15).
+ */
+export const MIN_HITS = 3;
+
 /** 썸네일이 있는 결과 앞에서부터 최대 넷. 첫 장이 대표 사진이다. 이미지 검색은 정확도 순이다. */
 export const MAX_PHOTOS = 4;
 export function pickPhoto(documents) {
@@ -78,11 +84,15 @@ export default async function handler(req, res) {
     const near = photoQueries(name, regions);
     const nameOnly = near.at(-1) === name ? near.pop() : null;
     const docs = [];
+    const thin = [];
     for (const query of near) {
       const found = await kakao(`/v2/search/image?query=${encodeURIComponent(query)}&sort=accuracy&size=8`, key);
-      docs.push(...(found.documents ?? []));
+      const list = found.documents ?? [];
+      if (list.length < MIN_HITS) thin.push(...list);
+      else docs.push(...list);
       if ((pickPhoto(docs)?.photos.length ?? 0) >= MAX_PHOTOS) break;
     }
+    docs.push(...thin);
     if (!pickPhoto(docs) && nameOnly) {
       const found = await kakao(`/v2/search/image?query=${encodeURIComponent(nameOnly)}&sort=accuracy&size=8`, key);
       docs.push(...(found.documents ?? []));
