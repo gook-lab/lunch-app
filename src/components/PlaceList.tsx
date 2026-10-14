@@ -23,6 +23,7 @@ import { walkMinutesBetween } from '../lib/walk';
 import { updatePlace } from '../services/lunch';
 import type { RatingSummary } from '../lib/ratings';
 import { RatingBadge, RatingEditor, RatingReviews } from './Rating';
+import { RemovePlaceSheet } from './RemovePlace';
 
 interface Props {
   places: Place[];
@@ -222,6 +223,7 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
   const [editing, setEditing] = useState<string | null>(null);
   // 별점 칸을 연 가게. 고치기와 같은 자리에 펼친다.
   const [rating, setRating] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<Place | null>(null);
   // 가까운 순(기본) 또는 별점 순. 별점이 없는 가게는 별점 순에서 맨 뒤로.
   const [sortBy, setSortBy] = useState<'walk' | 'rating'>('walk');
   const [busy, setBusy] = useState<string | null>(null);
@@ -323,9 +325,10 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
                 },
                 {
                   label: place.active ? '끄기' : '켜기',
-                  tone: place.active ? 'danger' : 'default',
                   onSelect: () => void toggle(place),
                 },
+                // 끄기는 잠깐 빼기(되돌리기 쉬움), 지우기는 목록에서도 없애기. 위험한 쪽만 빨갛게.
+                { label: '지우기', tone: 'danger', onSelect: () => setRemoving(place) },
               ]}
             />
           </div>
@@ -411,6 +414,7 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
           </details>
         )}
       </div>
+      <RemovePlaceSheet place={removing} onClose={() => setRemoving(null)} onDone={onChanged} />
     </div>
   );
 }

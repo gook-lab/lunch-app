@@ -85,7 +85,8 @@ export function useLunchData(day: DayId): LunchData {
         if (!alive) return;
         setOfficeOverride(office);
         setOfficeKey(office ? `${office.lat},${office.lng}` : 'env');
-        setPlaces(p.map((x) => withMenu(withCurrentWalk(x))));
+        // 지운 가게는 화면 어디에도 안 보인다. 방문 기록은 남아 있어도 이름 대신 빠진다.
+        setPlaces(p.filter((x) => !x.removed).map((x) => withMenu(withCurrentWalk(x))));
         setHistory(v);
         setState('ready');
       })

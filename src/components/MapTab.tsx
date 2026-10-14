@@ -15,6 +15,7 @@ import { ChipPicker } from './ChipPicker';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Checkbox, Input, Textarea } from '@gook-lab/ui';
 import { PRICE_BANDS, WALK_STEPS, type Place, type PriceBand } from '../lib/candidates';
+import { kakaoPlaceUrl } from '../lib/directions';
 import { DirectionsLink } from './DirectionsLink';
 import { CATEGORIES, categoryIcon, categoryLabel } from '../lib/category';
 import { CategoryChips } from './CategoryChips';
@@ -23,12 +24,13 @@ import { CategoryPicker } from './CategoryPicker';
 import { metersForWalkMinutes, officeCoord, officeSource, type Coord } from '../lib/walk';
 import { OfficeCard } from './map/OfficeCard';
 import { SearchField } from './map/SearchField';
+import { RemovePlaceSheet } from './RemovePlace';
 import { pinElement } from './map/pin';
 import type { RatingSummary } from '../lib/ratings';
 import { RatingBadge, RatingEditor, RatingReviews } from './Rating';
 import { clearKakaoLoadFailure, KakaoLoadError, kakaoJsKey, loadKakaoMaps } from '../services/kakao';
 import { updatePlace } from '../services/lunch';
-import type { KakaoCustomOverlay, KakaoMap, KakaoMaps, KakaoMarker, KakaoPlace } from '../types/kakao';
+import type { KakaoCustomOverlay, KakaoMap, KakaoMarkerClusterer, KakaoMaps, KakaoMarker, KakaoPlace } from '../types/kakao';
 import { PlaceForm, type PlaceDraft } from './map/PlaceForm';
 import { MapAddMenu } from './map/MapAddMenu';
 import { nearbyHits, TAP_RADIUS_M, type NearbyHit } from './map/nearbyHits';
@@ -48,6 +50,8 @@ interface Props {
   onOfficeChanged: () => void;
   /** 오늘 정한 가게. 지도 핀에 "오늘" 표시를 단다. */
   todayId?: string | null;
+  /** 최근 1주에 다녀온 가게. 핀을 흐리게 그린다. */
+  recentIds?: ReadonlySet<string>;
   /** 목록에서 "지도" 를 눌러 들어왔으면 그 가게. 처음 한 번 그 핀으로 간다. */
   focusId?: string | null;
   /** 가게별 별점 요약. 핀·카드·옆 목록에 평균을 단다. */
@@ -56,6 +60,8 @@ interface Props {
 
 /** 이 배율보다 멀리 보면 핀에서 이름을 빼고 그림만 남긴다. 이름끼리 겹친다. */
 const LABEL_MAX_LEVEL = 5;
+/** 이 레벨부터(더 멀리 보면) 몰린 핀을 묶는다. */
+const CLUSTER_MIN_LEVEL = 4;
 
 interface Pin {
   overlay: KakaoCustomOverlay;
@@ -101,7 +107,7 @@ function troubleOf(error: unknown): Trouble {
   };
 }
 
-export default function MapTab({ places, onChanged, onOfficeChanged, todayId = null, focusId = null, ratings }: Props) {
+export default function MapTab({ places, onChanged, onOfficeChanged, todayId = null, recentIds, focusId = null, ratings }: Props) {
   const [phase, setPhase] = useState<Phase>('loading');
   const [trouble, setTrouble] = useState<Trouble | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -138,6 +144,8 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
   const mapRef = useRef<KakaoMap | null>(null);
   // 회사 위치를 지도에서 찍는 중이면, 짧게 누른 자리를 이 함수로 넘긴다.
   const pickRef = useRef<((coord: Coord) => void) | null>(null);
+  const clustererRef = useRef<KakaoMarkerClusterer | null>(null);
+  const [removing, setRemoving] = useState<Place | null>(null);
   const officePinRef = useRef<{ setMap: (map: KakaoMap | null) => void } | null>(null);
   // 회사를 아직 안 정했으면 OfficeCard 가 여기에 "누른 자리를 회사 후보로" 를 걸어 둔다.
   /** 회사 후보 자리에 "새 회사" 핀을 꽂는다. 찾기로 고른 자리면 지도를 그리로 옮긴다. */
@@ -220,6 +228,42 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
         const map = new maps.Map(el, { center, level: 4 });
         mapsRef.current = maps;
         mapRef.current = map;
+        // 가게가 몰린 동네(대학가 등)는 핀이 서로 덮였다. 가까이(레벨 3 이하) 보면 다 펼치고,
+        // 그보다 멀면 50px 안 세 곳 이상을 "N곳" 하나로 묶는다. 누르면 그 자리로 확대한다.
+        // 동그라미 모양은 카카오가 인라인 스타일로만 받는다 — 지도 위라 테마와 상관없이 어두운 색.
+        clustererRef.current = maps.MarkerClusterer
+          ? new maps.MarkerClusterer({
+              map,
+              averageCenter: true,
+              minLevel: CLUSTER_MIN_LEVEL,
+              gridSize: 50,
+              minClusterSize: 3,
+              texts: (count) => `${count}곳`,
+              calculator: [1000],
+              styles: [
+                {
+                  minWidth: '44px',
+                  height: '32px',
+                  padding: '0 10px',
+                  lineHeight: '28px',
+                  borderRadius: '999px',
+                  border: '2px solid #ffffff',
+                  background: '#1f1f1f',
+                  color: '#ffffff',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  textAlign: 'center',
+                  boxShadow: '0 2px 6px rgba(0,0,0,.3)',
+                },
+              ],
+            })
+          : null;
+        // 묶음 동그라미가 회사 표시·도보 원 라벨 밑에 깔려 "6곳" 이 안 보였다. 그려질 때마다 위로 올린다.
+        if (clustererRef.current) {
+          maps.event.addListener(clustererRef.current, 'clustered', (clusters: { getClusterMarker: () => KakaoCustomOverlay }[]) => {
+            for (const c of clusters) c.getClusterMarker().setZIndex(6);
+          });
+        }
 
         new maps.CustomOverlay({
           position: center,
@@ -296,6 +340,8 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
 
     for (const pin of markersRef.current.values()) pin.overlay.setMap(null);
     markersRef.current.clear();
+    clustererRef.current?.clear();
+    const clustered: KakaoCustomOverlay[] = [];
 
     const bounds = new maps.LatLngBounds();
     const office = officeCoord();
@@ -305,7 +351,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       const position = new maps.LatLng(place.lat, place.lng);
       if (place.active || showOff) bounds.extend(position);
       const today = place.id === todayId;
-      const el = pinElement(place, today, ratings?.get(place.id)?.average);
+      const el = pinElement(place, today, ratings?.get(place.id)?.average, recentIds?.has(place.id));
       el.addEventListener('click', () => {
         closeTapMenuRef.current();
         setSelectedId(place.id);
@@ -316,17 +362,22 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       // 올린 핀은 겹친 핀들 위로 올라와야 이름이 다 보인다(10/14 사용자: 지도에 반응이 없다).
       el.addEventListener('mouseenter', () => markersRef.current.get(place.id)?.overlay.setZIndex(7));
       el.addEventListener('mouseleave', () => markersRef.current.get(place.id)?.overlay.setZIndex(zIndex));
+      const shown = (place.active || showOff) && matchesCategory(place, mapCats);
+      // 오늘 정한 곳은 묶지 않는다. 멀리 봐도 어디인지 보여야 한다.
+      const cluster = shown && !today && clustererRef.current !== null;
       const overlay = new maps.CustomOverlay({
         position,
         content: el,
-        map: (place.active || showOff) && matchesCategory(place, mapCats) ? map : undefined,
+        map: shown && !cluster ? map : undefined,
         // 핀 위에서 누른 것은 지도로 넘기지 않는다. 안 그러면 핀을 누르다 지도가 끌린다.
         clickable: true,
         yAnchor: 1,
         zIndex,
       });
       markersRef.current.set(place.id, { overlay, el, zIndex });
+      if (cluster) clustered.push(overlay);
     }
+    clustererRef.current?.addMarkers(clustered);
 
     // 목록에서 골라 들어왔으면 화면 맞춤 대신 그 가게로 가까이 간다. 처음 한 번만.
     const focus = places.find((p) => p.id === focusId);
@@ -343,7 +394,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       fittedRef.current = true;
       map.setBounds(bounds, 48, 32, 48, 32);
     }
-  }, [places, phase, todayId, showOff, focusId, mapCats, ratings]);
+  }, [places, phase, todayId, recentIds, showOff, focusId, mapCats, ratings]);
 
   /* 고른 가게 핀을 강조하고 맨 위로 올린다. */
   useEffect(() => {
@@ -353,7 +404,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       pin.el.setAttribute('aria-pressed', String(on));
       pin.overlay.setZIndex(on ? 6 : pin.zIndex);
     }
-  }, [selectedId, places, phase, todayId, showOff, mapCats, ratings]);
+  }, [selectedId, places, phase, todayId, recentIds, showOff, mapCats, ratings]);
 
   /* 3. 길게 눌러 핀 꽂기. */
   useEffect(() => {
@@ -549,7 +600,11 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       dropTempPin();
       setSelectedId(place.id);
       setEditing(false);
-      if (maps && map) map.panTo(new maps.LatLng(place.lat, place.lng));
+      if (maps && map) {
+        // 묶인 동그라미 속에 있으면 고른 핀이 안 보인다. 묶음이 풀리는 데까지 다가간다.
+        if (map.getLevel() >= CLUSTER_MIN_LEVEL) map.setLevel(CLUSTER_MIN_LEVEL - 1);
+        map.panTo(new maps.LatLng(place.lat, place.lng));
+      }
     },
     [dropTempPin],
   );
@@ -847,8 +902,17 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
                 >
                   {selected.active ? '끄기' : '켜기'}
                 </Button>
+                <Button block size="sm" variant="secondary" tone="danger" onClick={() => setRemoving(selected)}>
+                  지우기
+                </Button>
               </div>
-              <DirectionsLink place={selected} />
+              <div className="mp__links">
+                <DirectionsLink place={selected} />
+                <a className="dir-link" href={kakaoPlaceUrl(selected)} target="_blank" rel="noopener noreferrer">
+                  <span aria-hidden="true">📍 </span>카카오맵에서 보기
+                  <span className="sr-only"> (메뉴·사진·영업시간, 새 탭)</span>
+                </a>
+              </div>
               <RatingEditor key={selected.id} placeId={selected.id} summary={ratings?.get(selected.id)} />
             </>
           )}
@@ -967,6 +1031,14 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
           }}
         />
       )}
+      <RemovePlaceSheet
+        place={removing}
+        onClose={() => setRemoving(null)}
+        onDone={() => {
+          setSelectedId(null);
+          onChanged();
+        }}
+      />
     </section>
   );
 }

@@ -66,6 +66,12 @@ export interface KakaoCustomOverlay {
   setZIndex: (zIndex: number) => void;
 }
 
+/** libraries=clusterer. 가까운 핀을 "N곳" 동그라미 하나로 묶는다. CustomOverlay 도 받는다. */
+export interface KakaoMarkerClusterer {
+  addMarkers: (markers: KakaoCustomOverlay[], nodraw?: boolean) => void;
+  clear: () => void;
+}
+
 export interface KakaoMaps {
   LatLng: new (lat: number, lng: number) => KakaoLatLng;
   LatLngBounds: new () => KakaoLatLngBounds;
@@ -89,6 +95,17 @@ export interface KakaoMaps {
     fillOpacity?: number;
     map?: KakaoMap;
   }) => KakaoCircle;
+  MarkerClusterer?: new (options: {
+    map: KakaoMap;
+    averageCenter?: boolean;
+    minLevel?: number;
+    gridSize?: number;
+    minClusterSize?: number;
+    disableClickZoom?: boolean;
+    calculator?: number[];
+    texts?: (count: number) => string;
+    styles?: Record<string, string>[];
+  }) => KakaoMarkerClusterer;
   CustomOverlay: new (options: {
     position: KakaoLatLng;
     content: string | HTMLElement;

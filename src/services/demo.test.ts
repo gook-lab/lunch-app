@@ -3,7 +3,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { todayKST } from '../lib/date';
 import { loadDemoSample, resetDemo } from './demoStore';
-import { decideToday, fetchOffice, fetchPlaces, fetchRecentVisits, subscribeToday } from './lunch.demo';
+import { decideToday, fetchOffice, fetchPlaces, updatePlace, fetchRecentVisits, subscribeToday } from './lunch.demo';
 import { castVote, subscribeVotes } from './predictions.demo';
 
 beforeEach(() => {
@@ -24,6 +24,12 @@ describe('데모 저장소', () => {
     expect(places.length).toBeGreaterThanOrEqual(10);
     expect(places.some((p) => !p.active)).toBe(true);
     expect((await fetchRecentVisits(todayKST())).length).toBeGreaterThan(0);
+  });
+
+  it('지운 가게(removed)는 저장소에 남는다 — 화면에서 빼는 건 useLunchData 몫', async () => {
+    loadDemoSample();
+    await updatePlace('demo-1', { removed: true, active: false });
+    expect((await fetchPlaces()).find((p) => p.id === 'demo-1')?.removed).toBe(true);
   });
 
   it('오늘 결정을 쓰면 구독이 바로 받고, 새로 읽어도 남아 있다', async () => {

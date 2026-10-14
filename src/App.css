@@ -796,12 +796,12 @@ footer.muted { text-align: center; }
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
-  min-height: 28px;
-  margin-bottom: 7px;
-  padding: 2px var(--space-2) 2px var(--space-1);
-  border: 1px solid var(--color-neutral-400);
-  border-radius: var(--radius-lg);
+  gap: 6px;
+  min-height: 30px;
+  margin-bottom: 8px;
+  padding: 3px var(--space-3) 3px 3px;
+  border: 1px solid var(--color-neutral-300);
+  border-radius: 999px;
   background: var(--color-surface);
   color: var(--color-text);
   font: inherit;
@@ -811,15 +811,17 @@ footer.muted { text-align: center; }
   box-shadow: var(--shadow-sm);
   cursor: pointer;
 }
+/* 꼬리 — 알약 아래 가운데가 아니라 동그라미 아래. 가게 자리가 동그라미 쪽에 있어 보이게. */
 .map__pin::after {
   content: '';
   position: absolute;
-  left: 50%;
+  left: 15px;
   bottom: -7px;
   translate: -50% 0;
   border: 6px solid transparent;
   border-bottom: 0;
-  border-top-color: var(--color-neutral-400);
+  border-top-color: var(--color-surface);
+  filter: drop-shadow(0 1px 0 var(--color-neutral-300));
 }
 /* 올리면 살짝 떠오른다. 카카오가 지도 전체에 손바닥 커서를 깔아 핀도 끄는 자리처럼 보였다(10/14). */
 .map__pin {
@@ -836,18 +838,32 @@ footer.muted { text-align: center; }
   box-shadow: var(--shadow-md);
 }
 .map__pin:hover::after,
-.map__pin--hover::after { border-top-color: var(--color-text); }
+.map__pin--hover::after { filter: drop-shadow(0 1px 0 var(--color-text)); }
 @media (prefers-reduced-motion: reduce) {
   .map__pin { transition: none; }
 }
-.map__pinIcon { font-size: var(--fs-sm); line-height: 1; }
+.map__pinIcon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: oklch(0.9 0.08 var(--cat-hue, 200));
+  font-size: 14px;
+  line-height: 1;
+}
 .map__pinName { max-width: 9em; overflow: hidden; text-overflow: ellipsis; }
 .map__pinWalk { color: var(--color-neutral-700); font-weight: 600; }
 .map__pin:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 .map__pin--off { background: var(--color-neutral-100); border-style: dashed; }
 .map__pin--off .map__pinName { color: var(--color-neutral-700); text-decoration: line-through; }
-.map__pin--today { border-color: var(--color-accent); border-width: 2px; }
-.map__pin--today::after { border-top-color: var(--color-accent); }
+.map__pin--today { border-color: var(--color-accent); box-shadow: 0 0 0 2px var(--color-accent), var(--shadow-sm); }
+.map__pin--today .map__pinIcon { background: var(--color-accent); }
+/* 최근 1주에 다녀온 곳 — 오늘 고르기에서 빠지는 곳이라 지도에서도 한 발 물러나 보인다. */
+.map__pin--recent { opacity: 0.62; box-shadow: none; }
+.map__pin--recent .map__pinIcon { filter: grayscale(1); background: var(--color-neutral-200); }
+.map__pin--recent:is(:hover, .map__pin--hover, .map__pin--on) { opacity: 1; }
 .map__pin--on {
   background: var(--color-text);
   color: var(--color-bg);
@@ -855,9 +871,9 @@ footer.muted { text-align: center; }
   scale: 1.08;
 }
 .map__pin--on .map__pinWalk { color: inherit; }
-.map__pin--on::after { border-top-color: var(--color-text); }
+.map__pin--on::after { border-top-color: var(--color-text); filter: none; }
 /* 멀리 보면 이름·시간을 접고 그림만. 고른 핀과 오늘 핀은 이름을 남긴다. */
-.map__frame--far .map__pin:not(.map__pin--on, .map__pin--today) { padding: 2px var(--space-1); }
+.map__frame--far .map__pin:not(.map__pin--on, .map__pin--today) { padding: 3px; }
 .map__frame--far .map__pin:not(.map__pin--on, .map__pin--today) :is(.map__pinName, .map__pinWalk) { display: none; }
 
 .map__toggle {
@@ -2406,7 +2422,8 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   background: var(--color-bg);
   font-size: var(--fs-sm);
 }
-.cands__name { font-weight: 600; }
+.cands__name { font-weight: 600; max-width: 8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cands__more { display: inline-flex; align-items: center; padding: 0 var(--space-2); font-size: var(--fs-sm); }
 .cands__walk { font-size: var(--fs-xs); color: var(--color-neutral-700); }
 .cands__item--released { border-style: dashed; }
 .cands__item--win { border-color: var(--color-accent); background: var(--color-accent-100); }
@@ -3432,7 +3449,8 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
  * 뒤집으면 글자까지 어두워져 공 개수 표·바퀴 칩이 안 보였다(10/14 사용자).
  */
 [data-theme='dark'] .pinball,
-[data-theme='dark'] .prace__board {
+[data-theme='dark'] .prace__board,
+[data-theme='dark'] .map__canvas {
   --color-bg: #f3f2f2;
   --color-surface: #eae9e9;
   --color-text: #201e1d;
@@ -3489,4 +3507,7 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 
 /* 멀리 봐서 이름을 접었어도 올린 핀은 이름을 보여 준다. 접는 규칙(.map__frame--far)보다 뒤에 둔다. */
 .map__frame--far .map__pin:is(:hover, .map__pin--hover) :is(.map__pinName, .map__pinWalk) { display: inline; }
-.map__frame--far .map__pin:is(:hover, .map__pin--hover) { padding: 2px var(--space-2) 2px var(--space-1); }
+.map__frame--far .map__pin:is(:hover, .map__pin--hover) { padding: 3px var(--space-3) 3px 3px; }
+
+/* 지도 카드 — 길찾기 · 카카오맵에서 보기 나란히 */
+.mp__links { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }

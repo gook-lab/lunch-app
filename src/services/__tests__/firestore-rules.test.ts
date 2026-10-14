@@ -187,6 +187,12 @@ d('firestore.rules', () => {
       await assertFails(updateDoc(doc(db(BOB), 'places/seed'), { createdBy: BOB }));
     });
 
+    it('R7d — 지우기는 removed 표시(참·거짓만). 문서 삭제는 여전히 거부', async () => {
+      await assertSucceeds(updateDoc(doc(db(BOB), 'places/seed'), { removed: true, active: false }));
+      await assertFails(updateDoc(doc(db(BOB), 'places/seed'), { removed: 'yes' }));
+      await assertFails(deleteDoc(doc(db(BOB), 'places/seed')));
+    });
+
     it('읽기는 로그인 필요', async () => {
       await assertSucceeds(getDoc(doc(db(ALICE), 'places/seed')));
       await assertFails(getDoc(doc(anon(), 'places/seed')));

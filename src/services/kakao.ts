@@ -92,7 +92,7 @@ export function loadKakaoMaps(): Promise<KakaoMaps> {
     script.async = true;
     script.src =
       `${SDK_ORIGIN}${SDK_PATH}` +
-      `?appkey=${encodeURIComponent(key)}&libraries=services&autoload=false`;
+      `?appkey=${encodeURIComponent(key)}&libraries=services,clusterer&autoload=false`;
 
     script.onerror = () =>
       fail('script', 'SDK 스크립트를 받지 못했어요. 네트워크나 앱 키를 확인해 주세요.');

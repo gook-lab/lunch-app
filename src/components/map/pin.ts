@@ -1,4 +1,4 @@
-import { categoryIcon, categoryLabel } from '../../lib/category';
+import { categoryHue, categoryIcon, categoryLabel } from '../../lib/category';
 import type { Place } from '../../lib/candidates';
 
 /**
@@ -6,13 +6,18 @@ import type { Place } from '../../lib/candidates';
  * 그림(카테고리)·이름·도보 시간을 핀에 바로 쓴다. textContent 로만 넣는다 —
  * 가게 이름은 사람이 입력한 값이다.
  */
-/** average 가 있으면 도보 시간 앞에 ★ 평균을 붙인다. */
-export function pinElement(place: Place, today: boolean, average?: number): HTMLButtonElement {
+/**
+ * average 가 있으면 도보 시간 앞에 ★ 평균을 붙인다. recent 면 흐리게 그린다(최근 1주에 다녀옴).
+ * 모양은 지도 앱의 업종 핀처럼 메뉴 색 동그라미 + 이름 알약(10/14, 핀이 심심하다는 피드백).
+ */
+export function pinElement(place: Place, today: boolean, average?: number, recent = false): HTMLButtonElement {
   const el = document.createElement('button');
   el.type = 'button';
   el.className = 'map__pin';
+  el.style.setProperty('--cat-hue', String(categoryHue(place.category)));
   if (!place.active) el.classList.add('map__pin--off');
   if (today) el.classList.add('map__pin--today');
+  else if (recent) el.classList.add('map__pin--recent');
   const icon = document.createElement('span');
   icon.className = 'map__pinIcon';
   icon.setAttribute('aria-hidden', 'true');
@@ -28,7 +33,7 @@ export function pinElement(place: Place, today: boolean, average?: number): HTML
     'aria-label',
     `${place.name}, ${categoryLabel(place)}, 도보 ${place.walkMin}분` +
       (average ? `, 별점 ${average.toFixed(1)}점` : '') +
-      (today ? ', 오늘 정한 곳' : '') +
+      (today ? ', 오늘 정한 곳' : recent ? ', 최근 1주에 다녀온 곳' : '') +
       (place.active ? '' : ', 꺼 둔 가게'),
   );
   return el;

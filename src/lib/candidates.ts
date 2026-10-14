@@ -42,6 +42,8 @@ export interface Place {
   review?: string;
   /** 메모. 120자. */
   memo?: string;
+  /** 지운 가게. 문서는 남기고(visits 가 참조) 화면에서만 뺀다 — components/RemovePlace.tsx. */
+  removed?: boolean;
 }
 
 /** 가격대. 세 칸뿐이다 — 더 쪼개면 아무도 안 고른다. */
@@ -152,6 +154,13 @@ function lastVisitWithinWindow(
     }
   }
   return last;
+}
+
+/** 최근 1주 안에 다녀온 가게(오늘 정한 곳 제외). 지도에서 흐리게 그린다. */
+export function recentlyVisitedIds(visits: readonly Visit[], today: DayId): Set<string> {
+  const ids = new Set<string>();
+  for (const [placeId, day] of lastVisitWithinWindow(visits, today)) if (day !== today) ids.add(placeId);
+  return ids;
 }
 
 function emptyReasonFor(

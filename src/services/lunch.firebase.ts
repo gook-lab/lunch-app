@@ -166,7 +166,7 @@ export async function updatePlace(
     Pick<
       Place,
       'name' | 'lat' | 'lng' | 'walkMin' | 'category' | 'active'
-      | 'price' | 'rating' | 'review' | 'memo'
+      | 'price' | 'rating' | 'review' | 'memo' | 'removed'
     >
   >,
 ): Promise<void> {

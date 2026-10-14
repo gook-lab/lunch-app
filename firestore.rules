@@ -86,7 +86,9 @@ service cloud.firestore {
       allow update: if signedIn()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
              ['name', 'lat', 'lng', 'walkMin', 'category', 'active',
-              'price', 'rating', 'review', 'memo'])
+              'price', 'rating', 'review', 'memo', 'removed'])
+        // 지우기는 removed 표시다. 문서는 남는다(아래 delete 금지와 같은 이유).
+        && (!('removed' in request.resource.data) || request.resource.data.removed is bool)
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
         && request.resource.data.name.size() <= 40

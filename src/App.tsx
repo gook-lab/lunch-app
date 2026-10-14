@@ -51,7 +51,7 @@ import {
 import { Roadmap } from './components/Roadmap';
 import { useTodayKST } from './hooks/useTodayKST';
 import { useLunchData } from './hooks/useLunchData';
-import { MIN_GAME_CANDIDATES, selectCandidates, type Filters, type Place } from './lib/candidates';
+import { MIN_GAME_CANDIDATES, recentlyVisitedIds, selectCandidates, type Filters, type Place } from './lib/candidates';
 import { categoryHue } from './lib/category';
 import { josa, withJosa } from './lib/josa';
 import { officeSource } from './lib/walk';
@@ -234,6 +234,7 @@ export default function App() {
   );
 
   const result = useMemo(() => selectCandidates(places, visits, filters, today), [places, visits, filters, today]);
+  const recentIds = useMemo(() => recentlyVisitedIds(visits, today), [visits, today]);
 
   const decidedPlace = useMemo(
     () => (decision ? (places.find((p) => p.id === decision.placeId) ?? null) : null),
@@ -707,6 +708,7 @@ export default function App() {
               onChanged={reload}
               onOfficeChanged={reload}
               todayId={decidedPlace?.id ?? null}
+              recentIds={recentIds}
               focusId={mapFocus}
               ratings={ratings}
             />
