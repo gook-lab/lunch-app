@@ -22,18 +22,17 @@ export interface NearbyHit {
   existing: Place | null;
 }
 
-const norm = (s: string) => s.replace(/\s+/g, '').toLowerCase();
-
 export function existingFor(places: readonly Place[], hit: KakaoPlace): Place | null {
   const lat = Number(hit.y);
   const lng = Number(hit.x);
+  // 카카오 id 가 같거나, 이름이 같고 30m 안이면 같은 가게다(lib/duplicate).
   const dup = findDuplicate(places, { name: hit.place_name, lat, lng, kakaoPlaceId: hit.id });
   if (dup) return dup.place;
-  const name = norm(hit.place_name);
+  // 거리만으로 묶는 건 지도에 손으로 꽂은 가게(카카오 id 없음)뿐이다. 예전엔 모든 가게를
+  // 20m 로 묶어서, 한 건물에 있는 롯데리아·파가니니가 전부 "유" 로 잡혀 새로 넣을 수가
+  // 없었다(10/14 사용자). 이름이 다른 가게는 다른 가게로 본다.
   return (
-    places.find((p) => norm(p.name) === name) ??
-    places.find((p) => straightLineMeters(p.lat, p.lng, lat, lng) <= NEAR_SAME_M) ??
-    null
+    places.find((p) => !p.kakaoPlaceId && straightLineMeters(p.lat, p.lng, lat, lng) <= NEAR_SAME_M) ?? null
   );
 }
 
