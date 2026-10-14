@@ -21,7 +21,7 @@ import { CATEGORIES, categoryIcon, categoryLabel } from '../lib/category';
 import { CategoryChips } from './CategoryChips';
 import { matchesCategory } from '../lib/candidates';
 import { CategoryPicker } from './CategoryPicker';
-import { metersForWalkMinutes, officeCoord, officeSource, type Coord } from '../lib/walk';
+import { metersForWalkMinutes, officeCoord, officeSource, walkMinutesBetween, type Coord } from '../lib/walk';
 import { OfficeCard } from './map/OfficeCard';
 import { SearchField } from './map/SearchField';
 import { RemovePlaceSheet } from './RemovePlace';
@@ -664,6 +664,9 @@ export default function MapTab({
           location: new maps.LatLng(office.lat, office.lng),
           radius: SEARCH_RADIUS_M,
           size: MAX_RESULTS,
+          // 가까운 순. 정확도 순이면 "판교 칼국수" 에 도보 16분 집이 맨 위였다 — 기본 조건(10분)
+          // 밖이라 넣어도 오늘 고를 가게에 안 들어갔다(10/15 첫 사용 점검).
+          sort: 'distance',
         },
       );
     } catch (error) {
@@ -798,7 +801,10 @@ export default function MapTab({
                 {results.map((hit) => (
                   <li key={hit.id}>
                     <button type="button" className="add__hit" onClick={() => pickResult(hit)}>
-                      <strong>{hit.place_name}</strong>
+                      <strong>
+                        {hit.place_name}
+                        <span className="add__walk"> 도보 {walkMinutesBetween(Number(hit.y), Number(hit.x))}분</span>
+                      </strong>
                       <span className="muted small">{hit.road_address_name || hit.address_name}</span>
                       <span className="muted small">{hit.category_name}</span>
                     </button>
@@ -881,6 +887,14 @@ export default function MapTab({
 
       {/* 오른쪽 칸 아래 — 고른 가게·근처 목록·넣기 폼. 데스크톱에선 이 칸만 넘긴다. */}
       <div className="map__side map__side--body">
+        {/* 회사만 정하고 가게가 아직 없을 때 — 오른쪽이 텅 비어 다음에 뭘 할지 몰랐다(10/15 첫 사용 점검). */}
+        {phase === 'ready' && officeSet && places.length === 0 && !draft && results.length === 0 && (
+          <div className="map__next">
+            <strong>이제 자주 가는 가게를 넣어 볼까요?</strong>
+            <p className="muted small">위 검색창에 가게 이름을 쓰거나, 지도에서 가게 자리를 눌러 주세요.</p>
+            <p className="muted small">두 곳만 넣으면 바로 게임을 할 수 있어요.</p>
+          </div>
+        )}
         {selected && !draft && (
           <div className="mp__card" ref={selCardRef} tabIndex={-1} role="region" aria-label={selected.name}>
             {editing ? (

@@ -241,4 +241,7 @@
 /* 높이 800 안팎 노트북 — 간격을 한 단계 더 줄여 저장 단추까지 한 화면에. */
 @media (min-width: 960px) and (max-height: 860px) {
   .map__side .pf { gap: var(--space-1); }
+  /* 메모는 선택 칸이라 한 줄 반으로. 주소가 길게 붙으면 여기서 모자랐다. */
+  .map__side .pf__field textarea { height: 2.4em; }
+  .map__side .pf__field { gap: 2px; }
 }

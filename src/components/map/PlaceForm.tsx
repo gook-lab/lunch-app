@@ -184,11 +184,20 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
         autoFocus={draft.name === ''}
         state={problem === '이름을 넣어 주세요.' ? 'error' : 'default'}
       />
-      {draft.address && <p className="muted small">{draft.address}</p>}
-
-      <p className={tooFar ? 'notice notice--empty' : 'muted small'}>
-        {walk.error ? walk.error : `회사에서 도보 ${walk.min}분이에요. 직선거리로 계산한 예상 시간이에요.`}
-      </p>
+      {/* 주소와 도보 시간을 한 줄로 — 두 줄이면 1280×800 오른쪽 칸에서 저장 단추가 밀려났다(10/15). */}
+      {walk.error || tooFar ? (
+        <>
+          {draft.address && <p className="muted small">{draft.address}</p>}
+          <p className="notice notice--empty">{walk.error ? walk.error : `회사에서 도보 ${walk.min}분이에요.`}</p>
+        </>
+      ) : (
+        <p
+          className="muted small pf__where"
+          title={`${draft.address ?? ''} — 도보 시간은 직선거리로 계산한 예상이에요`}
+        >
+          {draft.address ? `${draft.address} · ` : ''}회사에서 도보 약 {walk.min}분
+        </p>
+      )}
 
       <div className="pf__field" ref={catRef}>
         <span className="filters__label">메뉴</span>

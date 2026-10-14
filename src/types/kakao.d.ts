@@ -123,7 +123,7 @@ export interface KakaoMaps {
       keywordSearch: (
         keyword: string,
         callback: (data: KakaoPlace[], status: string) => void,
-        options?: { location?: KakaoLatLng; radius?: number; size?: number },
+        options?: { location?: KakaoLatLng; radius?: number; size?: number; sort?: 'accuracy' | 'distance' },
       ) => void;
     };
     Status: { OK: string; ZERO_RESULT: string; ERROR: string };

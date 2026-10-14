@@ -3618,3 +3618,8 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 @media (prefers-reduced-motion: reduce) {
   .ladder__label--win, .cards__card--win { animation: none; }
 }
+.add__walk { font-weight: 400; font-size: var(--fs-xs); color: var(--color-neutral-700); }
+.map__next { display: grid; gap: var(--space-1); padding: var(--space-4); border: 1px dashed var(--color-neutral-400); border-radius: var(--radius-md); background: var(--color-bg); }
+.map__next strong { font-size: var(--fs-md); }
+.map__next p { margin: 0; }
+.pf__where { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
