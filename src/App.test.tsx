@@ -569,3 +569,31 @@ describe('핀볼 — 판이 끝난 뒤 공 개수 바꾸기', () => {
     expect(screen.getByRole('button', { name: /공 굴리기/ })).toBeTruthy();
   });
 });
+
+describe('게임 방식 레일의 Tab 순서', () => {
+  // 앞에 오면 DOCUMENT_POSITION_FOLLOWING(4) 이 선다.
+  const before = (a: Element, b: Element) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+  // 메뉴 칩은 메뉴가 두 가지 이상일 때만 나온다.
+  const saved = fx.places;
+  beforeEach(() => {
+    fx.places = saved.map((p, i) => ({ ...p, category: i % 2 ? '면' : '밥' }));
+  });
+  afterEach(() => {
+    fx.places = saved;
+  });
+
+  it('데스크톱은 왼쪽 레일이 메뉴 칩보다 먼저다(보이는 순서와 같다)', () => {
+    window.matchMedia = ((q: string) => ({
+      matches: q.includes('min-width: 960px'),
+      addEventListener() {},
+      removeEventListener() {},
+    })) as unknown as typeof window.matchMedia;
+    render(<App />);
+    expect(before(screen.getByRole('group', { name: '방식' }), screen.getByRole('group', { name: '메뉴 고르기' }))).toBe(true);
+  });
+
+  it('휴대폰은 메뉴 칩 아래에 보이므로 DOM 도 칩 뒤다', () => {
+    render(<App />);
+    expect(before(screen.getByRole('group', { name: '메뉴 고르기' }), screen.getByRole('group', { name: '방식' }))).toBe(true);
+  });
+});

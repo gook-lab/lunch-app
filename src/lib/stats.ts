@@ -8,18 +8,14 @@
 import type { DayId } from './date';
 import type { Place, Visit } from './candidates';
 
-/**
- * 이번 달(today의 YYYYMM)에 해당하는 방문 기록.
- * 31일 창 안에서 그 가게의 첫 방문 여부를 판정할 때는
- * visits 전체 배열을 넘겨 받아야 한다(31일 기준 근사).
- */
 export interface MonthlyStats {
   totalCount: number;
   topPlaces: { place: Place; count: number }[];
   categoryCount: Record<string, number>;
   /** 어떤 게임으로 몇 번 뽑았는지. 게임이 기록된 방문만 센다(10/14 부터). 많은 순. */
   topGames: { mode: string; count: number }[];
-  newPlaceCount: number;
+  /** 이번 달 서로 다른 가게 수. */
+  distinctPlaceCount: number;
   badges: BadgeStatus[];
 }
 
@@ -27,22 +23,26 @@ export interface BadgeStatus {
   id: BadgeId;
   icon: string;
   label: string;
+  /** 무엇을 세는지. 이름만으로는 몰라 title·화면낭독기 문구에 쓴다("이번 달 서로 다른 가게"). */
+  hint: string;
+  /** 세는 단위(곳·번·종·일). */
+  unit: string;
   earned: boolean;
   current: number;
   target: number;
 }
 
-export type BadgeId = 'explorer' | 'balanced' | 'regular' | 'consecutive' | 'prolific';
+export type BadgeId = 'variety' | 'balanced' | 'regular' | 'consecutive' | 'prolific';
 
 /**
  * 뱃지 정의: 조건과 문구.
  */
-const BADGE_DEFINITIONS: Record<BadgeId, { icon: string; label: string }> = {
-  explorer: { icon: '🧭', label: '개척자' },
-  balanced: { icon: '🌈', label: '골고루' },
-  regular: { icon: '💛', label: '단골' },
-  consecutive: { icon: '🔥', label: '꾸준함' },
-  prolific: { icon: '🎲', label: '점심 열 번' },
+const BADGE_DEFINITIONS: Record<BadgeId, { icon: string; label: string; hint: string; unit: string }> = {
+  variety: { icon: '🧭', label: '이곳저곳', hint: '이번 달 서로 다른 가게', unit: '곳' },
+  balanced: { icon: '🌈', label: '골고루', hint: '이번 달 먹은 메뉴 종류', unit: '종' },
+  regular: { icon: '💛', label: '단골', hint: '한 가게에 간 횟수', unit: '번' },
+  consecutive: { icon: '🔥', label: '꾸준함', hint: '평일 연달아 정한 날', unit: '일' },
+  prolific: { icon: '🎲', label: '점심 열 번', hint: '이번 달 정한 점심', unit: '번' },
 };
 
 /**
@@ -143,46 +143,14 @@ function getCategoryCount(
 }
 
 /**
- * 31일 창(today 포함 최근 31일) 안에서 그 가게의 첫 방문이 이번 달인 가게 수.
- * 기준: 31일 창 안에서 처음 나타나는 가게들 중 이번 달 방문이 있는 것.
+ * 이번 달 서로 다른 가게 수.
+ *
+ * 예전 "개척자" 는 31일 창에서 처음 나타난 가게를 "새 가게" 로 셌다. 방문 기록을 31일만
+ * 읽으니 월말엔 이번 달 간 곳이 전부 창 안에서 처음이라 모두 새 가게가 됐다(10/15 리뷰).
+ * 정말 처음인지 알려면 전체 기록이 필요하다 — 그 대신 이번 달 기록만으로 정확한 값을 센다.
  */
-function getNewPlaceCount(
-  allVisits: Visit[],
-  thisMonthVisits: Visit[],
-  today: DayId
-): number {
-  const MS_PER_DAY = 86_400_000;
-  const windowStart = new Date(dayIdToUTC(today) - 30 * MS_PER_DAY);
-  const y = windowStart.getUTCFullYear();
-  const m = String(windowStart.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(windowStart.getUTCDate()).padStart(2, '0');
-  const windowStartId = `${y}${m}${d}`;
-
-  // 31일 창 안의 모든 가게
-  // 날짜순으로 — 첫 방문을 고르므로 들어온 순서에 기대면 안 된다.
-  const windowVisits = allVisits
-    .filter((v) => v.id >= windowStartId && v.id <= today)
-    .sort((a, b) => a.id.localeCompare(b.id));
-  const firstAppearance = new Map<string, DayId>();
-  for (const v of windowVisits) {
-    if (!firstAppearance.has(v.placeId)) {
-      firstAppearance.set(v.placeId, v.id);
-    }
-  }
-
-  // 이번 달 방문이면서 31일 창 안에서 처음 나타나는 가게
-  const thisMonthPlaces = new Set(thisMonthVisits.map((v) => v.placeId));
-  let count = 0;
-  for (const placeId of thisMonthPlaces) {
-    if (firstAppearance.has(placeId)) {
-      const first = firstAppearance.get(placeId)!;
-      if (first.startsWith(getMonthId(today))) {
-        count++;
-      }
-    }
-  }
-
-  return count;
+function getDistinctPlaceCount(thisMonthVisits: Visit[]): number {
+  return new Set(thisMonthVisits.map((v) => v.placeId)).size;
 }
 
 /**
@@ -236,7 +204,7 @@ export function calculateStats(
   const totalCount = thisMonth.length;
   const topPlaces = getTopPlaces(thisMonth, places);
   const categoryCount = getCategoryCount(thisMonth, places);
-  const newPlaceCount = getNewPlaceCount(visits, thisMonth, today);
+  const distinctPlaceCount = getDistinctPlaceCount(thisMonth);
 
   // 뱃지 판정
   const maxConsecutive = getMaxConsecutiveWeekdays(thisMonth);
@@ -247,13 +215,13 @@ export function calculateStats(
 
   const badges: BadgeStatus[] = [];
 
-  // 🧭 개척자: 새 가게 3곳 이상
+  // 🧭 이곳저곳: 이번 달 서로 다른 가게 5곳 이상
   badges.push({
-    id: 'explorer',
-    ...BADGE_DEFINITIONS.explorer,
-    earned: newPlaceCount >= 3,
-    current: newPlaceCount,
-    target: 3,
+    id: 'variety',
+    ...BADGE_DEFINITIONS.variety,
+    earned: distinctPlaceCount >= 5,
+    current: distinctPlaceCount,
+    target: 5,
   });
 
   // 🌈 골고루: 카테고리 4종 이상
@@ -305,7 +273,7 @@ export function calculateStats(
     topPlaces,
     categoryCount,
     topGames,
-    newPlaceCount,
+    distinctPlaceCount,
     badges,
   };
 }

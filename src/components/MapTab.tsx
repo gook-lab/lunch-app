@@ -627,6 +627,39 @@ export default function MapTab({
     if (draft) draftRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
   }, [draft]);
 
+  /*
+   * 목록의 "지도에서 보기" 로 들어오면 누른 단추는 목록과 함께 사라진다. 초점이 <body> 에
+   * 남아 Tab 이 지도 맨 위부터 다시 돌았다(10/15 리뷰). 카드가 그려진 뒤 한 번만 카드로 옮긴다.
+   * 스크롤은 막는다 — 휴대폰에선 지도를 먼저 보여 주려고 위에서 이미 지도로 내렸다.
+   */
+  const focusedFromList = useRef(false);
+  const cardShown = selectedId !== null && selectedId === focusId && !draft && places.some((p) => p.id === selectedId);
+  useEffect(() => {
+    if (!cardShown || focusedFromList.current) return;
+    // 표시는 실제로 옮긴 뒤에 한다. 먼저 해 두면 개발 모드(StrictMode)의 효과 두 번 실행에서
+    // 첫 rAF 가 취소되고 두 번째는 건너뛰어 초점이 끝내 안 갔다.
+    const id = requestAnimationFrame(() => {
+      if (!selCardRef.current) return;
+      selCardRef.current.focus({ preventScroll: true });
+      focusedFromList.current = true;
+    });
+    return () => cancelAnimationFrame(id);
+  }, [cardShown]);
+
+  /**
+   * 카드 닫기. 닫기 단추가 카드와 함께 사라지니 초점을 그 핀으로 돌려준다. 핀이 묶음 속이거나
+   * 거름에 걸려 화면에 없으면 지도로 둔다.
+   */
+  const closeCard = () => {
+    const id = selectedId;
+    setSelectedId(null);
+    requestAnimationFrame(() => {
+      const pin = id ? markersRef.current.get(id)?.el : undefined;
+      if (pin?.isConnected && pin.getClientRects().length > 0) pin.focus({ preventScroll: true });
+      else containerRef.current?.focus({ preventScroll: true });
+    });
+  };
+
   const goTo = useCallback(
     (place: Place) => {
       const maps = mapsRef.current;
@@ -880,7 +913,8 @@ export default function MapTab({
             .filter(Boolean)
             .join(' ')}
         >
-          <div className="map__canvas" ref={containerRef} aria-label="점심 지도" />
+          {/* tabIndex -1: 카드를 닫았는데 그 핀이 묶음 속이라 못 받으면 초점을 여기로 둔다. */}
+          <div className="map__canvas" ref={containerRef} role="region" aria-label="점심 지도" tabIndex={-1} />
           {/* "지도 가운데로" 의 가운데가 어디인지 보여 주는 십자. 지도 조작은 막지 않는다. */}
           <span className="map__crosshair" aria-hidden="true" />
           {/* 지도를 끌다 보면 회사가 어디였는지 잃는다. 한 번에 돌아온다. */}
@@ -931,7 +965,7 @@ export default function MapTab({
                       {selected.price ? ` · ${selected.price}` : ''}
                     </p>
                   </div>
-                  <button type="button" className="linkish" onClick={() => setSelectedId(null)}>
+                  <button type="button" className="linkish" onClick={closeCard}>
                     닫기
                   </button>
                 </div>

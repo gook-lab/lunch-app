@@ -9,8 +9,8 @@
  * 화면에서는 "최근 1주 안에 간 곳" 을 강조한다. 그게 오늘 후보에서 빠진
  * 이유라서, 표시하지 않으면 목록과 돌림판이 어긋나 보인다.
  */
-import { recentNote } from '../lib/messages';
-import { useId, useRef, useState } from 'react';
+import { recentNote, type RecentSummary } from '../lib/messages';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Button, Input, Menu } from '@gook-lab/ui';
 import { LunchStats } from './LunchStats';
 import { CATEGORIES, categoryLabel } from '../lib/category';
@@ -31,8 +31,11 @@ interface Props {
   visits: Visit[];
   today: DayId;
   onChanged: () => void;
-  /** 로드맵의 "최근 1주 제외" 칩 상태. 꺼져 있으면 "빠집니다" 가 거짓이 된다. */
-  excludeRecent: boolean;
+  /**
+   * 오늘 판의 최근 방문 수. App 의 selectCandidates 결과를 그대로 받는다 — 목록에서 따로
+   * 세면 도보·메뉴 칩과 다시 넣은 곳을 몰라 돌림판과 다른 숫자를 말했다.
+   */
+  recent: RecentSummary;
   /** 지도 탭을 열고 이 가게 핀을 고른다. */
   onShowOnMap?: (placeId: string) => void;
   /** 지도 탭으로 가서 새 가게를 넣는다. 추가 경로는 지도 하나뿐이다. */
@@ -220,7 +223,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
   );
 }
 
-export function PlaceList({ places, visits, today, onChanged, excludeRecent, onShowOnMap, onAdd, ratings }: Props) {
+export function PlaceList({ places, visits, today, onChanged, recent, onShowOnMap, onAdd, ratings }: Props) {
   const [editing, setEditing] = useState<string | null>(null);
   // 별점 칸을 연 가게. 고치기와 같은 자리에 펼친다.
   const [rating, setRating] = useState<string | null>(null);
@@ -229,6 +232,31 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
   const [sortBy, setSortBy] = useState<'walk' | 'rating'>('walk');
   const [busy, setBusy] = useState<string | null>(null);
   const [toggleProblem, setToggleProblem] = useState<string | null>(null);
+  /**
+   * 빼기·되돌리기·지우기 뒤 초점을 둘 곳. 그 줄이 다른 묶음으로 옮겨 가거나 사라지면
+   * 초점이 <body> 로 떨어져 키보드로는 목록 맨 위부터 다시 와야 했다(10/15 리뷰).
+   * 다음 줄의 ⋯ 단추, 없으면 목록 제목으로 보낸다. 다시 읽기가 끝나 줄이 바뀐 뒤에도
+   * 한 번 더 맞춘다 — 지운 줄은 다시 읽은 뒤에야 사라지고, 시트가 닫히며 초점을 그 줄로 돌린다.
+   */
+  const focusAfter = useRef<string | null>(null);
+  const applyFocus = () => {
+    const target = focusAfter.current;
+    if (!target) return;
+    (document.getElementById(target) ?? document.getElementById('list-on'))?.focus();
+  };
+  const focusSoon = (target: string) => {
+    focusAfter.current = target;
+    requestAnimationFrame(applyFocus);
+  };
+  useEffect(() => {
+    if (!focusAfter.current) return;
+    const id = requestAnimationFrame(() => {
+      applyFocus();
+      focusAfter.current = null;
+    });
+    return () => cancelAnimationFrame(id);
+    // places 가 바뀐 것(다시 읽기 끝)만 본다.
+  }, [places]);
 
   if (places.length === 0) {
     return <p className="muted">지도에서 자주 가는 가게를 넣어 볼까요?</p>;
@@ -243,13 +271,20 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
     return a.walkMin - b.walkMin;
   });
 
-  const recentCount = sorted.filter((p) => p.active && lastVisit(p, visits, today).recent).length;
+  /** 같은 묶음(켜진·뺀)에서 바로 아래 줄, 맨 끝이면 바로 위 줄의 ⋯ 단추. 없으면 목록 제목. */
+  const neighborTarget = (place: Place) => {
+    const group = sorted.filter((p) => p.active === place.active);
+    const i = group.findIndex((p) => p.id === place.id);
+    const next = group[i + 1] ?? group[i - 1];
+    return next ? `edit-${next.id}` : 'list-on';
+  };
 
   const toggle = async (place: Place) => {
     setBusy(place.id);
     setToggleProblem(null);
     try {
       await updatePlace(place.id, { active: !place.active });
+      focusSoon(neighborTarget(place));
       onChanged();
     } catch {
       // 실패하면 단추만 다시 살아나고 아무 말이 없었다. 바뀐 줄 알고 넘어간다.
@@ -380,7 +415,7 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
         <section className="list__group" aria-labelledby="list-on">
           {/* 추가 단추는 후보 제목 줄 끝에. 혼자 한 줄을 먹으면 맨 위가 비어 보였다(10/9 리뷰). */}
           <div className="list__headRow">
-            <h2 id="list-on" className="list__heading">
+            <h2 id="list-on" className="list__heading" tabIndex={-1}>
               오늘 고를 가게 <span className="list__count">{on.length}곳</span>
             </h2>
             {onAdd && (
@@ -398,7 +433,7 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
                 별점 순
               </button>
             </div>
-            <p className="muted small">{recentNote(recentCount, excludeRecent)}</p>
+            <p className="muted small">{recentNote(recent)}</p>
           </div>
           {on.length > 0 ? (
             <ul className="list">{on.map(renderRow)}</ul>
@@ -415,7 +450,14 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
           </details>
         )}
       </div>
-      <RemovePlaceSheet place={removing} onClose={() => setRemoving(null)} onDone={onChanged} />
+      <RemovePlaceSheet
+        place={removing}
+        onClose={() => setRemoving(null)}
+        onDone={() => {
+          if (removing) focusSoon(neighborTarget(removing));
+          onChanged();
+        }}
+      />
     </div>
   );
 }

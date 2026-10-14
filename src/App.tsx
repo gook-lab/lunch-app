@@ -675,6 +675,31 @@ export default function App() {
     </div>
   ) : null;
 
+  /*
+   * 게임 방식 고르기. 데스크톱에선 왼쪽 레일이라 DOM 에서도 메뉴 칩보다 앞에 둔다 — 뒤에 두면
+   * Tab 이 오른쪽 메뉴 칩을 다 지난 뒤에 왼쪽 레일로 되돌아갔다(10/15 리뷰). 휴대폰은 칩 아래에
+   * 보이므로 DOM 도 칩 뒤다. 자리(grid)는 CSS 가 정하므로 화면은 그대로다.
+   */
+  const modebar = (
+    <div className="modebar" role="group" aria-label="방식">
+      {GAME_MODES.map((m) => (
+        <button
+          key={m.id}
+          type="button"
+          aria-pressed={mode === m.id}
+          className={mode === m.id ? 'modebar__item modebar__item--on' : 'modebar__item'}
+          onClick={() => pickMode(m.id)}
+          disabled={spinning}
+        >
+          <span className="modebar__icon" aria-hidden="true">
+            {MODE_ICON[m.id]}
+          </span>
+          {m.label}
+        </button>
+      ))}
+    </div>
+  );
+
   // 가게가 하나도 없을 때 — 고르기·목록 탭이 같은 안내와 단추를 쓴다(10/14 목록 탭은 한 줄 글뿐이었다).
   const emptyScreen = (
     <StatusScreen
@@ -775,7 +800,7 @@ export default function App() {
               visits={visits}
               today={today}
               onChanged={reload}
-              excludeRecent={filters.excludeRecent}
+              recent={result}
               onShowOnMap={showOnMap}
               onAdd={() => goTab('map')}
               ratings={ratings}
@@ -867,6 +892,7 @@ export default function App() {
                   </span>
                 </button>
               )}
+              {wide && modebar}
               {!expanded && (
                 <CategoryChips
                   places={places}
@@ -879,23 +905,7 @@ export default function App() {
                   disabled={spinning}
                 />
               )}
-              <div className="modebar" role="group" aria-label="방식">
-                {GAME_MODES.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    aria-pressed={mode === m.id}
-                    className={mode === m.id ? 'modebar__item modebar__item--on' : 'modebar__item'}
-                    onClick={() => pickMode(m.id)}
-                    disabled={spinning}
-                  >
-                    <span className="modebar__icon" aria-hidden="true">
-                      {MODE_ICON[m.id]}
-                    </span>
-                    {m.label}
-                  </button>
-                ))}
-              </div>
+              {!wide && modebar}
               {/* 데스크톱에선 판·실행·예측을 한 세로 칸으로 묶어 판이 남는 높이를 다 쓴다. 휴대폰·크게 보기에선 display: contents 라 없는 것과 같다. */}
               <div className="stage__main">
                 <div className="stage__top">

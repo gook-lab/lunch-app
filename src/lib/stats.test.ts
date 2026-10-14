@@ -50,7 +50,7 @@ describe('calculateStats', () => {
       expect(stats.totalCount).toBe(0);
       expect(stats.topPlaces).toEqual([]);
       expect(stats.categoryCount).toEqual({});
-      expect(stats.newPlaceCount).toBe(0);
+      expect(stats.distinctPlaceCount).toBe(0);
       expect(stats.badges.every((b) => !b.earned)).toBe(true);
     });
   });
@@ -132,32 +132,28 @@ describe('calculateStats', () => {
     });
   });
 
-  describe('new places', () => {
-    it('31일 창 안에서 처음 나타나면서 이번 달 방문인 가게만 센다', () => {
+  describe('이번 달 서로 다른 가게', () => {
+    it('이번 달 기록만, 같은 가게는 한 번만 센다', () => {
       const p1 = place('p1', '가게1', '한식');
       const p2 = place('p2', '가게2', '면');
       const p3 = place('p3', '가게3', '고기');
-      // 10월 13일 기준, 31일 창은 9월 13일 ~ 10월 13일
       const visits = [
-        visit('20260913', 'p1'), // 9월 13일: p1 첫 방문, 하지만 이번 달(10월)이 아님
-        visit('20261001', 'p2'), // 10월 1일: p2 첫 방문, 이번 달
-        visit('20261005', 'p3'), // 10월 5일: p3 첫 방문, 이번 달
-        visit('20261010', 'p1'), // 10월 10일: p1 이번 달 방문 (하지만 이미 9월에 처음 나타남)
+        visit('20260913', 'p3'), // 지난달 — 세지 않는다
+        visit('20261001', 'p1'),
+        visit('20261005', 'p2'),
+        visit('20261010', 'p1'), // 같은 가게 다시
       ];
-      const stats = calculateStats(visits, [p1, p2, p3], '20261013');
-      expect(stats.newPlaceCount).toBe(2); // p2, p3
+      expect(calculateStats(visits, [p1, p2, p3], '20261013').distinctPlaceCount).toBe(2);
     });
 
-    it('31일 창 밖의 가게는 새 가게로 안 센다', () => {
+    it('월말이라도 지난달에 간 가게를 "새로" 셈하지 않는다 — 이번 달에 간 곳 수 그대로', () => {
+      // 예전 개척자는 31일 창 첫 등장만 봐서, 10/31 엔 9/30 이전 기록이 창 밖으로 나가
+      // 늘 가던 단골까지 모두 새 가게가 됐다.
       const p1 = place('p1', '가게1', '한식');
-      const p2 = place('p2', '가게2', '면');
-      // 10월 13일 기준, 31일 창은 9월 13일 ~ 10월 13일
-      const visits = [
-        visit('20260910', 'p1'), // 9월 10일: 31일 창 밖
-        visit('20261001', 'p2'), // 10월 1일: 새 가게
-      ];
-      const stats = calculateStats(visits, [p1, p2], '20261013');
-      expect(stats.newPlaceCount).toBe(1); // p2만
+      const visits = [visit('20260915', 'p1'), visit('20261031', 'p1')];
+      const stats = calculateStats(visits, [p1], '20261031');
+      expect(stats.distinctPlaceCount).toBe(1);
+      expect(stats.badges.find((b) => b.id === 'variety')!.current).toBe(1);
     });
   });
 
@@ -175,17 +171,15 @@ describe('calculateStats', () => {
       }
     });
 
-    it('🧭 개척자: 새 가게 3곳 이상', () => {
-      const places = [place('p1', '가게1', '한식'), place('p2', '가게2', '면'), place('p3', '가게3', '고기')];
-      const visits = [
-        visit('20261001', 'p1'),
-        visit('20261002', 'p2'),
-        visit('20261003', 'p3'),
-      ];
+    it('🧭 이곳저곳: 이번 달 서로 다른 가게 5곳 이상', () => {
+      const places = ['p1', 'p2', 'p3', 'p4', 'p5'].map((id) => place(id, id, '한식'));
+      const visits = places.map((p, i) => visit(`2026100${i + 1}`, p.id));
       const stats = calculateStats(visits, places, '20261013');
-      const explorer = stats.badges.find((b) => b.id === 'explorer')!;
-      expect(explorer.earned).toBe(true);
-      expect(explorer.current).toBe(3);
+      const variety = stats.badges.find((b) => b.id === 'variety')!;
+      expect(variety.label).toBe('이곳저곳');
+      expect(variety.hint).toBe('이번 달 서로 다른 가게');
+      expect(variety.earned).toBe(true);
+      expect(variety.current).toBe(5);
     });
 
     it('🌈 골고루: 카테고리 4종 이상', () => {
@@ -296,10 +290,10 @@ describe('calculateStats', () => {
       const visits = [visit('20261001', 'p1'), visit('20261002', 'p2')];
       const stats = calculateStats(visits, places, '20261013');
 
-      const explorer = stats.badges.find((b) => b.id === 'explorer')!;
-      expect(explorer.earned).toBe(false);
-      expect(explorer.current).toBe(2);
-      expect(explorer.target).toBe(3);
+      const variety = stats.badges.find((b) => b.id === 'variety')!;
+      expect(variety.earned).toBe(false);
+      expect(variety.current).toBe(2);
+      expect(variety.target).toBe(5);
     });
   });
 });

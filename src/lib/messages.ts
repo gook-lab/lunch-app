@@ -71,14 +71,24 @@ export function noticeMessage(result: CandidateResult): string | null {
   return null;
 }
 
+/** 목록 머리말이 쓰는 후보 산출 결과 일부. 돌림판과 같은 selectCandidates 결과여야 숫자가 맞는다. */
+export type RecentSummary = Pick<CandidateResult, 'recentlyVisitedCount' | 'releasedCount' | 'excludedRecent'>;
+
 /**
  * 목록 탭 머리말의 최근 방문 문구. 로드맵에서 제외를 끈 상태면 "빠집니다" 라고
  * 말하면 안 된다 — 같은 거짓말을 noticeMessage 에서 한 번 고쳤다.
+ *
+ * 숫자는 목록이 따로 세지 않고 App 의 selectCandidates 결과를 받는다. 목록에서 세면
+ * 도보·메뉴 칩과 5곳 채우려고 다시 넣은 곳을 몰라, 돌림판엔 있는 가게를 "고르지 않아요"
+ * 라고 말했다(10/15 리뷰).
  */
-export function recentNote(recentCount: number, excludeRecent: boolean): string {
-  if (recentCount === 0) return '최근 1주에 간 곳이 없어요';
-  if (!excludeRecent) return `최근 1주 제외를 꺼 둬서 최근에 간 ${recentCount}곳도 오늘 함께 골라요`;
-  return `최근 1주에 간 ${recentCount}곳은 오늘 고르지 않아요`;
+export function recentNote({ recentlyVisitedCount: recent, releasedCount: released, excludedRecent }: RecentSummary): string {
+  if (recent === 0) return '최근 1주에 간 곳이 없어요';
+  if (!excludedRecent) return `최근 1주 제외를 꺼 둬서 최근에 간 ${recent}곳도 오늘 함께 골라요`;
+  const skipped = recent - released;
+  if (skipped === 0) return `가게가 모자라서 최근 1주에 간 ${recent}곳도 오늘 함께 골라요`;
+  if (released > 0) return `최근 1주에 간 ${skipped}곳은 오늘 고르지 않아요 · ${released}곳은 다시 넣었어요`;
+  return `최근 1주에 간 ${skipped}곳은 오늘 고르지 않아요`;
 }
 
 /** 게임을 못 돌릴 때 무대에 띄우는 안내와, 바로 풀 수 있는 한 가지 방법. */

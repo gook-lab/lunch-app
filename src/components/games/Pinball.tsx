@@ -791,9 +791,21 @@ export function Pinball({
     setShuffling(prefersReducedMotion() ? null : { from, at: performance.now() });
   };
 
-  const setBalls = (id: string, n: number) =>
-    onBallCounts?.((prev) => ({ ...prev, [id]: Math.max(1, Math.min(MAX_BALLS_EACH, n)) }));
-  const setAll = (n: number) => onBallCounts?.(() => Object.fromEntries(candidates.map((p) => [p.id, n])));
+  /**
+   * 공 개수를 바꾼 결과를 한 문장으로 읽어 준다. 예전엔 줄마다 aria-live 가 있어 "모두 3개" 한 번에
+   * 일곱 줄이 한꺼번에 읽혔다(10/15 리뷰). 목록 밖 한 곳에 마지막 바뀐 것만 남긴다.
+   */
+  const [ballNote, setBallNote] = useState('');
+  const setBalls = (i: number, n: number) => {
+    const next = Math.max(1, Math.min(MAX_BALLS_EACH, n));
+    const nextTotal = total - ballsOf(i) + next;
+    setBallNote(`${candidates[i].name} 공 ${next}개, ${Math.round((next / Math.max(1, nextTotal)) * 100)}%`);
+    onBallCounts?.((prev) => ({ ...prev, [candidates[i].id]: next }));
+  };
+  const setAll = (n: number) => {
+    setBallNote(`모든 가게 공 ${n}개`);
+    onBallCounts?.(() => Object.fromEntries(candidates.map((p) => [p.id, n])));
+  };
 
   if (count === 0) return <div className="pinball pinball--empty" />;
 
@@ -916,18 +928,19 @@ export function Pinball({
                       type="button"
                       aria-label={`${p.name} 공 하나 빼기`}
                       disabled={spinning || n <= 1}
-                      onClick={() => setBalls(p.id, n - 1)}
+                      onClick={() => setBalls(i, n - 1)}
                     >
                       −
                     </button>
-                    <span aria-live="polite" aria-label={`${p.name} 공 ${n}개`}>
+                    <span>
                       {n}
+                      <span className="sr-only">개</span>
                     </span>
                     <button
                       type="button"
                       aria-label={`${p.name} 공 하나 더`}
                       disabled={spinning || n >= MAX_BALLS_EACH || total >= MAX_MARBLES}
-                      onClick={() => setBalls(p.id, n + 1)}
+                      onClick={() => setBalls(i, n + 1)}
                     >
                       +
                     </button>
@@ -937,6 +950,11 @@ export function Pinball({
             })}
           </ul>
         </details>
+      )}
+      {onBallCounts && (
+        <p className="sr-only" role="status">
+          {ballNote}
+        </p>
       )}
     </div>
   );

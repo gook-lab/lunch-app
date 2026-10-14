@@ -96,7 +96,7 @@ export function LunchStats({ places, visits, today }: Props) {
             <div
               key={badge.id}
               className={badge.earned ? 'stats__badge stats__badge--earned' : 'stats__badge'}
-              title={`${badge.label} 배지, ${badge.current}/${badge.target}`}
+              title={`${badge.label} 배지: ${badge.hint} ${badge.current}/${badge.target}${badge.unit}`}
             >
               <span className="stats__badgeIcon" aria-hidden="true">{badge.icon}</span>
               <span className="stats__badgeLabel">{badge.label}</span>
@@ -104,8 +104,9 @@ export function LunchStats({ places, visits, today }: Props) {
                 <span className="sr-only"> 배지, 받았어요</span>
               ) : (
                 <span className="stats__badgeProgress">
-                  <span className="sr-only"> 배지, 달성도 </span>
+                  <span className="sr-only"> 배지, {badge.hint} </span>
                   {badge.current}/{badge.target}
+                  <span className="sr-only">{badge.unit}</span>
                 </span>
               )}
             </div>

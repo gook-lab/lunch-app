@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 
 afterEach(cleanup);
+const NONE = { recentlyVisitedCount: 0, releasedCount: 0, excludedRecent: true };
 import { PlaceList } from './PlaceList';
 import type { Place } from '../lib/candidates';
 import { updatePlace } from '../services/lunch';
@@ -28,7 +29,7 @@ describe('최근 다녀온 곳', () => {
         visits={[{ id: '20261006', placeId: 'b' }, { id: '20261009', placeId: 'a' }, { id: '20261008', placeId: 'b' }]}
         today="20261009"
         onChanged={() => {}}
-        excludeRecent
+        recent={NONE}
         onShowOnMap={onShowOnMap}
       />,
     );
@@ -40,7 +41,7 @@ describe('최근 다녀온 곳', () => {
   });
 
   it('방문이 없으면 보이지 않는다', () => {
-    render(<PlaceList places={[place('a', '가집')]} visits={[]} today="20261009" onChanged={() => {}} excludeRecent />);
+    render(<PlaceList places={[place('a', '가집')]} visits={[]} today="20261009" onChanged={() => {}} recent={NONE} />);
     expect(screen.queryByRole('region', { name: /최근 다녀온 곳/ })).toBeNull();
   });
 });
@@ -49,7 +50,7 @@ describe('끄기 실패', () => {
   it('저장이 실패하면 알려 주고 목록을 다시 읽지 않는다', async () => {
     vi.mocked(updatePlace).mockRejectedValueOnce(new Error('denied'));
     const onChanged = vi.fn();
-    render(<PlaceList places={[place('a', '가집')]} visits={[]} today="20261009" onChanged={onChanged} excludeRecent />);
+    render(<PlaceList places={[place('a', '가집')]} visits={[]} today="20261009" onChanged={onChanged} recent={NONE} />);
     openMenu();
     fireEvent.click(screen.getByRole('menuitem', { name: '잠시 빼기' }));
     expect((await screen.findByRole('alert')).textContent).toBe('가집을 빼지 못했어요. 잠시 뒤 다시 해 주세요.');
@@ -60,7 +61,7 @@ describe('끄기 실패', () => {
 describe('고치기 — 카테고리', () => {
   it('메뉴를 고르고 세부까지 고르면 세부를 저장한다', async () => {
     vi.mocked(updatePlace).mockClear();
-    render(<PlaceList places={[place('a', '가집')]} visits={[]} today="20261009" onChanged={() => {}} excludeRecent />);
+    render(<PlaceList places={[place('a', '가집')]} visits={[]} today="20261009" onChanged={() => {}} recent={NONE} />);
     openMenu();
     fireEvent.click(screen.getByRole('menuitem', { name: '고치기' }));
     const menus = screen.getByRole('group', { name: '메뉴' });
@@ -78,7 +79,7 @@ describe('고치기 — 카테고리', () => {
 describe('고치기 — 목록에 없는 옛 카테고리', () => {
   it('아무 칩도 켜지지 않은 채로 시작하고, 고르지 않으면 저장하지 않는다', () => {
     vi.mocked(updatePlace).mockClear();
-    render(<PlaceList places={[{ ...place('a', '가집'), category: '국밥' }]} visits={[]} today="20261009" onChanged={() => {}} excludeRecent />);
+    render(<PlaceList places={[{ ...place('a', '가집'), category: '국밥' }]} visits={[]} today="20261009" onChanged={() => {}} recent={NONE} />);
     openMenu();
     fireEvent.click(screen.getByRole('menuitem', { name: '고치기' }));
     const group = screen.getByRole('group', { name: '메뉴' });
