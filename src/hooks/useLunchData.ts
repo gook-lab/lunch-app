@@ -115,7 +115,9 @@ export function useLunchData(day: DayId): LunchData {
 
   const visits = useMemo(() => {
     const withoutToday = history.filter((v) => v.id !== day);
-    return today ? [...withoutToday, { id: day, placeId: today.placeId }] : withoutToday;
+    if (!today) return withoutToday;
+    const todayVisit: Visit = { id: day, placeId: today.placeId, ...(today.mode ? { mode: today.mode } : {}) };
+    return [...withoutToday, todayVisit];
   }, [history, today, day]);
 
   return { state, error, places, visits, today, refreshing, reload, officeKey };

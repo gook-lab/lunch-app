@@ -36,8 +36,10 @@ export function subscribeToday(
   _onError: (error: unknown) => void,
 ): Unsubscribe {
   const emit = () => {
-    const placeId = readDemo().visits[today];
-    onChange(placeId ? { dayId: today, placeId } : null);
+    const state = readDemo();
+    const placeId = state.visits[today];
+    const mode = state.modes?.[today];
+    onChange(placeId ? { dayId: today, placeId, ...(mode ? { mode } : {}) } : null);
   };
   emit();
   return onDemoChange(emit);

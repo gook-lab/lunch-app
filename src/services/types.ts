@@ -4,6 +4,8 @@ import type { DayId } from '../lib/date';
 export interface TodayDecision {
   dayId: DayId;
   placeId: string;
+  /** 어떤 게임으로 뽑았는지(10/14 부터). */
+  mode?: string;
 }
 
 export interface Vote {

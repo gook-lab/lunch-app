@@ -93,10 +93,9 @@ export function subscribeToday(
       inner = onSnapshot(
         doc(visits(), today),
         (snap) => {
+          const data = snap.exists() ? (snap.data() as { placeId: string; mode?: string }) : null;
           onChange(
-            snap.exists()
-              ? { dayId: today, placeId: (snap.data() as { placeId: string }).placeId }
-              : null,
+            data ? { dayId: today, placeId: data.placeId, ...(data.mode ? { mode: data.mode } : {}) } : null,
           );
         },
         onError,
