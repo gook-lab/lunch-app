@@ -3348,3 +3348,13 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 }
 .tour__next:focus-visible { outline: 2px solid var(--color-text); outline-offset: 2px; }
 .app__help { margin-left: auto; font-size: var(--fs-sm); }
+
+/* 게임이 그리다 터졌을 때 — 게임판 자리만 안내로 바꾼다 */
+.game-failed {
+  display: grid;
+  place-items: center;
+  gap: var(--space-2);
+  min-height: 240px;
+  color: var(--color-neutral-700);
+  text-align: center;
+}

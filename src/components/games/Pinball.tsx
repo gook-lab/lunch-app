@@ -32,7 +32,19 @@ import {
 } from '../../lib/pinball';
 import { seededRandom } from '../../lib/random';
 import { MAX_BALLS_EACH, marblesFor, winnerMarble } from '../../lib/weights';
-import { FUNNEL_Y, PALETTES, SHADOW_DX, SHADOW_DY, drawBumper, drawOrbiter, drawPortal, drawPost, drawSpinner, drawTable, drawWall } from './pinballDraw';
+import {
+  FUNNEL_Y,
+  PALETTES,
+  SHADOW_DX,
+  SHADOW_DY,
+  drawBumper,
+  drawOrbiter,
+  drawPortal,
+  drawPost,
+  drawSpinner,
+  drawTable,
+  drawWall,
+} from './pinballDraw';
 import { prefersReducedMotion, type GameProps } from './types';
 import { FRAME_MS, SLOW_RATE, frameAtMs, timingFor, type Timing } from '../../lib/pinballTiming';
 
@@ -98,7 +110,6 @@ function marbleHue(i: number): number {
 }
 const marbleColor = (i: number) => `oklch(0.78 0.19 ${marbleHue(i)})`;
 const marbleGlow = (i: number) => `oklch(0.78 0.19 ${marbleHue(i)} / 0.45)`;
-
 
 /** 프레임 f 에서 아직 안 들어온 구슬 중 가장 아래(선두)의 y. */
 function leaderY(race: RaceResult, f: number): number {
@@ -175,6 +186,8 @@ function drawMarble(ctx: CanvasRenderingContext2D, x: number, y: number, i: numb
 
 interface Play {
   run: number;
+  /** 돌린 순간의 후보·공 구성. 끝난 판 위에서 칩으로 후보가 바뀌면 이 경기는 버린다. */
+  key: string;
   race: RaceResult;
   timing: Timing;
 }
@@ -186,10 +199,20 @@ interface PinballProps extends GameProps {
   onBallCounts?: (update: (prev: Record<string, number>) => Record<string, number>) => void;
 }
 
-export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false, balls, onBallCounts }: PinballProps) {
+export function Pinball({
+  candidates,
+  winnerIndex,
+  spinning,
+  run,
+  onSpinEnd,
+  expanded = false,
+  balls,
+  onBallCounts,
+}: PinballProps) {
   const viewH = expanded ? VIEW_H_BIG : VIEW_H;
   const count = candidates.length;
   const ballsKey = balls.slice(0, count).join(',');
+  const playKey = `${candidates.map((p) => p.id).join(',')}|${ballsKey}`;
   /** 구슬마다 어느 가게인지. */
   const marbles = useMemo(() => marblesFor(ballsKey === '' ? [] : ballsKey.split(',').map(Number)), [ballsKey]);
   const total = marbles.length;
@@ -306,7 +329,7 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
         onSpinEnd();
         return;
       }
-      const found = { run, race, timing: timingFor(race.frames.length, race.winnerFrame) };
+      const found = { run, key: playKey, race, timing: timingFor(race.frames.length, race.winnerFrame) };
       // 게이트에서 구슬이 실제 출발 자리로 섞여 들어가도록 경기를 먼저 건넨다.
       setPlay(found);
       const wait = reduced ? 0 : Math.max(0, GATE_MS - (performance.now() - t0));
@@ -326,7 +349,9 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spinning, winnerIndex, total, run, onSpinEnd]);
 
-  const current = play && play.run === run ? play : null;
+  // 끝난 경기는 구슬 수가 그때 기준이다. 칩으로 후보가 줄면 구슬 위치가 남아 색 계산이
+  // NaN 이 되고 앱 전체가 멈췄다(10/14). 구성이 바뀌면 경기를 버리고 출발선으로 돌아간다.
+  const current = play && play.run === run && play.key === playKey ? play : null;
   const race = current?.race ?? null;
   const timing = current?.timing ?? null;
   const t = progress.run === run ? progress.t : -1;
@@ -512,7 +537,9 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
       drawMarble(ctx, m.x, m.y, marbles[i]);
       ctx.restore();
     });
-    if (followMarbles) for (const i of followMarbles) if (i !== lead && positions[i]) drawMarble(ctx, positions[i].x, positions[i].y, marbles[i]);
+    if (followMarbles)
+      for (const i of followMarbles)
+        if (i !== lead && positions[i]) drawMarble(ctx, positions[i].x, positions[i].y, marbles[i]);
     if (lead !== null && follow !== null) {
       const m = positions[lead];
       const pulse = reducedNow ? 0.5 : 0.5 + 0.5 * Math.sin(now / 180);
@@ -611,7 +638,11 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = `oklch(0.92 0.05 285 / ${reducedNow ? 0.9 : 0.65 + 0.35 * Math.sin(now / 300)})`;
-      ctx.fillText('👆 공을 눌러 내 공을 골라 보세요', COURSE_W / 2, startSpot(Math.max(0, total - 1), Math.max(1, total)).y + 34);
+      ctx.fillText(
+        '👆 공을 눌러 내 공을 골라 보세요',
+        COURSE_W / 2,
+        startSpot(Math.max(0, total - 1), Math.max(1, total)).y + 34,
+      );
       ctx.restore();
     }
 
@@ -876,7 +907,9 @@ export function Pinball({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
                     >
                       −
                     </button>
-                    <span aria-live="polite" aria-label={`${p.name} 공 ${n}개`}>{n}</span>
+                    <span aria-live="polite" aria-label={`${p.name} 공 ${n}개`}>
+                      {n}
+                    </span>
                     <button
                       type="button"
                       aria-label={`${p.name} 공 하나 더`}

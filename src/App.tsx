@@ -57,6 +57,7 @@ import { officeSource } from './lib/walk';
 import { emptyMessage, noticeMessage } from './lib/messages';
 import { decideToday } from './services/lunch';
 import { DemoNote } from './components/DemoNote';
+import { GameBoundary } from './components/games/GameBoundary';
 import { DevHostNote, isDevHost } from './components/DevHostNote';
 import { Tour, tourSeen } from './components/Tour';
 import { RatingBadge } from './components/Rating';
@@ -882,55 +883,57 @@ export default function App() {
                * 스크롤 한 번보다 그게 더 나쁘다. 칩을 누르면 판이 바로 바뀐다.
                */}
               <div ref={boardRef} className="stage__board" tabIndex={-1}>
-                {(() => {
-                  const game = {
-                    candidates: board ?? result.candidates,
-                    winnerIndex,
-                    spinning,
-                    run,
-                    onSpinEnd,
-                    expanded,
-                  };
-                  // 사다리는 사용자가 판을 고친다. 후보 구성이 바뀌면 새 판이어야 하므로
-                  // 후보 id 를 key 로 준다. 돌린 순간 얼리는 board 는 같은 id 라 판이 유지된다.
-                  if (mode === 'ladder') {
-                    const key = game.candidates.map((p) => p.id).join(',');
-                    return <Ladder key={key} {...game} onRequestSpin={spin} />;
-                  }
-                  if (mode === 'cards') {
-                    const key = game.candidates.map((p) => p.id).join(',');
-                    return <Cards key={key} {...game} onRequestSpin={spin} />;
-                  }
-                  if (mode === 'memory') {
-                    const key = game.candidates.map((p) => p.id).join(',');
-                    return <Memory key={key} {...game} onRequestSpin={spin} onActivity={onActivity} />;
-                  }
-                  if (mode === 'tournament') {
-                    // 응원 고른 것은 같은 후보 구성 안에서만 유지한다.
-                    const key = game.candidates.map((p) => p.id).join(',');
-                    return <Tournament key={key} {...game} />;
-                  }
-                  if (mode === 'slot') return <Slot {...game} />;
-                  if (mode === 'pinball') {
-                    const balls =
-                      board && boardBalls
-                        ? boardBalls
-                        : ballCountsFor(
-                            game.candidates.map((p) => p.id),
-                            ballCounts,
-                          );
-                    return <Pinball {...game} balls={balls} onBallCounts={changeBalls} />;
-                  }
-                  if (mode === 'gacha') return <Gacha {...game} />;
-                  if (mode === 'plinko') return <Plinko {...game} />;
-                  if (mode === 'horse') return <HorseRace {...game} />;
-                  if (mode === 'racing') return <CarRace {...game} />;
-                  if (mode === 'dice') {
-                    const key = game.candidates.map((p) => p.id).join(',');
-                    return <Dice key={key} {...game} />;
-                  }
-                  return <Wheel {...game} />;
-                })()}
+                <GameBoundary resetKey={`${mode}|${run}|${(board ?? result.candidates).map((p) => p.id).join(',')}`}>
+                  {(() => {
+                    const game = {
+                      candidates: board ?? result.candidates,
+                      winnerIndex,
+                      spinning,
+                      run,
+                      onSpinEnd,
+                      expanded,
+                    };
+                    // 사다리는 사용자가 판을 고친다. 후보 구성이 바뀌면 새 판이어야 하므로
+                    // 후보 id 를 key 로 준다. 돌린 순간 얼리는 board 는 같은 id 라 판이 유지된다.
+                    if (mode === 'ladder') {
+                      const key = game.candidates.map((p) => p.id).join(',');
+                      return <Ladder key={key} {...game} onRequestSpin={spin} />;
+                    }
+                    if (mode === 'cards') {
+                      const key = game.candidates.map((p) => p.id).join(',');
+                      return <Cards key={key} {...game} onRequestSpin={spin} />;
+                    }
+                    if (mode === 'memory') {
+                      const key = game.candidates.map((p) => p.id).join(',');
+                      return <Memory key={key} {...game} onRequestSpin={spin} onActivity={onActivity} />;
+                    }
+                    if (mode === 'tournament') {
+                      // 응원 고른 것은 같은 후보 구성 안에서만 유지한다.
+                      const key = game.candidates.map((p) => p.id).join(',');
+                      return <Tournament key={key} {...game} />;
+                    }
+                    if (mode === 'slot') return <Slot {...game} />;
+                    if (mode === 'pinball') {
+                      const balls =
+                        board && boardBalls
+                          ? boardBalls
+                          : ballCountsFor(
+                              game.candidates.map((p) => p.id),
+                              ballCounts,
+                            );
+                      return <Pinball {...game} balls={balls} onBallCounts={changeBalls} />;
+                    }
+                    if (mode === 'gacha') return <Gacha {...game} />;
+                    if (mode === 'plinko') return <Plinko {...game} />;
+                    if (mode === 'horse') return <HorseRace {...game} />;
+                    if (mode === 'racing') return <CarRace {...game} />;
+                    if (mode === 'dice') {
+                      const key = game.candidates.map((p) => p.id).join(',');
+                      return <Dice key={key} {...game} />;
+                    }
+                    return <Wheel {...game} />;
+                  })()}
+                </GameBoundary>
               </div>
 
               {/*
