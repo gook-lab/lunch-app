@@ -3413,3 +3413,20 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
   font-weight: 600;
 }
 .stats__gameCount { color: var(--color-neutral-700); font-weight: 500; }
+
+/*
+ * 다크 모드 — "가장 어두운 색" 으로 --color-neutral-900 을 쓴 곳. 다크 테마에선 그 값이 가장 밝은 색이 된다.
+ * 첫 방문 안내는 화면을 어둡게 덮어야 하는데 회색으로 밝아졌고, 카테고리 배지는 연한 바탕에 밝은 글자가 됐다(10/14).
+ */
+[data-theme='dark'] .tour__dim { background: oklch(0 0 0 / 0.6); }
+[data-theme='dark'] .tour__hole { box-shadow: 0 0 0 200vmax oklch(0 0 0 / 0.6); }
+[data-theme='dark'] .tour__card { box-shadow: 0 8px 24px oklch(0 0 0 / 0.5); }
+[data-theme='dark'] .card__cat { background: oklch(0.38 0.07 var(--cat-hue)); color: var(--color-text); }
+/* 뽑기 기계 동전 구멍·배출구는 기계 그림의 일부라 늘 어둡다. */
+[data-theme='dark'] .gacha__slot,
+[data-theme='dark'] .gacha__chute {
+  --color-neutral-800: #444141;
+  --color-neutral-900: #2d2b2b;
+}
+/* MODUL 모달·시트 뒤 가림막도 같은 이유로 다크에서 밝은 회색이 됐다. */
+[data-theme='dark'] dialog::backdrop { background: oklch(0 0 0 / 0.55); }
