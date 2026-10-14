@@ -61,7 +61,7 @@ interface Props {
 /** 이 배율보다 멀리 보면 핀에서 이름을 빼고 그림만 남긴다. 이름끼리 겹친다. */
 const LABEL_MAX_LEVEL = 5;
 /** 이 레벨부터(더 멀리 보면) 몰린 핀을 묶는다. */
-const CLUSTER_MIN_LEVEL = 4;
+const CLUSTER_MIN_LEVEL = 3;
 
 interface Pin {
   overlay: KakaoCustomOverlay;
@@ -228,7 +228,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
         const map = new maps.Map(el, { center, level: 4 });
         mapsRef.current = maps;
         mapRef.current = map;
-        // 가게가 몰린 동네(대학가 등)는 핀이 서로 덮였다. 가까이(레벨 3 이하) 보면 다 펼치고,
+        // 가게가 몰린 동네(대학가 등)는 핀이 서로 덮였다. 가까이(레벨 2 이하) 보면 다 펼치고,
         // 그보다 멀면 50px 안 세 곳 이상을 "N곳" 하나로 묶는다. 누르면 그 자리로 확대한다.
         // 동그라미 모양은 카카오가 인라인 스타일로만 받는다 — 지도 위라 테마와 상관없이 어두운 색.
         clustererRef.current = maps.MarkerClusterer
