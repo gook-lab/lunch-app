@@ -20,17 +20,12 @@ import { CATEGORIES, categoryIcon, categoryLabel } from '../lib/category';
 import { CategoryChips } from './CategoryChips';
 import { matchesCategory } from '../lib/candidates';
 import { CategoryPicker } from './CategoryPicker';
-import { metersForWalkMinutes, officeCoord, type Coord } from '../lib/walk';
+import { metersForWalkMinutes, officeCoord, officeSource, type Coord } from '../lib/walk';
 import { OfficeCard } from './map/OfficeCard';
 import { pinElement } from './map/pin';
 import type { RatingSummary } from '../lib/ratings';
 import { RatingBadge, RatingEditor, RatingReviews } from './Rating';
-import {
-  clearKakaoLoadFailure,
-  KakaoLoadError,
-  kakaoJsKey,
-  loadKakaoMaps,
-} from '../services/kakao';
+import { clearKakaoLoadFailure, KakaoLoadError, kakaoJsKey, loadKakaoMaps } from '../services/kakao';
 import { updatePlace } from '../services/lunch';
 import type { KakaoCustomOverlay, KakaoMap, KakaoMaps, KakaoMarker, KakaoPlace } from '../types/kakao';
 import { PlaceForm, type PlaceDraft } from './map/PlaceForm';
@@ -141,6 +136,26 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
   // 회사 위치를 지도에서 찍는 중이면, 짧게 누른 자리를 이 함수로 넘긴다.
   const pickRef = useRef<((coord: Coord) => void) | null>(null);
   const officePinRef = useRef<{ setMap: (map: KakaoMap | null) => void } | null>(null);
+  // 회사를 아직 안 정했으면 OfficeCard 가 여기에 "누른 자리를 회사 후보로" 를 걸어 둔다.
+  /** 회사 후보 자리에 "새 회사" 핀을 꽂는다. 찾기로 고른 자리면 지도를 그리로 옮긴다. */
+  const dropOfficePin = useCallback((coord: Coord, pan: boolean) => {
+    const maps = mapsRef.current;
+    const map = mapRef.current;
+    if (!maps || !map) return;
+    const position = new maps.LatLng(coord.lat, coord.lng);
+    officePinRef.current?.setMap(null);
+    officePinRef.current = new maps.CustomOverlay({
+      position,
+      content: '<div class="map__office map__office--new">새 회사</div>',
+      map,
+      yAnchor: 0.5,
+      zIndex: 8,
+    });
+    if (pan) map.panTo(position);
+  }, []);
+  const officeTapRef = useRef<((coord: Coord) => void) | null>(null);
+  // 회사를 정하기 전에는 가게 찾기·넣기를 숨긴다. 기준이 없으면 도보 시간이 다 틀린다.
+  const officeSet = officeSource() === 'saved';
   const [picking, setPicking] = useState(false);
   const markersRef = useRef<Map<string, Pin>>(new Map());
   const placesRef = useRef(places);
@@ -165,10 +180,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
     [places, showOff],
   );
 
-  const selected = useMemo(
-    () => places.find((p) => p.id === selectedId) ?? null,
-    [places, selectedId],
-  );
+  const selected = useMemo(() => places.find((p) => p.id === selectedId) ?? null, [places, selectedId]);
   const pickMapCats = (next: { categories: string[]; subs: string[] }) => {
     setMapCats(next);
     // 고른 가게 핀이 숨으면 정보 카드만 덩그러니 남는다.
@@ -222,9 +234,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
             // 1px·0.35 로는 카카오 지도 위에서 안 보인다. 실제로 안 보였다.
             strokeWeight: 2,
             // 카카오는 CSS 변수를 못 읽는다. 토큰 값을 꺼내 넘긴다.
-            strokeColor:
-              getComputedStyle(document.documentElement).getPropertyValue('--color-text').trim() ||
-              'black',
+            strokeColor: getComputedStyle(document.documentElement).getPropertyValue('--color-text').trim() || 'black',
             strokeOpacity: 0.6,
             strokeStyle: 'shortdash',
             fillOpacity: 0,
@@ -302,10 +312,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       const overlay = new maps.CustomOverlay({
         position,
         content: el,
-        map:
-          (place.active || showOff) && matchesCategory(place, mapCats)
-            ? map
-            : undefined,
+        map: (place.active || showOff) && matchesCategory(place, mapCats) ? map : undefined,
         // 핀 위에서 누른 것은 지도로 넘기지 않는다. 안 그러면 핀을 누르다 지도가 끌린다.
         clickable: true,
         yAnchor: 1,
@@ -400,20 +407,13 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
     const onUp = (e: PointerEvent) => {
       const maps = mapsRef.current;
       const map = mapRef.current;
-      const pick = pickRef.current;
+      const pick = pickRef.current ?? officeTapRef.current;
       if (pick && start && maps && map) {
         const rect = el.getBoundingClientRect();
         const coords = map
           .getProjection()
           .coordsFromContainerPoint(new maps.Point(e.clientX - rect.left, e.clientY - rect.top));
-        officePinRef.current?.setMap(null);
-        officePinRef.current = new maps.CustomOverlay({
-          position: coords,
-          content: '<div class="map__office map__office--new">새 회사</div>',
-          map,
-          yAnchor: 0.5,
-          zIndex: 8,
-        });
+        dropOfficePin({ lat: coords.getLat(), lng: coords.getLng() }, false);
         pickRef.current = null;
         setPicking(false);
         pick({ lat: coords.getLat(), lng: coords.getLng() });
@@ -426,7 +426,11 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
           const coords = map
             .getProjection()
             .coordsFromContainerPoint(new maps.Point(e.clientX - rect.left, e.clientY - rect.top));
-          openTapMenuRef.current({ lat: coords.getLat(), lng: coords.getLng() }, e.clientX - rect.left, e.clientY - rect.top);
+          openTapMenuRef.current(
+            { lat: coords.getLat(), lng: coords.getLng() },
+            e.clientX - rect.left,
+            e.clientY - rect.top,
+          );
         }
       }
       clear();
@@ -444,7 +448,8 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       el.removeEventListener('pointercancel', clear, { capture: true });
       el.removeEventListener('pointerleave', clear, { capture: true });
     };
-  }, [phase]);
+  }, [phase, dropOfficePin]);
+
 
   const closeTapMenu = useCallback(() => {
     tapOverlayRef.current?.setMap(null);
@@ -530,15 +535,18 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
     if (draft) draftRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
   }, [draft]);
 
-  const goTo = useCallback((place: Place) => {
-    const maps = mapsRef.current;
-    const map = mapRef.current;
-    setDraft(null);
-    dropTempPin();
-    setSelectedId(place.id);
-    setEditing(false);
-    if (maps && map) map.panTo(new maps.LatLng(place.lat, place.lng));
-  }, [dropTempPin]);
+  const goTo = useCallback(
+    (place: Place) => {
+      const maps = mapsRef.current;
+      const map = mapRef.current;
+      setDraft(null);
+      dropTempPin();
+      setSelectedId(place.id);
+      setEditing(false);
+      if (maps && map) map.panTo(new maps.LatLng(place.lat, place.lng));
+    },
+    [dropTempPin],
+  );
 
   const search = useCallback(async () => {
     const q = keyword.trim();
@@ -605,6 +613,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
     });
   }, []);
 
+
   const startPick = (onPick: (coord: Coord) => void) => {
     pickRef.current = onPick;
     setPicking(true);
@@ -628,7 +637,9 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
         <OfficeCard onSaved={onOfficeChanged} />
         {/* 지도 자리에 같은 크기의 점선 상자를 두고 안에서 알린다(docs/handoff/6 · 5e). */}
         <div className="map__troubleBox" role="alert">
-          <span className="map__troubleArt" aria-hidden="true">🗺️</span>
+          <span className="map__troubleArt" aria-hidden="true">
+            🗺️
+          </span>
           <p className="map__troubleTitle">{trouble.title}</p>
           <p className="muted small">{trouble.detail}</p>
           {trouble.retryable && (
@@ -638,7 +649,9 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
           )}
         </div>
         <p className="muted small">
-          {kakaoJsKey() ? '지도가 없어도 오늘·목록 탭은 그대로 쓸 수 있어요.' : '지도 키가 없어도 오늘과 목록 탭은 쓸 수 있어요. 지도는 나중에 설정해도 돼요.'}
+          {kakaoJsKey()
+            ? '지도가 없어도 오늘·목록 탭은 그대로 쓸 수 있어요.'
+            : '지도 키가 없어도 오늘과 목록 탭은 쓸 수 있어요. 지도는 나중에 설정해도 돼요.'}
         </p>
       </section>
     );
@@ -651,32 +664,51 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
         onStartPick={phase === 'ready' ? startPick : undefined}
         onCancelPick={cancelPick}
         picking={picking}
+        onPreview={phase === 'ready' ? (c) => dropOfficePin(c, true) : undefined}
+        tapRef={officeTapRef}
         onSaved={onOfficeChanged}
       />
-      <div className="add__search">
-        <Input value={keyword} onChange={(e) => setKeyword(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') void search(); }} placeholder="가게 이름으로 찾기" maxLength={40} aria-label="가게 이름으로 찾기" />
-        <Button onClick={() => void search()} loading={searching} disabled={!keyword.trim()}>
-          찾기
-        </Button>
-      </div>
-      {searchProblem && <p className="notice notice--empty" role="alert">{searchProblem}</p>}
-      {/* 결과 수는 화면에 따로 안 쓰지만 화면 낭독기에는 알린다. 늘 있어야 바뀐 걸 읽는다. */}
-      <p className="sr-only" role="status">
-        {!searching && results.length > 0 ? `${results.length}곳 찾았어요` : ''}
-      </p>
+      {officeSet && (
+        <>
+          <div className="add__search">
+            <Input
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void search();
+              }}
+              placeholder="가게 이름으로 찾기"
+              maxLength={40}
+              aria-label="가게 이름으로 찾기"
+            />
+            <Button onClick={() => void search()} loading={searching} disabled={!keyword.trim()}>
+              찾기
+            </Button>
+          </div>
+          {searchProblem && (
+            <p className="notice notice--empty" role="alert">
+              {searchProblem}
+            </p>
+          )}
+          {/* 결과 수는 화면에 따로 안 쓰지만 화면 낭독기에는 알린다. 늘 있어야 바뀐 걸 읽는다. */}
+          <p className="sr-only" role="status">
+            {!searching && results.length > 0 ? `${results.length}곳 찾았어요` : ''}
+          </p>
 
-      {results.length > 0 && (
-        <ul className="add__results">
-          {results.map((hit) => (
-            <li key={hit.id}>
-              <button type="button" className="add__hit" onClick={() => pickResult(hit)}>
-                <strong>{hit.place_name}</strong>
-                <span className="muted small">{hit.road_address_name || hit.address_name}</span>
-                <span className="muted small">{hit.category_name}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+          {results.length > 0 && (
+            <ul className="add__results">
+              {results.map((hit) => (
+                <li key={hit.id}>
+                  <button type="button" className="add__hit" onClick={() => pickResult(hit)}>
+                    <strong>{hit.place_name}</strong>
+                    <span className="muted small">{hit.road_address_name || hit.address_name}</span>
+                    <span className="muted small">{hit.category_name}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
 
       {/* 데스크톱에서는 지도가 왼쪽 큰 칸을 차지하고, 나머지는 오른쪽에 쌓인다. */}
@@ -715,11 +747,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
           />
         )}
         <div
-          className={[
-            'map__frame',
-            picking && 'map__frame--picking',
-            far && 'map__frame--far',
-          ]
+          className={['map__frame', picking && 'map__frame--picking', far && 'map__frame--far']
             .filter(Boolean)
             .join(' ')}
         >
@@ -729,7 +757,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
           {/* SDK·타일을 받는 동안 빈 회색 칸만 보이면 고장 난 것 같았다 — 스피너를 지도 위에 띄운다. */}
           {phase === 'loading' && (
             <div className="map__loading">
-              <Spinner size={32} style={{ borderRadius: "50%" }} aria-label="지도를 불러오고 있어요" />
+              <Spinner size={32} style={{ borderRadius: '50%' }} aria-label="지도를 불러오고 있어요" />
               <span className="muted small">지도를 불러오고 있어요</span>
             </div>
           )}
@@ -759,8 +787,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
                 <div>
                   <strong>{selected.name}</strong>
                   <p className="muted small">
-                    {categoryLabel(selected)} · 도보 {selected.walkMin}분
-                    {selected.price ? ` · ${selected.price}` : ''}
+                    {categoryLabel(selected)} · 도보 {selected.walkMin}분{selected.price ? ` · ${selected.price}` : ''}
                   </p>
                 </div>
                 <button type="button" className="linkish" onClick={() => setSelectedId(null)}>
@@ -802,13 +829,15 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       )}
 
       {/*
-        * 아무 핀도 안 고르면 데스크톱 오른쪽 칸이 회사 카드·검색창만 남아 텅 비었다(10/9 리뷰).
-        * 지금 지도에 그려진 가게를 가까운 순으로 보여 주고, 누르면 그 핀으로 간다.
-        * 휴대폰에서도 지도 아래에 둔다. 카카오 핀은 키보드로 못 고르니 이 목록이 그 대안이다(10/10 접근성 리뷰).
-        */}
+       * 아무 핀도 안 고르면 데스크톱 오른쪽 칸이 회사 카드·검색창만 남아 텅 비었다(10/9 리뷰).
+       * 지금 지도에 그려진 가게를 가까운 순으로 보여 주고, 누르면 그 핀으로 간다.
+       * 휴대폰에서도 지도 아래에 둔다. 카카오 핀은 키보드로 못 고르니 이 목록이 그 대안이다(10/10 접근성 리뷰).
+       */}
       {phase === 'ready' && !selected && !draft && results.length === 0 && nearby.length > 0 && (
         <section className="mp__card mp__nearby" aria-labelledby="nearby-title">
-          <h3 id="nearby-title" className="mp__title">지도에 있는 가게 {nearby.length}곳</h3>
+          <h3 id="nearby-title" className="mp__title">
+            지도에 있는 가게 {nearby.length}곳
+          </h3>
           <ul className="mp__nearList">
             {nearby.map((p) => (
               <li key={p.id}>
@@ -845,10 +874,10 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       )}
 
       {/*
-        * 새 가게 폼. 예전엔 모달 시트였는데 지도를 덮어 방금 찍은 자리를 볼 수
-        * 없었다(10/9 사용자). 데스크톱은 오른쪽 검색 아래, 휴대폰은 지도 아래에
-        * 붙는다. 지도는 그대로 보이고 임시 핀도 남는다.
-        */}
+       * 새 가게 폼. 예전엔 모달 시트였는데 지도를 덮어 방금 찍은 자리를 볼 수
+       * 없었다(10/9 사용자). 데스크톱은 오른쪽 검색 아래, 휴대폰은 지도 아래에
+       * 붙는다. 지도는 그대로 보이고 임시 핀도 남는다.
+       */}
       {draft && (
         <section
           ref={draftRef}
@@ -859,7 +888,9 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
           }}
         >
           <div className="mp__head">
-            <h3 id="draft-title" className="mp__title">여기 저장할까요?</h3>
+            <h3 id="draft-title" className="mp__title">
+              여기 저장할까요?
+            </h3>
             <button type="button" className="linkish" onClick={closeDraft}>
               닫기
             </button>
@@ -913,20 +944,10 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
  * 지도에서 좌표를 숫자로 치게 하면 아무도 안 쓰고, 핀을 옮기는 UI 는
  * 새로 꽂는 것과 구분이 안 된다.
  */
-function PlaceEdit({
-  place,
-  onDone,
-  onCancel,
-}: {
-  place: Place;
-  onDone: () => void;
-  onCancel: () => void;
-}) {
+function PlaceEdit({ place, onDone, onCancel }: { place: Place; onDone: () => void; onCancel: () => void }) {
   const [name, setName] = useState(place.name);
   const [category, setCategory] = useState<string | null>(
-    (CATEGORIES as readonly string[]).includes(place.category)
-      ? (place.sub ?? place.category)
-      : null,
+    (CATEGORIES as readonly string[]).includes(place.category) ? (place.sub ?? place.category) : null,
   );
   const [price, setPrice] = useState<PriceBand | null>(place.price ?? null);
   const [memo, setMemo] = useState(place.memo ?? '');
@@ -956,7 +977,15 @@ function PlaceEdit({
 
   return (
     <div className="pf">
-      <Input label="이름" fieldProps={{ className: 'pf__field' }} value={name} onChange={(e) => setName(e.target.value)} maxLength={40} aria-required="true" autoFocus />
+      <Input
+        label="이름"
+        fieldProps={{ className: 'pf__field' }}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        maxLength={40}
+        aria-required="true"
+        autoFocus
+      />
       <div className="pf__field">
         <span className="filters__label">카테고리</span>
         <CategoryPicker value={category} onPick={setCategory} />
@@ -965,9 +994,20 @@ function PlaceEdit({
         <span className="filters__label">가격대</span>
         <ChipPicker label="가격대" options={PRICE_BANDS} value={price} onPick={setPrice} allowNone />
       </div>
-      <Textarea label="메모" fieldProps={{ className: 'pf__field' }} value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={120} rows={2} />
+      <Textarea
+        label="메모"
+        fieldProps={{ className: 'pf__field' }}
+        value={memo}
+        onChange={(e) => setMemo(e.target.value)}
+        maxLength={120}
+        rows={2}
+      />
       <p className="muted small">좌표와 도보 시간은 목록 탭에서 고칠 수 있어요.</p>
-      {problem && <p className="notice notice--empty" role="alert">{problem}</p>}
+      {problem && (
+        <p className="notice notice--empty" role="alert">
+          {problem}
+        </p>
+      )}
       <div className="row">
         <Button block onClick={() => void save()} loading={saving}>
           저장

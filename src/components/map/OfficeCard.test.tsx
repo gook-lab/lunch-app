@@ -10,6 +10,16 @@ import { saveOffice } from '../../services/lunch';
 
 vi.mock('../../services/lunch', () => ({ saveOffice: vi.fn(async () => {}) }));
 
+const HITS = [
+  { id: '1', place_name: '강남파이낸스센터', road_address_name: '서울 강남구 테헤란로 152', address_name: '', x: '127.0363', y: '37.5000' },
+];
+const keywordSearch = vi.fn((_q: string, cb: (data: unknown[], status: string) => void) => cb(HITS, 'OK'));
+vi.mock('../../services/kakao', () => ({
+  loadKakaoMaps: async () => ({
+    services: { Places: class { keywordSearch = keywordSearch; }, Status: { OK: 'OK', ZERO_RESULT: 'ZERO_RESULT', ERROR: 'ERROR' } },
+  }),
+}));
+
 const CITY_HALL = { lat: 37.5665, lng: 126.978 };
 
 function stubGps(result: { lat: number; lng: number; accuracy?: number } | { code: number }) {
@@ -139,5 +149,42 @@ describe('회사 위치 — 지도 가운데로', () => {
     render(<OfficeCard onSaved={() => {}} />);
     unfold();
     expect(screen.queryByRole('button', { name: /지도 가운데로/ })).toBeNull();
+  });
+});
+
+describe('회사 위치 — 건물·주소로 찾기', () => {
+  it('찾은 건물을 고르면 지도에 미리 꽂고, 확인하면 그 좌표로 저장한다', async () => {
+    setOfficeOverride(null);
+    const onPreview = vi.fn();
+    render(<OfficeCard onSaved={() => {}} onPreview={onPreview} />);
+
+    fireEvent.change(screen.getByLabelText('회사 건물 이름이나 주소로 찾기'), { target: { value: '강남파이낸스' } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '찾기' }));
+    });
+    expect(keywordSearch.mock.calls[0][0]).toBe('강남파이낸스');
+
+    fireEvent.click(screen.getByRole('button', { name: /강남파이낸스센터/ }));
+    expect(onPreview).toHaveBeenCalledWith({ lat: 37.5, lng: 127.0363 });
+    expect(screen.getByText(/테헤란로 152/)).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '이 위치로 정하기' }));
+    });
+    expect(saveOffice).toHaveBeenCalledWith({ lat: 37.5, lng: 127.0363 });
+  });
+
+  it('회사를 정하기 전에만 지도 누르기를 회사 후보로 받는다', () => {
+    const tapRef = { current: null as ((c: { lat: number; lng: number }) => void) | null };
+    setOfficeOverride(null);
+    const { unmount } = render(<OfficeCard onSaved={() => {}} tapRef={tapRef} />);
+    expect(tapRef.current).toBeTypeOf('function');
+    act(() => tapRef.current?.({ lat: 37.57, lng: 126.98 }));
+    expect(screen.getByRole('button', { name: '이 위치로 정하기' })).toBeTruthy();
+    unmount();
+
+    setOfficeOverride(CITY_HALL);
+    render(<OfficeCard onSaved={() => {}} tapRef={tapRef} />);
+    expect(tapRef.current).toBeNull();
   });
 });
