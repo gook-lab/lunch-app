@@ -53,7 +53,7 @@ describe('빼기·되돌리기 뒤 초점', () => {
     render(<PlaceList places={[place('a', '가집')]} visits={[]} today="20261009" onChanged={() => {}} recent={NONE} />);
     hide('가집');
     await vi.waitFor(() =>
-      expect(document.activeElement).toBe(screen.getByRole('heading', { name: /오늘 고를 가게/ })),
+      expect(document.activeElement).toBe(screen.getByRole('heading', { name: /넣어 둔 가게/ })),
     );
   });
 });
