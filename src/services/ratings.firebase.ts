@@ -5,7 +5,7 @@
  * 따로 두고 화면이 평균을 낸다. 가게가 몇십 곳이라 컬렉션 그룹 하나를 통째로 구독한다.
  */
 import { collectionGroup, deleteDoc, doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
-import { auth, authReady, db } from './firebase';
+import { auth, ensureAuth, db } from './firebase';
 import type { PlaceVote, Unsubscribe } from './types';
 
 export function subscribeRatings(
@@ -14,7 +14,7 @@ export function subscribeRatings(
 ): Unsubscribe {
   let stopped = false;
   let inner: Unsubscribe | undefined;
-  authReady
+  ensureAuth()
     .then(() => {
       if (stopped) return;
       inner = onSnapshot(
@@ -37,11 +37,11 @@ export function subscribeRatings(
 }
 
 export async function ratingUid(): Promise<string> {
-  return (await authReady).uid;
+  return (await ensureAuth()).uid;
 }
 
 export async function rate(placeId: string, score: number, review: string, name: string): Promise<void> {
-  await authReady;
+  await ensureAuth();
   const data: Record<string, unknown> = { score, at: serverTimestamp() };
   if (review.trim()) data.review = review.trim().slice(0, 40);
   if (name.trim()) data.name = name.trim().slice(0, 12);
@@ -49,6 +49,6 @@ export async function rate(placeId: string, score: number, review: string, name:
 }
 
 export async function unrate(placeId: string): Promise<void> {
-  await authReady;
+  await ensureAuth();
   await deleteDoc(doc(db, 'places', placeId, 'ratings', auth.currentUser!.uid));
 }

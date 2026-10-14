@@ -6,18 +6,41 @@
  * 기록(이 도구의 생사 기준)이 쌓이는 쪽이다.
  */
 import type { Place } from './candidates';
+import { kakaoPlaceUrl } from './directions';
 
-export function shareText(place: Pick<Place, 'name' | 'category' | 'sub' | 'walkMin'>, url: string): string {
-  return `🍱 오늘 점심은 ${place.name} (${place.sub ?? place.category} · 도보 ${place.walkMin}분)\n${url}`;
+type SharedPlace = Pick<Place, 'name' | 'category' | 'sub' | 'walkMin' | 'lat' | 'lng'> & { kakaoPlaceId?: string };
+
+export interface ShareMessage {
+  /** 클립보드에 넣는 글 전체. */
+  text: string;
+  /** 휴대폰 공유 시트에 넘기는 값. 앱마다 text·url 을 따로 다뤄 나눠 넘긴다. */
+  sheet: { title: string; text: string; url: string };
+}
+
+/**
+ * 받은 사람이 어디로 가는지 바로 열 수 있게 가게 링크(카카오맵 장소, 없으면 그 자리 핀)를 넣는다.
+ * 예전엔 앱 주소 한 줄뿐이라, 데모에서 보낸 링크를 열면 받은 사람 브라우저엔 가게가 없어
+ * 빈 화면("아직 가게가 없어요")만 보였다(10/15). 데모는 기록이 그 브라우저에만 있으니
+ * appUrl 을 null 로 받아 앱 주소를 빼고 가게 링크만 보낸다.
+ */
+export function shareMessage(place: SharedPlace, appUrl: string | null): ShareMessage {
+  const line = `🍱 오늘 점심은 ${place.name} (${place.sub ?? place.category} · 도보 ${place.walkMin}분)`;
+  const placeUrl = kakaoPlaceUrl(place);
+  const text = appUrl ? `${line}\n가게: ${placeUrl}\n${appUrl}` : `${line}\n${placeUrl}`;
+  const sheet = appUrl
+    ? { title: '오늘 점심', text: `${line}\n가게: ${placeUrl}`, url: appUrl }
+    : { title: '오늘 점심', text: line, url: placeUrl };
+  return { text, sheet };
 }
 
 export type ShareResult = 'shared' | 'copied' | 'failed';
 
 /** 휴대폰은 공유 시트, 아니면 클립보드. 사용자가 시트를 닫아도 실패로 보지 않는다. */
-export async function sharePlace(text: string): Promise<ShareResult> {
+export async function sharePlace(message: ShareMessage): Promise<ShareResult> {
+  const { text, sheet } = message;
   try {
     if (typeof navigator.share === 'function' && matchMedia?.('(pointer: coarse)').matches) {
-      await navigator.share({ text });
+      await navigator.share(sheet);
       return 'shared';
     }
   } catch (error) {

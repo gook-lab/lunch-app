@@ -66,24 +66,42 @@ if (import.meta.env.VITE_FIREBASE_EMULATOR === '1') {
  * 익명 로그인이 끝나면 resolve 한다. 여러 번 호출해도 로그인은 한 번만 일어난다.
  * 실패하면 reject 하고, 화면은 그 상태를 사용자에게 보여야 한다 — 조용히
  * 빈 화면으로 두면 "앱이 고장났다" 로 보고된다.
+ *
+ * 예전엔 모듈을 불러올 때 Promise 하나를 만들어 두고 모두가 그것을 await 했다. 오프라인으로
+ * 열어 로그인이 한 번 실패하면 그 거절된 Promise 가 끝까지 남아, 연결된 뒤 "다시 시도" 를
+ * 눌러도 signUp 요청이 다시 나가지 않았다(팀 사이트에서 차단 후 해제, 8초 동안 0건 · 10/15).
+ * 그래서 실패하면 캐시를 비워 다음 호출이 로그인을 새로 시도하게 한다.
  */
-export const authReady: Promise<User> = new Promise((resolve, reject) => {
-  const stop = onAuthStateChanged(
-    auth,
-    (user) => {
-      if (user) {
+let pending: Promise<User> | null = null;
+
+export function ensureAuth(): Promise<User> {
+  if (pending) return pending;
+  const attempt = new Promise<User>((resolve, reject) => {
+    const stop = onAuthStateChanged(
+      auth,
+      (user) => {
+        if (user) {
+          stop();
+          resolve(user);
+        }
+      },
+      (error) => {
         stop();
-        resolve(user);
-      }
-    },
-    (error) => {
+        reject(error);
+      },
+    );
+
+    signInAnonymously(auth).catch((error) => {
       stop();
       reject(error);
-    },
-  );
-
-  signInAnonymously(auth).catch((error) => {
-    stop();
-    reject(error);
+    });
   });
-});
+  pending = attempt;
+  attempt.catch(() => {
+    if (pending === attempt) pending = null;
+  });
+  return attempt;
+}
+
+// 첫 화면이 기다리지 않게 모듈을 불러오자마자 로그인을 시작한다. 실패는 실제로 기다리는 쪽이 받는다.
+ensureAuth().catch(() => {});

@@ -361,6 +361,24 @@ describe('결정 저장 실패', () => {
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: '여기로 결정' })); });
     expect(screen.getByRole('alert').textContent).toBe('저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.');
   });
+
+  it('오프라인이라 서버가 답하지 않으면 8초 뒤 단추를 풀고 대기 중이라고 알린다. 나중에 저장되면 안내를 지운다', async () => {
+    // Firestore 의 setDoc 은 오프라인에서 reject 하지 않고 서버가 받을 때까지 기다린다.
+    let done: () => void = () => {};
+    vi.mocked(decideToday).mockImplementationOnce(() => new Promise<void>((r) => { done = r; }));
+    startWheel();
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '여기로 결정' })); });
+    const waitingText = '연결이 끊겨 아직 저장 못 했어요. 연결되면 자동으로 저장돼요.';
+    expect(screen.queryByText(waitingText)).toBeNull();
+
+    await act(async () => { vi.advanceTimersByTime(8000); });
+    expect(screen.getByText(waitingText)).toBeTruthy();
+    expect((screen.getByRole('button', { name: '여기로 결정' }) as HTMLButtonElement).disabled).toBe(false);
+
+    await act(async () => { done(); });
+    expect(screen.queryByText(waitingText)).toBeNull();
+  });
 });
 
 describe('여기로 결정', () => {

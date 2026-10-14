@@ -24,7 +24,7 @@ import {
   where,
   type Unsubscribe,
 } from 'firebase/firestore';
-import { db, authReady } from './firebase';
+import { db, ensureAuth } from './firebase';
 import { dayIdBefore, type DayId } from '../lib/date';
 import { VISIT_HISTORY_DAYS, type Place, type Visit } from '../lib/candidates';
 import type { TodayDecision } from './types';
@@ -35,7 +35,7 @@ const visits = () => collection(db, 'visits');
 
 /** 가게 목록 1회 읽기. */
 export async function fetchPlaces(): Promise<Place[]> {
-  await authReady;
+  await ensureAuth();
   const snap = await getDocs(places());
   return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Place, 'id'>) }));
 }
@@ -45,7 +45,7 @@ export async function fetchPlaces(): Promise<Place[]> {
  * Firestore 문서 하나에 둔다. 아직 아무도 안 정했으면 null.
  */
 export async function fetchOffice(): Promise<{ lat: number; lng: number } | null> {
-  await authReady;
+  await ensureAuth();
   const snap = await getDoc(officeDoc());
   if (!snap.exists()) return null;
   const { lat, lng } = snap.data() as { lat: unknown; lng: unknown };
@@ -54,13 +54,13 @@ export async function fetchOffice(): Promise<{ lat: number; lng: number } | null
 
 /** 회사 위치를 바꾼다. 규칙이 한국 안 좌표인지, 시각이 서버 시각인지 검사한다. */
 export async function saveOffice(coord: { lat: number; lng: number }): Promise<void> {
-  await authReady;
+  await ensureAuth();
   await setDoc(officeDoc(), { lat: coord.lat, lng: coord.lng, updatedAt: serverTimestamp() });
 }
 
 /** 최근 31일 결정 기록. 문서 id 가 YYYYMMDD 라 documentId() 범위 쿼리로 읽는다. */
 export async function fetchRecentVisits(today: DayId): Promise<Visit[]> {
-  await authReady;
+  await ensureAuth();
   const snap = await getDocs(
     query(
       visits(),
@@ -88,7 +88,7 @@ export function subscribeToday(
   let stopped = false;
   let inner: Unsubscribe | undefined;
 
-  authReady
+  ensureAuth()
     .then(() => {
       if (stopped) return;
       inner = onSnapshot(
@@ -115,7 +115,7 @@ export function subscribeToday(
  * decidedAt 은 서버 시각이다. 규칙이 request.time 과 같은지 검사한다.
  */
 export async function decideToday(today: DayId, placeId: string, mode?: string): Promise<void> {
-  await authReady;
+  await ensureAuth();
   // mode 는 어떤 게임으로 뽑았는지 — 이번 달 기록의 "자주 쓴 게임" 에만 쓴다.
   await setDoc(doc(visits(), today), { placeId, decidedAt: serverTimestamp(), ...(mode ? { mode } : {}) });
 }
@@ -147,7 +147,7 @@ function withoutEmpty<T extends Record<string, unknown>>(input: T): Partial<T> {
 export async function addPlace(
   input: Omit<Place, 'id' | 'createdBy'>,
 ): Promise<{ added: boolean; id?: string }> {
-  const user = await authReady;
+  const user = await ensureAuth();
   if (input.kakaoPlaceId) {
     const existing = await getDocs(
       query(places(), where('kakaoPlaceId', '==', input.kakaoPlaceId)),
@@ -179,7 +179,7 @@ export async function updatePlace(
     >
   >,
 ): Promise<void> {
-  await authReady;
+  await ensureAuth();
   // 비운 선택 필드(메모·가격 등)는 지운다. 빼고 보내면 예전 값이 그대로 남는다.
   const data: Record<string, unknown> = withoutEmpty(patch);
   for (const key of Object.keys(patch)) if (!(key in data)) data[key] = deleteField();
@@ -187,7 +187,7 @@ export async function updatePlace(
 }
 
 export async function fetchPlace(id: string): Promise<Place | null> {
-  await authReady;
+  await ensureAuth();
   const snap = await getDoc(doc(places(), id));
   return snap.exists() ? { id: snap.id, ...(snap.data() as Omit<Place, 'id'>) } : null;
 }

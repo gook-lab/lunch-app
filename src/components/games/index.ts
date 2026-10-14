@@ -1,5 +1,5 @@
 /**
- * 게임 열 가지 — 고른 것만 받는다(lazy.tsx). 돌림판은 첫 화면 기본값이라 바로 싣는다.
+ * 게임 열다섯 가지 — 고른 것만 받는다(lazy.tsx). 돌림판은 첫 화면 기본값이라 바로 싣는다.
  */
 import { lazyGame } from './lazy';
 import { preloadDeferred } from '../deferred';

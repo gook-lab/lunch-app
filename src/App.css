@@ -1416,6 +1416,19 @@ footer.muted { text-align: center; }
 .decided__title { font-size: var(--fs-md); }
 .decided__title strong { font-weight: 800; }
 
+/* 다음 날 별점 묻기 — 정한 곳 배너와 같은 결의 한 줄. 열면 아래로 별점 편집기가 붙는다. */
+.rate-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-neutral-300);
+  background: var(--color-neutral-100);
+}
+.rate-prompt__row { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3); }
+.rate-prompt__title { flex: 1 1 auto; min-width: 0; font-size: var(--fs-md); }
+.rate-prompt__title strong { font-weight: 800; }
+
 /* 게임 무대 */
 .stage {
   display: flex;
@@ -1665,7 +1678,7 @@ html:has(dialog[open]:modal) { overflow: hidden; }
   /* 데스크톱: 방식은 왼쪽 세로 레일, 나머지는 오른쪽 칸에 위에서 아래로. */
   .stage:not(.stage--full) {
     display: grid;
-    /* 게임이 열 가지라 레일은 두 줄 — 한 줄이면 레일이 640px 를 넘어 판보다 길었다. */
+    /* 게임이 열 가지가 넘어 레일은 두 줄 — 한 줄이면 레일이 640px 를 넘어 판보다 길었다. */
     grid-template-columns: 176px minmax(0, 1fr);
     align-content: start;
     column-gap: var(--space-4);

@@ -14,7 +14,7 @@ import {
   setDoc,
   type Unsubscribe,
 } from 'firebase/firestore';
-import { auth, authReady, db } from './firebase';
+import { auth, ensureAuth, db } from './firebase';
 import type { DayId } from '../lib/date';
 
 import type { Vote } from './types';
@@ -22,7 +22,7 @@ import type { Vote } from './types';
 const votes = (day: DayId) => collection(db, 'predictions', day, 'votes');
 
 export async function myUid(): Promise<string> {
-  const user = await authReady;
+  const user = await ensureAuth();
   return user.uid;
 }
 
@@ -33,7 +33,7 @@ export function subscribeVotes(
 ): Unsubscribe {
   let stopped = false;
   let inner: Unsubscribe | undefined;
-  authReady
+  ensureAuth()
     .then(() => {
       if (stopped) return;
       inner = onSnapshot(
@@ -56,12 +56,12 @@ export function subscribeVotes(
 }
 
 export async function castVote(day: DayId, placeId: string, name: string): Promise<void> {
-  await authReady;
+  await ensureAuth();
   const uid = auth.currentUser!.uid;
   await setDoc(doc(votes(day), uid), { placeId, name: name.trim().slice(0, 12), at: serverTimestamp() });
 }
 
 export async function clearVote(day: DayId): Promise<void> {
-  await authReady;
+  await ensureAuth();
   await deleteDoc(doc(votes(day), auth.currentUser!.uid));
 }

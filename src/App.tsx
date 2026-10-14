@@ -58,6 +58,7 @@ import { MIN_GAME_CANDIDATES, recentlyVisitedIds, selectCandidates, type Filters
 import { categoryHue } from './lib/category';
 import { josa, withJosa } from './lib/josa';
 import { officeSource } from './lib/walk';
+import { retryLoad } from './lib/retryLoad';
 import { gameGate, noticeMessage } from './lib/messages';
 import { decideToday } from './services/lunch';
 import { DemoNote } from './components/DemoNote';
@@ -70,6 +71,8 @@ import { isDevHost } from './lib/devHost';
 import { Tour, tourSeen } from './components/Tour';
 import { RatingBadge } from './components/Rating';
 import { useRatings } from './hooks/useRatings';
+import { RatePrompt } from './components/RatePrompt';
+import { ratePromptTarget } from './lib/ratePrompt';
 import { CategoryChips } from './components/CategoryChips';
 import './App.css';
 // 종이 식권 테마는 App.css 뒤에 — 같은 명시도로 덮는다.
@@ -102,6 +105,9 @@ const TAB_TITLE: Record<Tab, string> = {
 
 const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
 /** "20261008" 을 "10월 8일 목요일" 로. */
+/** "여기로 결정" 이 서버 확인을 기다리는 최대 시간. 넘으면 대기 중이라고 알리고 단추를 푼다. */
+export const SAVE_WAIT_MS = 8000;
+
 function formatDay(day: string): string {
   const y = Number(day.slice(0, 4));
   const m = Number(day.slice(4, 6));
@@ -125,6 +131,11 @@ export default function App() {
   const today = useTodayKST();
   const { state, error, places, visits, today: decision, refreshing, reload, officeKey } = useLunchData(today);
   const ratings = useRatings(places);
+  // 다음 날 "어제 ○○ 어땠어요?". 별점만 묻고 후보·당첨에는 닿지 않는다.
+  const rateTarget = useMemo(
+    () => ratePromptTarget(visits, places, today, (id) => Boolean(ratings.get(id)?.mine)),
+    [visits, places, today, ratings],
+  );
   // 동료 예측. 오늘 표를 실시간으로 받는다. 당첨에는 쓰지 않는다 — spin() 은 이 값을 보지 않는다.
   const [votes, setVotes] = useState<Vote[]>([]);
   const [uid, setUid] = useState<string | null>(null);
@@ -204,6 +215,8 @@ export default function App() {
   const [burst, setBurst] = useState(0);
   // "여기로 결정" 저장 실패. 다시 돌리면 지운다.
   const [saveProblem, setSaveProblem] = useState(false);
+  // 저장을 보냈지만 서버가 아직 받지 않았다(오프라인). 대기열에 있으니 연결되면 저절로 저장된다.
+  const [saveWaiting, setSaveWaiting] = useState(false);
   const resultTimer = useRef(0);
   const closeResult = useCallback(() => {
     window.clearTimeout(resultTimer.current);
@@ -303,6 +316,7 @@ export default function App() {
     setBoardBalls(balls);
     closeResult();
     setSaveProblem(false);
+    setSaveWaiting(false);
     setBoard(frozen);
     setWinnerIndex(index);
     setWinner(null);
@@ -455,6 +469,7 @@ export default function App() {
     setResultOpen(false);
     setConfirming(null);
     setSaveProblem(false);
+    setSaveWaiting(false);
   }, [today]);
 
   // 공 개수를 바꾸면 지난 판을 내려놓는다(조건 바꾸기와 같다). 얼려 둔 판이 남아 있으면
@@ -477,13 +492,33 @@ export default function App() {
       savingRef.current = true;
       setSaving(true);
       setSaveProblem(false);
+      setSaveWaiting(false);
+      // 오프라인이면 Firestore 의 setDoc 은 서버가 받을 때까지 resolve 도 reject 도 하지 않는다
+      // (에뮬레이터에서 네트워크를 끄고 10초 동안 대기 그대로 · 10/15). 그대로 기다리면 스피너만 돈다.
+      // 그래서 잠깐만 기다리고, 그 뒤엔 대기열에 들어갔다고 알려 준 채 단추를 푼다.
+      let timer = 0;
+      const late = new Promise<'late'>((resolve) => {
+        timer = window.setTimeout(() => resolve('late'), navigator.onLine === false ? 0 : SAVE_WAIT_MS);
+      });
       try {
-        await decideToday(today, place.id, mode);
+        const write = decideToday(today, place.id, mode);
+        const outcome = await Promise.race([write.then(() => 'saved' as const), late]);
         setConfirming(null);
+        if (outcome === 'late') {
+          setSaveWaiting(true);
+          write.then(
+            () => setSaveWaiting(false),
+            () => {
+              setSaveWaiting(false);
+              setSaveProblem(true);
+            },
+          );
+        }
       } catch {
         // 실패하면 스피너만 멈추고 아무 말이 없었다. 결정된 줄 알고 밥 먹으러 간다.
         setSaveProblem(true);
       } finally {
+        window.clearTimeout(timer);
         savingRef.current = false;
         setSaving(false);
       }
@@ -565,9 +600,10 @@ export default function App() {
           role="alert"
           art={<span className="status__bang">!</span>}
           title="목록을 불러오지 못했어요"
-          code={String((error as Error)?.message ?? error)}
-          lines={['네트워크를 확인하고 다시 시도해 주세요.', '계속 안 되면 새 링크로 다시 들어와 주세요.']}
-          action={<Button onClick={reload}>다시 시도</Button>}
+          // 원문(auth/network-request-failed 등)은 고치는 사람에게만 쓸모가 있어 개발 빌드에서만 보인다.
+          code={import.meta.env.DEV ? String((error as Error)?.message ?? error) : undefined}
+          lines={['인터넷이 끊겼을 수 있어요.', '연결되면 다시 시도를 눌러 주세요.']}
+          action={<Button onClick={() => retryLoad(error, reload)}>다시 시도</Button>}
         />
       </main>
     );
@@ -697,6 +733,11 @@ export default function App() {
           {saveProblem && !confirming && (
             <p className="notice notice--empty" role="alert">
               저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.
+            </p>
+          )}
+          {saveWaiting && (
+            <p className="notice" role="status">
+              연결이 끊겨 아직 저장 못 했어요. 연결되면 자동으로 저장돼요.
             </p>
           )}
         </>
@@ -871,6 +912,14 @@ export default function App() {
       >
         {/* 게임 중·결과가 나와도 배너를 그대로 둔다. 결과가 나오는 순간 사라지면 아래 화면 전체가
             위로 올라붙었다(10/14 사용자). 새로 "여기로 결정" 을 누르면 배너 내용만 바뀐다. */}
+        {places.length > 0 && (
+          <RatePrompt
+            key={today}
+            today={today}
+            target={rateTarget}
+            ratings={ratings}
+          />
+        )}
         {decidedPlace && (
           <section className="decided" aria-label="오늘 정한 곳">
             <span className="decided__check" aria-hidden="true">
