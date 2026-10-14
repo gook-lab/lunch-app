@@ -134,6 +134,13 @@ const SOUNDS = {
     noise(ac, { dur: 0.06, hz: rand(1800, 2600), q: 0.6, vol: 0.12, filter: 'highpass' });
     tone(ac, { hz: rand(180, 240), to: 70, dur: 0.07, type: 'sine', vol: 0.07 });
   },
+  /** 낚시 찌가 톡 — 줄이 물에 들어갈 때·입질할 때. */
+  plop: (ac: AudioContext) => tone(ac, { hz: rand(520, 640), to: rand(900, 1100), dur: 0.07, type: 'sine', vol: 0.07 }),
+  /** 낚시 챔질 — 물을 가르며 끌어올리는 촤악. */
+  splash: (ac: AudioContext) => {
+    noise(ac, { dur: 0.35, hz: 900, to: 3200, q: 0.8, vol: 0.1 });
+    tone(ac, { hz: 300, to: 120, dur: 0.12, type: 'sine', vol: 0.05 });
+  },
   /** 핀볼 범퍼 — 칠 때마다 높이가 조금 다르다. */
   bump: (ac: AudioContext) => tone(ac, { hz: rand(420, 720), to: rand(200, 300), dur: 0.09, type: 'sine', vol: 0.08 }),
   /** 플링코 핀. pitch 0~1 로 높이를 정한다(아래로 갈수록 낮게). */
@@ -185,7 +192,7 @@ const SOUNDS = {
 export type SfxName = keyof typeof SOUNDS;
 
 /** 같은 소리의 최소 간격(ms). */
-const MIN_GAP: Partial<Record<SfxName, number>> = { tick: 28, peg: 35, bump: 45, step: 40, burst: 40 };
+const MIN_GAP: Partial<Record<SfxName, number>> = { tick: 28, peg: 35, bump: 45, step: 40, burst: 40, plop: 60 };
 const last = new Map<SfxName, number>();
 
 /** 효과음 한 번. 소리를 끈 사람에겐 아무 일도 없다. */

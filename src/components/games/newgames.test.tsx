@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * 뽑기 기계 · 플링코 · 주사위 · 폭탄 · 풍선. 모두 App 이 정한 당첨을 보여 주기만 하고, 끝나면
+ * 뽑기 기계 · 플링코 · 주사위 · 폭탄 · 풍선 · 낚시. 모두 App 이 정한 당첨을 보여 주기만 하고, 끝나면
  * onSpinEnd 를 한 번 부른다. 움직임 줄이기면 바로 결과를 보여 준다.
  */
 import { act, cleanup, render } from '@testing-library/react';
@@ -9,6 +9,7 @@ import type { Place } from '../../lib/candidates';
 import { Balloon } from './Balloon';
 import { Bomb } from './Bomb';
 import { Dice } from './Dice';
+import { Fishing } from './Fishing';
 import { Gacha, MAX_CAPSULES } from './Gacha';
 import { Plinko } from './Plinko';
 
@@ -231,5 +232,86 @@ describe('풍선 터뜨리기', () => {
     expect(rest).toHaveLength(1);
     expect(rest[0].getAttribute('title')).toBe('가게6');
     expect(r.container.querySelector('.balloon__status')?.textContent).toBe('가게6만 남았어요!');
+  });
+});
+
+describe('낚시', () => {
+  const caught = (c: HTMLElement) => [...c.querySelectorAll('.fishing__fish--win')];
+  const status = (c: HTMLElement) => c.querySelector('.fishing__status')?.textContent;
+
+  it('입질을 몇 번 받다가 당첨 물고기를 낚아 올린다', () => {
+    for (const [n, winner] of [[2, 0], [2, 1], [5, 2], [10, 9], [20, 0], [20, 13]]) {
+      const onSpinEnd = vi.fn();
+      const r = render(<Fishing candidates={places(n)} winnerIndex={winner} spinning run={n * 31 + winner} onSpinEnd={onSpinEnd} />);
+      expect(r.container.querySelectorAll('.fishing__fish')).toHaveLength(n);
+      expect(r.container.querySelector('[role="img"]')?.getAttribute('aria-label')).toContain('가게1');
+      // 줄이 내려간다(run 을 이번 판으로 바꾸지 않으면 줄도 없고 여기서 멈춘다).
+      expect(r.container.querySelector('.fishing__line')).not.toBeNull();
+      const seen = new Set<string>();
+      for (let t = 0; t < 3_500; t += 50) {
+        run(50);
+        seen.add(status(r.container) ?? '');
+        const biting = r.container.querySelector('.fishing__fish--bite');
+        // 헛입질 동안 당첨 물고기는 다가오지 않는다.
+        if (biting && status(r.container) === '입질이 왔어요…' && t < 2_000) {
+          expect(biting.getAttribute('title')).not.toBe(`가게${winner + 1}`);
+        }
+      }
+      expect(seen).toContain('입질이 왔어요…');
+      expect(seen).toContain('앗, 놓쳤어요');
+      expect(caught(r.container)).toHaveLength(0);
+      expect(onSpinEnd).not.toHaveBeenCalled();
+      run(3_000);
+      expect(onSpinEnd).toHaveBeenCalledTimes(1);
+      const win = caught(r.container);
+      expect(win).toHaveLength(1);
+      expect(win[0].getAttribute('title')).toBe(`가게${winner + 1}`);
+      expect(status(r.container)).toMatch(new RegExp(`^가게${winner + 1}(을|를) 낚았어요!$`));
+      r.unmount();
+    }
+  });
+
+  it('언마운트하면 타이머가 멈춰 onSpinEnd 를 부르지 않는다', () => {
+    const onSpinEnd = vi.fn();
+    const r = render(<Fishing candidates={places(8)} winnerIndex={3} spinning run={5} onSpinEnd={onSpinEnd} />);
+    run(1_000);
+    r.unmount();
+    run(8_000);
+    expect(onSpinEnd).not.toHaveBeenCalled();
+  });
+
+  it('spinning 이 꺼지면 타이머가 멈춘다', () => {
+    const onSpinEnd = vi.fn();
+    const props = { candidates: places(8), winnerIndex: 3, run: 5, onSpinEnd };
+    const r = render(<Fishing {...props} spinning />);
+    run(1_000);
+    r.rerender(<Fishing {...props} spinning={false} />);
+    run(8_000);
+    expect(onSpinEnd).not.toHaveBeenCalled();
+  });
+
+  it('다음 판은 낚은 물고기를 연못에 돌려놓고 다시 시작한다', () => {
+    const onSpinEnd = vi.fn();
+    const props = { candidates: places(6), onSpinEnd };
+    const r = render(<Fishing {...props} winnerIndex={1} spinning run={1} />);
+    run(7_000);
+    r.rerender(<Fishing {...props} winnerIndex={1} spinning={false} run={1} />);
+    expect(caught(r.container).map((e) => e.getAttribute('title'))).toEqual(['가게2']);
+    r.rerender(<Fishing {...props} winnerIndex={4} spinning run={2} />);
+    expect(caught(r.container)).toHaveLength(0);
+    expect(status(r.container)).toBe('낚싯줄을 드리웠어요…');
+    run(7_000);
+    expect(onSpinEnd).toHaveBeenCalledTimes(2);
+    expect(caught(r.container).map((e) => e.getAttribute('title'))).toEqual(['가게5']);
+  });
+
+  it('움직임 줄이기면 바로 낚아 올린 모습을 보인다', () => {
+    reduced = true;
+    const onSpinEnd = vi.fn();
+    const r = render(<Fishing candidates={places(7)} winnerIndex={5} spinning run={1} onSpinEnd={onSpinEnd} />);
+    act(() => { vi.advanceTimersByTime(1); });
+    expect(onSpinEnd).toHaveBeenCalledTimes(1);
+    expect(caught(r.container).map((e) => e.getAttribute('title'))).toEqual(['가게6']);
+    expect(status(r.container)).toBe('가게6을 낚았어요!');
   });
 });

@@ -25,6 +25,7 @@ import {
   Balloon,
   CarRace,
   Cards,
+  Fishing,
   Dice,
   Gacha,
   HorseRace,
@@ -1032,6 +1033,7 @@ export default function App() {
                         }
                         if (mode === 'bomb') return <Bomb {...game} />;
                         if (mode === 'balloon') return <Balloon {...game} />;
+                        if (mode === 'fishing') return <Fishing {...game} />;
                         return <Wheel {...game} />;
                       })()}
                     </GameBoundary>

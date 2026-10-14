@@ -2815,12 +2815,162 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   to { filter: brightness(1.12); box-shadow: inset -3px -5px 8px oklch(0.45 0.14 var(--hue) / 0.45), 0 0 18px 6px var(--color-accent-100); }
 }
 
+/* 낚시 — 위 --sky 는 하늘, 아래는 물. 물고기 자리(left/top %)는 JS 가 주고, 좌우로 헤엄치는 건 CSS 가 한다.
+   크기는 연못 폭(cqw)에 맞춰 커지고 줄어든다 — 20마리(4열)도 휴대폰에서 이름표가 겹치지 않는다. */
+.fishing { width: min(360px, 94vw); display: grid; gap: var(--space-2); justify-items: center; }
+.fishing--big { width: min(640px, 94vw); }
+.fishing--empty { height: 360px; }
+.fishing__pond {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--fit);
+  container-type: inline-size;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    to bottom,
+    oklch(0.95 0.03 230) 0 var(--sky),
+    oklch(0.72 0.1 225) var(--sky),
+    oklch(0.84 0.07 215) calc(var(--sky) + 1.2%),
+    oklch(0.62 0.1 235) 100%
+  );
+}
+[data-theme='dark'] .fishing__pond {
+  background: linear-gradient(
+    to bottom,
+    oklch(0.32 0.03 250) 0 var(--sky),
+    oklch(0.42 0.08 230) var(--sky),
+    oklch(0.36 0.07 235) calc(var(--sky) + 1.2%),
+    oklch(0.24 0.06 245) 100%
+  );
+}
+.fishing__line {
+  position: absolute;
+  top: 0;
+  z-index: 1; /* 물고기·이름표 뒤로 지나간다 — 위 줄 이름표를 긋지 않게 */
+  width: 1px;
+  translate: -50% 0;
+  background: oklch(0.3 0.02 250);
+  transition: left 350ms var(--ease-inout), height 350ms var(--ease-inout);
+}
+[data-theme='dark'] .fishing__line { background: oklch(0.9 0.01 250); }
+/* 바늘 */
+.fishing__line::after {
+  content: '';
+  position: absolute;
+  left: -3px;
+  bottom: -5px;
+  width: 6px;
+  height: 6px;
+  border: 1.5px solid oklch(0.45 0.02 250);
+  border-top: 0;
+  border-radius: 0 0 6px 6px;
+}
+.fishing__line--cast { animation: fishing-cast 500ms var(--ease-out) both; }
+/* 찌 — 수면에 떠서 입질 때 흔들리고 챔질 때 쑥 들어간다. */
+.fishing__float {
+  position: absolute;
+  top: var(--sky);
+  z-index: 4;
+  width: 8px;
+  height: 14px;
+  translate: -50% -60%;
+  border-radius: 4px 4px 3px 3px;
+  background: linear-gradient(to bottom, var(--color-accent) 0 50%, oklch(0.98 0 0) 50%);
+  box-shadow: 0 0 0 1px oklch(0.3 0.02 250 / 0.4);
+  transition: left 350ms var(--ease-inout);
+}
+.fishing__float--bite { animation: fishing-nibble 260ms var(--ease-inout) infinite alternate; }
+.fishing__float--strike { animation: fishing-dip 300ms var(--ease-out) forwards; }
+.fishing__fish {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  max-width: calc(var(--cell-w) * 0.72);
+  transform: translate(-50%, -50%);
+  transition: left 420ms var(--ease-inout), top 420ms var(--ease-inout);
+  animation: fishing-swim var(--period) var(--ease-inout) var(--delay) infinite alternate;
+}
+.fishing__swim { display: block; animation: fishing-face calc(var(--period) * 2) steps(1) var(--delay) infinite; }
+.fishing__body {
+  position: relative;
+  display: block;
+  width: clamp(18px, 7.2cqw, 46px);
+  aspect-ratio: 1.8;
+  border-radius: 50% 60% 60% 50% / 50%;
+  background:
+    radial-gradient(circle at 76% 40%, oklch(0.2 0 0) 0 6%, transparent 7%),
+    linear-gradient(to bottom, oklch(0.8 0.13 var(--hue)), oklch(0.62 0.15 var(--hue)));
+}
+/* 꼬리 */
+.fishing__body::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 94%;
+  width: 40%;
+  height: 80%;
+  translate: 0 -50%;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  background: oklch(0.62 0.15 var(--hue));
+}
+.fishing__tag {
+  max-width: 100%;
+  padding: 0 4px;
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fishing--big .fishing__tag { font-size: var(--fs-sm); }
+/* 입질 — 헤엄을 멈추고 바늘 쪽으로 떠올라 몸을 떤다. */
+.fishing__fish--bite { z-index: 3; animation: none; }
+.fishing__fish--bite .fishing__swim { animation: none; }
+.fishing__fish--bite .fishing__body { animation: fishing-wiggle 180ms var(--ease-inout) infinite alternate; }
+.fishing__fish--flee { animation: none; transition-duration: 260ms; }
+.fishing__fish--flee .fishing__tag { opacity: 0.6; }
+/* 낚아 올림 — 물 위에서 커지며 반짝인다. */
+.fishing__fish--win { z-index: 5; max-width: min(92cqw, calc(var(--cell-w) * 2.2)); animation: none; transition-duration: 600ms; }
+.fishing__fish--win .fishing__swim { animation: none; }
+.fishing__fish--win .fishing__body {
+  scale: 1.35;
+  rotate: -18deg;
+  /* scale 은 자리를 안 늘린다 — 커진 몸이 이름표를 덮지 않게 아래로 띄운다. */
+  margin-bottom: 0.45em;
+  animation: fishing-shine 700ms var(--ease-inout) infinite alternate;
+}
+.fishing__fish--win .fishing__tag { border-color: var(--color-accent); background: var(--color-accent); color: var(--color-bg); }
+/* 끝난 판을 다시 그릴 때(방식 전환·크게 보기)는 올라오는 장면을 또 틀지 않는다. */
+.fishing--settled .fishing__fish--win, .fishing--settled .fishing__line { transition: none; }
+.fishing__status { margin: 0; font-size: var(--fs-sm); font-weight: 700; color: var(--color-text); text-align: center; }
+@keyframes fishing-swim { from { translate: calc(var(--range) * -1) 0; } to { translate: var(--range) 2px; } }
+/* 오른쪽으로 갈 때(앞 절반) 오른쪽을 보고, 돌아올 때 뒤집는다. 몸 그림은 오른쪽을 본다. */
+@keyframes fishing-face { 0% { scale: 1 1; } 50% { scale: -1 1; } }
+@keyframes fishing-cast { from { height: 0; } }
+@keyframes fishing-nibble { from { translate: -50% -60%; } to { translate: -50% -25%; } }
+@keyframes fishing-dip { to { translate: -50% 60%; opacity: 0.4; } }
+@keyframes fishing-wiggle { from { rotate: -8deg; } to { rotate: 8deg; } }
+@keyframes fishing-shine {
+  from { filter: brightness(1) drop-shadow(0 0 0 var(--color-accent-100)); }
+  to { filter: brightness(1.15) drop-shadow(0 0 8px var(--color-accent-100)); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gacha__capsule, .gacha__handle, .gacha__out, .dice__die--rolling, .bomb__burst, .bomb__pop { animation: none !important; }
   .bomb__bomb { transition: none; }
   .balloon__float, .balloon__item--win .balloon__body { animation: none; }
   .balloon__item--popped .balloon__body, .balloon__item--popped .balloon__string { animation: none; opacity: 0; }
   .balloon__burst { display: none; }
+  .fishing__fish, .fishing__swim, .fishing__body, .fishing__float, .fishing__line { animation: none !important; transition: none !important; }
   .gacha__half { transition: none; }
 }
 

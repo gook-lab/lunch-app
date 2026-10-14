@@ -18,11 +18,12 @@ export const HorseRace = lazyGame(() => import('./PixelRace').then((m) => m.Hors
 export const CarRace = lazyGame(() => import('./PixelRace').then((m) => m.CarRace));
 export const Bomb = lazyGame(() => import('./Bomb').then((m) => m.Bomb));
 export const Balloon = lazyGame(() => import('./Balloon').then((m) => m.Balloon));
+export const Fishing = lazyGame(() => import('./Fishing').then((m) => m.Fishing));
 
 /** 나머지 게임을 미리 받는다. 첫 화면을 그린 뒤 쉬는 시간에, 테스트는 시작 전에 부른다. */
 export function preloadGames(): Promise<void> {
   return Promise.all(
-    [Ladder, Slot, Pinball, Cards, Memory, Tournament, Gacha, Plinko, Dice, HorseRace, CarRace, Bomb, Balloon]
+    [Ladder, Slot, Pinball, Cards, Memory, Tournament, Gacha, Plinko, Dice, HorseRace, CarRace, Bomb, Balloon, Fishing]
       .map((g) => g.preload())
       // 설정·목록도 같은 쉬는 시간에 받는다(components/deferred.tsx).
       .concat(preloadDeferred()),

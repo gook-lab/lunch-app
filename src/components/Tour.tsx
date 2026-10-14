@@ -34,7 +34,7 @@ const STEPS: Step[] = [
     target: '.modebar',
     icon: '🎲',
     title: '게임을 골라요',
-    body: '열네 가지 중 마음에 드는 걸 골라요. 어떤 게임을 골라도 뽑힐 확률은 같아요.',
+    body: '열다섯 가지 중 마음에 드는 걸 골라요. 어떤 게임을 골라도 뽑힐 확률은 같아요.',
   },
   {
     target: '.stage__run',
