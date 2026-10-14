@@ -646,10 +646,13 @@ export default function App() {
             <span className="app__count">
               {refreshing ? '새로고침 중' : `가게 ${places.filter((p) => p.active).length}곳`}
             </span>
-            <button type="button" className="linkish app__help" onClick={openTour} disabled={spinning}>
-              <span aria-hidden="true">❓ </span>사용법
-            </button>
-            <Settings />
+            {/* 그림 없이 글자만. 그림이 밑줄 위에 얹혀 깨져 보였다(10/14). */}
+            <span className="app__tools">
+              <button type="button" className="linkish app__tool" onClick={openTour} disabled={spinning}>
+                사용법
+              </button>
+              <Settings />
+            </span>
           </div>
           {import.meta.env.VITE_DEMO === '1' && <DemoNote />}
           {import.meta.env.VITE_DEMO !== '1' && isDevHost(window.location.hostname) && <DevHostNote />}
@@ -998,7 +1001,6 @@ export default function App() {
         )}
       </div>
 
-      <footer className="muted small">로그인 없이, 링크만 있으면 누구나 쓸 수 있어요.</footer>
 
       <Sheet
         open={filtersOpen && !wide && tab === 'roadmap'}

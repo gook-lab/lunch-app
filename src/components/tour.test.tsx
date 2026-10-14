@@ -37,10 +37,10 @@ describe('첫 방문 안내', () => {
     stage(false);
     const r = render(<Tour onClose={() => {}} />);
     expect(r.getByRole('dialog').textContent).toContain('1 / 4');
-    expect(r.container.querySelector('.tour__hole')).toBeNull();
+    expect(r.container.querySelector('.onboard__hole')).toBeNull();
     act(() => r.getByRole('button', { name: '다음' }).click());
     expect(r.getByRole('dialog').textContent).toContain('게임을 골라요');
-    expect(r.container.querySelector('.tour__hole')).toBeTruthy();
+    expect(r.container.querySelector('.onboard__hole')).toBeTruthy();
   });
 
   it('건너뛰기와 Escape 도 기억하고 닫는다', () => {

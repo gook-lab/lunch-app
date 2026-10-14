@@ -136,47 +136,47 @@ export function Tour({ onClose }: { onClose: () => void }) {
     : { top: '50%' };
 
   return (
-    <div className="tour">
+    <div className="onboard">
       {rect ? (
         <div
-          className="tour__hole"
+          className="onboard__hole"
           style={{ top: rect.top, left: rect.left, width: rect.width, height: rect.height }}
           aria-hidden="true"
         />
       ) : (
-        <div className="tour__dim" aria-hidden="true" />
+        <div className="onboard__dim" aria-hidden="true" />
       )}
       {/* 어두운 바깥을 눌러도 아무 일 없게 막는다. 실수로 게임이 돌면 안내가 엉킨다. */}
-      <div className="tour__block" aria-hidden="true" />
+      <div className="onboard__block" aria-hidden="true" />
       <section
         key={index}
-        className={rect ? 'tour__card' : 'tour__card tour__card--center'}
+        className={rect ? 'onboard__card' : 'onboard__card onboard__card--center'}
         style={cardStyle}
         role="dialog"
         aria-modal="true"
         aria-labelledby="tour-title"
         aria-describedby="tour-body"
       >
-        <div className="tour__head">
-          <span className="tour__icon" aria-hidden="true">
+        <div className="onboard__head">
+          <span className="onboard__icon" aria-hidden="true">
             {step.icon}
           </span>
           <div>
-            <p className="tour__count">
+            <p className="onboard__count">
               {index + 1} / {steps.length}
             </p>
-            <h2 id="tour-title" className="tour__title">
+            <h2 id="tour-title" className="onboard__title">
               {step.title}
             </h2>
           </div>
         </div>
-        <p id="tour-body" className="tour__body">
+        <p id="tour-body" className="onboard__body">
           {step.body}
         </p>
-        <div className="tour__foot">
-          <span className="tour__dots" aria-hidden="true">
+        <div className="onboard__foot">
+          <span className="onboard__dots" aria-hidden="true">
             {steps.map((s, i) => (
-              <span key={s.title} className={i === index ? 'tour__dot tour__dot--on' : 'tour__dot'} />
+              <span key={s.title} className={i === index ? 'onboard__dot onboard__dot--on' : 'onboard__dot'} />
             ))}
           </span>
           {!last && (
@@ -184,7 +184,7 @@ export function Tour({ onClose }: { onClose: () => void }) {
               건너뛰기
             </button>
           )}
-          <button type="button" ref={nextRef} className="tour__next" onClick={next}>
+          <button type="button" ref={nextRef} className="onboard__next" onClick={next}>
             {last ? '시작하기' : '다음'}
           </button>
         </div>

@@ -9,8 +9,8 @@ export const Settings = lazyGame(
   () => import('./Settings').then((m) => m.Settings),
   // 받는 동안에도 자리를 지킨다. 머리말이 들썩이지 않게 같은 모양의 단추를 둔다.
   () => (
-    <button type="button" className="linkish app__help" disabled>
-      <span aria-hidden="true">⚙️ </span>설정
+    <button type="button" className="linkish app__tool" disabled>
+      설정
     </button>
   ),
 );

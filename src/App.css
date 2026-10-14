@@ -3289,9 +3289,10 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 .demo-note .linkish { margin: -12px 0 -12px var(--space-1); font-size: var(--fs-xs); }
 
 /* 첫 방문 안내 — 화면을 어둡게 덮고 설명하는 곳만 밝힌다(pig-ma 시작 안내와 같은 구조) */
-.tour { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
-.tour__dim { position: absolute; inset: 0; background: color-mix(in oklch, var(--color-neutral-900) 55%, transparent); }
-.tour__hole {
+/* 클래스는 .onboard. .tour 는 토너먼트 게임이 먼저 쓰고 있어서, 겹치면 토너먼트 판이 화면에 고정돼 튀어나왔다(10/14). */
+.onboard { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
+.onboard__dim { position: absolute; inset: 0; background: color-mix(in oklch, var(--color-neutral-900) 55%, transparent); }
+.onboard__hole {
   position: absolute;
   border-radius: var(--radius-lg);
   /* 구멍 바깥 전체를 그림자로 칠한다 — 구멍 안은 밝은 그대로 보인다 */
@@ -3303,8 +3304,8 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
   animation: tour-pulse 1.8s var(--ease-inout) infinite;
 }
 @keyframes tour-pulse { 50% { outline-offset: 5px; } }
-.tour__block { position: absolute; inset: 0; pointer-events: auto; }
-.tour__card {
+.onboard__block { position: absolute; inset: 0; pointer-events: auto; }
+.onboard__card {
   position: absolute;
   left: 50%;
   translate: -50% 0;
@@ -3320,10 +3321,10 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
   pointer-events: auto;
   animation: tour-in var(--motion-slow) var(--ease-out);
 }
-.tour__card--center { translate: -50% -50%; }
+.onboard__card--center { translate: -50% -50%; }
 @keyframes tour-in { from { opacity: 0; } }
-.tour__head { display: flex; gap: var(--space-3); align-items: center; }
-.tour__icon {
+.onboard__head { display: flex; gap: var(--space-3); align-items: center; }
+.onboard__icon {
   display: grid;
   place-items: center;
   flex: none;
@@ -3333,14 +3334,14 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
   background: var(--color-neutral-100);
   font-size: 22px;
 }
-.tour__count { margin: 0; font-size: var(--fs-xs); font-weight: 700; color: var(--color-neutral-700); letter-spacing: 0.06em; }
-.tour__title { margin: 0; font-size: var(--fs-md); line-height: 1.35; }
-.tour__body { margin: 0; font-size: var(--fs-sm); line-height: 1.6; color: var(--color-neutral-800); }
-.tour__foot { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-1); }
-.tour__dots { display: flex; gap: 4px; margin-right: auto; }
-.tour__dot { width: 6px; height: 6px; border-radius: 999px; background: var(--color-neutral-300); transition: width var(--motion-fast) var(--ease-out); }
-.tour__dot--on { width: 18px; background: var(--color-accent); }
-.tour__next {
+.onboard__count { margin: 0; font-size: var(--fs-xs); font-weight: 700; color: var(--color-neutral-700); letter-spacing: 0.06em; }
+.onboard__title { margin: 0; font-size: var(--fs-md); line-height: 1.35; }
+.onboard__body { margin: 0; font-size: var(--fs-sm); line-height: 1.6; color: var(--color-neutral-800); }
+.onboard__foot { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-1); }
+.onboard__dots { display: flex; gap: 4px; margin-right: auto; }
+.onboard__dot { width: 6px; height: 6px; border-radius: 999px; background: var(--color-neutral-300); transition: width var(--motion-fast) var(--ease-out); }
+.onboard__dot--on { width: 18px; background: var(--color-accent); }
+.onboard__next {
   min-height: 40px;
   padding: 0 var(--space-4);
   border: 0;
@@ -3351,8 +3352,9 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
   font-weight: 700;
   cursor: pointer;
 }
-.tour__next:focus-visible { outline: 2px solid var(--color-text); outline-offset: 2px; }
-.app__help { margin-left: auto; font-size: var(--fs-sm); }
+.onboard__next:focus-visible { outline: 2px solid var(--color-text); outline-offset: 2px; }
+.app__tools { display: inline-flex; margin-left: auto; }
+.app__tool { font-size: var(--fs-sm); }
 
 /* 게임이 그리다 터졌을 때 — 게임판 자리만 안내로 바꾼다 */
 .game-failed {
@@ -3418,9 +3420,9 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
  * 다크 모드 — "가장 어두운 색" 으로 --color-neutral-900 을 쓴 곳. 다크 테마에선 그 값이 가장 밝은 색이 된다.
  * 첫 방문 안내는 화면을 어둡게 덮어야 하는데 회색으로 밝아졌고, 카테고리 배지는 연한 바탕에 밝은 글자가 됐다(10/14).
  */
-[data-theme='dark'] .tour__dim { background: oklch(0 0 0 / 0.6); }
-[data-theme='dark'] .tour__hole { box-shadow: 0 0 0 200vmax oklch(0 0 0 / 0.6); }
-[data-theme='dark'] .tour__card { box-shadow: 0 8px 24px oklch(0 0 0 / 0.5); }
+[data-theme='dark'] .onboard__dim { background: oklch(0 0 0 / 0.6); }
+[data-theme='dark'] .onboard__hole { box-shadow: 0 0 0 200vmax oklch(0 0 0 / 0.6); }
+[data-theme='dark'] .onboard__card { box-shadow: 0 8px 24px oklch(0 0 0 / 0.5); }
 [data-theme='dark'] .card__cat { background: oklch(0.38 0.07 var(--cat-hue)); color: var(--color-text); }
 /* 뽑기 기계 동전 구멍·배출구는 기계 그림의 일부라 늘 어둡다. */
 [data-theme='dark'] .gacha__slot,

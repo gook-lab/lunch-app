@@ -23,8 +23,8 @@ export function Settings() {
       align="end"
       className="settings"
       trigger={
-        <button type="button" className="linkish app__help">
-          <span aria-hidden="true">⚙️ </span>설정
+        <button type="button" className="linkish app__tool">
+          설정
         </button>
       }
     >
