@@ -3,16 +3,19 @@
  * 같은 가게를 다시 묻지 않게 이 브라우저에 30일(없음은 1일) 기억한다.
  * 개발 서버엔 /api 가 없어 index.html 이 돌아오는데, JSON 이 아니면 null 로 본다.
  */
+import { useEffect, useState } from 'react';
 import type { Place } from '../lib/candidates';
 
 export interface PlacePhoto {
   thumb: string;
   source: string | null;
+  /** 대표(thumb) 포함 최대 넷. 예전 응답엔 없다. */
+  photos: string[];
 }
 
 const DAY = 24 * 60 * 60 * 1000;
-// v2: 검색어를 행정동→법정동→구로 넓혔다(10/14). 예전 "사진 없음" 기억을 버린다.
-const KEY = 'lunch-app:photo2:';
+// v3: 사진 여러 장(photos). v2: 검색어를 행정동→법정동→구로 넓혔다(10/14). 예전 기억은 버린다.
+const KEY = 'lunch-app:photo3:';
 
 type Cached = { at: number; photo: PlacePhoto | null };
 
@@ -53,7 +56,16 @@ export function fetchPlacePhoto(place: Pick<Place, 'id' | 'name' | 'lat' | 'lng'
     .then(async (res) => {
       if (!res.ok || !res.headers.get('content-type')?.includes('json')) return null;
       const body = (await res.json()) as Partial<PlacePhoto>;
-      const photo = typeof body.thumb === 'string' ? { thumb: body.thumb, source: body.source ?? null } : null;
+      const photo =
+        typeof body.thumb === 'string'
+          ? {
+              thumb: body.thumb,
+              source: body.source ?? null,
+              photos: Array.isArray(body.photos)
+                ? body.photos.filter((u) => typeof u === 'string').slice(0, 4)
+                : [body.thumb],
+            }
+          : null;
       writeCached(place, photo);
       return photo;
     })
@@ -61,4 +73,21 @@ export function fetchPlacePhoto(place: Pick<Place, 'id' | 'name' | 'lat' | 'lng'
     .finally(() => inflight.delete(k));
   inflight.set(k, p);
   return p;
+}
+
+/** 가게 사진 한 번만 묻기. 같은 가게를 여러 곳(머리 사진·사진 줄)에서 써도 요청은 하나다. */
+export function usePlacePhoto(place: Pick<Place, 'id' | 'name' | 'lat' | 'lng'>): PlacePhoto | null {
+  const [photo, setPhoto] = useState<PlacePhoto | null>(() => readCached(place) ?? null);
+  useEffect(() => {
+    let alive = true;
+    void fetchPlacePhoto(place).then((p) => {
+      if (alive) setPhoto(p);
+    });
+    return () => {
+      alive = false;
+    };
+    // 같은 가게면 다시 묻지 않는다. 이름을 고치면 다른 사진을 찾는다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [place.id, place.name]);
+  return photo;
 }

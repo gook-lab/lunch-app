@@ -26,7 +26,10 @@ describe('/api/photo', () => {
     expect(pickPhoto([{ thumbnail_url: 'http://x' }, { thumbnail_url: 'https://y', display_sitename: '블로그' }])).toEqual({
       thumb: 'https://y',
       source: '블로그',
+      photos: ['https://y'],
     });
+    const many = ['a', 'b', 'b', 'c', 'd', 'e'].map((x) => ({ thumbnail_url: `https://${x}` }));
+    expect(pickPhoto(many)?.photos).toEqual(['https://a', 'https://b', 'https://c', 'https://d']);
     expect(pickPhoto([])).toBeNull();
     expect(inKorea(37.5, 127)).toBe(true);
     expect(inKorea(0, 0)).toBe(false);
@@ -76,7 +79,7 @@ describe('/api/photo', () => {
     // 행정동에서 못 찾으면 법정동으로 한 번 더
     expect(decodeURIComponent(String(f.mock.calls[2][0]))).toContain('query=가게 충무로');
     expect(f.mock.calls[0][1].headers.Authorization).toBe('KakaoAK k');
-    expect(r.body).toEqual({ thumb: 'https://t', source: 'S' });
+    expect(r.body).toEqual({ thumb: 'https://t', source: 'S', photos: ['https://t'] });
     expect(r.headers['Cache-Control']).toContain('s-maxage=2592000');
   });
 });

@@ -416,7 +416,7 @@ body {
 .ladder__shuffle:hover:not(:disabled) { border-color: var(--color-neutral-700); color: var(--color-text); }
 .ladder__shuffle:disabled { opacity: 0.4; cursor: default; }
 
-.ladder__board { position: relative; }
+.ladder__board { position: relative; container-type: inline-size; }
 
 .ladder__svg--editable { cursor: crosshair; }
 
@@ -425,14 +425,17 @@ body {
   position: absolute;
   top: 0;
   translate: -50% 0;
-  width: 26px;
-  height: 26px;
+  /* 가게가 많으면(17곳) 26px 동그라미가 이웃과 겹쳤다(10/14). 줄 간격보다 2px 작게 줄인다. */
+  width: min(26px, 100% / var(--cols, 1) - 2px);
+  height: auto;
+  aspect-ratio: 1;
+  padding: 0;
   border-radius: 50%;
   border: 1.5px solid var(--color-text);
   background: var(--color-bg);
   color: var(--color-text);
   font: inherit;
-  font-size: var(--fs-xs);
+  font-size: min(var(--fs-xs), 100cqw / var(--cols, 1) * 0.5);
   font-weight: 700;
   cursor: pointer;
   transition: background var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out);
@@ -3006,8 +3009,10 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: var(--space-1);
   min-height: 36px;
   margin-top: var(--space-2);
+  padding: 0 var(--space-3);
   border: 1px solid var(--color-neutral-400);
   border-radius: var(--radius-md);
   color: var(--color-text);
@@ -3560,3 +3565,25 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 .mp__head { justify-content: flex-start; }
 .mp__head > .mp__title { flex: 1; min-width: 0; }
 .ticket__thumb { display: grid; }
+
+/* 오늘 정한 곳 배너 — 길찾기(36px 링크)와 알리기(26px 단추)가 높이가 달라 튀어 보였다(10/14 사용자).
+   알리기도 36px 로 맞추고, 그 아래 안내 줄("복사했어요")은 자리를 차지하지 않게 띄운다. */
+.decided .share { position: relative; }
+.decided .share button { min-height: 36px; height: 36px; margin-top: 0; }
+.decided .share__note { position: absolute; top: 100%; right: 0; margin: 2px 0 0; white-space: nowrap; }
+.decided .share__note:empty { display: none; }
+@media (max-width: 959px) {
+  /* 휴대폰: 길찾기·알리기를 같은 폭 두 칸으로 나란히. 하나는 꽉 차고 하나는 반이라 들쭉날쭉했다. */
+  .decided__body { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--space-2); }
+  .decided__body > p { grid-column: 1 / -1; }
+  .decided__body > .dir-link { margin-top: var(--space-2); }
+  .decided__body > .share { margin-top: var(--space-2); }
+  .decided .share button { width: 100%; }
+}
+
+/* 대표 말고 더 찾은 사진 한 줄 — 같은 크기 칸 셋. */
+.photos { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-1); }
+.photos a { display: block; aspect-ratio: 1; overflow: hidden; border: 1px solid var(--color-neutral-200); border-radius: var(--radius-sm); background: var(--color-neutral-100); }
+.photos img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photos a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.ticket__photos { max-width: 264px; margin: var(--space-2) auto 0; }

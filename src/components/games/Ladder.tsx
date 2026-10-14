@@ -191,7 +191,7 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
         </button>
       </div>
 
-      <div className="ladder__board">
+      <div className="ladder__board" style={{ '--cols': count } as React.CSSProperties}>
         <svg
           viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
           role="img"

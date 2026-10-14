@@ -32,10 +32,15 @@ export function photoQueries(name, regions) {
   return [...new Set(near)];
 }
 
-/** 첫 결과 중 썸네일이 있는 것. 이미지 검색은 정확도 순이다. */
+/** 썸네일이 있는 결과 앞에서부터 최대 넷. 첫 장이 대표 사진이다. 이미지 검색은 정확도 순이다. */
+export const MAX_PHOTOS = 4;
 export function pickPhoto(documents) {
-  const doc = (documents ?? []).find((d) => typeof d.thumbnail_url === 'string' && d.thumbnail_url.startsWith('https://'));
-  return doc ? { thumb: doc.thumbnail_url, source: doc.display_sitename || null } : null;
+  const docs = (documents ?? []).filter(
+    (d) => typeof d.thumbnail_url === 'string' && d.thumbnail_url.startsWith('https://'),
+  );
+  if (docs.length === 0) return null;
+  const photos = [...new Set(docs.map((d) => d.thumbnail_url))].slice(0, MAX_PHOTOS);
+  return { thumb: photos[0], source: docs[0].display_sitename || null, photos };
 }
 
 async function kakao(path, key) {
@@ -70,7 +75,7 @@ export default async function handler(req, res) {
     };
     let photo = null;
     for (const query of photoQueries(name, regions)) {
-      const found = await kakao(`/v2/search/image?query=${encodeURIComponent(query)}&sort=accuracy&size=5`, key);
+      const found = await kakao(`/v2/search/image?query=${encodeURIComponent(query)}&sort=accuracy&size=8`, key);
       photo = pickPhoto(found.documents);
       if (photo) break;
     }

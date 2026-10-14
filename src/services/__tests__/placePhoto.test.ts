@@ -15,8 +15,8 @@ describe('가게 사진 가져오기', () => {
   it('찾은 썸네일을 돌려주고 이 브라우저에 기억해 다시 묻지 않는다', async () => {
     const f = vi.fn().mockResolvedValue(json({ thumb: 'https://search1.kakaocdn.net/a.jpg', source: '블로그' }));
     vi.stubGlobal('fetch', f);
-    expect(await fetchPlacePhoto(place)).toEqual({ thumb: 'https://search1.kakaocdn.net/a.jpg', source: '블로그' });
-    expect(await fetchPlacePhoto(place)).toEqual({ thumb: 'https://search1.kakaocdn.net/a.jpg', source: '블로그' });
+    expect(await fetchPlacePhoto(place)).toEqual({ thumb: 'https://search1.kakaocdn.net/a.jpg', source: '블로그', photos: ['https://search1.kakaocdn.net/a.jpg'] });
+    expect(await fetchPlacePhoto(place)).toEqual({ thumb: 'https://search1.kakaocdn.net/a.jpg', source: '블로그', photos: ['https://search1.kakaocdn.net/a.jpg'] });
     expect(f).toHaveBeenCalledTimes(1);
     expect(String(f.mock.calls[0][0])).toContain('name=%EA%B3%A8%EB%AA%A9');
   });

@@ -72,7 +72,7 @@ import './App.css';
 // 종이 식권 테마는 App.css 뒤에 — 같은 명시도로 덮는다.
 import './theme.css';
 import './desktop.css';
-import { PlaceThumb } from './components/PlaceThumb';
+import { PlacePhotoStrip, PlaceThumb } from './components/PlaceThumb';
 
 // 지도와 추가는 결정 화면 첫 페인트에 섞이지 않는다 (D7).
 const MapTab = lazy(() => import('./components/MapTab'));
@@ -595,6 +595,7 @@ export default function App() {
         <span>도보 {winner.walkMin}분</span>
         <RatingBadge summary={ratings.get(winner.id)} />
       </div>
+      <PlacePhotoStrip place={winner} className="ticket__photos" />
       {odds && (
         <p className="muted small ticket__odds">
           공 {odds.total}개 중 {odds.mine}개였어요. 당첨 확률은 {Math.round((odds.mine / odds.total) * 100)}%였어요.

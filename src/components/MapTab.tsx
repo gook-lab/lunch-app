@@ -41,7 +41,7 @@ import type {
 import { PlaceForm, type PlaceDraft } from './map/PlaceForm';
 import { MapAddMenu } from './map/MapAddMenu';
 import { nearbyHits, TAP_RADIUS_M, type NearbyHit } from './map/nearbyHits';
-import { PlaceThumb } from './PlaceThumb';
+import { PlacePhotoStrip, PlaceThumb } from './PlaceThumb';
 
 /** 이만큼 누르고 있으면 핀을 꽂는다. */
 const LONG_PRESS_MS = 500;
@@ -815,45 +815,45 @@ export default function MapTab({
         {/* 지도 위 칩·안내 묶음. 데스크톱에선 오른쪽 회사 카드와 같은 줄에 놓여 지도와 오른쪽 칸의
             위·아래 끝이 맞는다(10/14 — 안내가 지도 아래에 있으면 오른쪽 칸만 한 줄 더 내려갔다). */}
         <div className="map__mainHead">
-        {phase === 'ready' && (
-          // 오늘 탭과 같은 메뉴 > 세부 칩. 지도에서는 보기만 거른다(오늘 후보 조건과 따로다).
-          <CategoryChips
-            places={mapPool}
-            selected={mapCats.categories}
-            subs={mapCats.subs}
-            onToggle={(c) =>
-              pickMapCats({
-                categories: mapCats.categories.includes(c)
-                  ? mapCats.categories.filter((x) => x !== c)
-                  : [...mapCats.categories, c],
-                subs: [],
-              })
-            }
-            onToggleSub={(sub) =>
-              pickMapCats({
-                ...mapCats,
-                subs: mapCats.subs.includes(sub) ? mapCats.subs.filter((x) => x !== sub) : [...mapCats.subs, sub],
-              })
-            }
-            onClear={() => pickMapCats({ categories: [], subs: [] })}
-            onClearSubs={() => pickMapCats({ ...mapCats, subs: [] })}
-          />
-        )}
-        {phase === 'ready' && places.some((p) => !p.active) && (
-          <Checkbox
-            className="map__toggle"
-            layout="inline"
-            label="잠시 뺀 가게도 보기"
-            checked={showOff}
-            onCheckedChange={(v) => setShowOff(v === true)}
-          />
-        )}
-        {phase === 'ready' && (
-          <p className="muted small">
-            원은 도보 {WALK_STEPS.join('·')}분 거리예요.{' '}
-            {officeSet ? '지도를 누르면 가게를 넣을 수 있어요.' : '지도를 누르면 그 자리를 회사로 정할 수 있어요.'}
-          </p>
-        )}
+          {phase === 'ready' && (
+            // 오늘 탭과 같은 메뉴 > 세부 칩. 지도에서는 보기만 거른다(오늘 후보 조건과 따로다).
+            <CategoryChips
+              places={mapPool}
+              selected={mapCats.categories}
+              subs={mapCats.subs}
+              onToggle={(c) =>
+                pickMapCats({
+                  categories: mapCats.categories.includes(c)
+                    ? mapCats.categories.filter((x) => x !== c)
+                    : [...mapCats.categories, c],
+                  subs: [],
+                })
+              }
+              onToggleSub={(sub) =>
+                pickMapCats({
+                  ...mapCats,
+                  subs: mapCats.subs.includes(sub) ? mapCats.subs.filter((x) => x !== sub) : [...mapCats.subs, sub],
+                })
+              }
+              onClear={() => pickMapCats({ categories: [], subs: [] })}
+              onClearSubs={() => pickMapCats({ ...mapCats, subs: [] })}
+            />
+          )}
+          {phase === 'ready' && places.some((p) => !p.active) && (
+            <Checkbox
+              className="map__toggle"
+              layout="inline"
+              label="잠시 뺀 가게도 보기"
+              checked={showOff}
+              onCheckedChange={(v) => setShowOff(v === true)}
+            />
+          )}
+          {phase === 'ready' && (
+            <p className="muted small">
+              원은 도보 {WALK_STEPS.join('·')}분 거리예요.{' '}
+              {officeSet ? '지도를 누르면 가게를 넣을 수 있어요.' : '지도를 누르면 그 자리를 회사로 정할 수 있어요.'}
+            </p>
+          )}
         </div>
         <div
           className={['map__frame', picking && 'map__frame--picking', far && 'map__frame--far']
@@ -877,7 +877,6 @@ export default function MapTab({
             </div>
           )}
         </div>
-
       </div>
 
       {/* 오른쪽 칸 아래 — 고른 가게·근처 목록·넣기 폼. 데스크톱에선 이 칸만 넘긴다. */}
@@ -908,6 +907,7 @@ export default function MapTab({
                     닫기
                   </button>
                 </div>
+                <PlacePhotoStrip place={selected} />
                 <RatingBadge summary={ratings?.get(selected.id)} />
                 <RatingReviews summary={ratings?.get(selected.id)} />
                 {selected.memo && <p className="muted small">{selected.memo}</p>}
