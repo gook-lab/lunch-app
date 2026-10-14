@@ -251,7 +251,8 @@ export default function MapTab({
               map,
               averageCenter: true,
               minLevel: CLUSTER_MIN_LEVEL,
-              gridSize: 50,
+              // 휴대폰 폭에선 이름표(약 120px)가 50px 칸보다 훨씬 넓어 묶이지 않은 핀끼리 덮였다(10/14 390px 점검).
+              gridSize: el.clientWidth < 600 ? 100 : 50,
               minClusterSize: 3,
               texts: (count) => `${count}곳`,
               calculator: [1000],

@@ -7,6 +7,7 @@
  * 필터 로직은 여기 없다. selectCandidates 의 결과를 받아 그리기만 한다 —
  * 화면이 자기만의 필터를 들고 있으면 후보 수와 그림이 어긋난다.
  */
+import { useState, type PointerEvent } from 'react';
 import { categorySummary } from '../lib/category';
 import { Tag } from '@gook-lab/ui';
 import type { CandidateResult, Filters, Place } from '../lib/candidates';
@@ -28,6 +29,9 @@ interface Props {
  * 빠진 곳으로 읽히고, 다섯 줄 범례가 그림보다 먼저 읽혔다(10/9 처음 쓰는 사람 시점 리뷰).
  * "다시 넣음" 이 무슨 뜻인지는 아래 안내 문구가 숫자까지 넣어 풀어 준다.
  */
+/** 포인터에서 이 거리(판 좌표) 안의 점만 이름을 띄운다. 점 지름의 두세 배. */
+const PEEK_RADIUS = 12;
+
 const LEGEND: { status: string; label: string }[] = [
   { status: 'candidate', label: '고를 가게' },
   { status: 'released', label: '다시 넣은 곳' },
@@ -44,6 +48,25 @@ export function Roadmap({
   winnerId,
 }: Props) {
   const model = buildRoadmap(places, filters, result);
+  // 이름이 자리를 못 얻은 점(붐비는 조각·범위 밖)은 가리키거나 눌렀을 때만 이름을 띄운다.
+  // 점에 과녁을 따로 두면 그 자리 조각 누르기가 막히므로, 판 위 포인터 위치에서 가장 가까운 점을 찾는다.
+  const [peekId, setPeekId] = useState<string | null>(null);
+  const peek = model.dots.find((d) => d.place.id === peekId && !d.labelled);
+  const findDot = (e: PointerEvent<HTMLDivElement>) => {
+    const box = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - box.left) / box.width) * VIEW;
+    const y = ((e.clientY - box.top) / box.width) * VIEW;
+    let best: string | null = null;
+    let bestDist = PEEK_RADIUS;
+    for (const d of model.dots) {
+      const dist = Math.hypot(d.x - x, d.y - y);
+      if (dist < bestDist) {
+        best = d.place.id;
+        bestDist = dist;
+      }
+    }
+    if (best !== peekId) setPeekId(best);
+  };
   // 후보 수가 먼저다. 조건은 그 뒤에 붙인다. "→" 는 상태 변화로 읽혀 뺐다.
   const summary =
     `고를 가게 ${result.candidates.length}곳 · 도보 ${filters.maxWalkMin}분 · ` +
@@ -51,7 +74,12 @@ export function Roadmap({
 
   return (
     <section className="rm">
-      <div className="rm__stage">
+      <div
+        className={peek ? 'rm__stage rm__stage--peek' : 'rm__stage'}
+        onPointerMove={findDot}
+        onPointerDown={findDot}
+        onPointerLeave={() => setPeekId(null)}
+      >
         <svg viewBox={`0 0 ${VIEW} ${VIEW}`} className="rm__svg" aria-hidden="true">
           <circle cx={VIEW / 2} cy={VIEW / 2} r={model.discR} className="rm__disc" />
 
@@ -124,6 +152,15 @@ export function Roadmap({
               {d.label}
             </span>
           ))}
+
+        {peek && (
+          <span
+            className={`rm__dotLabel rm__dotLabel--peek rm__dotLabel--${peek.status}`}
+            style={{ left: `${(peek.x / VIEW) * 100}%`, top: `${(peek.y / VIEW) * 100}%` }}
+          >
+            {peek.label}
+          </span>
+        )}
 
         {model.rings.map((r) => (
           <button

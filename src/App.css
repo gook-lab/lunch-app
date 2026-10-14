@@ -3511,3 +3511,15 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 
 /* 지도 카드 — 길찾기 · 카카오맵에서 보기 나란히 */
 .mp__links { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+
+/* 이름이 자리를 못 얻은 점 — 가리키면 점 위에 띄운다. 다른 라벨 위에 올라가므로 바탕을 깐다. */
+.rm__dotLabel--peek {
+  z-index: 2;
+  translate: -50% calc(-100% - 8px);
+  padding: 3px 6px;
+  font-size: var(--fs-xs);
+  background: var(--color-text);
+  color: var(--color-bg);
+  border-radius: var(--radius-sm);
+}
+.rm__dotLabel--peek.rm__dotLabel--recent { color: var(--color-bg); }

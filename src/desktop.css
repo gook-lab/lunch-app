@@ -142,3 +142,60 @@
   .stage:not(.stage--full) > .catbar-wrap { padding-right: 112px; }
   .stage:not(.stage--full) > .stage__main > .stage__top:not(:has(> p)) { display: contents; }
 }
+
+/*
+ * 크게 보기 — 게임이 화면 밖으로 넘치지 않게 (10/14 사용자: 경마가 실행 단추를 덮었다).
+ *
+ * 예전엔 게임마다 폭만 키우고(prace 880px 등) 무대 전체를 스크롤시켰다. 이제 판(.stage__board)이
+ * 남는 높이를 다 갖는 크기 컨테이너가 되고, 게임은 "그 높이에 들어가는 폭" 까지만 큰다.
+ * 높이 = 기울기 × 폭 + 고정 부분 을 실측(1440×900, 폭 400·800 에서 잰 높이)해서 거꾸로 푼다.
+ *   사다리 0.79w+188 · 뽑기 0.84w+126 · 플링코 1.035w+108 · 경주 0.57w+172 · 핀볼 1.02w+383
+ * 핀볼(코스를 카메라가 따라감)과 카드(칸이 줄바꿈)는 비례로 줄지 않아 판 안에서 스크롤한다.
+ * 판이 320px 보다 낮아지면(아주 작은 창) 그때만 무대가 스크롤한다.
+ */
+.stage--full .stage__board {
+  flex: 1 1 auto;
+  min-height: 320px;
+  container-type: size;
+  overflow: auto;
+}
+.stage--full .wheel { width: min(86vw, 640px, 100cqh - 16px); }
+.stage--full .dice--big { width: min(520px, 94vw, 100cqh - 16px); }
+.stage--full .ladder { width: min(92vw, 760px, (100cqh - 204px) / 0.79); }
+.stage--full .gacha--big { width: min(380px, 92vw, (100cqh - 142px) / 0.84); }
+.stage--full .plinko--big { width: min(560px, 94vw, (100cqh - 136px) / 1.035); }
+.stage--full .prace--big { width: min(880px, 96vw, (100cqh - 188px) / 0.57); }
+
+/*
+ * 패널 안 상자 겹침 정리 · 목록 한 줄 (10/14 디자인 리뷰 후속).
+ * 패널(점선 상자) 안에 다시 테두리 상자를 두면 상자가 두세 겹으로 보였다 — 게임 레일 회색 판,
+ * 예측 점선 상자, 이번 달 기록·최근 다녀온 곳 상자. 패널 안에서는 테두리를 걷고 구획은 가는 선 하나로 나눈다.
+ * 목록 줄은 78px 라 1440×900 에서 8곳만 보였다. 이름·정보를 한 줄에 놓아 15곳 넘게 보이게 한다.
+ */
+@media (min-width: 960px) {
+  .stage:not(.stage--full) > .modebar { background: transparent; padding: 0; }
+  .stage:not(.stage--full) > .modebar .modebar__item { border: 1px solid var(--color-neutral-300); }
+
+  .today__filters .predict {
+    border: 0;
+    border-top: 1px solid var(--color-neutral-300);
+    border-radius: 0;
+    padding: var(--space-3) 0 0;
+  }
+
+  .lt__side .stats { border: 0; padding: 0; }
+  .lt__side .history { padding-top: var(--space-4); border-top: 1px solid var(--color-neutral-300); }
+  .lt__side .history__list { border: 0; padding: 0; background: transparent; }
+
+  .lt .list { gap: var(--space-1); }
+  .lt .list .list__item { padding: var(--space-1) var(--space-3); }
+  .lt .list__icon { width: 32px; height: 32px; font-size: var(--fs-md); }
+  .lt .list__text { display: flex; align-items: baseline; gap: var(--space-3); }
+  .lt .list__name { flex: none; flex-wrap: nowrap; max-width: 45%; }
+  .lt .list__name strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lt .list__meta { margin-top: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+/* 마우스로 쓰는 넓은 화면만 아이콘 단추를 줄인다. 손가락으로 누르는 화면은 44px 그대로. */
+@media (min-width: 960px) and (pointer: fine) {
+  .lt .list__iconBtn { width: 36px; height: 36px; font-size: var(--fs-md); }
+}
