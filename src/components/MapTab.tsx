@@ -311,6 +311,9 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       });
       // 켜진 가게가 꺼진 가게를 덮고, 오늘 정한 곳이 맨 위.
       const zIndex = today ? 4 : place.active ? 3 : 2;
+      // 올린 핀은 겹친 핀들 위로 올라와야 이름이 다 보인다(10/14 사용자: 지도에 반응이 없다).
+      el.addEventListener('mouseenter', () => markersRef.current.get(place.id)?.overlay.setZIndex(7));
+      el.addEventListener('mouseleave', () => markersRef.current.get(place.id)?.overlay.setZIndex(zIndex));
       const overlay = new maps.CustomOverlay({
         position,
         content: el,
@@ -617,6 +620,13 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
     });
   }, []);
 
+  const hoverPin = (id: string, on: boolean) => {
+    const pin = markersRef.current.get(id);
+    if (!pin) return;
+    pin.el.classList.toggle('map__pin--hover', on);
+    pin.overlay.setZIndex(on ? 7 : pin.zIndex);
+  };
+
   const goOffice = () => {
     const maps = mapsRef.current;
     const map = mapRef.current;
@@ -863,6 +873,11 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
                 <button
                   type="button"
                   className="mp__near"
+                  // 목록에 올리면 지도에서 그 핀이 어디인지 같이 보여 준다.
+                  onMouseEnter={() => hoverPin(p.id, true)}
+                  onMouseLeave={() => hoverPin(p.id, false)}
+                  onFocus={() => hoverPin(p.id, true)}
+                  onBlur={() => hoverPin(p.id, false)}
                   onClick={() => {
                     goTo(p);
                     requestAnimationFrame(() => {
