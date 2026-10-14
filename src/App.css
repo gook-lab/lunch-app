@@ -3538,3 +3538,25 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
   border-radius: var(--radius-sm);
 }
 .rm__dotLabel--peek.rm__dotLabel--recent { color: var(--color-bg); }
+
+/* 가게 사진 칸 — 크기를 먼저 잡고(메뉴 그림) 사진이 오면 같은 칸에 끼운다. 늦게 와도 글자가 안 밀린다. */
+.thumb {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-sm);
+  background: var(--color-neutral-100);
+  font-size: var(--fs-xl);
+}
+.thumb--lg { width: 96px; height: 96px; font-size: 40px; margin: 0 auto var(--space-2); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb--photo:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+/* 목록 줄은 기존 아이콘 칸 크기 그대로(.list__icon 이 폭·높이를 정한다). */
+.list__icon.thumb { width: 40px; height: 40px; font-size: var(--fs-lg); }
+.mp__head { justify-content: flex-start; }
+.mp__head > .mp__title { flex: 1; min-width: 0; }
+.ticket__thumb { display: grid; }

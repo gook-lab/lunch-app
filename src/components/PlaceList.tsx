@@ -13,7 +13,7 @@ import { recentNote } from '../lib/messages';
 import { useId, useRef, useState } from 'react';
 import { Button, Input, Menu } from '@gook-lab/ui';
 import { LunchStats } from './LunchStats';
-import { CATEGORIES, categoryIcon, categoryLabel } from '../lib/category';
+import { CATEGORIES, categoryLabel } from '../lib/category';
 import { CategoryPicker } from './CategoryPicker';
 import type { Place, Visit } from '../lib/candidates';
 import { withJosa } from '../lib/josa';
@@ -24,6 +24,7 @@ import { updatePlace } from '../services/lunch';
 import type { RatingSummary } from '../lib/ratings';
 import { RatingBadge, RatingEditor, RatingReviews } from './Rating';
 import { RemovePlaceSheet } from './RemovePlace';
+import { PlaceThumb } from './PlaceThumb';
 
 interface Props {
   places: Place[];
@@ -263,7 +264,7 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
     return (
       <li key={place.id} className={place.active ? 'list__item' : 'list__item list__off'}>
         <div className="list__main">
-          <span className="list__icon" aria-hidden="true">{categoryIcon(place.sub ?? place.category)}</span>
+          <PlaceThumb place={place} className="list__icon" />
           <div className="list__text">
             <div className="list__name">
               <strong>{place.name}</strong>

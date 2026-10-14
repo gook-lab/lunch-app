@@ -26,10 +26,7 @@ function mulberry32(seed: number) {
  * chi-square 적합성 검사. 기댓값이 5 미만이면 병합한다.
  * 반환: { stat: chi2 값, pValue: p-value, dof: 자유도 }
  */
-function chiSquare(
-  observed: number[],
-  expected: number[],
-): { stat: number; pValue: number; dof: number } {
+function chiSquare(observed: number[], expected: number[]): { stat: number; pValue: number; dof: number } {
   if (observed.length !== expected.length) {
     throw new Error('길이 불일치');
   }
@@ -37,7 +34,7 @@ function chiSquare(
   for (let i = 0; i < observed.length; i += 1) {
     const e = expected[i];
     if (e <= 0) continue;
-    stat += ((observed[i] - e) ** 2) / e;
+    stat += (observed[i] - e) ** 2 / e;
   }
   const dof = observed.length - 1;
   const pValue = chiSquarePValue(stat, dof);
@@ -47,9 +44,8 @@ function chiSquare(
 /** ln Γ(x) — Lanczos 근사(g=7, 9항). 감마 함수 값이 커져 넘치지 않게 로그로 다룬다. */
 function logGamma(x: number): number {
   const c = [
-    0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313,
-    -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6,
-    1.5056327351493116e-7,
+    0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059,
+    12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7,
   ];
   if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - logGamma(1 - x);
   const z = x - 1;
@@ -119,9 +115,7 @@ describe('균등 선택 (heavy)', () => {
         const { stat, pValue, dof } = chiSquare(counts, expected);
 
         // p > 0.001 이면 귀무가설(균등) 기각 안 함. (유의도 α=0.001)
-        console.log(
-          `  N=${n}: χ²=${stat.toFixed(2)}, p=${pValue.toFixed(6)}, dof=${dof}`,
-        );
+        console.log(`  N=${n}: χ²=${stat.toFixed(2)}, p=${pValue.toFixed(6)}, dof=${dof}`);
         expect(pValue).toBeGreaterThan(0.001);
 
         // 첫/마지막 칸 편향 검사. 극값 비율이 중앙값의 1.5배 이상이면 경고.
@@ -259,9 +253,7 @@ describe('주사위 (heavy)', () => {
 
       // 평균 굴림 수.
       const avgRolls = totalRolls / totalTrials;
-      console.log(
-        `  총 ${totalTrials}회 시행, 평균 굴림 수: ${avgRolls.toFixed(2)} (굴림 수 = round(거리/3.5) 기준)`,
-      );
+      console.log(`  총 ${totalTrials}회 시행, 평균 굴림 수: ${avgRolls.toFixed(2)} (굴림 수 = round(거리/3.5) 기준)`);
       // 평균이 3 ~ 4 사이면 합리적.
       expect(avgRolls).toBeGreaterThan(2.5);
       expect(avgRolls).toBeLessThan(4.5);

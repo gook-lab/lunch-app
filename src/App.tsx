@@ -72,6 +72,7 @@ import './App.css';
 // 종이 식권 테마는 App.css 뒤에 — 같은 명시도로 덮는다.
 import './theme.css';
 import './desktop.css';
+import { PlaceThumb } from './components/PlaceThumb';
 
 // 지도와 추가는 결정 화면 첫 페인트에 섞이지 않는다 (D7).
 const MapTab = lazy(() => import('./components/MapTab'));
@@ -583,6 +584,7 @@ export default function App() {
         <span aria-hidden="true">{MODE_ICON[mode]} </span>
         {withJosa(GAME_MODES.find((m) => m.id === mode)?.label ?? '게임', '으로/로')} 뽑은 오늘의 점심
       </p>
+      <PlaceThumb place={winner} size="lg" className="ticket__thumb" />
       <h2 className="ticket__name" ref={resultRef} tabIndex={-1}>
         {winner.name}
       </h2>

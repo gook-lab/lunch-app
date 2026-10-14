@@ -41,6 +41,7 @@ import type {
 import { PlaceForm, type PlaceDraft } from './map/PlaceForm';
 import { MapAddMenu } from './map/MapAddMenu';
 import { nearbyHits, TAP_RADIUS_M, type NearbyHit } from './map/nearbyHits';
+import { PlaceThumb } from './PlaceThumb';
 
 /** 이만큼 누르고 있으면 핀을 꽂는다. */
 const LONG_PRESS_MS = 500;
@@ -895,7 +896,8 @@ export default function MapTab({
             ) : (
               <>
                 <div className="mp__head">
-                  <div>
+                  <PlaceThumb place={selected} />
+                  <div className="mp__title">
                     <strong>{selected.name}</strong>
                     <p className="muted small">
                       {categoryLabel(selected)} · 도보 {selected.walkMin}분
