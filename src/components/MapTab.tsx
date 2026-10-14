@@ -22,6 +22,7 @@ import { matchesCategory } from '../lib/candidates';
 import { CategoryPicker } from './CategoryPicker';
 import { metersForWalkMinutes, officeCoord, officeSource, type Coord } from '../lib/walk';
 import { OfficeCard } from './map/OfficeCard';
+import { SearchField } from './map/SearchField';
 import { pinElement } from './map/pin';
 import type { RatingSummary } from '../lib/ratings';
 import { RatingBadge, RatingEditor, RatingReviews } from './Rating';
@@ -128,6 +129,7 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
 
   const [keyword, setKeyword] = useState('');
   const [results, setResults] = useState<KakaoPlace[]>([]);
+  const searchSeq = useRef(0);
   const [searching, setSearching] = useState(false);
   const [searchProblem, setSearchProblem] = useState<string | null>(null);
 
@@ -555,8 +557,9 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
   const search = useCallback(async () => {
     const q = keyword.trim();
     if (!q) return;
+    // 늦게 온 이전 응답이 최신 결과를 덮지 않게 순번을 붙인다(Combobox RADIO).
+    const seq = ++searchSeq.current;
     setSearchProblem(null);
-    setResults([]);
     setSearching(true);
     try {
       const maps = await loadKakaoMaps();
@@ -564,12 +567,14 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       new maps.services.Places().keywordSearch(
         q,
         (data, status) => {
+          if (seq !== searchSeq.current) return;
           setSearching(false);
           if (status === maps.services.Status.OK) {
             setResults(data.slice(0, MAX_RESULTS));
             return;
           }
           if (status === maps.services.Status.ZERO_RESULT) {
+            setResults([]);
             setSearchProblem('회사 근처에서 찾지 못했어요. 지점 이름까지 넣어 볼까요?');
             return;
           }
@@ -692,21 +697,14 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
       />
       {officeSet && (
         <>
-          <div className="add__search">
-            <Input
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void search();
-              }}
-              placeholder="가게 이름이나 지점으로 찾기"
-              maxLength={40}
-              aria-label="가게 이름이나 지점으로 찾기"
-            />
-            <Button onClick={() => void search()} loading={searching} disabled={!keyword.trim()}>
-              찾기
-            </Button>
-          </div>
+          <SearchField
+            value={keyword}
+            onChange={setKeyword}
+            onSearch={() => void search()}
+            loading={searching}
+            placeholder="가게 이름이나 지점으로 찾기"
+            label="가게 이름이나 지점으로 찾기"
+          />
           {searchProblem && (
             <p className="notice notice--empty" role="alert">
               {searchProblem}

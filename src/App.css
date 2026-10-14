@@ -872,7 +872,12 @@ footer.muted { text-align: center; }
 /* 가게 추가 시트 */
 .add { display: flex; flex-direction: column; gap: var(--space-3); }
 
-.add__search { display: flex; gap: var(--space-2); }
+.add__search { display: flex; gap: var(--space-2); margin: 0; }
+/* Input 은 Field 상자로 감싸여 온다. 상자가 남는 폭을 다 쓰고, 찾기 단추는 글자 폭만. */
+.add__search > :first-child { flex: 1; min-width: 0; }
+.add__search > button { flex: none; }
+/* type=search 의 브라우저 기본 지우기 단추가 다크에서 안 보이고 높이를 흔든다. */
+.add__search input::-webkit-search-cancel-button { -webkit-appearance: none; }
 
 .add__search input {
   flex: 1;
@@ -1866,11 +1871,17 @@ html:has(.stage--full) { overflow: hidden; }
     grid-template-columns: minmax(0, 1fr) 360px;
     grid-auto-flow: row dense;
     align-items: start;
-    gap: var(--space-3) var(--space-6);
+    /* 지도가 20줄을 차지하므로 줄 간격을 두면 빈 줄 19개만큼 페이지가 길어졌다(10/14). 간격은 오른쪽 칸 margin 으로. */
+    gap: 0 var(--space-6);
+    grid-auto-rows: min-content;
   }
   .map > * { grid-column: 2; }
+  .map > :not(.map__main) { margin-bottom: var(--space-3); }
   .map > .map__main { grid-column: 1; grid-row: 1 / span 20; position: sticky; top: var(--space-6); }
-  .map__canvas { height: min(640px, calc(100svh - 200px)); }
+  /* 한 화면에 들어오게(10/14 사용자). 머리말·칩·안내 한 줄을 뺀 높이. */
+  .map__canvas { height: clamp(360px, calc(100svh - 336px), 900px); }
+  /* 오른쪽 칸이 길어지면 페이지 대신 칸 안에서 넘긴다. */
+  .map > .mp__card { max-height: calc(100svh - 332px); overflow-y: auto; overscroll-behavior: contain; }
 }
 
 /* ── 카드 뒤집기 ─────────────────────────────────────────── */

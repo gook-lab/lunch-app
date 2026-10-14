@@ -9,8 +9,9 @@
  * 모두가 같은 기준을 봐야 하므로 저장은 Firestore 한 곳이다. 바꾸기 전에
  * 얼마나 옮기는지 보여 주고 한 번 더 묻는다.
  */
-import { useEffect, useState, type MutableRefObject } from 'react';
-import { Button, Input } from '@gook-lab/ui';
+import { useEffect, useRef, useState, type MutableRefObject } from 'react';
+import { Button } from '@gook-lab/ui';
+import { SearchField } from './SearchField';
 import type { KakaoPlace } from '../../types/kakao';
 import { loadKakaoMaps } from '../../services/kakao';
 import { officeCoord, officeSource, setOfficeOverride, straightLineMeters, type Coord } from '../../lib/walk';
@@ -85,6 +86,7 @@ export function OfficeCard({
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<KakaoPlace[]>([]);
   const [searching, setSearching] = useState(false);
+  const searchSeq = useRef(0);
   const expanded = open || pending !== null || picking || problem !== null;
 
   const propose = (coord: Coord, note = '') => {
@@ -108,8 +110,9 @@ export function OfficeCard({
   const search = async () => {
     const q = query.trim();
     if (!q) return;
+    // 늦게 온 이전 응답이 최신 결과를 덮지 않게 순번을 붙인다(Combobox RADIO).
+    const seq = ++searchSeq.current;
     setProblem(null);
-    setHits([]);
     setSearching(true);
     try {
       const maps = await loadKakaoMaps();
@@ -117,8 +120,10 @@ export function OfficeCard({
       new maps.services.Places().keywordSearch(
         q,
         (data, status) => {
+          if (seq !== searchSeq.current) return;
           setSearching(false);
           if (status === maps.services.Status.OK) return setHits(data.slice(0, MAX_HITS));
+          setHits([]);
           if (status === maps.services.Status.ZERO_RESULT) {
             return setProblem('찾지 못했어요. 건물 이름이나 도로명 주소로 찾아 볼까요?');
           }
@@ -269,21 +274,18 @@ export function OfficeCard({
         </div>
       ) : (
         <>
-          <div className="add__search office__search">
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void search();
-              }}
-              placeholder="건물 이름이나 주소로 찾기"
-              maxLength={40}
-              aria-label="회사 건물 이름이나 주소로 찾기"
-            />
-            <Button onClick={() => void search()} loading={searching} disabled={!query.trim()}>
-              찾기
-            </Button>
-          </div>
+          <SearchField
+            className="office__search"
+            value={query}
+            onChange={setQuery}
+            onSearch={() => void search()}
+            loading={searching}
+            placeholder="건물 이름이나 주소로 찾기"
+            label="회사 건물 이름이나 주소로 찾기"
+          />
+          <p className="sr-only" role="status">
+            {!searching && hits.length > 0 ? `${hits.length}곳 찾았어요` : ''}
+          </p>
           {hits.length > 0 && (
             <ul className="add__results" aria-label="회사 위치 후보">
               {hits.map((hit) => (
