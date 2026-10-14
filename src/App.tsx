@@ -108,6 +108,16 @@ function formatDay(day: string): string {
   return `${m}월 ${d}일 ${w}요일`;
 }
 
+/**
+ * "여기로 결정" 단추가 사라지면 초점이 body 로 떨어진다. 그 자리에 생긴 안내로 옮긴다.
+ * 모듈 범위 함수라 ref 가 그려질 때 한 번만 불린다. 다른 곳에 초점이 있으면 건드리지 않는다.
+ */
+function focusIfLost(node: HTMLElement | null) {
+  if (node && (document.activeElement === null || document.activeElement === document.body)) {
+    node.focus({ preventScroll: true });
+  }
+}
+
 export default function App() {
   const today = useTodayKST();
   const { state, error, places, visits, today: decision, refreshing, reload, officeKey } = useLunchData(today);
@@ -405,6 +415,23 @@ export default function App() {
     setFilters(patch);
   }, []);
 
+  // 자정을 넘기면 어제 판을 내려놓는다. 탭을 켜 둔 채 날이 바뀌면 어제 당첨이 결과 카드에
+  // 남아 있고, "여기로 결정" 을 누르면 오늘 기록으로 저장됐다. 첫 렌더는 건너뛴다.
+  const dayRef = useRef(today);
+  useEffect(() => {
+    if (dayRef.current === today) return;
+    dayRef.current = today;
+    window.clearTimeout(resultTimer.current);
+    setSpinning(false);
+    setBoard(null);
+    setBoardBalls(null);
+    setWinner(null);
+    setWinnerIndex(null);
+    setResultOpen(false);
+    setConfirming(null);
+    setSaveProblem(false);
+  }, [today]);
+
   // 공 개수를 바꾸면 지난 판을 내려놓는다(조건 바꾸기와 같다). 얼려 둔 판이 남아 있으면
   // 바꾼 개수가 화면에 안 보이고, 지난 경기와 구슬 수도 안 맞는다.
   const changeBalls = useCallback((update: (prev: Record<string, number>) => Record<string, number>) => {
@@ -613,7 +640,9 @@ export default function App() {
       <hr className="ticket__perf" aria-hidden="true" />
       {confirmed ? (
         <>
-          <p className="confirmed">오늘 점심으로 정했어요</p>
+          <p className="confirmed" role="status" tabIndex={-1} ref={focusIfLost}>
+            오늘 점심으로 정했어요
+          </p>
           <DirectionsLink place={winner} />
           <ShareButton place={winner} />
           <Button block variant="secondary" onClick={spin} disabled={spinning}>

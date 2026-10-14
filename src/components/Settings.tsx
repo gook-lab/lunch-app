@@ -22,6 +22,7 @@ export function Settings() {
     <Popover
       align="end"
       className="settings"
+      aria-label="설정"
       trigger={
         <button type="button" className="linkish app__tool">
           설정

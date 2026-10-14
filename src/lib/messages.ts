@@ -41,14 +41,16 @@ export function noticeMessage(result: CandidateResult): string | null {
   const { afterCategoryCount, recentlyVisitedCount, releasedCount, shortOfMinimum } = result;
 
   if (shortOfMinimum) {
+    // 후보가 모자라 최근에 간 곳을 다시 넣었으면 그것도 밝힌다. 빼고 고르는 줄 알았다가 어제 간 곳이 나온다.
+    const released = releasedCount > 0 ? ` 최근 1주에 간 ${releasedCount}곳도 함께 골라요.` : '';
     // 모자란 까닭이 사용자가 좁힌 도보·카테고리면 그걸 짚는다. 이때 "가게가
     // 20곳은 돼야" 는 엉뚱한 처방이다 — 양식 1곳만 골라도 그 문구가 떴다(10/8).
     if (afterCategoryCount < result.activeCount) {
-      return `지금은 ${result.candidates.length}곳에서 골라요. 도보 시간을 늘리거나 다른 메뉴도 보면 더 많아져요.`;
+      return `지금은 ${result.candidates.length}곳에서 골라요. 도보 시간을 늘리거나 다른 메뉴도 보면 더 많아져요.${released}`;
     }
     // "최근 방문 제외가 제대로 돌아가요" 는 처음 온 사람에게 고장 안내처럼 읽혔다(10/9).
     // 숫자(20곳)는 실측 근거가 있어 남기고, 할 일(가게 더 넣기)과 이득으로 바꿔 말한다.
-    return `${result.candidates.length}곳 중에 골라요. 가게를 ${HEALTHY_POOL_SIZE}곳쯤 넣어 두면 같은 가게가 덜 나와요.`;
+    return `${result.candidates.length}곳 중에 골라요. 가게를 ${HEALTHY_POOL_SIZE}곳쯤 넣어 두면 같은 가게가 덜 나와요.${released}`;
   }
 
   // 제외를 껐으면 최근에 간 곳도 그대로 후보다. "빠졌습니다" 는 거짓이 된다.

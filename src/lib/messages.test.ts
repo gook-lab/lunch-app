@@ -52,6 +52,16 @@ describe('noticeMessage — 공개 숫자가 실제와 일치한다', () => {
     expect(msg).toContain('3곳은 함께 골라요');
   });
 
+  it('후보가 모자라도 최근에 간 곳을 다시 넣었으면 그 수를 밝힌다', () => {
+    // 3곳뿐이고 그중 2곳이 최근 방문 → 최소 후보를 채우려 2곳을 다시 넣는다.
+    const places = pool(3);
+    const visits = [1, 2].map((n) => ({ id: dayIdBefore(TODAY, n), placeId: String(n) }));
+    const r = selectCandidates(places, visits, filters(), TODAY);
+    expect(r.shortOfMinimum).toBe(true);
+    expect(r.releasedCount).toBeGreaterThan(0);
+    expect(noticeMessage(r)).toContain(`최근 1주에 간 ${r.releasedCount}곳도 함께 골라요`);
+  });
+
   it('보정 없이 제외만 있으면 빠진 수만 말한다', () => {
     const places = pool(12);
     const visits = [1, 2].map((n) => ({ id: dayIdBefore(TODAY, n), placeId: String(n) }));

@@ -116,6 +116,26 @@ export function Tour({ onClose }: { onClose: () => void }) {
     nextRef.current?.focus({ preventScroll: true });
   }, [index]);
 
+  // 안내 중에는 뒤 화면을 inert 로 막는다. Tab 이 가려진 단추로 새지 않게. 닫으면 원래 초점으로.
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const before = document.activeElement as HTMLElement | null;
+    const blocked: HTMLElement[] = [];
+    for (let node: HTMLElement | null = rootRef.current; node && node.parentElement; node = node.parentElement) {
+      for (const sib of node.parentElement.children) {
+        if (sib !== node && sib instanceof HTMLElement && !sib.inert) {
+          sib.inert = true;
+          blocked.push(sib);
+        }
+      }
+      if (node.parentElement === document.body) break;
+    }
+    return () => {
+      for (const el of blocked) el.inert = false;
+      if (before && before !== document.body && before.isConnected) before.focus({ preventScroll: true });
+    };
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') finish();
@@ -136,7 +156,7 @@ export function Tour({ onClose }: { onClose: () => void }) {
     : { top: '50%' };
 
   return (
-    <div className="onboard">
+    <div className="onboard" ref={rootRef}>
       {rect ? (
         <div
           className="onboard__hole"

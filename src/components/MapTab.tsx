@@ -281,7 +281,13 @@ export default function MapTab({
             clustererRef.current,
             'clustered',
             (clusters: { getClusterMarker: () => KakaoCustomOverlay }[]) => {
-              for (const c of clusters) c.getClusterMarker().setZIndex(6);
+              for (const c of clusters) {
+                const marker = c.getClusterMarker();
+                marker.setZIndex(6);
+                // 묶음을 누르면 확대만 한다. 표시해 두지 않으면 지도 탭으로 읽혀 가게 넣기 메뉴가 같이 뜬다.
+                const node = marker.getContent?.();
+                if (node instanceof Element) node.classList.add('map__cluster');
+              }
             },
           );
         }
@@ -375,8 +381,16 @@ export default function MapTab({
       const el = pinElement(place, today, ratings?.get(place.id)?.average, recentIds?.has(place.id));
       el.addEventListener('click', () => {
         closeTapMenuRef.current();
+        // 쓰던 넣기 폼과 임시 핀은 접는다. 남겨 두면 카드와 폼이 같이 떠 어느 쪽인지 헷갈린다.
+        setDraft(null);
+        tempMarkerRef.current?.setMap(null);
+        tempMarkerRef.current = null;
         setSelectedId(place.id);
         setEditing(false);
+        // 휴대폰에선 카드가 지도 아래에 열린다. 눌러도 반응이 없는 것처럼 보이지 않게 카드까지 내린다.
+        if (window.matchMedia?.('(max-width: 959px)').matches) {
+          window.setTimeout(() => selCardRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' }), 60);
+        }
       });
       // 켜진 가게가 꺼진 가게를 덮고, 오늘 정한 곳이 맨 위.
       const zIndex = today ? 4 : place.active ? 3 : 2;
@@ -446,7 +460,7 @@ export default function MapTab({
       const map = mapRef.current;
       if (!maps || !map) return;
       // 핀을 누른 건 가게 고르기다. 길게 눌러도 새 가게를 꽂지 않는다.
-      if (e.target instanceof Element && e.target.closest('.map__pin, .map-add')) return;
+      if (e.target instanceof Element && e.target.closest('.map__pin, .map-add, .map__cluster')) return;
       start = { x: e.clientX, y: e.clientY };
       const rect = el.getBoundingClientRect();
       const px = e.clientX - rect.left;

@@ -11,6 +11,7 @@
  */
 import {
   collection,
+  deleteField,
   doc,
   documentId,
   getDoc,
@@ -151,7 +152,15 @@ export async function addPlace(
     const existing = await getDocs(
       query(places(), where('kakaoPlaceId', '==', input.kakaoPlaceId)),
     );
-    if (!existing.empty) return { added: false, id: existing.docs[0].id };
+    if (!existing.empty) {
+      // 지웠던 가게를 다시 넣으면 그 문서를 되살린다. 새로 만들면 kakaoPlaceId 가 겹쳐
+      // 위 검사에 계속 걸리고, 그대로 두면 지운 가게는 영영 다시 못 넣는다.
+      const live = existing.docs.find((d) => d.data().removed !== true);
+      if (live) return { added: false, id: live.id };
+      const revived = existing.docs[0];
+      await updateDoc(revived.ref, { removed: false, active: true });
+      return { added: true, id: revived.id };
+    }
   }
 
   const ref = doc(places());
@@ -171,7 +180,10 @@ export async function updatePlace(
   >,
 ): Promise<void> {
   await authReady;
-  await updateDoc(doc(places(), id), withoutEmpty(patch));
+  // 비운 선택 필드(메모·가격 등)는 지운다. 빼고 보내면 예전 값이 그대로 남는다.
+  const data: Record<string, unknown> = withoutEmpty(patch);
+  for (const key of Object.keys(patch)) if (!(key in data)) data[key] = deleteField();
+  await updateDoc(doc(places(), id), data);
 }
 
 export async function fetchPlace(id: string): Promise<Place | null> {

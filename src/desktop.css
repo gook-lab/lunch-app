@@ -74,7 +74,7 @@
   }
   .stage:not(.stage--full) > .stage__main > .stage__board { flex: 1 1 auto; min-height: 0; overflow: auto; }
   .stage:not(.stage--full) > .stage__main > :not(.stage__board) { flex: none; }
-  .today__filters { position: static; height: 100%; }
+  .today__filters { position: relative; height: 100%; }
 
   /* ── 가게 목록: 목록 | 기록 ────────────────────────── */
   .lt {
@@ -85,8 +85,8 @@
     gap: 0 var(--space-4);
   }
   .lt > .notice { grid-row: 1; margin-bottom: var(--space-3); }
-  .lt__main { grid-column: 1; grid-row: 2; }
-  .lt__side { grid-column: 2; grid-row: 2; position: static; }
+  .lt__main { grid-column: 1; grid-row: 2; position: relative; }
+  .lt__side { grid-column: 2; grid-row: 2; position: relative; }
 
   /* ── 가게 지도: 지도 | 오른쪽 칸(위: 회사·찾기, 아래: 넘기는 칸) ── */
   #panel-map > .map {

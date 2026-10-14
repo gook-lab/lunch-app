@@ -97,7 +97,7 @@ function History({
   return (
     <section className="history" aria-labelledby="history-title">
       <h2 id="history-title" className="list__heading">
-        최근 다녀온 곳 <span className="list__count">{rows.length}번</span>
+        최근 다녀온 곳 <span className="list__count">{rows.length}건</span>
       </h2>
       <ol className="history__list">
         {rows.map(({ visit, place }) => (

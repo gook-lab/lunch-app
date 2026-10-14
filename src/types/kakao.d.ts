@@ -64,6 +64,7 @@ export interface KakaoMarker {
 export interface KakaoCustomOverlay {
   setMap: (map: KakaoMap | null) => void;
   setZIndex: (zIndex: number) => void;
+  getContent?: () => HTMLElement | string;
 }
 
 /** libraries=clusterer. 가까운 핀을 "N곳" 동그라미 하나로 묶는다. CustomOverlay 도 받는다. */

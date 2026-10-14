@@ -56,8 +56,15 @@ export async function decideToday(today: DayId, placeId: string, mode?: string):
 
 export async function addPlace(input: Omit<Place, 'id' | 'createdBy'>): Promise<{ added: boolean; id?: string }> {
   await tick();
-  const existing = input.kakaoPlaceId && readDemo().places.find((p) => p.kakaoPlaceId === input.kakaoPlaceId);
-  if (existing) return { added: false, id: existing.id };
+  const matches = input.kakaoPlaceId ? readDemo().places.filter((p) => p.kakaoPlaceId === input.kakaoPlaceId) : [];
+  const live = matches.find((p) => !p.removed);
+  if (live) return { added: false, id: live.id };
+  if (matches.length > 0) {
+    // 지웠던 가게는 되살린다(lunch.firebase.ts 와 같은 규칙).
+    const id = matches[0].id;
+    writeDemo((s) => ({ ...s, places: s.places.map((p) => (p.id === id ? { ...p, removed: false, active: true } : p)) }));
+    return { added: true, id };
+  }
   const id = `demo-${Date.now().toString(36)}`;
   writeDemo((s) => ({ ...s, places: [...s.places, { ...input, id, createdBy: DEMO_UID }] }));
   return { added: true, id };
