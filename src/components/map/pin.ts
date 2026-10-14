@@ -34,7 +34,7 @@ export function pinElement(place: Place, today: boolean, average?: number, recen
     `${place.name}, ${categoryLabel(place)}, 도보 ${place.walkMin}분` +
       (average ? `, 별점 ${average.toFixed(1)}점` : '') +
       (today ? ', 오늘 정한 곳' : recent ? ', 최근 1주에 다녀온 곳' : '') +
-      (place.active ? '' : ', 꺼 둔 가게'),
+      (place.active ? '' : ', 잠시 뺀 가게'),
   );
   return el;
 }

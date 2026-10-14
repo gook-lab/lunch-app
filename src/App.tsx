@@ -188,7 +188,7 @@ export default function App() {
   // 기기 설정은 앱이 바꿀 수 없으니 읽기만 한다. 앱 안 스위치는 games/types.ts 가 기억한다.
   const [reducedBySystem] = useState(systemReducesMotion);
   const [motionOn, setMotionOn] = useState(motionForced);
-  // CSS 연출도 이 값을 따른다. @media (prefers-reduced-motion) 로 끄면 "연출 켜기" 를 눌러도
+  // CSS 연출도 이 값을 따른다. @media (prefers-reduced-motion) 로 끄면 "움직임 켜기" 를 눌러도
   // 바늘 착지·카드 들썩임·토너먼트 튀어나옴 같은 CSS 애니메이션은 꺼진 채였다(10/9 접근성 리뷰).
   useEffect(() => {
     document.documentElement.dataset.motion = reducedBySystem && !motionOn ? 'reduced' : 'full';
@@ -555,11 +555,11 @@ export default function App() {
         <span>
           🏢{' '}
           {officeSource() === 'saved'
-            ? '회사에서 걸어가는 시간이에요'
-            : '회사 위치를 정하면 걸리는 시간을 알려 드려요.'}
+            ? '회사에서 걸어서 몇 분인지 보여 드려요'
+            : '회사 위치를 정하면 걸어서 몇 분인지 알려 드려요'}
         </span>
         <button type="button" className="linkish" onClick={() => goTab('map')}>
-          {officeSource() === 'saved' ? '바꾸기' : '정하기'}
+          {officeSource() === 'saved' ? '회사 위치 바꾸기' : '정하기'}
         </button>
       </div>
     </>
@@ -641,6 +641,46 @@ export default function App() {
     </div>
   ) : null;
 
+  // 가게가 하나도 없을 때 — 고르기·목록 탭이 같은 안내와 단추를 쓴다(10/14 목록 탭은 한 줄 글뿐이었다).
+  const emptyScreen = (
+    <StatusScreen
+      inline
+      art={
+        <span className="status__office">
+          <span className="status__dot" />
+          <span className="status__officeLabel">회사</span>
+        </span>
+      }
+      title="아직 가게가 없어요"
+      lines={
+        // 회사부터 정한다. 지도 탭도 그 전에는 가게 찾기를 숨긴다.
+        officeSource() === 'saved'
+          ? ['지도에서 자주 가는 가게를 넣어 주세요.', '두 곳 이상 넣으면 게임을 시작할 수 있어요.']
+          : ['먼저 회사 위치를 정해 주세요.', '그다음 가게를 두 곳 이상 넣으면 게임을 시작할 수 있어요.']
+      }
+      action={
+        <>
+          <Button onClick={() => goTab('map')}>
+            <span aria-hidden="true">🗺️ </span>
+            {officeSource() === 'saved' ? '지도에서 가게 넣기' : '회사 위치 정하기'}
+          </Button>
+          {/* 데모는 빈 상태로 시작한다. 둘러보기만 할 사람은 지어낸 예시를 깐다. */}
+          {import.meta.env.VITE_DEMO === '1' && (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                loadDemoSample();
+                window.location.reload();
+              }}
+            >
+              예시로 둘러보기
+            </Button>
+          )}
+        </>
+      }
+    />
+  );
+
   return (
     <main className="app">
       <div className="topbar">
@@ -693,16 +733,20 @@ export default function App() {
 
       {tab === 'list' && (
         <div role="tabpanel" id="panel-list" aria-labelledby="tab-list" className="panel">
-          <PlaceList
-            places={places}
-            visits={visits}
-            today={today}
-            onChanged={reload}
-            excludeRecent={filters.excludeRecent}
-            onShowOnMap={showOnMap}
-            onAdd={() => goTab('map')}
-            ratings={ratings}
-          />
+          {places.length === 0 ? (
+            emptyScreen
+          ) : (
+            <PlaceList
+              places={places}
+              visits={visits}
+              today={today}
+              onChanged={reload}
+              excludeRecent={filters.excludeRecent}
+              onShowOnMap={showOnMap}
+              onAdd={() => goTab('map')}
+              ratings={ratings}
+            />
+          )}
         </div>
       )}
 
@@ -737,7 +781,9 @@ export default function App() {
         className="panel"
         hidden={tab !== 'roadmap'}
       >
-        {decidedPlace && !winner && (
+        {/* 게임 중·결과가 나와도 배너를 그대로 둔다. 결과가 나오는 순간 사라지면 아래 화면 전체가
+            위로 올라붙었다(10/14 사용자). 새로 "여기로 결정" 을 누르면 배너 내용만 바뀐다. */}
+        {decidedPlace && (
           <section className="decided" aria-label="오늘 정한 곳">
             <span className="decided__check" aria-hidden="true">
               ✓
@@ -748,7 +794,7 @@ export default function App() {
                 {josa(decidedPlace.name, '으로/로')} 정했어요
               </p>
               <p className="muted small">
-                {categoryLabel(decidedPlace)} · 도보 {decidedPlace.walkMin}분 · 다시 돌려서 바꿀 수 있어요
+                {categoryLabel(decidedPlace)} · 도보 {decidedPlace.walkMin}분 · 다시 하면 바꿀 수 있어요
               </p>
               <DirectionsLink place={decidedPlace} />
               <ShareButton place={decidedPlace} />
@@ -757,42 +803,7 @@ export default function App() {
         )}
 
         {places.length === 0 ? (
-          <StatusScreen
-            inline
-            art={
-              <span className="status__office">
-                <span className="status__dot" />
-                <span className="status__officeLabel">회사</span>
-              </span>
-            }
-            title="아직 가게가 없어요"
-            lines={
-              // 회사부터 정한다. 지도 탭도 그 전에는 가게 찾기를 숨긴다.
-              officeSource() === 'saved'
-                ? ['지도에서 첫 가게를 넣어 주세요.', '2곳부터 게임을 돌릴 수 있어요.']
-                : ['먼저 회사 위치를 정하고', '첫 가게를 넣어 주세요. 2곳부터 게임을 돌릴 수 있어요.']
-            }
-            action={
-              <>
-                <Button onClick={() => goTab('map')}>
-                  <span aria-hidden="true">🗺️ </span>
-                  {officeSource() === 'saved' ? '지도에서 가게 넣기' : '회사 위치 정하기'}
-                </Button>
-                {/* 데모는 빈 상태로 시작한다. 둘러보기만 할 사람은 지어낸 예시를 깐다. */}
-                {import.meta.env.VITE_DEMO === '1' && (
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      loadDemoSample();
-                      window.location.reload();
-                    }}
-                  >
-                    예시로 둘러보기
-                  </Button>
-                )}
-              </>
-            }
-          />
+          emptyScreen
         ) : (
           <div className="today">
             <section
@@ -880,11 +891,11 @@ export default function App() {
                   <div className="motion-note" role="note">
                     <p>
                       {motionOn
-                        ? '게임 연출을 켰어요. 기기의 \u2018동작 줄이기\u2019 설정과 다르게 움직여요.'
-                        : '기기의 \u2018동작 줄이기\u2019 설정에 따라 결과만 바로 보여 드려요.'}
+                        ? '게임 움직임을 켰어요. 기기의 \u2018동작 줄이기\u2019 설정과 상관없이 움직여요.'
+                        : '기기에서 \u2018동작 줄이기\u2019를 쓰고 있어서 결과를 바로 보여 드려요.'}
                     </p>
                     <button type="button" className="motion-note__toggle" onClick={toggleMotion} disabled={spinning}>
-                      {motionOn ? '연출 끄기' : '연출 켜기'}
+                      {motionOn ? '움직임 끄기' : '움직임 켜기'}
                     </button>
                   </div>
                 )}
@@ -909,14 +920,14 @@ export default function App() {
                       action={
                         gateWalk !== null ? (
                           <Button onClick={() => updateFilters((f) => ({ ...f, maxWalkMin: gateWalk }))}>
-                            도보 {gateWalk}분으로 넓히기
+                            도보 {gateWalk}분까지 보기
                           </Button>
                         ) : gate.fix.kind === 'category' ? (
                           <Button onClick={() => updateFilters((f) => ({ ...f, categories: [], subs: [] }))}>
-                            카테고리 전체로
+                            메뉴 전체 보기
                           </Button>
                         ) : gate.fix.kind === 'list' ? (
-                          <Button onClick={() => goTab('list')}>목록에서 가게 켜기</Button>
+                          <Button onClick={() => goTab('list')}>목록에서 가게 되돌리기</Button>
                         ) : (
                           <Button onClick={() => goTab('map')}>
                             <span aria-hidden="true">🗺️ </span>지도에서 가게 넣기

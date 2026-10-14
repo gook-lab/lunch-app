@@ -19,13 +19,13 @@ export function emptyMessage(result: CandidateResult): string | null {
     case 'no-places':
       return '아직 가게가 없어요. 지도에서 자주 가는 곳을 넣어 볼까요?';
     case 'all-inactive':
-      return `가게 ${reason.total}곳이 모두 꺼져 있어요. 목록에서 켜면 바로 고를 수 있어요.`;
+      return `가게 ${reason.total}곳을 모두 잠시 빼 뒀어요. 목록에서 되돌리면 바로 고를 수 있어요.`;
     case 'walk':
       return reason.countAtWiderWalk > 0
-        ? `도보 ${reason.widerWalkMin}분까지 넓히면 ${reason.countAtWiderWalk}곳이 있어요.`
+        ? `도보 ${reason.widerWalkMin}분까지 넓히면 ${reason.countAtWiderWalk}곳에서 고를 수 있어요.`
         : `걸어서 ${reason.widerWalkMin}분 안에는 아직 가게가 없어요. 회사 근처 가게를 넣어 볼까요?`;
     case 'category':
-      return `다른 메뉴까지 보면 ${reason.countWithoutCategory}곳에서 고를 수 있어요.`;
+      return `메뉴를 전체로 보면 ${reason.countWithoutCategory}곳에서 고를 수 있어요.`;
   }
 }
 
@@ -44,11 +44,11 @@ export function noticeMessage(result: CandidateResult): string | null {
     // 모자란 까닭이 사용자가 좁힌 도보·카테고리면 그걸 짚는다. 이때 "가게가
     // 20곳은 돼야" 는 엉뚱한 처방이다 — 양식 1곳만 골라도 그 문구가 떴다(10/8).
     if (afterCategoryCount < result.activeCount) {
-      return `지금은 ${result.candidates.length}곳에서 골라요. 도보 시간이나 메뉴를 넓히면 선택지가 더 많아져요.`;
+      return `지금은 ${result.candidates.length}곳에서 골라요. 도보 시간을 늘리거나 다른 메뉴도 보면 더 많아져요.`;
     }
     // "최근 방문 제외가 제대로 돌아가요" 는 처음 온 사람에게 고장 안내처럼 읽혔다(10/9).
     // 숫자(20곳)는 실측 근거가 있어 남기고, 할 일(가게 더 넣기)과 이득으로 바꿔 말한다.
-    return `${result.candidates.length}곳 중에 골라요. 가게를 ${HEALTHY_POOL_SIZE}곳쯤 넣어 두면 같은 곳이 덜 나와요.`;
+    return `${result.candidates.length}곳 중에 골라요. 가게를 ${HEALTHY_POOL_SIZE}곳쯤 넣어 두면 같은 가게가 덜 나와요.`;
   }
 
   // 제외를 껐으면 최근에 간 곳도 그대로 후보다. "빠졌습니다" 는 거짓이 된다.
@@ -90,13 +90,20 @@ export interface GameGate {
  * 후보가 2곳보다 적으면 게임판 대신 이유와 할 일을 보여 준다. 예전엔 빈 판 아래
  * 비활성 버튼과 작은 글씨 한 줄뿐이라 고장 난 화면처럼 보였다(10/14 사용자).
  */
+const COUNT_WORDS = ['', '한', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열'];
+/** 1~10 은 "두 곳" 처럼 말로, 그 밖은 숫자 그대로. */
+export function countWord(n: number): string {
+  return COUNT_WORDS[n] ?? String(n);
+}
+
 export function gameGate(
   result: CandidateResult,
   filters: Pick<Filters, 'maxWalkMin' | 'categories'>,
 ): GameGate | null {
   const count = result.candidates.length;
   if (count >= MIN_GAME_CANDIDATES) return null;
-  const rule = `게임은 ${MIN_GAME_CANDIDATES}곳부터 할 수 있어요.`;
+  // "2곳부터" 처럼 숫자+곳은 말로 읽으면 어색했다(10/14). 말할 때처럼 "두 곳" 으로 쓴다.
+  const rule = `가게가 ${countWord(MIN_GAME_CANDIDATES)} 곳 이상이면 게임을 시작할 수 있어요.`;
   const wider = WALK_STEPS.find((step) => step > filters.maxWalkMin);
 
   if (count === 0) {
@@ -112,12 +119,13 @@ export function gameGate(
   }
 
   // 1곳. 사용자가 좁힌 범위 탓이면 넓히기를, 아니면 가게 더 넣기를 권한다.
-  const title = '고를 곳이 한 곳뿐이에요';
+  // 안 되는 이유보다 무엇이 모자란지를 먼저 말한다. 규칙 문장은 제목이 대신한다.
+  const title = '한 곳만 더 있으면 시작할 수 있어요';
   if (result.afterCategoryCount < result.activeCount && filters.categories.length > 0) {
-    return { title, lines: [rule, '메뉴를 전체로 보면 더 많아져요.'], fix: { kind: 'category' } };
+    return { title, lines: ['메뉴를 전체로 바꾸면 가게가 더 나와요.'], fix: { kind: 'category' } };
   }
   if (result.activeCount > count && wider) {
-    return { title, lines: [rule, `도보 ${wider}분까지 넓혀 볼까요?`], fix: { kind: 'walk', walkMin: wider } };
+    return { title, lines: [`도보 ${wider}분까지 넓히면 가게가 더 나와요.`], fix: { kind: 'walk', walkMin: wider } };
   }
-  return { title, lines: [rule, '한 곳만 더 넣으면 바로 할 수 있어요.'], fix: { kind: 'add' } };
+  return { title, lines: ['지도에서 가게를 하나 더 넣어 주세요.'], fix: { kind: 'add' } };
 }

@@ -172,7 +172,7 @@ export function Tournament({ candidates, winnerIndex, spinning, run, onSpinEnd, 
 
       <p className="muted small tour__hint">
         {done
-          ? cheerLine || `${count}곳 토너먼트가 끝났어요.`
+          ? cheerLine || `${count}곳이 겨룬 토너먼트가 끝났어요.`
           : resolved
             ? '이긴 가게가 다음 판으로 가요.'
             : `${roundName(round.length)} 시작!`}

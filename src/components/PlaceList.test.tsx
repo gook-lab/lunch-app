@@ -51,8 +51,8 @@ describe('끄기 실패', () => {
     const onChanged = vi.fn();
     render(<PlaceList places={[place('a', '가집')]} visits={[]} today="20261009" onChanged={onChanged} excludeRecent />);
     openMenu();
-    fireEvent.click(screen.getByRole('menuitem', { name: '끄기' }));
-    expect((await screen.findByRole('alert')).textContent).toBe('가집을 끄지 못했어요. 잠시 뒤 다시 해 주세요.');
+    fireEvent.click(screen.getByRole('menuitem', { name: '잠시 빼기' }));
+    expect((await screen.findByRole('alert')).textContent).toBe('가집을 빼지 못했어요. 잠시 뒤 다시 해 주세요.');
     expect(onChanged).not.toHaveBeenCalled();
   });
 });
@@ -84,7 +84,7 @@ describe('고치기 — 목록에 없는 옛 카테고리', () => {
     const group = screen.getByRole('group', { name: '메뉴' });
     expect(within(group).queryAllByRole('button', { pressed: true })).toHaveLength(0);
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
-    expect(screen.getByRole('alert').textContent).toBe('카테고리를 골라 주세요.');
+    expect(screen.getByRole('alert').textContent).toBe('메뉴를 골라 주세요.');
     expect(updatePlace).not.toHaveBeenCalled();
     // 막힌 칸(첫 카테고리 칩)으로 초점이 간다.
     expect(document.activeElement).toBe(within(group).getAllByRole('button')[0]);

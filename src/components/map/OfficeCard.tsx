@@ -125,7 +125,7 @@ export function OfficeCard({
           if (status === maps.services.Status.OK) return setHits(data.slice(0, MAX_HITS));
           setHits([]);
           if (status === maps.services.Status.ZERO_RESULT) {
-            return setProblem('찾지 못했어요. 건물 이름이나 도로명 주소로 찾아 볼까요?');
+            return setProblem('건물 이름이나 도로명 주소로 다시 찾아 볼까요?');
           }
           setProblem('검색에 실패했어요. 잠시 뒤 다시 해 주세요.');
         },
@@ -227,7 +227,7 @@ export function OfficeCard({
         </h2>
         <span className="office__tail">
           <span className={saved ? 'office__badge' : 'office__badge office__badge--temp'}>
-            {saved ? '정해 둠' : '임시 위치'}
+            {saved ? '정해 둠' : '아직 안 정함'}
           </span>
           {/* 바꾸기로 펼쳤다가 안 바꾸고 접을 길이 없었다(20회차). 고르는 중엔 취소가 그 길이다. */}
           {saved && !pending && !picking && (
@@ -247,7 +247,7 @@ export function OfficeCard({
       </div>
       <p className="muted small">
         {saved
-          ? '도보 시간과 로드맵이 이 위치를 기준으로 계산돼요.'
+          ? '가게까지 걸리는 시간을 이 위치에서부터 재요.'
           : '먼저 회사 위치를 정해 주세요. 도보 시간이 여기서부터 계산돼요.'}
       </p>
 
@@ -284,10 +284,10 @@ export function OfficeCard({
             label="회사 건물 이름이나 주소로 찾기"
           />
           <p className="sr-only" role="status">
-            {!searching && hits.length > 0 ? `${hits.length}곳 찾았어요` : ''}
+            {!searching && hits.length > 0 ? `${hits.length}곳을 찾았어요` : ''}
           </p>
           {hits.length > 0 && (
-            <ul className="add__results" aria-label="회사 위치 후보">
+            <ul className="add__results" aria-label="회사 위치 검색 결과">
               {hits.map((hit) => (
                 <li key={hit.id}>
                   <button type="button" className="add__hit" onClick={() => pickHit(hit)}>

@@ -19,9 +19,10 @@ describe('CandidateChips', () => {
     expect(screen.getByRole('button', { name: '접기' })).toBeTruthy();
   });
 
-  it('뽑힌 곳이 접힌 쪽에 있어도 보인다', () => {
-    render(<CandidateChips result={result} winnerId="p11" />);
+  it('뽑힌 곳이 접힌 쪽에 있으면 여덟째 자리에 들어간다 — 칩 수가 늘지 않는다', () => {
+    const { container } = render(<CandidateChips result={result} winnerId="p11" />);
     expect(screen.getByText('가게11')).toBeTruthy();
-    expect(screen.getByRole('button', { name: '3곳 더 보기' })).toBeTruthy();
+    expect(container.querySelectorAll('.cands__item')).toHaveLength(8);
+    expect(screen.getByRole('button', { name: '4곳 더 보기' })).toBeTruthy();
   });
 });

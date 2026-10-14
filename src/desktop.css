@@ -10,7 +10,7 @@
  * 휴대폰(960px 미만)은 손대지 않는다. 그래서 새 래퍼(.stage__main)는 평소 display: contents 다.
  */
 .stage__main,
-.map__side { display: contents; }
+.map__side, .map__mainHead { display: contents; }
 
 @media (min-width: 960px) {
   /* ── 셸 ─────────────────────────────────────────── */
@@ -96,15 +96,29 @@
     align-items: stretch;
     gap: var(--space-3) var(--space-6);
   }
+  /* 지도 칸은 오른쪽 칸과 같은 두 줄(subgrid)을 쓴다 — 칩·안내는 회사 카드 줄, 지도는 그 아래 줄.
+     그래서 지도와 오른쪽 칸의 위·아래 끝이 늘 맞는다. */
   .map > .map__main {
     grid-column: 1;
     grid-row: 1 / 3;
     position: static;
     min-height: 0;
+    display: grid;
+    grid-template-rows: subgrid;
+    row-gap: var(--space-3);
+  }
+  .map__main > .map__mainHead {
+    grid-row: 1;
     display: flex;
     flex-direction: column;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    min-width: 0;
   }
-  .map__main > .map__frame { flex: 1; min-height: 0; }
+  .map__main > .map__mainHead > p { margin: 0; }
+  .map__main > .map__frame { grid-row: 2; min-height: 0; }
+  /* 오른쪽 칸의 마지막 상자(가게 카드·근처 목록)는 지도 아래 끝까지 채운다. */
+  .map > .map__side--body > :last-child { flex-grow: 1; }
   .map__main .map__canvas { height: 100%; }
   .map > .map__side { display: flex; flex-direction: column; gap: var(--space-3); min-height: 0; grid-column: 2; margin-bottom: 0; }
   .map > .map__side--head { grid-row: 1; }
@@ -198,4 +212,32 @@
 /* 마우스로 쓰는 넓은 화면만 아이콘 단추를 줄인다. 손가락으로 누르는 화면은 44px 그대로. */
 @media (min-width: 960px) and (pointer: fine) {
   .lt .list__iconBtn { width: 36px; height: 36px; font-size: var(--fs-md); }
+}
+
+/* 오늘 정한 곳 배너 — 데스크톱은 한 줄. 세 줄(제목·설명·길찾기 막대)이면 150px 라 게임판이 그만큼 줄었다. */
+@media (min-width: 960px) {
+  .decided { padding: var(--space-2) var(--space-4); flex: none; }
+  .decided__body { display: flex; flex-direction: row; align-items: center; gap: var(--space-3); }
+  .decided__body > .muted { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .decided__body > .dir-link { width: auto; flex: none; margin: 0; }
+  .decided__body > .share { flex: none; margin: 0; }
+}
+
+/*
+ * 지도 오른쪽 칸의 가게 넣기 폼 — 스크롤 없이 한 화면에. 1280×800 에서 182px 넘쳐 저장 단추가
+ * 칸 밖으로 밀려 있었다(10/14 사용자). 간격·입력 높이를 줄이고 가격대·별점을 한 줄에 둔다.
+ */
+.pf__pair { display: contents; }
+@media (min-width: 960px) {
+  .map__side .pf { gap: var(--space-2); }
+  .map__side .pf__field { gap: var(--space-1); }
+  .map__side .pf__field input,
+  .map__side .pf__field textarea { padding: var(--space-2) var(--space-3); }
+  .map__side .pf__field textarea { resize: none; min-height: 0; height: 3.2em; }
+  .map__side .pf__pair { display: grid; grid-template-columns: auto 1fr; gap: var(--space-4); align-items: start; }
+  .map__side .pf__star { font-size: var(--fs-lg); }
+}
+/* 높이 800 안팎 노트북 — 간격을 한 단계 더 줄여 저장 단추까지 한 화면에. */
+@media (min-width: 960px) and (max-height: 860px) {
+  .map__side .pf { gap: var(--space-1); }
 }

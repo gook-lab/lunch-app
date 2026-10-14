@@ -2675,22 +2675,37 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   .gacha__half { transition: none; }
 }
 
-/* 모달을 닫은 뒤 게임 아래 한 줄 결과 */
+/* 모달을 닫은 뒤 게임 아래 한 줄 결과.
+ * 실행 버튼(50px) 자리를 그대로 이어받는다. 예전엔 두 줄로 접혀(휴대폰 89px) 결과가 나올 때마다
+ * 아래 내용이 39px 밀렸다(10/14 사용자). 높이를 버튼과 같게 묶고, 넘치는 이름은 말줄임으로. */
 .result-bar {
+  /* 실행 버튼의 위 여백(MODUL Button block 의 8px)도 같이 이어받아야 결과가 나올 때 판이 안 움직인다. */
+  margin-top: var(--space-2);
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2) var(--space-3);
-  padding: var(--space-2) var(--space-3);
+  gap: var(--space-2);
+  box-sizing: border-box;
+  height: 50px;
+  padding: 0 var(--space-1) 0 var(--space-3);
   border: 1px solid var(--color-neutral-300);
   border-radius: var(--radius-md);
   background: var(--color-bg);
 }
-.result-bar__text { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); margin: 0; min-width: 0; }
-.result-bar__text strong { font-size: var(--fs-lg); }
-.result-bar__meta { color: var(--color-neutral-700); font-size: var(--fs-sm); }
-.result-bar__actions { display: flex; gap: var(--space-2); }
+.result-bar__text { flex: 1; display: flex; align-items: baseline; gap: var(--space-2); margin: 0; min-width: 0; white-space: nowrap; overflow: hidden; }
+.result-bar__text strong { font-size: var(--fs-md); min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.result-bar__meta { flex: none; color: var(--color-neutral-700); font-size: var(--fs-sm); }
+.result-bar__actions { display: flex; flex: none; gap: var(--space-1); }
+.result-bar__actions > * { height: 40px; min-height: 0; padding-inline: var(--space-3); }
+@media (max-width: 959px) {
+  .result-bar {
+    position: sticky;
+    bottom: calc(72px + env(safe-area-inset-bottom) + var(--space-2));
+    z-index: 5;
+    box-shadow: var(--shadow-md);
+  }
+  .result-bar__meta { display: none; }
+}
 
 /* 화면 진입 — 탭을 열 때 살짝 올라오며 나타난다(MODUL reveal 프리셋: slow · decel).
    fill 은 backwards — 끝난 뒤 transform 이 남으면 크게 보기(position: fixed)가 패널에 갇힌다. */

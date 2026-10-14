@@ -112,12 +112,12 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
     }
     if (!category) {
       catRef.current?.querySelector('button')?.focus();
-      return setProblem('카테고리를 골라 주세요.');
+      return setProblem('메뉴를 골라 주세요.');
     }
     if (walk.error) return setProblem(walk.error);
     if (walk.min === null) return setProblem('도보 시간을 계산하지 못했어요.');
     if (tooFar) {
-      return setProblem(`회사에서 걸어서 ${walk.min}분 거리예요. ${MAX_WALK_MIN}분 안쪽 가게만 넣을 수 있어요.`);
+      return setProblem(`회사에서 걸어서 ${walk.min}분 거리예요. ${MAX_WALK_MIN}분 안에 있는 가게를 넣을 수 있어요.`);
     }
 
     setSaving(true);
@@ -137,7 +137,7 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
         memo: memo.trim() || undefined,
       });
       if (!result.added) {
-        setProblem('방금 다른 기기에서 같은 가게가 등록됐어요.');
+        setProblem('방금 다른 기기에서 같은 가게를 넣었어요.');
         return;
       }
       // 별점·한줄평은 가게 문서가 아니라 내 표로 남긴다(사람마다 한 표). 실패해도 가게는 이미 들어갔다.
@@ -158,7 +158,7 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
         <div className="pf__dupe">
           <p className="small">
             <strong>{duplicate.place.name}</strong>
-            {josa(duplicate.place.name, '이/가')} 이미 등록돼 있어요
+            {josa(duplicate.place.name, '이/가')} 이미 들어 있어요
             {duplicate.reason === 'name-and-distance' && duplicate.meters !== null
               ? ` (${Math.round(duplicate.meters)}m 거리)`
               : ''}
@@ -170,49 +170,82 @@ export function PlaceForm({ draft, places, onSaved, onCancel, onGoTo }: Props) {
         </div>
       )}
 
-      <Input label="이름" fieldProps={{ className: 'pf__field' }} ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} maxLength={MAX_NAME} aria-required="true" aria-invalid={problem === '이름을 넣어 주세요.' || undefined} aria-describedby={problem ? errId : undefined} placeholder="가게 이름" autoFocus={draft.name === ''} state={problem === '이름을 넣어 주세요.' ? 'error' : 'default'} />
+      <Input
+        label="이름"
+        fieldProps={{ className: 'pf__field' }}
+        ref={nameRef}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        maxLength={MAX_NAME}
+        aria-required="true"
+        aria-invalid={problem === '이름을 넣어 주세요.' || undefined}
+        aria-describedby={problem ? errId : undefined}
+        placeholder="가게 이름"
+        autoFocus={draft.name === ''}
+        state={problem === '이름을 넣어 주세요.' ? 'error' : 'default'}
+      />
       {draft.address && <p className="muted small">{draft.address}</p>}
 
       <p className={tooFar ? 'notice notice--empty' : 'muted small'}>
-        {walk.error
-          ? walk.error
-          : `회사에서 도보 ${walk.min}분이에요. 직선거리로 계산한 예상 시간이에요.`}
+        {walk.error ? walk.error : `회사에서 도보 ${walk.min}분이에요. 직선거리로 계산한 예상 시간이에요.`}
       </p>
 
       <div className="pf__field" ref={catRef}>
-        <span className="filters__label">카테고리</span>
+        <span className="filters__label">메뉴</span>
         <CategoryPicker value={category} onPick={setCategory} />
       </div>
 
-      <div className="pf__field">
-        <span className="filters__label">가격대 (선택)</span>
-        <ChipPicker label="가격대" options={PRICE_BANDS} value={price} onPick={setPrice} allowNone />
-      </div>
+      {/* 가격대·별점은 데스크톱에서 한 줄에 나란히 — 오른쪽 칸 안에서 폼이 스크롤되지 않게(10/14). */}
+      <div className="pf__pair">
+        <div className="pf__field">
+          <span className="filters__label">가격대 (선택)</span>
+          <ChipPicker label="가격대" options={PRICE_BANDS} value={price} onPick={setPrice} allowNone />
+        </div>
 
-      <div className="pf__field">
-        <span className="filters__label">별점 (선택)</span>
-        <div className="pf__stars" role="group" aria-label="별점">
-          {RATINGS.map((n) => (
-            <button
-              key={n}
-              type="button"
-              aria-pressed={rating !== null && rating >= n}
-              aria-label={`${n}점`}
-              className={rating !== null && rating >= n ? 'pf__star pf__star--on' : 'pf__star'}
-              onClick={() => setRating(rating === n ? null : n)}
-            >
-              ★
-            </button>
-          ))}
-          {rating !== null && <span className="muted small">{rating}점</span>}
+        <div className="pf__field">
+          <span className="filters__label">별점 (선택)</span>
+          <div className="pf__stars" role="group" aria-label="별점">
+            {RATINGS.map((n) => (
+              <button
+                key={n}
+                type="button"
+                aria-pressed={rating !== null && rating >= n}
+                aria-label={`${n}점`}
+                className={rating !== null && rating >= n ? 'pf__star pf__star--on' : 'pf__star'}
+                onClick={() => setRating(rating === n ? null : n)}
+              >
+                ★
+              </button>
+            ))}
+            {rating !== null && <span className="muted small">{rating}점</span>}
+          </div>
         </div>
       </div>
 
-      <Input label="한 줄 평 (별점을 고르면 같이 남아요)" fieldProps={{ className: 'pf__field' }} value={review} onChange={(e) => setReview(e.target.value)} maxLength={MAX_REVIEW} placeholder="김치찌개가 진함" />
+      <Input
+        label="한 줄 평 (별점을 고르면 같이 남아요)"
+        fieldProps={{ className: 'pf__field' }}
+        value={review}
+        onChange={(e) => setReview(e.target.value)}
+        maxLength={MAX_REVIEW}
+        placeholder="김치찌개가 진함"
+      />
 
-      <Textarea label="메모 (선택)" fieldProps={{ className: 'pf__field' }} value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={MAX_MEMO} rows={2} placeholder="12시 전에 가야 자리 있음" />
+      <Textarea
+        label="메모 (선택)"
+        fieldProps={{ className: 'pf__field' }}
+        value={memo}
+        onChange={(e) => setMemo(e.target.value)}
+        maxLength={MAX_MEMO}
+        rows={2}
+        placeholder="12시 전에 가야 자리 있음"
+      />
 
-      {problem && <p id={errId} className="notice notice--empty" role="alert">{problem}</p>}
+      {problem && (
+        <p id={errId} className="notice notice--empty" role="alert">
+          {problem}
+        </p>
+      )}
 
       <div className="row">
         <Button block size="lg" onClick={() => void save()} loading={saving} disabled={tooFar}>

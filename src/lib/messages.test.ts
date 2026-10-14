@@ -73,7 +73,7 @@ describe('noticeMessage — 공개 숫자가 실제와 일치한다', () => {
   it('카테고리로 좁혀서 모자라면 가게 수가 아니라 조건을 넓히라고 말한다', () => {
     const places = pool(12, (i) => ({ category: i === 0 ? '양식' : '한식' }));
     const r = selectCandidates(places, [], filters({ categories: ['양식'] }), TODAY);
-    expect(noticeMessage(r)).toBe('지금은 1곳에서 골라요. 도보 시간이나 메뉴를 넓히면 선택지가 더 많아져요.');
+    expect(noticeMessage(r)).toBe('지금은 1곳에서 골라요. 도보 시간을 늘리거나 다른 메뉴도 보면 더 많아져요.');
   });
 
   it('도보로 좁혀서 모자라도 조건을 넓히라고 말한다', () => {
@@ -97,7 +97,7 @@ describe('emptyMessage — 원인을 짚되 칩을 대신 풀지 않는다', () 
       filters({ maxWalkMin: 5 }),
       TODAY,
     );
-    expect(emptyMessage(r)).toBe('도보 10분까지 넓히면 2곳이 있어요.');
+    expect(emptyMessage(r)).toBe('도보 10분까지 넓히면 2곳에서 고를 수 있어요.');
   });
 
   it('넓혀도 없으면 그렇게 말한다', () => {
@@ -107,7 +107,7 @@ describe('emptyMessage — 원인을 짚되 칩을 대신 풀지 않는다', () 
 
   it('카테고리가 원인이면 풀었을 때의 수를 말한다', () => {
     const r = selectCandidates(pool(6), [], filters({ categories: ['면'] }), TODAY);
-    expect(emptyMessage(r)).toBe('다른 메뉴까지 보면 6곳에서 고를 수 있어요.');
+    expect(emptyMessage(r)).toBe('메뉴를 전체로 보면 6곳에서 고를 수 있어요.');
   });
 
   it('가게가 없으면 추가를 권한다', () => {
@@ -116,7 +116,7 @@ describe('emptyMessage — 원인을 짚되 칩을 대신 풀지 않는다', () 
 
   it('전부 꺼져 있으면 그렇게 말한다', () => {
     const r = selectCandidates(pool(4, () => ({ active: false })), [], filters(), TODAY);
-    expect(emptyMessage(r)).toBe('가게 4곳이 모두 꺼져 있어요. 목록에서 켜면 바로 고를 수 있어요.');
+    expect(emptyMessage(r)).toBe('가게 4곳을 모두 잠시 빼 뒀어요. 목록에서 되돌리면 바로 고를 수 있어요.');
   });
 
   it('후보가 있으면 null', () => {
@@ -153,14 +153,18 @@ describe('noticeMessage — 제외를 껐을 때', () => {
 describe('gameGate — 후보가 2곳보다 적으면 게임판 대신 이유와 할 일', () => {
   const gate = (places: Place[], f: Filters = filters()) => gameGate(selectCandidates(places, [], f, TODAY), f);
 
+  it('게임 규칙은 숫자 대신 말로 쓴다 — "2곳부터" 가 아니라 "두 곳 이상"', () => {
+    expect(gate([])?.lines[0]).toBe('가게가 두 곳 이상이면 게임을 시작할 수 있어요.');
+  });
+
   it('2곳부터는 막지 않는다', () => {
     expect(gate(pool(2))).toBeNull();
   });
 
   it('가게가 1곳뿐이면 한 곳 더 넣으라고 한다', () => {
     const g = gate(pool(1));
-    expect(g?.title).toBe('고를 곳이 한 곳뿐이에요');
-    expect(g?.lines[0]).toContain('2곳부터');
+    expect(g?.title).toBe('한 곳만 더 있으면 시작할 수 있어요');
+    expect(g?.lines).toEqual(['지도에서 가게를 하나 더 넣어 주세요.']);
     expect(g?.fix).toEqual({ kind: 'add' });
   });
 

@@ -499,7 +499,7 @@ describe('기기의 "동작 줄이기"', () => {
   it('켜져 있으면 이유를 알리고, 연출 없이 바로 결과를 낸다', () => {
     reduceMotion();
     render(<App />);
-    expect(screen.getByRole('note').textContent).toContain('결과만 바로 보여 드려요');
+    expect(screen.getByRole('note').textContent).toContain('결과를 바로 보여 드려요');
     // CSS 연출도 끈다.
     expect(document.documentElement.dataset.motion).toBe('reduced');
     fireEvent.click(screen.getByRole('button', { name: '돌림판' }));
@@ -511,8 +511,8 @@ describe('기기의 "동작 줄이기"', () => {
   it('"연출 켜기" 를 누르면 기기 설정과 상관없이 연출을 재생한다', () => {
     reduceMotion();
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: '연출 켜기' }));
-    expect(screen.getByRole('note').textContent).toContain('게임 연출을 켰어요');
+    fireEvent.click(screen.getByRole('button', { name: '움직임 켜기' }));
+    expect(screen.getByRole('note').textContent).toContain('게임 움직임을 켰어요');
     // CSS 연출(바늘 착지·카드 들썩임 등)도 다시 켠다.
     expect(document.documentElement.dataset.motion).toBe('full');
     fireEvent.click(screen.getByRole('button', { name: '돌림판' }));

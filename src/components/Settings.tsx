@@ -32,7 +32,7 @@ export function Settings() {
       <Switch
         checked={sound}
         label="효과음"
-        hint="게임할 때와 당첨될 때 소리가 나요. 처음엔 꺼져 있어요."
+        hint="게임을 시작하거나 결과가 나올 때 소리가 나요. 처음에는 꺼져 있어요."
         onCheckedChange={(on) => {
           setSoundOn(on);
           setSound(on);

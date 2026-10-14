@@ -24,13 +24,13 @@ describe('지도 가게 핀', () => {
     expect(el.type).toBe('button');
   });
 
-  it('오늘 정한 곳은 별, 꺼 둔 가게는 표시가 붙는다', () => {
+  it('오늘 정한 곳은 별, 잠시 뺀 가게는 표시가 붙는다', () => {
     const today = pinElement(place(), true);
     expect(today.classList.contains('map__pin--today')).toBe(true);
     expect(today.textContent?.startsWith('⭐')).toBe(true);
     const off = pinElement(place({ active: false }), false);
     expect(off.classList.contains('map__pin--off')).toBe(true);
-    expect(off.getAttribute('aria-label')).toContain('꺼 둔 가게');
+    expect(off.getAttribute('aria-label')).toContain('잠시 뺀 가게');
   });
 
   it('가게 이름은 글자로만 들어간다', () => {

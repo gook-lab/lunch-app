@@ -151,7 +151,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
     }
     if (!category) {
       catRef.current?.querySelector('button')?.focus();
-      return setProblem('카테고리를 골라 주세요.');
+      return setProblem('메뉴를 골라 주세요.');
     }
     if (!Number.isFinite(nextLat) || !Number.isFinite(nextLng)) {
       (Number.isFinite(nextLat) ? lngRef : latRef).current?.focus();
@@ -162,7 +162,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
     // 따로 두면 좌표와 도보시간이 어긋난 채로 남는다.
     const walkMin = walkMinutesBetween(nextLat, nextLng);
     if (walkMin <= 0 || walkMin > 60) {
-      return setProblem(`회사에서 걸어서 ${walkMin}분 걸려요. 60분 안에 갈 수 있는 가게를 넣어 주세요.`);
+      return setProblem(`회사에서 걸어서 ${walkMin}분 거리예요. 도보 60분 안에 있는 가게를 넣을 수 있어요.`);
     }
 
     setSaving(true);
@@ -198,7 +198,7 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
       {/* 지도에서 넣을 때와 같은 칩. 글자로 받으면 목록에 없는 카테고리("국밥")가
           들어가 로드맵 조각·그림·카테고리 필터에서 길을 잃었다(20회차). */}
       <div ref={catRef}>
-        <span className="filters__label">카테고리</span>
+        <span className="filters__label">메뉴</span>
         <CategoryPicker value={category} onPick={setCategory} />
       </div>
       <div className="edit__coords">
@@ -252,7 +252,7 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
       onChanged();
     } catch {
       // 실패하면 단추만 다시 살아나고 아무 말이 없었다. 바뀐 줄 알고 넘어간다.
-      setToggleProblem(`${withJosa(place.name, '을/를')} ${place.active ? '끄지' : '켜지'} 못했어요. 잠시 뒤 다시 해 주세요.`);
+      setToggleProblem(`${withJosa(place.name, '을/를')} ${place.active ? '빼지' : '되돌리지'} 못했어요. 잠시 뒤 다시 해 주세요.`);
     } finally {
       setBusy(null);
     }
@@ -267,7 +267,7 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
           <div className="list__text">
             <div className="list__name">
               <strong>{place.name}</strong>
-              {!place.active && <span className="badge">꺼짐</span>}
+              {!place.active && <span className="badge">잠시 뺌</span>}
             </div>
             <div className="list__meta">
               {categoryLabel(place)} · 도보 {place.walkMin}분 ·{' '}
@@ -324,7 +324,7 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
                   },
                 },
                 {
-                  label: place.active ? '끄기' : '켜기',
+                  label: place.active ? '잠시 빼기' : '되돌리기',
                   onSelect: () => void toggle(place),
                 },
                 // 끄기는 잠깐 빼기(되돌리기 쉬움), 지우기는 목록에서도 없애기. 위험한 쪽만 빨갛게.
@@ -402,13 +402,13 @@ export function PlaceList({ places, visits, today, onChanged, excludeRecent, onS
           {on.length > 0 ? (
             <ul className="list">{on.map(renderRow)}</ul>
           ) : (
-            <p className="muted small">꺼 둔 가게를 다시 켜거나, 지도에서 새 가게를 넣어 볼까요?</p>
+            <p className="muted small">잠시 뺀 가게를 되돌리거나, 지도에서 새 가게를 넣어 볼까요?</p>
           )}
         </section>
         {off.length > 0 && (
           <details className="list__group list__group--off" open={on.length === 0}>
             <summary className="list__heading">
-              꺼 둔 가게 <span className="list__count">{off.length}곳</span>
+              잠시 뺀 가게 <span className="list__count">{off.length}곳</span>
             </summary>
             <ul className="list">{off.map(renderRow)}</ul>
           </details>

@@ -17,7 +17,12 @@ export function CandidateChips({ result, winnerId }: { result: CandidateResult; 
   const released = new Set(result.released.map((p) => p.id));
   const all = result.candidates;
   const folded = !open && all.length > CHIPS_FOLDED;
-  const shown = folded ? all.filter((p, i) => i < CHIPS_FOLDED || p.id === winnerId) : all;
+  // 당첨이 접힌 쪽에 있으면 여덟째 자리를 당첨에게 준다. 덧붙이면 결과가 나오는 순간 칩이
+  // 한 줄 늘어 오른쪽 칸이 밀렸다(10/14 사용자).
+  const winnerHidden = folded && all.findIndex((p) => p.id === winnerId) >= CHIPS_FOLDED;
+  const shown = folded
+    ? all.filter((p, i) => (winnerHidden ? i < CHIPS_FOLDED - 1 : i < CHIPS_FOLDED) || p.id === winnerId)
+    : all;
   const hidden = all.length - shown.length;
   return (
     <ul className="cands" aria-label={`고를 가게 ${all.length}곳`}>

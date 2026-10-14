@@ -151,8 +151,8 @@ export function categoryHue(category: string): number {
   return MENUS.find((m) => m.id === menu)?.hue ?? 200;
 }
 
-/** 조건 요약 한 마디. 세부를 골랐으면 세부, 아니면 메뉴, 둘 다 없으면 "카테고리 전체". */
+/** 조건 요약 한 마디. 세부를 골랐으면 세부, 아니면 메뉴, 둘 다 없으면 "메뉴 전체". */
 export function categorySummary(filters: { categories: string[]; subs?: string[] }): string {
   if (filters.subs && filters.subs.length > 0) return filters.subs.join('·');
-  return filters.categories.length > 0 ? filters.categories.join('·') : '카테고리 전체';
+  return filters.categories.length > 0 ? filters.categories.join('·') : '메뉴 전체';
 }

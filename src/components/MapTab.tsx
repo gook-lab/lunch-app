@@ -789,7 +789,7 @@ export default function MapTab({
             )}
             {/* 결과 수는 화면에 따로 안 쓰지만 화면 낭독기에는 알린다. 늘 있어야 바뀐 걸 읽는다. */}
             <p className="sr-only" role="status">
-              {!searching && results.length > 0 ? `${results.length}곳 찾았어요` : ''}
+              {!searching && results.length > 0 ? `${results.length}곳을 찾았어요` : ''}
             </p>
 
             {results.length > 0 && (
@@ -811,6 +811,9 @@ export default function MapTab({
 
       {/* 데스크톱에서는 지도가 왼쪽 큰 칸을 차지하고, 나머지는 오른쪽에 쌓인다. */}
       <div className="map__main">
+        {/* 지도 위 칩·안내 묶음. 데스크톱에선 오른쪽 회사 카드와 같은 줄에 놓여 지도와 오른쪽 칸의
+            위·아래 끝이 맞는다(10/14 — 안내가 지도 아래에 있으면 오른쪽 칸만 한 줄 더 내려갔다). */}
+        <div className="map__mainHead">
         {phase === 'ready' && (
           // 오늘 탭과 같은 메뉴 > 세부 칩. 지도에서는 보기만 거른다(오늘 후보 조건과 따로다).
           <CategoryChips
@@ -839,11 +842,18 @@ export default function MapTab({
           <Checkbox
             className="map__toggle"
             layout="inline"
-            label="꺼 둔 가게도 보기"
+            label="잠시 뺀 가게도 보기"
             checked={showOff}
             onCheckedChange={(v) => setShowOff(v === true)}
           />
         )}
+        {phase === 'ready' && (
+          <p className="muted small">
+            원은 도보 {WALK_STEPS.join('·')}분 거리예요.{' '}
+            {officeSet ? '지도를 누르면 가게를 넣을 수 있어요.' : '지도를 누르면 그 자리를 회사로 정할 수 있어요.'}
+          </p>
+        )}
+        </div>
         <div
           className={['map__frame', picking && 'map__frame--picking', far && 'map__frame--far']
             .filter(Boolean)
@@ -867,12 +877,6 @@ export default function MapTab({
           )}
         </div>
 
-        {phase === 'ready' && (
-          <p className="muted small">
-            원은 도보 {WALK_STEPS.join('·')}분 거리예요.{' '}
-            {officeSet ? '지도를 누르면 가게를 넣을 수 있어요.' : '지도를 누르면 그 자리를 회사로 정할 수 있어요.'}
-          </p>
-        )}
       </div>
 
       {/* 오른쪽 칸 아래 — 고른 가게·근처 목록·넣기 폼. 데스크톱에선 이 칸만 넘긴다. */}
@@ -905,7 +909,7 @@ export default function MapTab({
                 <RatingBadge summary={ratings?.get(selected.id)} />
                 <RatingReviews summary={ratings?.get(selected.id)} />
                 {selected.memo && <p className="muted small">{selected.memo}</p>}
-                {!selected.active && <span className="badge">꺼짐</span>}
+                {!selected.active && <span className="badge">잠시 뺌</span>}
                 {toggleProblem === selected.id && (
                   <p className="notice notice--empty" role="alert">
                     바꾸지 못했어요. 잠시 뒤 다시 해 주세요.
@@ -926,7 +930,7 @@ export default function MapTab({
                         .catch(() => setToggleProblem(selected.id));
                     }}
                   >
-                    {selected.active ? '끄기' : '켜기'}
+                    {selected.active ? '잠시 빼기' : '되돌리기'}
                   </Button>
                   <Button block size="sm" variant="secondary" tone="danger" onClick={() => setRemoving(selected)}>
                     지우기
@@ -1088,7 +1092,7 @@ function PlaceEdit({ place, onDone, onCancel }: { place: Place; onDone: () => vo
   const save = async () => {
     const trimmed = name.trim();
     if (!trimmed) return setProblem('이름을 넣어 주세요.');
-    if (!category) return setProblem('카테고리를 골라 주세요.');
+    if (!category) return setProblem('메뉴를 골라 주세요.');
     setSaving(true);
     setProblem(null);
     try {
@@ -1118,7 +1122,7 @@ function PlaceEdit({ place, onDone, onCancel }: { place: Place; onDone: () => vo
         autoFocus
       />
       <div className="pf__field">
-        <span className="filters__label">카테고리</span>
+        <span className="filters__label">메뉴</span>
         <CategoryPicker value={category} onPick={setCategory} />
       </div>
       <div className="pf__field">
@@ -1133,7 +1137,7 @@ function PlaceEdit({ place, onDone, onCancel }: { place: Place; onDone: () => vo
         maxLength={120}
         rows={2}
       />
-      <p className="muted small">좌표와 도보 시간은 가게 목록에서 고칠 수 있어요.</p>
+      <p className="muted small">위치와 도보 시간은 가게 목록에서 바꿀 수 있어요.</p>
       {problem && (
         <p className="notice notice--empty" role="alert">
           {problem}
