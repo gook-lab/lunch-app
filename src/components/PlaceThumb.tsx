@@ -65,7 +65,11 @@ export function PlaceThumb({ place, size = 'md', className }: Props) {
  */
 export function PlacePhotoStrip({ place, className }: Omit<Props, 'size'>) {
   const { known, urls } = usePlacePhotos(place);
-  const [reserve] = useState(!known);
+  // 자리 잡기는 가게마다 처음 그릴 때 정한다. 지도 카드·결과 모달은 같은 칸에서 가게만 바꿔 그려서,
+  // 첫 가게 값에 묶이면 늦게 온 줄이 다시 아래를 밀었다.
+  const [reserveFor, setReserveFor] = useState({ id: place.id, on: !known });
+  if (reserveFor.id !== place.id) setReserveFor({ id: place.id, on: !known });
+  const reserve = reserveFor.id === place.id ? reserveFor.on : !known;
   const rest = urls.slice(1, 4);
   if (rest.length === 0 && !reserve) return null;
   const cls = ['photos', className].filter(Boolean).join(' ');

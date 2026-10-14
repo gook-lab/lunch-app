@@ -87,6 +87,19 @@ export function OfficeCard({
   const [hits, setHits] = useState<KakaoPlace[]>([]);
   const [searching, setSearching] = useState(false);
   const searchSeq = useRef(0);
+  // GPS 순번. 위치 찾기는 15초까지 걸려 그사이 다른 방법(지도 가운데·찾기·지도 누르기)으로 고르거나
+  // 취소할 수 있다. 늦게 온 GPS 가 고른 후보를 덮어쓰거나 닫은 확인 화면을 다시 열지 않게 한다.
+  const geoSeq = useRef(0);
+  const dropGps = () => {
+    geoSeq.current += 1;
+    setLocating(false);
+  };
+  useEffect(
+    () => () => {
+      geoSeq.current += 1;
+    },
+    [],
+  );
   const expanded = open || pending !== null || picking || problem !== null;
 
   const propose = (coord: Coord, note = '') => {
@@ -101,7 +114,12 @@ export function OfficeCard({
   // 렌더 중엔 ref 를 바꾸지 않는다. 고르는 중(확인 대기)엔 다른 자리를 눌러 바꿀 수 있게 둔다.
   useEffect(() => {
     if (!tapRef) return;
-    tapRef.current = saved ? null : (coord) => propose(coord);
+    tapRef.current = saved
+      ? null
+      : (coord) => {
+          dropGps();
+          propose(coord);
+        };
     return () => {
       tapRef.current = null;
     };
@@ -132,6 +150,7 @@ export function OfficeCard({
         { size: MAX_HITS },
       );
     } catch {
+      if (seq !== searchSeq.current) return;
       setSearching(false);
       setProblem('지금은 찾을 수 없어요. 내 위치로 정해 주세요.');
     }
@@ -145,6 +164,7 @@ export function OfficeCard({
     setHits([]);
     setQuery('');
     onPreview?.(coord);
+    dropGps();
     propose(coord, `${hit.place_name} · ${hit.road_address_name || hit.address_name}`);
   };
 
@@ -153,10 +173,12 @@ export function OfficeCard({
       setProblem('지도에서 찍거나 건물 이름으로 찾아서 정할 수 있어요.');
       return;
     }
+    const seq = ++geoSeq.current;
     setLocating(true);
     setProblem(null);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        if (seq !== geoSeq.current) return;
         setLocating(false);
         const accuracy = Math.round(pos.coords.accuracy);
         propose(
@@ -165,6 +187,7 @@ export function OfficeCard({
         );
       },
       (err) => {
+        if (seq !== geoSeq.current) return;
         setLocating(false);
         setProblem(GEO_ERROR[err.code] ?? GEO_ERROR[2]);
       },
@@ -174,10 +197,14 @@ export function OfficeCard({
 
   const fromTap = () => {
     setProblem(null);
-    onStartPick?.((coord) => propose(coord));
+    onStartPick?.((coord) => {
+      dropGps();
+      propose(coord);
+    });
   };
 
   const cancel = () => {
+    dropGps();
     setPending(null);
     setHits([]);
     onCancelPick?.();
@@ -186,7 +213,9 @@ export function OfficeCard({
 
   const fromMap = () => {
     const center = getMapCenter?.();
-    if (center) propose(center);
+    if (!center) return;
+    dropGps();
+    propose(center);
   };
 
   const commit = async () => {

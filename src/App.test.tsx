@@ -597,3 +597,47 @@ describe('게임 방식 레일의 Tab 순서', () => {
     expect(before(screen.getByRole('group', { name: '메뉴 고르기' }), screen.getByRole('group', { name: '방식' }))).toBe(true);
   });
 });
+
+describe('공정성 — 당첨은 App 의 추첨이 정한다', () => {
+  // 공정성 검사(fairness.harness)는 lib 의 pickWinner 를 본다. App 이 그 함수를 안 거치고 식을
+  // 바꾸면 검사가 못 잡으므로, 끝 가게까지 실제로 뽑히는지 여기서 App 을 돌려 확인한다.
+  it('난수가 1 에 가까우면 마지막 후보가 걸린다(끝 칸이 빠지지 않는다)', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '돌림판' }));
+    vi.spyOn(Math, 'random').mockReturnValue(0.999);
+    fireEvent.click(runButton());
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
+    expect(card()).toBe('마집');
+  });
+});
+
+describe('결과 모달 예약 — 판을 내려놓으면 같이 끊는다', () => {
+  // 연출이 끝나고(한 줄 결과가 생기고) 모달이 뜨기 전 0.25초 사이.
+  const untilSpinEnd = () => {
+    for (let k = 0; k < 800 && !document.querySelector('.result-bar'); k += 1) act(() => { vi.advanceTimersByTime(50); });
+    expect(document.querySelector('.result-bar')).toBeTruthy();
+    expect(screen.queryByRole('dialog', { name: '오늘의 점심 결과' })).toBeNull();
+  };
+  const noResultBadge = () => {
+    act(() => { vi.advanceTimersByTime(RESULT_DELAY_MS + 50); });
+    fireEvent.click(screen.getByRole('tab', { name: '가게 목록' }));
+    expect(screen.getByRole('tab', { name: /점심 고르기/ }).textContent).not.toMatch(/결과/);
+  };
+
+  it('조건을 바꾸면 모달이 늦게 뜨지 않고 탭 바에 "결과" 도 안 붙는다', () => {
+    startWheel();
+    untilSpinEnd();
+    fireEvent.click(screen.getByRole('button', { name: /고를 가게 \d+곳.*바꾸기/ }));
+    fireEvent.click(screen.getByRole('button', { name: '걸어서 15분까지' }));
+    noResultBadge();
+  });
+
+  it('핀볼 공 개수를 바꿔도 같다', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '핀볼' }));
+    fireEvent.click(screen.getByRole('button', { name: /공 굴리기/ }));
+    untilSpinEnd();
+    fireEvent.click(screen.getByRole('button', { name: '가집 공 하나 더' }));
+    noResultBadge();
+  });
+});

@@ -164,6 +164,17 @@ describe('주사위 이름 길이', () => {
   });
 });
 
+/** 폭탄 그림의 위치(판 좌표). */
+const bombXY = (c: HTMLElement) => {
+  const m = (c.querySelector('.bomb__bomb') as HTMLElement).style.transform.match(/translate\(([-\d.]+)px, ([-\d.]+)px\)/);
+  return [Number(m?.[1]), Number(m?.[2])];
+};
+/** 터질 때 기대 위치 — n 자리 중 i 번째(12시부터 시계 방향) 쪽으로 가운데(180)에서 30. */
+const boomAt = (i: number, n: number) => {
+  const a = (i / n) * 2 * Math.PI - Math.PI / 2;
+  return [180 + 30 * Math.cos(a), 180 + 30 * Math.sin(a)];
+};
+
 describe('폭탄 돌리기', () => {
   it('폭탄은 당첨 자리에서 터진다', () => {
     for (const n of [2, 5, 10, 20]) {
@@ -176,8 +187,26 @@ describe('폭탄 돌리기', () => {
       const winSeat = r.container.querySelector('.bomb__seat--win');
       expect(winSeat).toBeTruthy();
       expect(winSeat?.querySelector('title')?.textContent).toBe(`가게${winner + 1}`);
+      // 위 클래스는 폭탄 위치와 상관없이 winnerIndex 로 붙는다. 폭탄 자체가 당첨 자리 쪽에 있는지 본다.
+      const [x, y] = bombXY(r.container);
+      const [ex, ey] = boomAt(winner, n);
+      expect(x).toBeCloseTo(ex, 3);
+      expect(y).toBeCloseTo(ey, 3);
       r.unmount();
     }
+  });
+
+  it('지난 판보다 자리가 줄어도 있는 자리에서 출발한다(첫 자리 강조가 빠지지 않는다)', () => {
+    const onSpinEnd = vi.fn();
+    const r = render(<Bomb candidates={places(10)} winnerIndex={9} spinning run={1} onSpinEnd={onSpinEnd} />);
+    run(7_500);
+    r.rerender(<Bomb candidates={places(10)} winnerIndex={9} spinning={false} run={1} onSpinEnd={onSpinEnd} />);
+    r.rerender(<Bomb candidates={places(4)} winnerIndex={1} spinning run={2} onSpinEnd={onSpinEnd} />);
+    act(() => { vi.advanceTimersByTime(0); });
+    expect(r.container.querySelectorAll('.bomb__seat--hot')).toHaveLength(1);
+    run(7_500);
+    expect(onSpinEnd).toHaveBeenCalledTimes(2);
+    expect(r.container.querySelector('.bomb__seat--win title')?.textContent).toBe('가게2');
   });
 
   it('터질 때는 판 가운데 쪽으로 옮겨 당첨 이름표를 덮지 않는다', () => {
@@ -185,9 +214,12 @@ describe('폭탄 돌리기', () => {
     const r = render(<Bomb candidates={places(7)} winnerIndex={0} spinning run={3} onSpinEnd={onSpinEnd} />);
     run(7_500);
     expect(onSpinEnd).toHaveBeenCalledTimes(1);
-    // 12시 자리(이름표 y=48)에서 터져도 폭탄은 가운데(180)에서 30 안쪽이다.
-    const m = (r.container.querySelector('.bomb__bomb') as HTMLElement).style.transform.match(/translate\(([\d.]+)px, ([\d.]+)px\)/);
-    expect(Math.hypot(Number(m?.[1]) - 180, Number(m?.[2]) - 180)).toBeLessThanOrEqual(31);
+    // 12시 자리(이름표 y=48)에서 터져도 폭탄은 가운데(180)에서 30 안쪽이다. 거리만 보면 어느 자리든
+    // 30 이라, 방향(12시 = 바로 위)까지 본다.
+    const [x, y] = bombXY(r.container);
+    expect(Math.hypot(x - 180, y - 180)).toBeLessThanOrEqual(31);
+    expect(x).toBeCloseTo(180, 3);
+    expect(y).toBeCloseTo(150, 3);
   });
 
   it('후보가 적으면 이름표를 넓혀 이름을 덜 자른다', () => {

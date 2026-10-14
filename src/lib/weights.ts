@@ -40,6 +40,15 @@ export function pickWeighted(weights: number[], random: () => number): number {
   return weights.length - 1;
 }
 
+/**
+ * 이번 판 당첨 번호. App 의 spin() 과 공정성 검사(fairness.harness)가 이 함수 하나를 같이 부른다 —
+ * 검사가 제 손으로 같은 식을 베껴 돌리면 App 쪽 식이 틀려도(마지막 가게가 안 뽑혀도) 검사는 통과했다.
+ * balls 가 있으면(핀볼) 공 개수에 비례, 없으면 균등.
+ */
+export function pickWinner(count: number, balls: number[] | null, random: () => number): number {
+  return balls ? pickWeighted(balls, random) : Math.floor(random() * count);
+}
+
 /** 당첨 가게의 구슬 중 하나(그 구슬이 1등 하는 경기를 보여 준다). */
 export function winnerMarble(marbles: number[], place: number, random: () => number): number {
   const mine = marbles.flatMap((p, m) => (p === place ? [m] : []));

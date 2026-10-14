@@ -1,11 +1,15 @@
 /**
  * 공정성 검사 (fairness harness) — 당첨 선택과 연출 보조 함수의 무작위성 검사.
  *
- * 무거운 시뮬레이션은 FAIRNESS=1 환경 변수로만 돈다 (ci 에서 항상 돌도록 따로 배포).
+ * 당첨 추첨은 App 의 spin() 이 부르는 pickWinner(lib/weights) 를 그대로 돌린다. 예전엔 여기서
+ * Math.floor(random() * n) 을 따로 베껴 돌려, App 쪽 식이 틀려도 이 검사는 통과했다.
+ * App 이 실제로 pickWinner 를 거치는지는 App.test 의 '공정성' 이 본다.
+ *
+ * 무거운 시뮬레이션은 FAIRNESS=1 환경 변수로 손으로 돌린다(지금 CI 는 없다).
  * 가벼운 회귀 검사는 고정 시드로 매번 돈다.
  */
 import { describe, it, expect } from 'vitest';
-import { pickWeighted } from '../weights';
+import { pickWinner } from '../weights';
 import { buildLadder, ladderMapping, startForTarget } from '../ladder';
 import { diceRolls } from '../dice';
 import { plinkoPath, landingSlot } from '../plinko';
@@ -107,7 +111,7 @@ describe('균등 선택 (heavy)', () => {
       it(`N=${n}, 시행=${TRIALS}`, () => {
         const counts = new Array(n).fill(0);
         for (let t = 0; t < TRIALS; t += 1) {
-          const idx = Math.floor(Math.random() * n);
+          const idx = pickWinner(n, null, Math.random);
           counts[idx] += 1;
         }
 
@@ -139,7 +143,7 @@ describe('가중 선택 — 핀볼', () => {
       const counts = new Array(5).fill(0);
       for (let t = 0; t < TRIALS; t += 1) {
         const balls = [1, 1, 1, 1, 1];
-        const idx = pickWeighted(balls, Math.random);
+        const idx = pickWinner(5, balls, Math.random);
         counts[idx] += 1;
       }
       const expected = Array(5).fill(TRIALS / 5);
@@ -152,7 +156,7 @@ describe('가중 선택 — 핀볼', () => {
       const counts = new Array(5).fill(0);
       for (let t = 0; t < TRIALS; t += 1) {
         const balls = [3, 1, 1, 1, 1];
-        const idx = pickWeighted(balls, Math.random);
+        const idx = pickWinner(5, balls, Math.random);
         counts[idx] += 1;
       }
       const total = 3 + 1 + 1 + 1 + 1;
@@ -166,7 +170,7 @@ describe('가중 선택 — 핀볼', () => {
       const counts = new Array(5).fill(0);
       for (let t = 0; t < TRIALS; t += 1) {
         const balls = [5, 5, 1, 1, 1];
-        const idx = pickWeighted(balls, Math.random);
+        const idx = pickWinner(5, balls, Math.random);
         counts[idx] += 1;
       }
       const total = 5 + 5 + 1 + 1 + 1;
@@ -223,7 +227,10 @@ describe('사다리 (heavy)', () => {
       console.log(
         `  가로줄 밀도 분포: 0=${densityCounts[0]}, 1=${densityCounts[1]}, 2=${densityCounts[2]}, 3=${densityCounts[3]}`,
       );
-      // 경고만 로그. 사다리는 확률적 구조라 분포가 정해져 있다.
+      // 한 가지 밀도로 쏠리면(전부 빈 줄·전부 꽉 찬 줄) 경로가 늘 같아진다. 빈 줄과 가로줄 있는 줄이 둘 다 나와야 한다.
+      const total = rungDensity.length;
+      expect(densityCounts[0]).toBeGreaterThan(0);
+      expect(densityCounts[0]).toBeLessThan(total);
     });
   });
 });
@@ -328,13 +335,24 @@ describe('균등 선택 (smoke)', () => {
     const TRIALS = 5000;
     const counts = new Array(n).fill(0);
     for (let t = 0; t < TRIALS; t += 1) {
-      const idx = Math.floor(rng() * n);
+      const idx = pickWinner(n, null, rng);
       counts[idx] += 1;
     }
     const expected = Array(n).fill(TRIALS / n);
     const { pValue } = chiSquare(counts, expected);
     // 느슨한 threshold (p > 0.0001) — regression 만 잡는다.
     expect(pValue).toBeGreaterThan(0.0001);
+  });
+});
+
+describe('당첨 번호의 양 끝 (smoke)', () => {
+  // 카이제곱은 한 칸이 통째로 빠지는 실수(n-1 로 곱하기 등)를 작은 시행에선 놓칠 수 있다. 끝을 직접 본다.
+  it('난수 0 은 첫 후보, 1 바로 아래는 마지막 후보', () => {
+    for (const n of [2, 5, 18]) {
+      expect(pickWinner(n, null, () => 0)).toBe(0);
+      expect(pickWinner(n, null, () => 0.999999)).toBe(n - 1);
+      expect(pickWinner(n, Array(n).fill(1), () => 0.999999)).toBe(n - 1);
+    }
   });
 });
 
@@ -345,7 +363,7 @@ describe('가중 선택 (smoke)', () => {
     const counts = new Array(3).fill(0);
     for (let t = 0; t < TRIALS; t += 1) {
       const balls = [1, 1, 1];
-      const idx = pickWeighted(balls, rng);
+      const idx = pickWinner(3, balls, rng);
       counts[idx] += 1;
     }
     const expected = Array(3).fill(TRIALS / 3);

@@ -10,7 +10,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Modal, Sheet } from '@gook-lab/ui';
 import { Spinner } from '@gook-lab/motion';
-import { ballCountsFor, pickWeighted } from './lib/weights';
+import { ballCountsFor, pickWinner } from './lib/weights';
 import { CandidateChips } from './components/CandidateChips';
 import { useMedia } from './hooks/useMedia';
 import { StatusScreen } from './components/StatusScreen';
@@ -299,7 +299,7 @@ export default function App() {
             ballCounts,
           )
         : null;
-    const index = balls ? pickWeighted(balls, Math.random) : Math.floor(Math.random() * frozen.length);
+    const index = pickWinner(frozen.length, balls, Math.random);
     setBoardBalls(balls);
     closeResult();
     setSaveProblem(false);
@@ -429,13 +429,16 @@ export default function App() {
   // 잠긴 채 새로고침 말고는 복구가 없다. 필터 칩은 연출 중에도 눌리므로
   // (모드 칩과 달리 disabled 가 없다) 실제로 도달한다.
   // 필터를 바꾸는 손잡이는 전부 이 함수를 같이 부른다(아래 updateFilters).
+  // 판을 내려놓을 땐 결과 모달 예약(resultTimer)도 같이 끊는다. 연출이 끝난 뒤 0.25초 안에
+  // 조건·공 개수를 바꾸면 판은 사라졌는데 차임이 울리고 탭 바에 "결과" 가 붙었다.
   const updateFilters = useCallback((patch: (f: Filters) => Filters) => {
+    closeResult();
     setBoard(null);
     setWinner(null);
     setWinnerIndex(null);
     setSpinning(false);
     setFilters(patch);
-  }, []);
+  }, [closeResult]);
 
   // 자정을 넘기면 어제 판을 내려놓는다. 탭을 켜 둔 채 날이 바뀌면 어제 당첨이 결과 카드에
   // 남아 있고, "여기로 결정" 을 누르면 오늘 기록으로 저장됐다. 첫 렌더는 건너뛴다.
@@ -457,12 +460,13 @@ export default function App() {
   // 공 개수를 바꾸면 지난 판을 내려놓는다(조건 바꾸기와 같다). 얼려 둔 판이 남아 있으면
   // 바꾼 개수가 화면에 안 보이고, 지난 경기와 구슬 수도 안 맞는다.
   const changeBalls = useCallback((update: (prev: Record<string, number>) => Record<string, number>) => {
+    closeResult();
     setBoard(null);
     setBoardBalls(null);
     setWinner(null);
     setWinnerIndex(null);
     setBallCounts(update);
-  }, []);
+  }, [closeResult]);
 
   // 단추는 saving 으로 잠기지만, 잠기기 전에 같은 순간 들어온 두 번째 클릭은
   // 막지 못한다. 상태가 아니라 ref 로 즉시 막는다.
@@ -1055,7 +1059,12 @@ export default function App() {
                           const key = game.candidates.map((p) => p.id).join(',');
                           return <Dice key={key} {...game} />;
                         }
-                        if (mode === 'bomb') return <Bomb {...game} />;
+                        if (mode === 'bomb') {
+                          // 폭탄도 주사위처럼 "지난 판 자리" 에서 출발한다. 후보 구성이 바뀌면 그 자리는
+                          // 다른 가게(또는 없는 자리)라 새로 시작한다.
+                          const key = game.candidates.map((p) => p.id).join(',');
+                          return <Bomb key={key} {...game} />;
+                        }
                         if (mode === 'balloon') return <Balloon {...game} />;
                         if (mode === 'fishing') return <Fishing {...game} />;
                         return <Wheel {...game} />;

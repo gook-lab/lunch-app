@@ -32,11 +32,14 @@ export function Bomb({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
       return () => window.clearTimeout(t);
     }
 
+    // 지난 판 자리에서 출발한다. App 은 후보 구성이 바뀌면 key 로 새로 그리지만, 그 밖에서 자리 수가
+    // 줄어도 없는 자리(10곳의 9번 → 4곳)에서 출발해 첫 자리 강조가 빠지지 않게 한 번 더 접는다.
+    const startSeat = startSeatRef.current % count;
     // 이번 판을 시작한다. 이걸 빼면 아래 setState 들이 s.run === run 에 막혀 폭탄이 움직이지 않는다.
-    setState({ run, seatIndex: startSeatRef.current, done: false });
+    setState({ run, seatIndex: startSeat, done: false });
 
     // 폭탄의 경로를 정한다.
-    const hops = bombHops(count, startSeatRef.current, winnerIndex, seededRandom(run));
+    const hops = bombHops(count, startSeat, winnerIndex, seededRandom(run));
     if (hops.length === 0) {
       onSpinEnd();
       return;

@@ -188,3 +188,39 @@ describe('회사 위치 — 건물·주소로 찾기', () => {
     expect(tapRef.current).toBeNull();
   });
 });
+
+describe('늦게 온 GPS', () => {
+  // 위치 찾기는 15초까지 걸린다. 그사이 다른 방법으로 고르거나 취소한 것을 덮지 않는다.
+  let late: PositionCallback | null = null;
+  beforeEach(() => {
+    setOfficeOverride(null);
+    late = null;
+    Object.defineProperty(navigator, 'geolocation', {
+      value: { getCurrentPosition: (ok: PositionCallback) => { late = ok; } },
+      configurable: true,
+    });
+  });
+  const arrive = () =>
+    act(() => late?.({ coords: { latitude: 37.6, longitude: 126.9, accuracy: 900 } } as GeolocationPosition));
+
+  it('기다리는 중 지도 가운데로 고른 후보를 덮어쓰지 않는다', async () => {
+    render(<OfficeCard onSaved={() => {}} getMapCenter={() => ({ lat: 37.5, lng: 127.03 })} />);
+    fireEvent.click(screen.getByRole('button', { name: /지금 내 위치로/ }));
+    fireEvent.click(screen.getByRole('button', { name: /지도 가운데로/ }));
+    arrive();
+    expect(screen.queryByText(/900m 차이/)).toBeNull();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '이 위치로 정하기' }));
+    });
+    expect(saveOffice).toHaveBeenCalledWith({ lat: 37.5, lng: 127.03 });
+  });
+
+  it('취소한 뒤에 와도 확인 화면을 다시 열지 않는다', () => {
+    render(<OfficeCard onSaved={() => {}} getMapCenter={() => ({ lat: 37.5, lng: 127.03 })} />);
+    fireEvent.click(screen.getByRole('button', { name: /지금 내 위치로/ }));
+    fireEvent.click(screen.getByRole('button', { name: /지도 가운데로/ }));
+    fireEvent.click(screen.getByRole('button', { name: '취소' }));
+    arrive();
+    expect(screen.queryByRole('button', { name: '이 위치로 정하기' })).toBeNull();
+  });
+});

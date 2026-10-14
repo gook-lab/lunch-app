@@ -456,6 +456,13 @@ export default function MapTab({
     };
 
     const onDown = (e: PointerEvent) => {
+      // 첫 손가락 타이머가 아직 도는데 또 눌렸으면 두 번째 손가락(핀치 확대)이다. 길게 누르기를 끈다.
+      // 예전엔 타이머를 덮어써 첫 것을 못 지웠고, 지도를 집어 확대하면 0.5초 뒤 임시 핀과 넣기 폼이 떴다.
+      // start 가 아니라 timer 로 본다 — 지도 밖에서 손을 떼 start 가 남아도 다음 탭을 삼키지 않게.
+      if (timer) {
+        clear();
+        return;
+      }
       const maps = mapsRef.current;
       const map = mapRef.current;
       if (!maps || !map) return;
