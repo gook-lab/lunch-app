@@ -351,7 +351,8 @@ export function RaceCircuit({
             >
               <span className="rc__posNo">{r + 1}</span>
               <span className="rc__posDot" style={{ background: runnerColor(i, n) }} aria-hidden="true" />
-              {shortName(candidates[i].name, n > 10 ? 4 : 6)}
+              {/* 1등 알약은 결과 카드와 같은 이름이 보이게 길게 둔다(8차: '한 그릇 …' 으로 잘림). */}
+              {shortName(candidates[i].name, rankOf.get(i) === 1 ? 12 : n > 10 ? 4 : 6)}
               {active[i] && <span aria-hidden="true">{STAND_ICON[theme][active[i]]}</span>}
             </button>
           </li>

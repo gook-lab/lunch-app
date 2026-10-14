@@ -408,3 +408,12 @@ describe('낚시', () => {
     expect(status(r.container)).toBe('가게6을 낚았어요!');
   });
 });
+
+describe('플링코 연출 시간 — 후보가 적어도 너무 짧지 않다', () => {
+  it('후보 2곳도 공이 칸에 닿기까지 2.2초 이상, 20곳은 줄당 170ms 그대로', async () => {
+    const { plinkoDuration, plinkoStepMs, PLINKO_STEP_MS } = await import('./Plinko');
+    expect(2 * plinkoStepMs(2)).toBeGreaterThanOrEqual(2200);
+    expect(plinkoDuration(2)).toBeGreaterThan(2200);
+    expect(plinkoStepMs(20)).toBe(PLINKO_STEP_MS);
+  });
+});

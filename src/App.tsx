@@ -1198,7 +1198,8 @@ export default function App() {
         title={`고를 가게 ${result.candidates.length}곳`}
         className="filters-sheet"
       >
-        {filtersPanel}
+        {/* 데스크톱은 오른쪽 칸에 이미 그린다. 닫힌 시트에 한 벌 더 그리지 않는다. */}
+        {!wide && filtersPanel}
         <Button block variant="secondary" onClick={() => setFiltersOpen(false)}>
           이대로 할게요
         </Button>

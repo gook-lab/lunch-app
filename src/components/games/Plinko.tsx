@@ -29,8 +29,19 @@ const BOUNCE = 6;
  */
 const MIN_W = 7 * S;
 
+/**
+ * 공이 칸에 닿기까지 최소 시간. 후보 2곳이면 2 × 170ms 라 0.7초 만에 끝나 긴장이 쌓일
+ * 틈이 없었다(8차 실측 1.3초, 다른 짧은 게임은 3.3초). 후보가 적으면 한 줄을 천천히 지난다.
+ */
+const MIN_FALL_MS = 2200;
+
+/** 한 줄을 지나는 시간. 줄이 적을수록 길게 늘려 전체가 MIN_FALL_MS 밑으로 안 내려간다. */
+export function plinkoStepMs(count: number): number {
+  return Math.max(PLINKO_STEP_MS, Math.round(MIN_FALL_MS / Math.max(1, count)));
+}
+
 export function plinkoDuration(count: number): number {
-  return Math.max(1, count) * PLINKO_STEP_MS + SETTLE_MS;
+  return Math.max(1, count) * plinkoStepMs(count) + SETTLE_MS;
 }
 
 export function Plinko({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
@@ -73,11 +84,11 @@ export function Plinko({ candidates, winnerIndex, spinning, run, onSpinEnd, expa
     const rowCount = Math.max(0, count - 1);
     const stopSfx = sfxLater([
       ...Array.from({ length: rowCount }, (_, r): [number, SfxName, number] => [
-        (r + 1) * PLINKO_STEP_MS,
+        (r + 1) * plinkoStepMs(count),
         'peg',
         rowCount <= 1 ? 0.5 : r / (rowCount - 1),
       ]),
-      [count * PLINKO_STEP_MS, 'thunk'],
+      [count * plinkoStepMs(count), 'thunk'],
     ]);
     return () => {
       cancelAnimationFrame(raf);
@@ -101,7 +112,7 @@ export function Plinko({ candidates, winnerIndex, spinning, run, onSpinEnd, expa
     },
   ];
   // 지금 몇 번째 구간인지. 구간 수 = 줄 수 + 1, 마지막 SETTLE 는 칸 안에서 멈춰 있다.
-  const moving = Math.max(0, Math.min(1, (t * plinkoDuration(count)) / (count * PLINKO_STEP_MS)));
+  const moving = Math.max(0, Math.min(1, (t * plinkoDuration(count)) / (count * plinkoStepMs(count))));
   const seg = Math.min(points.length - 2, Math.floor(moving * (points.length - 1)));
   const f = moving * (points.length - 1) - seg;
   const a = points[Math.max(0, seg)];
