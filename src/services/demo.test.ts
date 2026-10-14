@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-/** 데모 저장소 — 씨앗 데이터로 시작하고, 결정·예측이 브라우저에 남고, 처음 상태로 되돌린다. */
+/** 데모 저장소 — 빈 상태로 시작하고(예시는 골라서 깔고), 결정·예측이 브라우저에 남고, 처음 상태로 되돌린다. */
 import { beforeEach, describe, expect, it } from 'vitest';
 import { todayKST } from '../lib/date';
-import { resetDemo } from './demoStore';
-import { decideToday, fetchPlaces, fetchRecentVisits, subscribeToday } from './lunch.demo';
+import { loadDemoSample, resetDemo } from './demoStore';
+import { decideToday, fetchOffice, fetchPlaces, fetchRecentVisits, subscribeToday } from './lunch.demo';
 import { castVote, subscribeVotes } from './predictions.demo';
 
 beforeEach(() => {
@@ -12,7 +12,14 @@ beforeEach(() => {
 });
 
 describe('데모 저장소', () => {
-  it('지어낸 가게와 최근 방문 기록으로 시작한다', async () => {
+  it('빈 상태로 시작한다 — 가게·기록·회사 위치 없이', async () => {
+    expect(await fetchPlaces()).toEqual([]);
+    expect(await fetchRecentVisits(todayKST())).toEqual([]);
+    expect(await fetchOffice()).toBeNull();
+  });
+
+  it('예시로 둘러보면 지어낸 가게와 최근 방문 기록이 깔린다', async () => {
+    loadDemoSample();
     const places = await fetchPlaces();
     expect(places.length).toBeGreaterThanOrEqual(10);
     expect(places.some((p) => !p.active)).toBe(true);
@@ -35,6 +42,7 @@ describe('데모 저장소', () => {
   });
 
   it('예측은 동료 두 표에 내 표 하나를 더한다', async () => {
+    loadDemoSample();
     const today = todayKST();
     let count = 0;
     const stop = subscribeVotes(
@@ -52,7 +60,7 @@ describe('데모 저장소', () => {
 
 /** 메모리만 비우고 저장소는 둔다 — 새로고침과 같다. */
 function resetDemoMemoryOnly() {
-  const saved = localStorage.getItem('lunch-app:demo-v3');
+  const saved = localStorage.getItem('lunch-app:demo-v4');
   resetDemo();
-  if (saved) localStorage.setItem('lunch-app:demo-v3', saved);
+  if (saved) localStorage.setItem('lunch-app:demo-v4', saved);
 }

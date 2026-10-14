@@ -1,9 +1,9 @@
 /**
  * 데모 저장소 — Firebase 없이 이 브라우저(localStorage)에만 둔다.
  *
- * 공개 데모는 누구나 누르는 곳이라 실제 회사 위치·가게·기록을 쓰지 않는다. 기준점은
- * 서울시청이고 가게는 그 주변에 지어낸 이름이다. 처음 열면 며칠 치 방문 기록과 동료
- * 예측 두 표를 깔아 "최근 제외" 와 "예측" 이 바로 보이게 한다.
+ * 공개 데모는 다른 팀에 그대로 건네는 링크라 빈 상태로 시작한다(10/14). 지어낸 가게가
+ * 깔려 있으면 자기 동네 가게와 섞여 지워야 했다. 둘러보기만 할 사람은 빈 화면의
+ * "예시로 둘러보기" 로 서울시청 주변 지어낸 가게·방문 기록·동료 예측을 깐다.
  * 저장이 막힌 창(시크릿 등)에서도 이번 방문 동안은 메모리로 돈다.
  */
 import type { Place } from '../lib/candidates';
@@ -12,7 +12,8 @@ import type { PlaceVote, Vote } from './types';
 
 // 씨앗을 바꾸면 판 번호를 올린다 — 예전 데모 저장분은 새 씨앗으로 다시 시작한다.
 // v3: 카테고리를 메뉴 > 세부로 바꾸며 가게를 다시 깔았다(10/14).
-const KEY = 'lunch-app:demo-v3';
+// v4: 빈 상태로 시작한다. 예시는 고를 때만 깐다(10/14).
+const KEY = 'lunch-app:demo-v4';
 
 export interface DemoState {
   places: Place[];
@@ -49,7 +50,7 @@ const SEED: [string, string, number, number][] = [
 ];
 const ORIGIN = { lat: 37.5663, lng: 126.9779 };
 
-function seed(): DemoState {
+function sample(): DemoState {
   const places: Place[] = SEED.map(([name, category, north, east], i) => ({
     id: `demo-${i + 1}`,
     name,
@@ -88,6 +89,11 @@ function seed(): DemoState {
   return { places, visits, office: { ...ORIGIN }, votes, ratings };
 }
 
+/** 처음 상태 — 가게·기록 없이, 회사 위치도 정하기 전. */
+function empty(): DemoState {
+  return { places: [], visits: {}, office: null, votes: {}, ratings: [] };
+}
+
 let memory: DemoState | null = null;
 const listeners = new Set<() => void>();
 
@@ -97,11 +103,10 @@ export function readDemo(): DemoState {
     const raw = localStorage.getItem(KEY);
     if (raw) memory = JSON.parse(raw) as DemoState;
   } catch {
-    // 막힌 창이면 아래 씨앗으로 시작한다.
+    // 막힌 창이면 빈 상태로 시작한다.
   }
-  memory ??= seed();
-  // 별점이 생기기 전에 저장된 데모라면 동료 별점만 씨앗에서 채운다.
-  memory.ratings ??= seed().ratings;
+  memory ??= empty();
+  memory.ratings ??= [];
   return memory;
 }
 
@@ -128,6 +133,11 @@ export function resetDemo(): void {
   } catch {
     // 지울 것이 없거나 막혔다.
   }
+}
+
+/** 예시 가게·기록으로 바꾼다. 화면은 새로 읽어야 하므로 부른 쪽이 새로고침한다. */
+export function loadDemoSample(): void {
+  writeDemo(() => sample());
 }
 
 /** 네트워크처럼 한 박자 늦게 돌려준다. 바로 돌려주면 불러오는 중 화면이 깜빡이기만 한다. */

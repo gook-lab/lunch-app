@@ -58,6 +58,7 @@ import { officeSource } from './lib/walk';
 import { emptyMessage, noticeMessage } from './lib/messages';
 import { decideToday } from './services/lunch';
 import { DemoNote } from './components/DemoNote';
+import { loadDemoSample } from './services/demoStore';
 import { categoryLabel } from './lib/category';
 import { PlaceList, Settings } from './components/deferred';
 import { GameBoundary } from './components/games/GameBoundary';
@@ -761,9 +762,23 @@ export default function App() {
             title="아직 등록된 가게가 없어요"
             lines={['지도 탭에서 회사 위치를 정하고', '첫 가게를 넣어 주세요. 5곳부터 게임이 돼요.']}
             action={
-              <Button onClick={() => goTab('map')}>
-                <span aria-hidden="true">🗺️ </span>지도에서 가게 추가
-              </Button>
+              <>
+                <Button onClick={() => goTab('map')}>
+                  <span aria-hidden="true">🗺️ </span>지도에서 가게 추가
+                </Button>
+                {/* 데모는 빈 상태로 시작한다. 둘러보기만 할 사람은 지어낸 예시를 깐다. */}
+                {import.meta.env.VITE_DEMO === '1' && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      loadDemoSample();
+                      window.location.reload();
+                    }}
+                  >
+                    예시로 둘러보기
+                  </Button>
+                )}
+              </>
             }
           />
         ) : (
