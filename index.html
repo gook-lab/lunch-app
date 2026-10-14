@@ -10,7 +10,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=Nanum+Gothic+Coding:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
     <noscript><link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=Nanum+Gothic+Coding:wght@400;700&display=swap" rel="stylesheet" /></noscript>
     <title>오늘 점심</title>
-    <meta name="description" content="회사 근처에서 오늘 점심 먹을 곳을 공정하게 골라 줘요." />
+    <meta name="description" content="게임 한 판으로 점심을 정해요. 최근 1주에 간 곳은 빼고." />
+    <meta name="theme-color" content="#f3f2f2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#161413" media="(prefers-color-scheme: dark)" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- 링크 미리보기(슬랙·카카오톡). 이미지 주소는 절대 주소여야 해서 빌드할 때 VITE_SITE_URL 을 붙인다(.env). -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="오늘 점심" />
+    <meta property="og:description" content="게임 한 판으로 점심을 정해요. 최근 1주에 간 곳은 빼고." />
+    <meta property="og:image" content="%VITE_SITE_URL%/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
     <div id="root"></div>

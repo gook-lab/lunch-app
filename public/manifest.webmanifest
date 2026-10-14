@@ -1,0 +1,15 @@
+{
+  "name": "오늘 점심",
+  "short_name": "오늘 점심",
+  "description": "게임 한 판으로 점심을 정해요. 최근 1주에 간 곳은 빼고.",
+  "lang": "ko",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f2f2",
+  "theme_color": "#f3f2f2",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
