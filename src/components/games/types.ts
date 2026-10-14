@@ -36,7 +36,7 @@ export interface GameProps {
   onActivity?: () => void;
 }
 
-export type GameMode = 'wheel' | 'ladder' | 'slot' | 'pinball' | 'cards' | 'memory' | 'tournament' | 'gacha' | 'plinko' | 'dice' | 'horse' | 'racing';
+export type GameMode = 'wheel' | 'ladder' | 'slot' | 'pinball' | 'cards' | 'memory' | 'tournament' | 'gacha' | 'plinko' | 'dice' | 'horse' | 'racing' | 'bomb';
 
 /** label 은 칩에, action 은 실행 버튼에 쓴다. "돌리기" 는 슬롯·핀볼에 안 맞는다. */
 export const GAME_MODES: { id: GameMode; label: string; action: string }[] = [
@@ -52,6 +52,7 @@ export const GAME_MODES: { id: GameMode; label: string; action: string }[] = [
   { id: 'dice', label: '주사위', action: '주사위 굴리기' },
   { id: 'horse', label: '경마', action: '경주 시작' },
   { id: 'racing', label: '레이싱', action: '출발하기' },
+  { id: 'bomb', label: '폭탄 돌리기', action: '폭탄 넘기기' },
 ];
 
 /** 방식 단추 그림. 글자 이름은 그대로 두고 그림은 보조로만 쓴다. */
@@ -68,6 +69,7 @@ export const MODE_ICON: Record<GameMode, string> = {
   dice: '🎲',
   horse: '🏇',
   racing: '🏎️',
+  bomb: '💣',
 };
 
 export function actionLabel(mode: GameMode): string {
@@ -77,10 +79,10 @@ export function actionLabel(mode: GameMode): string {
 /**
  * 모드마다 연출 길이가 다르다. 결과는 같다.
  *
- * 핀볼·플링코·주사위·경마·레이싱은 여기 없다 — 재생 길이가 경기마다 달라 컴포넌트가 정한다.
+ * 핀볼·플링코·주사위·경마·레이싱·폭탄은 여기 없다 — 재생 길이가 경기마다 달라 컴포넌트가 정한다.
  * 여기 적어두면 두 곳이 어긋날 수 있다. 짝 맞추기도 없다 — 사람이 두는 만큼 걸린다.
  */
-export const SPIN_MS: Record<Exclude<GameMode, 'pinball' | 'memory' | 'plinko' | 'dice' | 'horse' | 'racing'>, number> = {
+export const SPIN_MS: Record<Exclude<GameMode, 'pinball' | 'memory' | 'plinko' | 'dice' | 'horse' | 'racing' | 'bomb'>, number> = {
   wheel: 2600,
   // 사다리·슬롯은 핀볼에 비해 너무 빨리 끝나 긴장이 쌓일 틈이 없었다(10/9 손맛 리뷰 5·4점).
   ladder: 2800,

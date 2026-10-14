@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 /**
- * 뽑기 기계 · 플링코 · 주사위. 셋 다 App 이 정한 당첨을 보여 주기만 하고, 끝나면
+ * 뽑기 기계 · 플링코 · 주사위 · 폭탄. 모두 App 이 정한 당첨을 보여 주기만 하고, 끝나면
  * onSpinEnd 를 한 번 부른다. 움직임 줄이기면 바로 결과를 보여 준다.
  */
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Place } from '../../lib/candidates';
+import { Bomb } from './Bomb';
 import { Dice } from './Dice';
 import { Gacha, MAX_CAPSULES } from './Gacha';
 import { Plinko } from './Plinko';
@@ -132,5 +133,31 @@ describe('주사위', () => {
     act(() => { vi.advanceTimersByTime(1); });
     expect(onSpinEnd).toHaveBeenCalledTimes(1);
     expect(r.container.querySelector('.dice__cell--win')?.getAttribute('title')).toBe('가게5');
+  });
+});
+
+describe('폭탄 돌리기', () => {
+  it('폭탄은 당첨 자리에서 터진다', () => {
+    for (const n of [2, 5, 10, 20]) {
+      const winner = Math.floor(n / 2);
+      const onSpinEnd = vi.fn();
+      const r = render(<Bomb candidates={places(n)} winnerIndex={winner} spinning run={1} onSpinEnd={onSpinEnd} />);
+      expect(r.container.querySelectorAll('.bomb__seat')).toHaveLength(n);
+      run(7_500); // 폭탄이 돌아다니고 터지기까지의 충분한 시간
+      expect(onSpinEnd).toHaveBeenCalledTimes(1);
+      const winSeat = r.container.querySelector('.bomb__seat--win');
+      expect(winSeat).toBeTruthy();
+      expect(winSeat?.getAttribute('title')).toBe(`가게${winner + 1}`);
+      r.unmount();
+    }
+  });
+
+  it('움직임 줄이기면 바로 당첨 자리를 보여 준다', () => {
+    reduced = true;
+    const onSpinEnd = vi.fn();
+    const r = render(<Bomb candidates={places(5)} winnerIndex={2} spinning run={1} onSpinEnd={onSpinEnd} />);
+    act(() => { vi.advanceTimersByTime(1); });
+    expect(onSpinEnd).toHaveBeenCalledTimes(1);
+    expect(r.container.querySelector('.bomb__seat--win')?.getAttribute('title')).toBe('가게3');
   });
 });

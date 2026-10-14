@@ -21,6 +21,7 @@ import { castVote, clearVote, myUid, subscribeVotes, type Vote } from './service
 import { buzz, playChime, soundOn } from './lib/celebrate';
 import { sfx } from './lib/sfx';
 import {
+  Bomb,
   CarRace,
   Cards,
   Dice,
@@ -989,6 +990,7 @@ export default function App() {
                           const key = game.candidates.map((p) => p.id).join(',');
                           return <Dice key={key} {...game} />;
                         }
+                        if (mode === 'bomb') return <Bomb {...game} />;
                         return <Wheel {...game} />;
                       })()}
                     </GameBoundary>

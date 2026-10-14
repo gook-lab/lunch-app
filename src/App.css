@@ -2673,8 +2673,49 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .dice__status { margin: 0; font-size: var(--fs-sm); font-weight: 700; color: var(--color-text); }
 @keyframes dice-roll { 50% { rotate: 200deg; scale: 0.85; } to { rotate: 360deg; } }
 
+/* 폭탄 돌리기 — 자리를 원형으로 앉히고 폭탄을 넘긴다. */
+.bomb { width: min(360px, 94vw); display: grid; gap: var(--space-2); justify-items: center; }
+.bomb--big { width: min(640px, 94vw); }
+.bomb--empty { height: 400px; }
+.bomb__board { max-width: 100%; aspect-ratio: 1; }
+.bomb__seat {
+  fill: var(--color-neutral-200);
+  stroke: var(--color-text);
+  stroke-width: 1;
+  transition: fill 150ms var(--ease-inout);
+}
+.bomb__seat--hot { fill: var(--color-accent-200); }
+.bomb__seat--win { fill: var(--color-accent-100); stroke-width: 2; stroke: var(--color-accent); }
+.bomb__name {
+  font-size: 12px;
+  font-weight: 500;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  fill: var(--color-text);
+  pointer-events: none;
+}
+.bomb__name--small { font-size: 10px; }
+.bomb__icon {
+  font-size: 28px;
+  line-height: 1;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+.bomb__burst {
+  font-size: 40px;
+  line-height: 1;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  opacity: 0;
+  animation: bomb-explode 500ms var(--ease-out) forwards;
+}
+.bomb__bomb--exploding .bomb__icon { animation: bomb-shrink 100ms var(--ease-inout); }
+@keyframes bomb-explode { 0% { opacity: 1; scale: 0.5; } 80% { opacity: 1; } to { opacity: 0; scale: 2; } }
+@keyframes bomb-shrink { to { opacity: 0; scale: 0; } }
+.bomb__status { margin: 0; font-size: var(--fs-sm); font-weight: 700; color: var(--color-text); text-align: center; }
+
 @media (prefers-reduced-motion: reduce) {
-  .gacha__capsule, .gacha__handle, .gacha__out, .dice__die--rolling { animation: none !important; }
+  .gacha__capsule, .gacha__handle, .gacha__out, .dice__die--rolling, .bomb__burst, .bomb__bomb--exploding { animation: none !important; }
   .gacha__half { transition: none; }
 }
 
