@@ -1,0 +1,144 @@
+/*
+ * 데스크톱 셸 — 한 화면에 들어가는 패널 (10/14 리빌딩).
+ *
+ * 사용자: "웹에서는 스크롤 없이 각 패널 h값이 일정하게". 예전엔 탭마다 높이를 따로 셈해
+ * (calc(100svh - 336px) 같은 숫자) 점심 고르기 965px · 가게 목록 1436px 로 화면을 넘었다.
+ * 이제 앱이 화면 높이(100svh)를 갖고, 머리말을 뺀 나머지를 탭 패널이 다 쓴다. 패널 안의
+ * 칸들은 같은 높이로 늘어나고, 넘치는 것은 그 칸 안에서만 스크롤한다.
+ *
+ * 규칙 하나: 높이를 숫자로 빼지 않는다. flex/grid 의 1fr 과 min-height: 0 으로만 나눈다.
+ * 휴대폰(960px 미만)은 손대지 않는다. 그래서 새 래퍼(.stage__main)는 평소 display: contents 다.
+ */
+.stage__main,
+.map__side { display: contents; }
+
+@media (min-width: 960px) {
+  /* ── 셸 ─────────────────────────────────────────── */
+  .app {
+    height: 100svh;
+    max-width: 1440px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-8) var(--space-6);
+    overflow: hidden;
+  }
+  .topbar { flex: none; padding-bottom: var(--space-2); align-items: center; }
+  .app__header { gap: var(--space-2); }
+  .app > .panel:not([hidden]) { flex: 1; min-height: 0; gap: var(--space-3); }
+
+  /* 패널 칸 — 같은 테두리·여백·바탕. 칸 안에서만 넘긴다. */
+  .today__filters,
+  .lt__main,
+  .lt__side,
+  .stage:not(.stage--full) {
+    min-height: 0;
+    border: 1px dashed var(--color-neutral-500);
+    background: var(--color-neutral-100);
+    box-shadow: none;
+  }
+  .today__filters,
+  .lt__main,
+  .lt__side { overflow-y: auto; overscroll-behavior: contain; padding: var(--space-4); }
+
+  /* ── 점심 고르기: 게임 레일 | 무대 | 조건 ───────────── */
+  #panel-roadmap > .today {
+    flex: 1;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-rows: minmax(0, 1fr);
+    align-items: stretch;
+    gap: var(--space-4);
+  }
+  /* 무대: 왼쪽 게임 레일이 두 줄을 다 쓰고, 오른쪽은 메뉴 칩(1줄) 아래 판 묶음(나머지). */
+  .today > .stage:not(.stage--full) {
+    height: 100%;
+    grid-template-rows: auto minmax(0, 1fr);
+    align-content: stretch;
+  }
+  .stage:not(.stage--full) > .catbar-wrap { grid-column: 2; grid-row: 1; margin-top: 0; }
+  .stage:not(.stage--full) > .modebar {
+    grid-row: 1 / 3;
+    position: static;
+    max-height: 100%;
+    overflow-y: auto;
+  }
+  .stage:not(.stage--full) > .stage__main {
+    grid-row: 2;
+    padding-top: var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-height: 0;
+    margin-top: 0;
+  }
+  .stage:not(.stage--full) > .stage__main > .stage__board { flex: 1 1 auto; min-height: 0; overflow: auto; }
+  .stage:not(.stage--full) > .stage__main > :not(.stage__board) { flex: none; }
+  .today__filters { position: static; height: 100%; }
+
+  /* ── 가게 목록: 목록 | 기록 ────────────────────────── */
+  .lt {
+    height: 100%;
+    grid-template-rows: auto minmax(0, 1fr);
+    align-items: stretch;
+    row-gap: 0;
+    gap: 0 var(--space-4);
+  }
+  .lt > .notice { grid-row: 1; margin-bottom: var(--space-3); }
+  .lt__main { grid-column: 1; grid-row: 2; }
+  .lt__side { grid-column: 2; grid-row: 2; position: static; }
+
+  /* ── 가게 지도: 지도 | 오른쪽 칸(위: 회사·찾기, 아래: 넘기는 칸) ── */
+  #panel-map > .map {
+    height: 100%;
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-auto-rows: 0;
+    align-items: stretch;
+    gap: var(--space-3) var(--space-6);
+  }
+  .map > .map__main {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    position: static;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .map__main > .map__frame { flex: 1; min-height: 0; }
+  .map__main .map__canvas { height: 100%; }
+  .map > .map__side { display: flex; flex-direction: column; gap: var(--space-3); min-height: 0; grid-column: 2; margin-bottom: 0; }
+  .map > .map__side--head { grid-row: 1; }
+  .map > .map__side--body { grid-row: 2; overflow-y: auto; overscroll-behavior: contain; }
+  .map__side .mp__card { max-height: none; overflow: visible; flex: none; }
+  /* 지도 위에 뜨는 메뉴·시트는 그리드 칸을 차지하지 않는다. */
+  .map > :not(.map__main, .map__side) { grid-column: 2; grid-row: 2; }
+}
+
+@media (min-width: 960px) {
+  /* 판 묶음 안으로 옮기며 가운데 정렬 규칙(.stage > .btn-block)이 빠졌다. */
+  .stage:not(.stage--full) > .stage__main > .btn-block { justify-content: center; }
+
+  /* 머리말 두 줄 — 날짜·체험 안내 한 줄, 제목·도구 한 줄. 세 줄이면 패널이 그만큼 낮아졌다. */
+  .app__header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    column-gap: var(--space-4);
+    row-gap: var(--space-1);
+  }
+  .app__header > .app__date { grid-row: 1; grid-column: 1; margin: 0; }
+  .app__header > .app__titleRow { grid-row: 2; grid-column: 1 / -1; }
+  .app__header > .demo-note,
+  .app__header > .devhost-note { grid-row: 1; grid-column: 2; margin: 0; }
+}
+
+@media (min-width: 960px) {
+  /* 사용법·설정은 제목 옆에 붙인다. margin-left: auto 면 머리말 가운데쯤에 떠 있었다. */
+  .app__titleRow .app__tools { margin-left: var(--space-4); }
+
+  /* "크게 보기" 는 메뉴 칩 줄 오른쪽 끝으로. 혼자 한 줄을 먹어 판이 40px 낮아졌다. */
+  .stage:not(.stage--full) { position: relative; }
+  .stage:not(.stage--full) .stage__expand { position: absolute; top: var(--space-4); right: var(--space-4); }
+  .stage:not(.stage--full) > .catbar-wrap { padding-right: 112px; }
+  .stage:not(.stage--full) > .stage__main > .stage__top:not(:has(> p)) { display: contents; }
+}

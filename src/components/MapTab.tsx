@@ -30,7 +30,14 @@ import type { RatingSummary } from '../lib/ratings';
 import { RatingBadge, RatingEditor, RatingReviews } from './Rating';
 import { clearKakaoLoadFailure, KakaoLoadError, kakaoJsKey, loadKakaoMaps } from '../services/kakao';
 import { updatePlace } from '../services/lunch';
-import type { KakaoCustomOverlay, KakaoMap, KakaoMarkerClusterer, KakaoMaps, KakaoMarker, KakaoPlace } from '../types/kakao';
+import type {
+  KakaoCustomOverlay,
+  KakaoMap,
+  KakaoMarkerClusterer,
+  KakaoMaps,
+  KakaoMarker,
+  KakaoPlace,
+} from '../types/kakao';
 import { PlaceForm, type PlaceDraft } from './map/PlaceForm';
 import { MapAddMenu } from './map/MapAddMenu';
 import { nearbyHits, TAP_RADIUS_M, type NearbyHit } from './map/nearbyHits';
@@ -107,7 +114,15 @@ function troubleOf(error: unknown): Trouble {
   };
 }
 
-export default function MapTab({ places, onChanged, onOfficeChanged, todayId = null, recentIds, focusId = null, ratings }: Props) {
+export default function MapTab({
+  places,
+  onChanged,
+  onOfficeChanged,
+  todayId = null,
+  recentIds,
+  focusId = null,
+  ratings,
+}: Props) {
   const [phase, setPhase] = useState<Phase>('loading');
   const [trouble, setTrouble] = useState<Trouble | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -260,9 +275,13 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
           : null;
         // 묶음 동그라미가 회사 표시·도보 원 라벨 밑에 깔려 "6곳" 이 안 보였다. 그려질 때마다 위로 올린다.
         if (clustererRef.current) {
-          maps.event.addListener(clustererRef.current, 'clustered', (clusters: { getClusterMarker: () => KakaoCustomOverlay }[]) => {
-            for (const c of clusters) c.getClusterMarker().setZIndex(6);
-          });
+          maps.event.addListener(
+            clustererRef.current,
+            'clustered',
+            (clusters: { getClusterMarker: () => KakaoCustomOverlay }[]) => {
+              for (const c of clusters) c.getClusterMarker().setZIndex(6);
+            },
+          );
         }
 
         new maps.CustomOverlay({
@@ -741,50 +760,53 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
 
   return (
     <section className="map">
-      <OfficeCard
-        getMapCenter={phase === 'ready' ? getMapCenter : undefined}
-        onStartPick={phase === 'ready' ? startPick : undefined}
-        onCancelPick={cancelPick}
-        picking={picking}
-        onPreview={phase === 'ready' ? (c) => dropOfficePin(c, true) : undefined}
-        tapRef={officeTapRef}
-        onSaved={onOfficeChanged}
-      />
-      {officeSet && (
-        <>
-          <SearchField
-            value={keyword}
-            onChange={setKeyword}
-            onSearch={() => void search()}
-            loading={searching}
-            placeholder="가게 이름이나 지점으로 찾기"
-            label="가게 이름이나 지점으로 찾기"
-          />
-          {searchProblem && (
-            <p className="notice notice--empty" role="alert">
-              {searchProblem}
+      {/* 오른쪽 칸 위 — 회사 위치·찾기. 휴대폰에선 display: contents 라 순서만 그대로. */}
+      <div className="map__side map__side--head">
+        <OfficeCard
+          getMapCenter={phase === 'ready' ? getMapCenter : undefined}
+          onStartPick={phase === 'ready' ? startPick : undefined}
+          onCancelPick={cancelPick}
+          picking={picking}
+          onPreview={phase === 'ready' ? (c) => dropOfficePin(c, true) : undefined}
+          tapRef={officeTapRef}
+          onSaved={onOfficeChanged}
+        />
+        {officeSet && (
+          <>
+            <SearchField
+              value={keyword}
+              onChange={setKeyword}
+              onSearch={() => void search()}
+              loading={searching}
+              placeholder="가게 이름이나 지점으로 찾기"
+              label="가게 이름이나 지점으로 찾기"
+            />
+            {searchProblem && (
+              <p className="notice notice--empty" role="alert">
+                {searchProblem}
+              </p>
+            )}
+            {/* 결과 수는 화면에 따로 안 쓰지만 화면 낭독기에는 알린다. 늘 있어야 바뀐 걸 읽는다. */}
+            <p className="sr-only" role="status">
+              {!searching && results.length > 0 ? `${results.length}곳 찾았어요` : ''}
             </p>
-          )}
-          {/* 결과 수는 화면에 따로 안 쓰지만 화면 낭독기에는 알린다. 늘 있어야 바뀐 걸 읽는다. */}
-          <p className="sr-only" role="status">
-            {!searching && results.length > 0 ? `${results.length}곳 찾았어요` : ''}
-          </p>
 
-          {results.length > 0 && (
-            <ul className="add__results">
-              {results.map((hit) => (
-                <li key={hit.id}>
-                  <button type="button" className="add__hit" onClick={() => pickResult(hit)}>
-                    <strong>{hit.place_name}</strong>
-                    <span className="muted small">{hit.road_address_name || hit.address_name}</span>
-                    <span className="muted small">{hit.category_name}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
-      )}
+            {results.length > 0 && (
+              <ul className="add__results">
+                {results.map((hit) => (
+                  <li key={hit.id}>
+                    <button type="button" className="add__hit" onClick={() => pickResult(hit)}>
+                      <strong>{hit.place_name}</strong>
+                      <span className="muted small">{hit.road_address_name || hit.address_name}</span>
+                      <span className="muted small">{hit.category_name}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+      </div>
 
       {/* 데스크톱에서는 지도가 왼쪽 큰 칸을 차지하고, 나머지는 오른쪽에 쌓인다. */}
       <div className="map__main">
@@ -852,158 +874,162 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
         )}
       </div>
 
-      {selected && !draft && (
-        <div className="mp__card" ref={selCardRef} tabIndex={-1} role="region" aria-label={selected.name}>
-          {editing ? (
-            <PlaceEdit
-              place={selected}
-              onDone={() => {
-                setEditing(false);
+      {/* 오른쪽 칸 아래 — 고른 가게·근처 목록·넣기 폼. 데스크톱에선 이 칸만 넘긴다. */}
+      <div className="map__side map__side--body">
+        {selected && !draft && (
+          <div className="mp__card" ref={selCardRef} tabIndex={-1} role="region" aria-label={selected.name}>
+            {editing ? (
+              <PlaceEdit
+                place={selected}
+                onDone={() => {
+                  setEditing(false);
+                  onChanged();
+                }}
+                onCancel={() => setEditing(false)}
+              />
+            ) : (
+              <>
+                <div className="mp__head">
+                  <div>
+                    <strong>{selected.name}</strong>
+                    <p className="muted small">
+                      {categoryLabel(selected)} · 도보 {selected.walkMin}분
+                      {selected.price ? ` · ${selected.price}` : ''}
+                    </p>
+                  </div>
+                  <button type="button" className="linkish" onClick={() => setSelectedId(null)}>
+                    닫기
+                  </button>
+                </div>
+                <RatingBadge summary={ratings?.get(selected.id)} />
+                <RatingReviews summary={ratings?.get(selected.id)} />
+                {selected.memo && <p className="muted small">{selected.memo}</p>}
+                {!selected.active && <span className="badge">꺼짐</span>}
+                {toggleProblem === selected.id && (
+                  <p className="notice notice--empty" role="alert">
+                    바꾸지 못했어요. 잠시 뒤 다시 해 주세요.
+                  </p>
+                )}
+                <div className="row">
+                  <Button block size="sm" variant="secondary" onClick={() => setEditing(true)}>
+                    고치기
+                  </Button>
+                  <Button
+                    block
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      setToggleProblem(null);
+                      updatePlace(selected.id, { active: !selected.active })
+                        .then(onChanged)
+                        .catch(() => setToggleProblem(selected.id));
+                    }}
+                  >
+                    {selected.active ? '끄기' : '켜기'}
+                  </Button>
+                  <Button block size="sm" variant="secondary" tone="danger" onClick={() => setRemoving(selected)}>
+                    지우기
+                  </Button>
+                </div>
+                <div className="mp__links">
+                  <DirectionsLink place={selected} />
+                  <a className="dir-link" href={kakaoPlaceUrl(selected)} target="_blank" rel="noopener noreferrer">
+                    <span aria-hidden="true">📍 </span>카카오맵에서 보기
+                    <span className="sr-only"> (메뉴·사진·영업시간, 새 탭)</span>
+                  </a>
+                </div>
+                <RatingEditor key={selected.id} placeId={selected.id} summary={ratings?.get(selected.id)} />
+              </>
+            )}
+          </div>
+        )}
+
+        {/*
+         * 아무 핀도 안 고르면 데스크톱 오른쪽 칸이 회사 카드·검색창만 남아 텅 비었다(10/9 리뷰).
+         * 지금 지도에 그려진 가게를 가까운 순으로 보여 주고, 누르면 그 핀으로 간다.
+         * 휴대폰에서도 지도 아래에 둔다. 카카오 핀은 키보드로 못 고르니 이 목록이 그 대안이다(10/10 접근성 리뷰).
+         */}
+        {phase === 'ready' && !selected && !draft && results.length === 0 && nearby.length > 0 && (
+          <section className="mp__card mp__nearby" aria-labelledby="nearby-title">
+            <h3 id="nearby-title" className="mp__title">
+              이 근처 가게 {nearby.length}곳
+            </h3>
+            <ul className="mp__nearList">
+              {nearby.map((p) => (
+                <li key={p.id}>
+                  <button
+                    type="button"
+                    className="mp__near"
+                    // 목록에 올리면 지도에서 그 핀이 어디인지 같이 보여 준다.
+                    onMouseEnter={() => hoverPin(p.id, true)}
+                    onMouseLeave={() => hoverPin(p.id, false)}
+                    onFocus={() => hoverPin(p.id, true)}
+                    onBlur={() => hoverPin(p.id, false)}
+                    onClick={() => {
+                      goTo(p);
+                      requestAnimationFrame(() => {
+                        selCardRef.current?.focus({ preventScroll: true });
+                        selCardRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+                      });
+                    }}
+                  >
+                    <span className="mp__nearName">
+                      <span aria-hidden="true">{categoryIcon(p.sub ?? p.category)} </span>
+                      {p.name}
+                      {p.id === todayId && <span className="badge">오늘</span>}
+                    </span>
+                    <span className="muted small">
+                      {ratings?.get(p.id) && (
+                        <>
+                          <RatingBadge summary={ratings.get(p.id)} />
+                          {' · '}
+                        </>
+                      )}
+                      도보 {p.walkMin}분
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/*
+         * 새 가게 폼. 예전엔 모달 시트였는데 지도를 덮어 방금 찍은 자리를 볼 수
+         * 없었다(10/9 사용자). 데스크톱은 오른쪽 검색 아래, 휴대폰은 지도 아래에
+         * 붙는다. 지도는 그대로 보이고 임시 핀도 남는다.
+         */}
+        {draft && (
+          <section
+            ref={draftRef}
+            className="mp__card mp__card--form"
+            aria-labelledby="draft-title"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') closeDraft();
+            }}
+          >
+            <div className="mp__head">
+              <h3 id="draft-title" className="mp__title">
+                이 위치에 가게를 넣을까요?
+              </h3>
+              <button type="button" className="linkish" onClick={closeDraft}>
+                닫기
+              </button>
+            </div>
+            <PlaceForm
+              key={`${draft.lat},${draft.lng},${draft.name}`}
+              draft={draft}
+              places={places}
+              onSaved={() => {
+                closeDraft();
                 onChanged();
               }}
-              onCancel={() => setEditing(false)}
+              onCancel={closeDraft}
+              onGoTo={goTo}
             />
-          ) : (
-            <>
-              <div className="mp__head">
-                <div>
-                  <strong>{selected.name}</strong>
-                  <p className="muted small">
-                    {categoryLabel(selected)} · 도보 {selected.walkMin}분{selected.price ? ` · ${selected.price}` : ''}
-                  </p>
-                </div>
-                <button type="button" className="linkish" onClick={() => setSelectedId(null)}>
-                  닫기
-                </button>
-              </div>
-              <RatingBadge summary={ratings?.get(selected.id)} />
-              <RatingReviews summary={ratings?.get(selected.id)} />
-              {selected.memo && <p className="muted small">{selected.memo}</p>}
-              {!selected.active && <span className="badge">꺼짐</span>}
-              {toggleProblem === selected.id && (
-                <p className="notice notice--empty" role="alert">
-                  바꾸지 못했어요. 잠시 뒤 다시 해 주세요.
-                </p>
-              )}
-              <div className="row">
-                <Button block size="sm" variant="secondary" onClick={() => setEditing(true)}>
-                  고치기
-                </Button>
-                <Button
-                  block
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => {
-                    setToggleProblem(null);
-                    updatePlace(selected.id, { active: !selected.active })
-                      .then(onChanged)
-                      .catch(() => setToggleProblem(selected.id));
-                  }}
-                >
-                  {selected.active ? '끄기' : '켜기'}
-                </Button>
-                <Button block size="sm" variant="secondary" tone="danger" onClick={() => setRemoving(selected)}>
-                  지우기
-                </Button>
-              </div>
-              <div className="mp__links">
-                <DirectionsLink place={selected} />
-                <a className="dir-link" href={kakaoPlaceUrl(selected)} target="_blank" rel="noopener noreferrer">
-                  <span aria-hidden="true">📍 </span>카카오맵에서 보기
-                  <span className="sr-only"> (메뉴·사진·영업시간, 새 탭)</span>
-                </a>
-              </div>
-              <RatingEditor key={selected.id} placeId={selected.id} summary={ratings?.get(selected.id)} />
-            </>
-          )}
-        </div>
-      )}
-
-      {/*
-       * 아무 핀도 안 고르면 데스크톱 오른쪽 칸이 회사 카드·검색창만 남아 텅 비었다(10/9 리뷰).
-       * 지금 지도에 그려진 가게를 가까운 순으로 보여 주고, 누르면 그 핀으로 간다.
-       * 휴대폰에서도 지도 아래에 둔다. 카카오 핀은 키보드로 못 고르니 이 목록이 그 대안이다(10/10 접근성 리뷰).
-       */}
-      {phase === 'ready' && !selected && !draft && results.length === 0 && nearby.length > 0 && (
-        <section className="mp__card mp__nearby" aria-labelledby="nearby-title">
-          <h3 id="nearby-title" className="mp__title">
-            이 근처 가게 {nearby.length}곳
-          </h3>
-          <ul className="mp__nearList">
-            {nearby.map((p) => (
-              <li key={p.id}>
-                <button
-                  type="button"
-                  className="mp__near"
-                  // 목록에 올리면 지도에서 그 핀이 어디인지 같이 보여 준다.
-                  onMouseEnter={() => hoverPin(p.id, true)}
-                  onMouseLeave={() => hoverPin(p.id, false)}
-                  onFocus={() => hoverPin(p.id, true)}
-                  onBlur={() => hoverPin(p.id, false)}
-                  onClick={() => {
-                    goTo(p);
-                    requestAnimationFrame(() => {
-                      selCardRef.current?.focus({ preventScroll: true });
-                      selCardRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
-                    });
-                  }}
-                >
-                  <span className="mp__nearName">
-                    <span aria-hidden="true">{categoryIcon(p.sub ?? p.category)} </span>
-                    {p.name}
-                    {p.id === todayId && <span className="badge">오늘</span>}
-                  </span>
-                  <span className="muted small">
-                    {ratings?.get(p.id) && (
-                      <>
-                        <RatingBadge summary={ratings.get(p.id)} />
-                        {' · '}
-                      </>
-                    )}
-                    도보 {p.walkMin}분
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/*
-       * 새 가게 폼. 예전엔 모달 시트였는데 지도를 덮어 방금 찍은 자리를 볼 수
-       * 없었다(10/9 사용자). 데스크톱은 오른쪽 검색 아래, 휴대폰은 지도 아래에
-       * 붙는다. 지도는 그대로 보이고 임시 핀도 남는다.
-       */}
-      {draft && (
-        <section
-          ref={draftRef}
-          className="mp__card mp__card--form"
-          aria-labelledby="draft-title"
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') closeDraft();
-          }}
-        >
-          <div className="mp__head">
-            <h3 id="draft-title" className="mp__title">
-              이 위치에 가게를 넣을까요?
-            </h3>
-            <button type="button" className="linkish" onClick={closeDraft}>
-              닫기
-            </button>
-          </div>
-          <PlaceForm
-            key={`${draft.lat},${draft.lng},${draft.name}`}
-            draft={draft}
-            places={places}
-            onSaved={() => {
-              closeDraft();
-              onChanged();
-            }}
-            onCancel={closeDraft}
-            onGoTo={goTo}
-          />
-        </section>
-      )}
+          </section>
+        )}
+      </div>
       {tapMenu && (
         <MapAddMenu
           host={tapMenu.host}
