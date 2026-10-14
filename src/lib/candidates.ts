@@ -133,6 +133,8 @@ export const HEALTHY_POOL_SIZE = 20;
 
 /** 도보 칩 단계. 후보 0곳일 때 "넓히면 N곳" 을 제안하는 데 쓴다. */
 export const WALK_STEPS = [5, 10, 15] as const;
+/** 게임을 돌릴 수 있는 최소 후보 수. 1곳이면 고를 게 없다. */
+export const MIN_GAME_CANDIDATES = 2;
 
 /** placeId -> 창 안에서 가장 마지막 방문일. 창 밖 방문은 담지 않는다. */
 function lastVisitWithinWindow(

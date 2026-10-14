@@ -3452,3 +3452,7 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 }
 /* MODUL 모달·시트 뒤 가림막도 같은 이유로 다크에서 밝은 회색이 됐다. */
 [data-theme='dark'] dialog::backdrop { background: oklch(0 0 0 / 0.55); }
+
+/* 게임을 못 돌릴 때 무대 안내 — 고른 게임 아이콘을 흐리게 */
+.stage__gateArt { font-size: 40px; line-height: 1; opacity: 0.5; filter: grayscale(1); }
+.stage__board > .status { width: 100%; align-self: stretch; margin-block: 0; justify-content: center; }

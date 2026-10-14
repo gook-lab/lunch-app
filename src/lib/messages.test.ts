@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { selectCandidates, type Place, type Filters } from './candidates';
-import { emptyMessage, noticeMessage } from './messages';
+import { emptyMessage, gameGate, noticeMessage } from './messages';
 import { dayIdBefore } from './date';
 
 const TODAY = '20260916';
@@ -147,5 +147,41 @@ describe('noticeMessage — 제외를 껐을 때', () => {
     const r = selectCandidates(pool(8), visits, filters(), TODAY);
     expect(r.excludedRecent).toBe(true);
     expect(noticeMessage(r)).toBe('최근 1주 안에 간 2곳은 뺐어요.');
+  });
+});
+
+describe('gameGate — 후보가 2곳보다 적으면 게임판 대신 이유와 할 일', () => {
+  const gate = (places: Place[], f: Filters = filters()) => gameGate(selectCandidates(places, [], f, TODAY), f);
+
+  it('2곳부터는 막지 않는다', () => {
+    expect(gate(pool(2))).toBeNull();
+  });
+
+  it('가게가 1곳뿐이면 한 곳 더 넣으라고 한다', () => {
+    const g = gate(pool(1));
+    expect(g?.title).toBe('후보가 1곳뿐이에요');
+    expect(g?.lines[0]).toContain('2곳 이상');
+    expect(g?.fix).toEqual({ kind: 'add' });
+  });
+
+  it('도보를 좁혀 1곳이면 다음 단계로 넓히기를 권한다', () => {
+    const g = gate([place('1', { walkMin: 4 }), place('2', { walkMin: 9 })], filters({ maxWalkMin: 5 }));
+    expect(g?.fix).toEqual({ kind: 'walk', walkMin: 10 });
+  });
+
+  it('카테고리로 좁혀 1곳이면 카테고리를 풀라고 한다', () => {
+    const g = gate([place('1'), place('2', { category: '면' })], filters({ categories: ['면'] }));
+    expect(g?.fix).toEqual({ kind: 'category' });
+  });
+
+  it('0곳이면 빈 이유를 같이 말하고, 넓히면 생기는 경우 넓히기를 권한다', () => {
+    const g = gate([place('1', { walkMin: 12 }), place('2', { walkMin: 13 })], filters({ maxWalkMin: 10 }));
+    expect(g?.title).toBe('지금은 게임을 돌릴 수 없어요');
+    expect(g?.lines[1]).toContain('도보 15분으로 넓히면 2곳');
+    expect(g?.fix).toEqual({ kind: 'walk', walkMin: 15 });
+  });
+
+  it('모두 꺼져 있으면 목록으로 보낸다', () => {
+    expect(gate(pool(3, () => ({ active: false })))?.fix).toEqual({ kind: 'list' });
   });
 });

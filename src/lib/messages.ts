@@ -7,8 +7,8 @@
  *
  * 카피는 "1주", 스펙·구현은 "7일" 로 쓴다 (설계 Success Criteria).
  */
-import type { CandidateResult } from './candidates';
-import { HEALTHY_POOL_SIZE } from './candidates';
+import type { CandidateResult, Filters } from './candidates';
+import { HEALTHY_POOL_SIZE, MIN_GAME_CANDIDATES, WALK_STEPS } from './candidates';
 
 /** 후보가 0곳일 때 원인을 짚는다. 칩을 대신 풀어주지는 않는다. */
 export function emptyMessage(result: CandidateResult): string | null {
@@ -77,4 +77,47 @@ export function recentNote(recentCount: number, excludeRecent: boolean): string 
   if (recentCount === 0) return '최근 1주에 간 곳이 없어요';
   if (!excludeRecent) return `최근 1주 제외를 꺼 둬서 최근에 간 ${recentCount}곳도 오늘 후보예요`;
   return `최근 1주에 간 ${recentCount}곳은 오늘 후보에서 빠져요`;
+}
+
+/** 게임을 못 돌릴 때 무대에 띄우는 안내와, 바로 풀 수 있는 한 가지 방법. */
+export interface GameGate {
+  title: string;
+  lines: string[];
+  fix: { kind: 'add' } | { kind: 'list' } | { kind: 'walk'; walkMin: number } | { kind: 'category' };
+}
+
+/**
+ * 후보가 2곳보다 적으면 게임판 대신 이유와 할 일을 보여 준다. 예전엔 빈 판 아래
+ * 비활성 버튼과 작은 글씨 한 줄뿐이라 고장 난 화면처럼 보였다(10/14 사용자).
+ */
+export function gameGate(
+  result: CandidateResult,
+  filters: Pick<Filters, 'maxWalkMin' | 'categories'>,
+): GameGate | null {
+  const count = result.candidates.length;
+  if (count >= MIN_GAME_CANDIDATES) return null;
+  const rule = `게임은 후보가 ${MIN_GAME_CANDIDATES}곳 이상일 때 돌릴 수 있어요.`;
+  const wider = WALK_STEPS.find((step) => step > filters.maxWalkMin);
+
+  if (count === 0) {
+    const reason = result.emptyReason;
+    const why = emptyMessage(result);
+    const lines = why ? [rule, why] : [rule];
+    if (reason?.kind === 'all-inactive') return { title: '지금은 게임을 돌릴 수 없어요', lines, fix: { kind: 'list' } };
+    if (reason?.kind === 'walk' && reason.countAtWiderWalk > 0) {
+      return { title: '지금은 게임을 돌릴 수 없어요', lines, fix: { kind: 'walk', walkMin: reason.widerWalkMin } };
+    }
+    if (reason?.kind === 'category') return { title: '지금은 게임을 돌릴 수 없어요', lines, fix: { kind: 'category' } };
+    return { title: '지금은 게임을 돌릴 수 없어요', lines, fix: { kind: 'add' } };
+  }
+
+  // 1곳. 사용자가 좁힌 범위 탓이면 넓히기를, 아니면 가게 더 넣기를 권한다.
+  const title = '후보가 1곳뿐이에요';
+  if (result.afterCategoryCount < result.activeCount && filters.categories.length > 0) {
+    return { title, lines: [rule, '카테고리를 전체로 바꾸면 더 많아져요.'], fix: { kind: 'category' } };
+  }
+  if (result.activeCount > count && wider) {
+    return { title, lines: [rule, `도보 ${wider}분으로 넓혀 보세요.`], fix: { kind: 'walk', walkMin: wider } };
+  }
+  return { title, lines: [rule, '가게를 한 곳 더 넣어 주세요.'], fix: { kind: 'add' } };
 }

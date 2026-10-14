@@ -51,11 +51,11 @@ import {
 import { Roadmap } from './components/Roadmap';
 import { useTodayKST } from './hooks/useTodayKST';
 import { useLunchData } from './hooks/useLunchData';
-import { selectCandidates, type Filters, type Place } from './lib/candidates';
+import { MIN_GAME_CANDIDATES, selectCandidates, type Filters, type Place } from './lib/candidates';
 import { categoryHue } from './lib/category';
 import { josa, withJosa } from './lib/josa';
 import { officeSource } from './lib/walk';
-import { emptyMessage, noticeMessage } from './lib/messages';
+import { gameGate, noticeMessage } from './lib/messages';
 import { decideToday } from './services/lunch';
 import { DemoNote } from './components/DemoNote';
 import { loadDemoSample } from './services/demoStore';
@@ -91,7 +91,6 @@ const TAB_TITLE: Record<Tab, string> = {
   list: '가게 목록',
   map: '우리 도보권',
 };
-
 
 const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
 /** "20261008" 을 "10월 8일 목요일" 로. */
@@ -257,7 +256,7 @@ export default function App() {
   const confirmed = winner !== null && decision?.placeId === winner.id;
 
   const spin = useCallback(() => {
-    if (result.candidates.length === 0 || spinning) return;
+    if (result.candidates.length < MIN_GAME_CANDIDATES || spinning) return;
     const active = document.activeElement;
     focusResult.current =
       active === document.body || (active !== null && !!boardRef.current?.closest('.stage')?.contains(active));
@@ -522,8 +521,10 @@ export default function App() {
     );
   }
 
-  const empty = emptyMessage(result);
-  const notice = noticeMessage(result);
+  // 돌리는 중·결과가 남은 판(board)은 막지 않는다. 쉬는 판에서만 후보 수를 본다.
+  const gate = board ? null : gameGate(result, filters);
+  const gateWalk = gate?.fix.kind === 'walk' ? gate.fix.walkMin : null;
+  const notice = gate ? null : noticeMessage(result);
 
   // 결과 카드. 끝난 순간엔 모달 안에, 닫으면 게임 아래에 같은 카드가 놓인다.
   // 후보와 조건. 데스크톱은 오른쪽 칸, 휴대폰은 시트 안에 같은 것을 그린다(한 번에 한 곳만).
@@ -763,8 +764,8 @@ export default function App() {
             lines={
               // 회사부터 정한다. 지도 탭도 그 전에는 가게 찾기를 숨긴다.
               officeSource() === 'saved'
-                ? ['지도에서 첫 가게를 넣어 주세요.', '5곳부터 게임이 돼요.']
-                : ['먼저 회사 위치를 정하고', '첫 가게를 넣어 주세요. 5곳부터 게임이 돼요.']
+                ? ['지도에서 첫 가게를 넣어 주세요.', '2곳부터 게임을 돌릴 수 있어요.']
+                : ['먼저 회사 위치를 정하고', '첫 가게를 넣어 주세요. 2곳부터 게임을 돌릴 수 있어요.']
             }
             action={
               <>
@@ -892,57 +893,83 @@ export default function App() {
                * 스크롤 한 번보다 그게 더 나쁘다. 칩을 누르면 판이 바로 바뀐다.
                */}
               <div ref={boardRef} className="stage__board" tabIndex={-1}>
-                <GameBoundary resetKey={`${mode}|${run}|${(board ?? result.candidates).map((p) => p.id).join(',')}`}>
-                  {(() => {
-                    const game = {
-                      candidates: board ?? result.candidates,
-                      winnerIndex,
-                      spinning,
-                      run,
-                      onSpinEnd,
-                      expanded,
-                    };
-                    // 사다리는 사용자가 판을 고친다. 후보 구성이 바뀌면 새 판이어야 하므로
-                    // 후보 id 를 key 로 준다. 돌린 순간 얼리는 board 는 같은 id 라 판이 유지된다.
-                    if (mode === 'ladder') {
-                      const key = game.candidates.map((p) => p.id).join(',');
-                      return <Ladder key={key} {...game} onRequestSpin={spin} />;
+                {gate ? (
+                  <StatusScreen
+                    inline
+                    art={<span className="stage__gateArt">{MODE_ICON[mode]}</span>}
+                    title={gate.title}
+                    lines={gate.lines}
+                    action={
+                      gateWalk !== null ? (
+                        <Button onClick={() => updateFilters((f) => ({ ...f, maxWalkMin: gateWalk }))}>
+                          도보 {gateWalk}분으로 넓히기
+                        </Button>
+                      ) : gate.fix.kind === 'category' ? (
+                        <Button onClick={() => updateFilters((f) => ({ ...f, categories: [], subs: [] }))}>
+                          카테고리 전체로
+                        </Button>
+                      ) : gate.fix.kind === 'list' ? (
+                        <Button onClick={() => goTab('list')}>목록에서 가게 켜기</Button>
+                      ) : (
+                        <Button onClick={() => goTab('map')}>
+                          <span aria-hidden="true">🗺️ </span>지도에서 가게 추가
+                        </Button>
+                      )
                     }
-                    if (mode === 'cards') {
-                      const key = game.candidates.map((p) => p.id).join(',');
-                      return <Cards key={key} {...game} onRequestSpin={spin} />;
-                    }
-                    if (mode === 'memory') {
-                      const key = game.candidates.map((p) => p.id).join(',');
-                      return <Memory key={key} {...game} onRequestSpin={spin} onActivity={onActivity} />;
-                    }
-                    if (mode === 'tournament') {
-                      // 응원 고른 것은 같은 후보 구성 안에서만 유지한다.
-                      const key = game.candidates.map((p) => p.id).join(',');
-                      return <Tournament key={key} {...game} />;
-                    }
-                    if (mode === 'slot') return <Slot {...game} />;
-                    if (mode === 'pinball') {
-                      const balls =
-                        board && boardBalls
-                          ? boardBalls
-                          : ballCountsFor(
-                              game.candidates.map((p) => p.id),
-                              ballCounts,
-                            );
-                      return <Pinball {...game} balls={balls} onBallCounts={changeBalls} />;
-                    }
-                    if (mode === 'gacha') return <Gacha {...game} />;
-                    if (mode === 'plinko') return <Plinko {...game} />;
-                    if (mode === 'horse') return <HorseRace {...game} />;
-                    if (mode === 'racing') return <CarRace {...game} />;
-                    if (mode === 'dice') {
-                      const key = game.candidates.map((p) => p.id).join(',');
-                      return <Dice key={key} {...game} />;
-                    }
-                    return <Wheel {...game} />;
-                  })()}
-                </GameBoundary>
+                  />
+                ) : (
+                  <GameBoundary resetKey={`${mode}|${run}|${(board ?? result.candidates).map((p) => p.id).join(',')}`}>
+                    {(() => {
+                      const game = {
+                        candidates: board ?? result.candidates,
+                        winnerIndex,
+                        spinning,
+                        run,
+                        onSpinEnd,
+                        expanded,
+                      };
+                      // 사다리는 사용자가 판을 고친다. 후보 구성이 바뀌면 새 판이어야 하므로
+                      // 후보 id 를 key 로 준다. 돌린 순간 얼리는 board 는 같은 id 라 판이 유지된다.
+                      if (mode === 'ladder') {
+                        const key = game.candidates.map((p) => p.id).join(',');
+                        return <Ladder key={key} {...game} onRequestSpin={spin} />;
+                      }
+                      if (mode === 'cards') {
+                        const key = game.candidates.map((p) => p.id).join(',');
+                        return <Cards key={key} {...game} onRequestSpin={spin} />;
+                      }
+                      if (mode === 'memory') {
+                        const key = game.candidates.map((p) => p.id).join(',');
+                        return <Memory key={key} {...game} onRequestSpin={spin} onActivity={onActivity} />;
+                      }
+                      if (mode === 'tournament') {
+                        // 응원 고른 것은 같은 후보 구성 안에서만 유지한다.
+                        const key = game.candidates.map((p) => p.id).join(',');
+                        return <Tournament key={key} {...game} />;
+                      }
+                      if (mode === 'slot') return <Slot {...game} />;
+                      if (mode === 'pinball') {
+                        const balls =
+                          board && boardBalls
+                            ? boardBalls
+                            : ballCountsFor(
+                                game.candidates.map((p) => p.id),
+                                ballCounts,
+                              );
+                        return <Pinball {...game} balls={balls} onBallCounts={changeBalls} />;
+                      }
+                      if (mode === 'gacha') return <Gacha {...game} />;
+                      if (mode === 'plinko') return <Plinko {...game} />;
+                      if (mode === 'horse') return <HorseRace {...game} />;
+                      if (mode === 'racing') return <CarRace {...game} />;
+                      if (mode === 'dice') {
+                        const key = game.candidates.map((p) => p.id).join(',');
+                        return <Dice key={key} {...game} />;
+                      }
+                      return <Wheel {...game} />;
+                    })()}
+                  </GameBoundary>
+                )}
               </div>
 
               {/*
@@ -978,7 +1005,7 @@ export default function App() {
                     </Button>
                   </div>
                 </div>
-              ) : (
+              ) : gate ? null : (
                 // 오늘 이미 정했으면 다시 하기는 보조 동작이다. 위 배너가 "정했어요" 라고 하는데
                 // 가장 큰 빨간 버튼이 또 돌리라고 하면 화면이 두 말을 한다(10/9 UI 점검).
                 <Button
@@ -987,7 +1014,7 @@ export default function App() {
                   size={decidedPlace ? 'md' : 'lg'}
                   variant={decidedPlace ? 'secondary' : 'primary'}
                   onClick={spin}
-                  disabled={result.candidates.length === 0 || spinning}
+                  disabled={spinning}
                 >
                   {spinning
                     ? '진행 중'
@@ -995,7 +1022,7 @@ export default function App() {
                 </Button>
               )}
 
-              {result.candidates.length > 0 && (
+              {!gate && (
                 <Predictions
                   candidates={result.candidates}
                   votes={votes}
@@ -1005,7 +1032,6 @@ export default function App() {
                   onClear={() => clearVote(today)}
                 />
               )}
-              {empty && <p className="notice notice--empty">{empty}</p>}
               {notice && <p className="notice">{notice}</p>}
             </section>
 
@@ -1021,7 +1047,6 @@ export default function App() {
           </div>
         )}
       </div>
-
 
       <Sheet
         open={filtersOpen && !wide && tab === 'roadmap'}
