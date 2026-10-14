@@ -26,12 +26,31 @@ function deferModulFont(): Plugin {
  * 2.97→2.31초, firebase 청크 끝은 2.49→1.83초로 당겨졌다(Slow 4G·CPU 4배, 10/15). 팀용 첫 화면은
  * 데이터가 와야 쓸 수 있어 LCP 를 택했다. fetchpriority=low 는 이 측정에서 차이가 없었다.
  */
+/**
+ * 첫 방문은 익명 로그인(signUp → lookup) → Firestore 첫 읽기가 한 줄로 이어지고, 두 서버에 처음
+ * 붙는 데(DNS·TCP·TLS) 각각 0.4초쯤 든다(로컬 팀용 빌드+실서버·Chromium: identitytoolkit 402ms,
+ * firestore 393ms · 10/15). Firestore 연결은 로그인이 끝난 뒤에야 시작돼 그 0.4초가 그대로 기다림에 더해졌다.
+ *
+ * 그래서 HTML 을 읽자마자 두 서버로 빈 요청을 하나씩 보내 연결을 먼저 열어 둔다. 응답(404)은 쓰지 않는다.
+ * <link rel="preconnect"> 가 정석이지만 Playwright Chromium 에선 연결을 열지 않아 효과를 확인할 수 없었고,
+ * 이 방식은 같은 측정에서 Firestore 첫 왕복을 390ms → 23ms 로 줄였다.
+ *
+ * 브라우저는 쿠키를 싣는 요청과 안 싣는 요청의 연결을 따로 쓴다. 로그인 SDK 의 fetch 는 쿠키 없이,
+ * Firestore 의 WebChannel XHR 은 withCredentials 로 보내므로 credentials 를 각각 맞춘다 —
+ * Firestore 쪽을 쿠키 없이 데웠을 때는 Listen 이 연결을 새로 맺었다(같은 측정).
+ */
+export const WARM_FIREBASE =
+  "[['https://identitytoolkit.googleapis.com/','omit'],['https://firestore.googleapis.com/','include']]" +
+  ".forEach(function(w){fetch(w[0],{mode:'no-cors',credentials:w[1]}).catch(function(){})})"
+
 function preloadFirebase(): Plugin {
   let base = '/'
+  let emulator = false
   return {
     name: 'preload-firebase',
     configResolved(config) {
       base = config.base
+      emulator = config.env.VITE_FIREBASE_EMULATOR === '1'
     },
     transformIndexHtml: {
       order: 'post',
@@ -51,11 +70,15 @@ function preloadFirebase(): Plugin {
           }
         }
         walk(entry)
-        return [...files].map((f) => ({
+        const preloads = [...files].map((f) => ({
           tag: 'link',
           attrs: { rel: 'modulepreload', crossorigin: true, href: base + f },
           injectTo: 'head' as const,
         }))
+        // 에뮬레이터 빌드는 Google 서버에 붙지 않으니 미리 열 연결도 없다.
+        if (emulator) return preloads
+        // 맨 앞에 둔다. 막는 스타일시트(index.css) 뒤의 인라인 스크립트는 그 CSS 를 다 받을 때까지 기다린다.
+        return [{ tag: 'script', children: WARM_FIREBASE, injectTo: 'head-prepend' as const }, ...preloads]
       },
     },
   }
