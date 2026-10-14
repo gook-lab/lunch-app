@@ -9,7 +9,9 @@ describe('categoryFromKakao', () => {
     expect(categoryFromKakao('음식점 > 중식 > 중국요리')).toBe('짬뽕·짜장');
     expect(categoryFromKakao('음식점 > 양식 > 이탈리안')).toBe('파스타');
     expect(categoryFromKakao('음식점 > 패스트푸드 > 피자')).toBe('피자');
-    expect(categoryFromKakao('음식점 > 치킨')).toBe('치킨');
+    expect(categoryFromKakao('음식점 > 치킨')).toBe('닭요리');
+    expect(categoryFromKakao('음식점 > 한식 > 육류,고기 > 닭요리 > 봉추찜닭')).toBe('닭요리');
+    expect(categoryFromKakao('음식점 > 일식 > 일본식라면')).toBe('라멘·우동');
     expect(categoryFromKakao('음식점 > 아시아음식 > 베트남음식')).toBe('쌀국수');
   });
 
