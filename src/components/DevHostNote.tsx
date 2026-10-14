@@ -5,10 +5,6 @@
  */
 const TEAM_URL = 'https://lunch-app-team.vercel.app';
 
-export function isDevHost(hostname: string) {
-  return /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname);
-}
-
 export function DevHostNote() {
   return (
     <p className="demo-note">

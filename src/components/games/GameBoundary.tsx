@@ -12,6 +12,7 @@ interface Props {
 }
 
 interface State {
+  /** 터진 판의 resetKey. 렌더할 때 지금 판과 다르면 다시 그려 본다(componentDidUpdate 의 setState 대신). */
   failedAt: string | null;
 }
 
@@ -19,6 +20,7 @@ export class GameBoundary extends Component<Props, State> {
   state: State = { failedAt: null };
 
   static getDerivedStateFromError(): Partial<State> {
+    // 어느 판인지는 componentDidCatch 가 채운다. 그 전 한 번은 '' 로 안내를 그린다.
     return { failedAt: '' };
   }
 
@@ -27,12 +29,10 @@ export class GameBoundary extends Component<Props, State> {
     console.error('[GameBoundary]', error);
   }
 
-  componentDidUpdate(prev: Props) {
-    if (this.state.failedAt !== null && prev.resetKey !== this.props.resetKey) this.setState({ failedAt: null });
-  }
-
   render() {
-    if (this.state.failedAt === null) return this.props.children;
+    const { failedAt } = this.state;
+    const failed = failedAt !== null && (failedAt === '' || failedAt === this.props.resetKey);
+    if (!failed) return this.props.children;
     return (
       <div className="game-failed" role="alert">
         <p>게임을 그리다 문제가 생겼어요.</p>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isDevHost } from './DevHostNote';
+import { isDevHost } from '../lib/devHost';
 
 describe('isDevHost', () => {
   it('숫자 IP 로 연 개발 서버만 안내한다', () => {
