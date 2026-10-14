@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 // @ts-expect-error — 서버 함수는 JS(Vercel). 타입 없이 동작만 확인한다.
-import handler, { inKorea, photoQuery, pickPhoto } from '../../../api/photo.js';
+import handler, { inKorea, photoQueries, photoQuery, pickPhoto } from '../../../api/photo.js';
 
 function call(qs: string) {
   const out: { status?: number; body?: unknown; headers: Record<string, string> } = { headers: {} };
@@ -32,6 +32,16 @@ describe('/api/photo', () => {
     expect(inKorea(0, 0)).toBe(false);
   });
 
+  it('행정동 → 법정동 → 구 → 이름만 순서, 짧은 이름은 이름만으로 찾지 않는다', () => {
+    expect(photoQueries('불밥 집', { h: '신촌동', b: '대현동', gu: '서대문구' })).toEqual([
+      '불밥 집 신촌동',
+      '불밥 집 대현동',
+      '불밥 집 서대문구',
+      '불밥 집',
+    ]);
+    expect(photoQueries('유', { h: '신촌동', b: '신촌동', gu: '서대문구' })).toEqual(['유 신촌동', '유 서대문구']);
+  });
+
   it('이름이 없거나 좌표가 한국 밖이면 400', async () => {
     expect((await call('name=&lat=37.5&lng=127')).status).toBe(400);
     expect((await call('name=a&lat=0&lng=0')).status).toBe(400);
@@ -44,15 +54,27 @@ describe('/api/photo', () => {
     expect(r.body).toEqual({ thumb: null });
   });
 
-  it('동 이름을 붙여 검색하고 결과를 30일 캐시한다', async () => {
+  it('동 이름을 붙여 검색하고, 없으면 다음 지역으로, 결과는 30일 캐시한다', async () => {
     vi.stubEnv('KAKAO_REST_KEY', 'k');
     const f = vi
       .fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({ documents: [{ region_type: 'B' }, { region_type: 'H', region_3depth_name: '명동' }] })))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            documents: [
+              { region_type: 'B', region_2depth_name: '중구', region_3depth_name: '충무로' },
+              { region_type: 'H', region_2depth_name: '중구', region_3depth_name: '명동' },
+            ],
+          }),
+        ),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ documents: [] })))
       .mockResolvedValueOnce(new Response(JSON.stringify({ documents: [{ thumbnail_url: 'https://t', display_sitename: 'S' }] })));
     vi.stubGlobal('fetch', f);
     const r = await call('name=%EA%B0%80%EA%B2%8C&lat=37.5&lng=127');
     expect(decodeURIComponent(String(f.mock.calls[1][0]))).toContain('query=가게 명동');
+    // 행정동에서 못 찾으면 법정동으로 한 번 더
+    expect(decodeURIComponent(String(f.mock.calls[2][0]))).toContain('query=가게 충무로');
     expect(f.mock.calls[0][1].headers.Authorization).toBe('KakaoAK k');
     expect(r.body).toEqual({ thumb: 'https://t', source: 'S' });
     expect(r.headers['Cache-Control']).toContain('s-maxage=2592000');

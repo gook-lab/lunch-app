@@ -21,6 +21,17 @@ export function photoQuery(name, dong) {
   return dong ? `${name} ${dong}` : name;
 }
 
+/**
+ * 좁은 곳부터 차례로 찾는다 — 행정동 → 법정동 → 구 → 이름만.
+ * 행정동만 넣으면 "불밥 신촌동" 처럼 결과가 0인 경우가 많았다(10/14 팀 가게 19곳 중 12곳).
+ * 이름만으로 찾는 건 세 글자 이상일 때만. "유"·"소오" 같은 이름은 엉뚱한 사진이 나온다.
+ */
+export function photoQueries(name, regions) {
+  const near = [regions.h, regions.b, regions.gu].filter(Boolean).map((r) => photoQuery(name, r));
+  if ([...name.replace(/\s/g, '')].length >= 3) near.push(name);
+  return [...new Set(near)];
+}
+
 /** 첫 결과 중 썸네일이 있는 것. 이미지 검색은 정확도 순이다. */
 export function pickPhoto(documents) {
   const doc = (documents ?? []).find((d) => typeof d.thumbnail_url === 'string' && d.thumbnail_url.startsWith('https://'));
@@ -51,11 +62,20 @@ export default async function handler(req, res) {
   }
   try {
     const region = await kakao(`/v2/local/geo/coord2regioncode.json?x=${lng}&y=${lat}`, key);
-    const dong = region.documents?.find((d) => d.region_type === 'H')?.region_3depth_name || '';
-    const q = encodeURIComponent(photoQuery(name, dong));
-    const found = await kakao(`/v2/search/image?query=${q}&sort=accuracy&size=5`, key);
+    const docs = region.documents ?? [];
+    const regions = {
+      h: docs.find((d) => d.region_type === 'H')?.region_3depth_name,
+      b: docs.find((d) => d.region_type === 'B')?.region_3depth_name,
+      gu: docs[0]?.region_2depth_name,
+    };
+    let photo = null;
+    for (const query of photoQueries(name, regions)) {
+      const found = await kakao(`/v2/search/image?query=${encodeURIComponent(query)}&sort=accuracy&size=5`, key);
+      photo = pickPhoto(found.documents);
+      if (photo) break;
+    }
     res.setHeader('Cache-Control', `public, s-maxage=${30 * DAY}, stale-while-revalidate=${DAY}`);
-    res.status(200).json(pickPhoto(found.documents) ?? { thumb: null });
+    res.status(200).json(photo ?? { thumb: null });
   } catch {
     res.setHeader('Cache-Control', 'public, s-maxage=600');
     res.status(200).json({ thumb: null });

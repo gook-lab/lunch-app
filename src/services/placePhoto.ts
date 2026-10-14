@@ -11,7 +11,8 @@ export interface PlacePhoto {
 }
 
 const DAY = 24 * 60 * 60 * 1000;
-const KEY = 'lunch-app:photo:';
+// v2: 검색어를 행정동→법정동→구로 넓혔다(10/14). 예전 "사진 없음" 기억을 버린다.
+const KEY = 'lunch-app:photo2:';
 
 type Cached = { at: number; photo: PlacePhoto | null };
 
