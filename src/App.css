@@ -2928,32 +2928,142 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   align-items: center;
   gap: 1px;
   max-width: calc(var(--cell-w) * 0.72);
+  /* 기본 몸 폭. 종류마다 --size(lib FISH_SPECIES)를 곱한다. */
+  --base: clamp(18px, 7.2cqw, 46px);
   transform: translate(-50%, -50%);
   transition: left 420ms var(--ease-inout), top 420ms var(--ease-inout);
   animation: fishing-swim var(--period) var(--ease-inout) var(--delay) infinite alternate;
 }
 .fishing__swim { display: block; animation: fishing-face calc(var(--period) * 2) steps(1) var(--delay) infinite; }
+/*
+ * 물고기 몸 — 종류(.fishing__fish--<kind>)마다 모양·지느러미·꼬리·무늬가 다르다. 모두 오른쪽(입)을 본다.
+ * 색은 --hue(lib fishLooks) 하나로 oklch 를 만들어 라이트·다크 물빛 모두에서 보인다.
+ * ::before 는 지느러미(또는 무늬 몸), ::after 는 꼬리다. 둘 다 몸 위에 그려지니 몸 가장자리 밖에 둔다.
+ */
 .fishing__body {
+  --fin: oklch(0.62 0.15 var(--hue));
   position: relative;
   display: block;
-  width: clamp(18px, 7.2cqw, 46px);
+  width: calc(var(--base) * var(--size, 1));
   aspect-ratio: 1.8;
   border-radius: 50% 60% 60% 50% / 50%;
   background:
     radial-gradient(circle at 76% 40%, oklch(0.2 0 0) 0 6%, transparent 7%),
-    linear-gradient(to bottom, oklch(0.8 0.13 var(--hue)), oklch(0.62 0.15 var(--hue)));
+    linear-gradient(to bottom, oklch(0.8 0.13 var(--hue)), var(--fin));
 }
-/* 꼬리 */
+.fishing__body::before,
+.fishing__body::after { content: ''; position: absolute; background: var(--fin); }
+/* 붕어(기본) — 둥근 몸, 등지느러미, 삼각 꼬리 */
+.fishing__body::before { left: 28%; bottom: 92%; width: 38%; height: 30%; clip-path: polygon(0 100%, 35% 0, 100% 100%); }
 .fishing__body::after {
-  content: '';
-  position: absolute;
   top: 50%;
   right: 94%;
   width: 40%;
   height: 80%;
   translate: 0 -50%;
   clip-path: polygon(0 0, 100% 50%, 0 100%);
-  background: oklch(0.62 0.15 var(--hue));
+}
+/* 복어 — 동그란 몸에 가시(몸 상자를 별 모양으로 자른 테두리), 점박이·흰 배 */
+.fishing__fish--puffer .fishing__body {
+  aspect-ratio: 1.08;
+  border-radius: 0;
+  background: oklch(0.5 0.1 var(--hue));
+  clip-path: polygon(50% 0, 58% 13%, 75% 7%, 75% 21%, 93% 25%, 85% 38%, 100% 50%, 85% 62%, 93% 75%, 75% 79%, 75% 93%, 58% 87%, 50% 100%, 42% 87%, 25% 93%, 25% 79%, 7% 75%, 15% 62%, 0 50%, 15% 38%, 7% 25%, 25% 21%, 25% 7%, 42% 13%);
+}
+.fishing__fish--puffer .fishing__body::before {
+  inset: 12%;
+  width: auto;
+  height: auto;
+  border-radius: 50%;
+  clip-path: none;
+  background:
+    radial-gradient(circle at 74% 38%, oklch(0.2 0 0) 0 8%, oklch(0.98 0 0) 9% 15%, transparent 16%),
+    radial-gradient(circle at 34% 28%, oklch(0.45 0.09 var(--hue)) 0 6%, transparent 7%),
+    radial-gradient(circle at 52% 18%, oklch(0.45 0.09 var(--hue)) 0 5%, transparent 6%),
+    radial-gradient(circle at 22% 46%, oklch(0.45 0.09 var(--hue)) 0 5%, transparent 6%),
+    linear-gradient(to bottom, oklch(0.84 0.15 var(--hue)) 0 55%, oklch(0.96 0.04 var(--hue)) 66%);
+}
+.fishing__fish--puffer .fishing__body::after { display: none; }
+/* 고등어 — 길쭉한 몸, 등에 물결 줄무늬·은빛 배, 갈래 꼬리 */
+.fishing__fish--mackerel .fishing__body {
+  --fin: oklch(0.5 0.09 var(--hue));
+  aspect-ratio: 3.4;
+  border-radius: 40% 60% 55% 40% / 50%;
+  background:
+    radial-gradient(circle at 86% 42%, oklch(0.2 0 0) 0 9%, transparent 10%),
+    linear-gradient(to bottom, transparent 0 46%, oklch(0.93 0.02 var(--hue)) 56%),
+    repeating-linear-gradient(110deg, oklch(0.38 0.08 var(--hue)) 0 2px, oklch(0.66 0.11 var(--hue)) 2px 5px);
+}
+.fishing__fish--mackerel .fishing__body::before { left: 40%; bottom: 90%; width: 22%; height: 45%; clip-path: polygon(0 100%, 30% 0, 100% 100%); }
+.fishing__fish--mackerel .fishing__body::after { right: 96%; width: 22%; height: 150%; clip-path: polygon(0 0, 100% 42%, 100% 58%, 0 100%, 35% 50%); }
+/* 엔젤피시 — 납작한 마름모 몸에 세로 줄무늬, 위아래로 길게 뻗은 지느러미(몸 상자 실루엣) */
+.fishing__fish--angel .fishing__body {
+  --fin: oklch(0.7 0.12 var(--hue));
+  aspect-ratio: 0.8;
+  border-radius: 0;
+  background: var(--fin);
+  clip-path: polygon(100% 50%, 62% 20%, 26% 0, 36% 28%, 16% 38%, 0 30%, 0 70%, 16% 62%, 36% 72%, 26% 100%, 62% 80%);
+}
+.fishing__fish--angel .fishing__body::before {
+  inset: 18% 0 18% 14%;
+  width: auto;
+  height: auto;
+  clip-path: polygon(100% 50%, 50% 0, 0 50%, 50% 100%);
+  background:
+    radial-gradient(circle at 80% 44%, oklch(0.2 0 0) 0 6%, transparent 7%),
+    repeating-linear-gradient(90deg, oklch(0.88 0.14 var(--hue)) 0 18%, oklch(0.32 0.04 var(--hue)) 18% 26%);
+}
+.fishing__fish--angel .fishing__body::after { display: none; }
+/* 멸치 — 작고 가는 은빛 몸, 옆줄, 작은 갈래 꼬리 */
+.fishing__fish--sardine .fishing__body {
+  --fin: oklch(0.6 0.06 var(--hue));
+  aspect-ratio: 3.6;
+  border-radius: 40% 60% 55% 40% / 50%;
+  background:
+    radial-gradient(circle at 86% 40%, oklch(0.2 0 0) 0 10%, transparent 11%),
+    linear-gradient(to bottom, transparent 0 44%, oklch(0.5 0.1 var(--hue)) 44% 54%, transparent 54%),
+    linear-gradient(to bottom, oklch(0.62 0.07 var(--hue)) 0 30%, oklch(0.86 0.03 var(--hue)) 50%, oklch(0.96 0.01 var(--hue)) 80%);
+}
+.fishing__fish--sardine .fishing__body::before { display: none; }
+.fishing__fish--sardine .fishing__body::after { right: 96%; width: 22%; height: 130%; clip-path: polygon(0 0, 100% 42%, 100% 58%, 0 100%, 35% 50%); }
+/* 고래 — 크고 둥근 머리, 어두운 등·밝은 배, 가로로 펼친 꼬리, 가슴지느러미 */
+.fishing__fish--whale .fishing__body {
+  --fin: oklch(0.52 0.08 var(--hue));
+  aspect-ratio: 2.2;
+  border-radius: 45% 55% 45% 50% / 55% 60% 40% 45%;
+  background:
+    radial-gradient(circle at 80% 58%, oklch(0.2 0 0) 0 5%, transparent 6%),
+    repeating-linear-gradient(to bottom, transparent 0 3px, oklch(0.75 0.03 var(--hue)) 3px 4px) 0 72% / 70% 22% no-repeat,
+    linear-gradient(to bottom, oklch(0.62 0.09 var(--hue)) 0 56%, oklch(0.92 0.02 var(--hue)) 62%);
+}
+.fishing__fish--whale .fishing__body::before { left: 52%; top: 70%; width: 22%; height: 40%; clip-path: polygon(0 0, 100% 0, 30% 100%); }
+.fishing__fish--whale .fishing__body::after {
+  top: 30%;
+  right: 92%;
+  width: 26%;
+  height: 90%;
+  clip-path: polygon(0 0, 45% 38%, 100% 42%, 100% 58%, 45% 62%, 0 100%, 25% 50%);
+}
+/* 오징어 — 오른쪽 끝이 뾰족한 몸통에 마름모 지느러미, 왼쪽으로 늘어진 다리 */
+.fishing__fish--squid .fishing__body {
+  --fin: oklch(0.66 0.13 var(--hue));
+  aspect-ratio: 2.6;
+  border-radius: 30% 80% 80% 30% / 50%;
+  background:
+    radial-gradient(circle at 18% 42%, oklch(0.2 0 0) 0 9%, oklch(0.98 0 0) 10% 15%, transparent 16%),
+    radial-gradient(circle at 55% 35%, oklch(0.6 0.15 var(--hue)) 0 6%, transparent 7%),
+    radial-gradient(circle at 70% 60%, oklch(0.6 0.15 var(--hue)) 0 5%, transparent 6%),
+    linear-gradient(to bottom, oklch(0.86 0.09 var(--hue)), oklch(0.74 0.12 var(--hue)));
+}
+.fishing__fish--squid .fishing__body::before { left: 74%; top: -22%; width: 30%; height: 144%; clip-path: polygon(0 50%, 70% 0, 100% 50%, 70% 100%); }
+.fishing__fish--squid .fishing__body::after {
+  top: 50%;
+  right: 96%;
+  width: 48%;
+  height: 76%;
+  translate: 0 -50%;
+  border-radius: 50% 0 0 50%;
+  background: repeating-linear-gradient(to bottom, var(--fin) 0 2px, transparent 2px 4px);
 }
 .fishing__tag {
   max-width: 100%;
@@ -2974,6 +3084,12 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .fishing__fish--bite { z-index: 3; animation: none; }
 .fishing__fish--bite .fishing__swim { animation: none; }
 .fishing__fish--bite .fishing__body { animation: fishing-wiggle 180ms var(--ease-inout) infinite alternate; }
+/* 놓친 대물 — 걸려서 반쯤 끌려 올라오며 버둥대다(hooked), 크게 몸부림쳐 빠져나간다(slip). */
+/* 다른 물고기 뒤로 — 끌려 올라오다 윗줄 이름표에 닿아도 그 이름표가 가려지지 않게. */
+.fishing__fish--hooked { z-index: 1; animation: none; transition-duration: 420ms; }
+.fishing__fish--hooked .fishing__swim { animation: none; }
+.fishing__fish--hooked .fishing__body { animation: fishing-tug 160ms var(--ease-inout) infinite alternate; }
+.fishing__fish--slip .fishing__body { animation: fishing-thrash 90ms linear infinite alternate; }
 .fishing__fish--flee { animation: none; transition-duration: 260ms; }
 .fishing__fish--flee .fishing__tag { opacity: 0.6; }
 /*
@@ -2983,24 +3099,25 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
  * --bw 는 몸 폭. 몸 가운데를 입(바늘)보다 0.2폭 왼쪽·0.6폭 아래에 둔다 — 세운 몸의 입이 바늘에 닿는 자리.
  */
 .fishing__fish--win {
-  --bw: clamp(18px, 7.2cqw, 46px);
+  /* 매달린 몸 길이. 고래·고등어처럼 긴 몸은 기본 몸 1.2배로 줄여 하늘 띠를 넘지 않게 한다. */
+  --bw: calc(var(--base) * 1.2 * min(var(--size, 1), 1));
   z-index: 5;
   flex-direction: row;
   align-items: center;
   gap: 4px;
   max-width: none;
-  transform: translate(calc(var(--bw) * -0.7), calc(-50% + var(--bw) * 0.6));
+  transform: translate(calc(var(--bw) * -0.58), calc(-50% + var(--bw) * 0.5));
   animation: none;
   transition-duration: 600ms;
 }
 /* 오른쪽 절반에서 낚으면 이름표를 몸 왼쪽에 — 연못 밖으로 나가지 않게. */
 .fishing__fish--win.fishing__fish--tagLeft {
   flex-direction: row-reverse;
-  transform: translate(calc(-100% + var(--bw) * 0.3), calc(-50% + var(--bw) * 0.6));
+  transform: translate(calc(-100% + var(--bw) * 0.25), calc(-50% + var(--bw) * 0.5));
 }
 .fishing__fish--win .fishing__swim { animation: none; }
 .fishing__fish--win .fishing__body {
-  scale: 1.2;
+  width: var(--bw);
   rotate: -70deg;
   animation: fishing-shine 700ms var(--ease-inout) infinite alternate;
 }
@@ -3016,6 +3133,37 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 @keyframes fishing-nibble { from { translate: -50% -60%; } to { translate: -50% -25%; } }
 @keyframes fishing-dip { to { translate: -50% 60%; opacity: 0.4; } }
 @keyframes fishing-wiggle { from { rotate: -8deg; } to { rotate: 8deg; } }
+@keyframes fishing-tug { from { rotate: -35deg; } to { rotate: -15deg; } }
+@keyframes fishing-thrash { from { rotate: -45deg; translate: -2px 0; } to { rotate: 15deg; translate: 2px 0; } }
+/* 큰 물고기 그림자 — 물고기들 뒤로 한 번 가로지른다(왼→오, --rtl 은 반대). */
+.fishing__shadow {
+  position: absolute;
+  left: 0;
+  z-index: 0;
+  width: 30cqw;
+  aspect-ratio: 2.6;
+  border-radius: 45% 55% 45% 50% / 55% 60% 40% 45%;
+  background: oklch(0.25 0.05 245 / 0.22);
+  pointer-events: none;
+  animation: fishing-pass var(--pass-dur) linear var(--pass-delay) both;
+}
+.fishing__shadow::after {
+  content: '';
+  position: absolute;
+  top: 25%;
+  right: 94%;
+  width: 26%;
+  height: 80%;
+  background: inherit;
+  clip-path: polygon(0 0, 45% 38%, 100% 42%, 100% 58%, 45% 62%, 0 100%, 25% 50%);
+}
+.fishing__shadow--rtl { scale: -1 1; animation-direction: reverse; }
+[data-theme='dark'] .fishing__shadow { background: oklch(0.1 0.04 250 / 0.4); }
+@keyframes fishing-pass {
+  0% { translate: -36cqw -50%; opacity: 0; }
+  15%, 85% { opacity: 1; }
+  100% { translate: 106cqw -50%; opacity: 0; }
+}
 @keyframes fishing-shine {
   from { filter: brightness(1) drop-shadow(0 0 0 var(--color-accent-100)); }
   to { filter: brightness(1.15) drop-shadow(0 0 8px var(--color-accent-100)); }
@@ -3028,6 +3176,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   .balloon__item--popped .balloon__body, .balloon__item--popped .balloon__string { animation: none; opacity: 0; }
   .balloon__burst { display: none; }
   .fishing__fish, .fishing__swim, .fishing__body, .fishing__float, .fishing__line { animation: none !important; transition: none !important; }
+  .fishing__shadow { display: none; }
   .gacha__half { transition: none; }
 }
 

@@ -5,7 +5,7 @@
  * 끝이 4~6초인지, 물고기 자리가 연못(물) 안에 겹치지 않게 놓이는지 본다. 후보는 2~20곳.
  */
 import { describe, it, expect } from 'vitest';
-import { fishingPlan, pondColumns, pondLayout, SKY } from './fishing';
+import { FISH_KINDS, fishingPlan, fishLooks, HOOK_MS, pondColumns, pondLayout, SKY, SLIP_MS } from './fishing';
 import { seededRandom } from './random';
 
 describe('낚시 입질 일정', () => {
@@ -39,16 +39,60 @@ describe('낚시 입질 일정', () => {
           expect(plan.landMs).toBeGreaterThan(prev);
           expect(plan.endMs).toBeGreaterThan(plan.landMs);
           expect(plan.endMs).toBeGreaterThanOrEqual(4000);
-          expect(plan.endMs).toBeLessThanOrEqual(6000);
+          const escaped = bites.some((b) => b.escape);
+          // 놓친 대물이 없으면 예전 그대로 6초, 있으면 0.9초 더해 7초 안(1.5초 넘게 늘지 않는다).
+          expect(plan.endMs).toBeLessThanOrEqual(escaped ? 6000 + HOOK_MS + SLIP_MS : 6000);
         }
       }
     }
   });
 
+  it('놓친 대물: 당첨이 아닌 물고기가 걸렸다가(hook) 빠져나가고(slip) 달아난다, 당첨 바로 앞 한 번뿐', () => {
+    let escapes = 0;
+    for (let count = 2; count <= 20; count += 1) {
+      for (let s = 0; s < 40; s += 1) {
+        const winner = s % count;
+        const { bites } = fishingPlan(count, winner, seededRandom(count * 1000 + s))!;
+        const esc = bites.filter((b) => b.escape);
+        expect(esc.length).toBeLessThanOrEqual(1);
+        expect(bites.at(-1)!.escape).toBeUndefined();
+        if (esc.length === 0) continue;
+        escapes += 1;
+        const b = esc[0];
+        expect(b.fish).not.toBe(winner);
+        // 두 곳이면 빠져나가는 건 남은 한 곳.
+        if (count === 2) expect(b.fish).toBe(1 - winner);
+        expect(bites.indexOf(b)).toBe(bites.length - 2);
+        expect(b.escape!.hookMs).toBeGreaterThan(b.biteMs);
+        expect(b.escape!.slipMs).toBe(b.escape!.hookMs + HOOK_MS);
+        expect(b.leaveMs).toBe(b.escape!.slipMs + SLIP_MS);
+      }
+    }
+    // 판마다 다르게 — 놓친 대물이 나오는 판도, 안 나오는 판도 있다.
+    expect(escapes).toBeGreaterThan(19 * 40 * 0.4);
+    expect(escapes).toBeLessThan(19 * 40 * 0.8);
+  });
+
+  it('큰 물고기 그림자는 물 안에서, 당첨을 낚기 전에 지나간다', () => {
+    let passes = 0;
+    for (let s = 0; s < 200; s += 1) {
+      const plan = fishingPlan(9, s % 9, seededRandom(s))!;
+      if (!plan.pass) continue;
+      passes += 1;
+      const { startMs, durMs, y } = plan.pass;
+      expect(startMs).toBeGreaterThanOrEqual(plan.castMs);
+      expect(startMs + durMs).toBeLessThan(plan.landMs);
+      expect(y).toBeGreaterThan(SKY);
+      expect(y).toBeLessThan(100);
+    }
+    expect(passes).toBeGreaterThan(50);
+    expect(passes).toBeLessThan(150);
+  });
+
   it('당첨 입질이 헛입질보다 길게 뜸을 들인다', () => {
     for (let s = 0; s < 50; s += 1) {
       const { bites } = fishingPlan(12, 4, seededRandom(s))!;
-      const hold = bites.map((b) => b.leaveMs - b.biteMs);
+      const hold = bites.map((b) => (b.escape ? b.escape.hookMs : b.leaveMs) - b.biteMs);
       expect(hold.at(-1)).toBeGreaterThanOrEqual(Math.max(...hold.slice(0, -1)));
     }
   });
@@ -101,5 +145,34 @@ describe('연못 배치', () => {
     expect(pondColumns(5)).toBe(3);
     expect(pondColumns(2)).toBe(2);
     expect(pondLayout(20).rows).toBe(5);
+  });
+});
+
+describe('물고기 생김새', () => {
+  it('같은 시드는 같은 생김새, 시드가 다르면 달라진다', () => {
+    expect(fishLooks(15, 4, seededRandom(3))).toEqual(fishLooks(15, 4, seededRandom(3)));
+    const seqs = new Set(Array.from({ length: 20 }, (_, s) => fishLooks(10, 4, seededRandom(s)).map((l) => l.kind).join(',')));
+    expect(seqs.size).toBeGreaterThan(10);
+  });
+
+  it('왼쪽·위 이웃과 종류가 겹치지 않고, 일곱 곳 이상이면 종류가 고루 나온다', () => {
+    for (let count = 1; count <= 20; count += 1) {
+      const cols = pondColumns(count);
+      for (let s = 0; s < 50; s += 1) {
+        const looks = fishLooks(count, cols, seededRandom(s));
+        expect(looks).toHaveLength(count);
+        looks.forEach((l, i) => {
+          expect(FISH_KINDS).toContain(l.kind);
+          expect(l.hue).toBeGreaterThanOrEqual(0);
+          expect(l.hue).toBeLessThan(360);
+          if (i % cols > 0) expect(l.kind).not.toBe(looks[i - 1].kind);
+          if (i >= cols) expect(l.kind).not.toBe(looks[i - cols].kind);
+        });
+        const kinds = new Set(looks.map((l) => l.kind));
+        // 주머니 방식이라 처음 일곱 마리 안에 거의 다 나온다(이웃과 겹쳐 하나쯤 밀릴 수 있다).
+        expect(kinds.size).toBeGreaterThanOrEqual(Math.min(count, FISH_KINDS.length) - 1);
+        if (count >= 14) expect(kinds.size).toBe(FISH_KINDS.length);
+      }
+    }
   });
 });

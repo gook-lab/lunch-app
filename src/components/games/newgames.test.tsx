@@ -337,7 +337,8 @@ describe('낚시', () => {
       expect(seen).toContain('앗, 놓쳤어요');
       expect(caught(r.container)).toHaveLength(0);
       expect(onSpinEnd).not.toHaveBeenCalled();
-      run(3_000);
+      // 놓친 대물이 끼면 0.9초 길어진다(최대 6.84초).
+      run(3_500);
       expect(onSpinEnd).toHaveBeenCalledTimes(1);
       const win = caught(r.container);
       expect(win).toHaveLength(1);
@@ -345,6 +346,47 @@ describe('낚시', () => {
       expect(status(r.container)).toMatch(new RegExp(`^가게${winner + 1}(을|를) 낚았어요!$`));
       r.unmount();
     }
+  });
+
+  it('놓친 대물: 당첨이 아닌 물고기가 걸려 올라오다 빠져나가고, 마지막엔 당첨을 낚는다', () => {
+    let escapes = 0;
+    for (let k = 0; k < 12; k += 1) {
+      const n = k % 2 === 0 ? 2 : 9;
+      const winner = k % n;
+      const onSpinEnd = vi.fn();
+      const r = render(<Fishing candidates={places(n)} winnerIndex={winner} spinning run={100 + k} onSpinEnd={onSpinEnd} />);
+      let hooked: string | null = null;
+      let slipped = false;
+      for (let t = 0; t < 7_000; t += 50) {
+        run(50);
+        const h = r.container.querySelector('.fishing__fish--hooked');
+        if (h) {
+          hooked = h.getAttribute('title');
+          // 놓친 대물은 당첨이 아니다. 두 곳이면 남은 한 곳.
+          expect(hooked).not.toBe(`가게${winner + 1}`);
+          if (n === 2) expect(hooked).toBe(`가게${2 - winner}`);
+          if (status(r.container) === '앗, 빠져나가요!') slipped = true;
+          expect(caught(r.container)).toHaveLength(0);
+        }
+      }
+      if (hooked) {
+        escapes += 1;
+        expect(slipped).toBe(true);
+      }
+      expect(onSpinEnd).toHaveBeenCalledTimes(1);
+      expect(caught(r.container).map((e) => e.getAttribute('title'))).toEqual([`가게${winner + 1}`]);
+      r.unmount();
+    }
+    expect(escapes).toBeGreaterThan(0);
+  });
+
+  it('물고기마다 종류 클래스가 붙고, 여러 종류가 섞인다', () => {
+    const r = render(<Fishing candidates={places(15)} winnerIndex={null} spinning={false} run={0} onSpinEnd={() => {}} />);
+    const kinds = new Set(
+      [...r.container.querySelectorAll('.fishing__fish')].map((e) => [...e.classList].find((c) => /^fishing__fish--(carp|puffer|mackerel|angel|sardine|whale|squid)$/.test(c))),
+    );
+    expect(kinds.has(undefined)).toBe(false);
+    expect(kinds.size).toBe(7);
   });
 
   it('언마운트하면 타이머가 멈춰 onSpinEnd 를 부르지 않는다', () => {
