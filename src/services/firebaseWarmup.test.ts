@@ -32,19 +32,22 @@ async function builtHtml(env: { demo: string; emulator: string }): Promise<strin
 }
 
 describe('팀용 index.html — Firebase 연결 미리 열기', () => {
-  it('팀용 빌드는 다른 태그보다 앞에서 두 서버로 요청을 보낸다', async () => {
+  it('팀용 빌드는 다른 태그보다 앞에서 두 서버에 preconnect 를 건다', async () => {
     const html = await builtHtml({ demo: '', emulator: '' });
-    const at = html.indexOf(WARM_FIREBASE);
-    expect(at).toBeGreaterThan(-1);
-    expect(WARM_FIREBASE).toContain('https://identitytoolkit.googleapis.com/');
-    expect(WARM_FIREBASE).toContain('https://firestore.googleapis.com/');
+    // 콘솔 오류를 남기던 빈 fetch 로 되돌아가지 않는다.
+    expect(html).not.toContain('no-cors');
+    const ats = WARM_FIREBASE.map((w) => html.indexOf(`rel="preconnect" href="${w.href}"`));
+    for (const at of ats) expect(at).toBeGreaterThan(-1);
+    const at = Math.max(...ats);
     // 막는 스타일시트·모듈 스크립트보다 앞이어야 HTML 을 읽자마자 출발한다.
     expect(at).toBeLessThan(html.indexOf('rel="stylesheet"'));
     expect(at).toBeLessThan(html.indexOf('<script type="module"'));
   }, 60_000);
 
   it('데모 빌드와 에뮬레이터 빌드에는 넣지 않는다', async () => {
-    expect(await builtHtml({ demo: '1', emulator: '' })).not.toContain(WARM_FIREBASE);
-    expect(await builtHtml({ demo: '', emulator: '1' })).not.toContain(WARM_FIREBASE);
+    for (const env of [{ demo: '1', emulator: '' }, { demo: '', emulator: '1' }]) {
+      const html = await builtHtml(env);
+      for (const w of WARM_FIREBASE) expect(html).not.toContain(w.href);
+    }
   }, 60_000);
 });
