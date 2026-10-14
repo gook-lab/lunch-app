@@ -67,18 +67,26 @@ export default async function handler(req, res) {
   }
   try {
     const region = await kakao(`/v2/local/geo/coord2regioncode.json?x=${lng}&y=${lat}`, key);
-    const docs = region.documents ?? [];
+    const areas = region.documents ?? [];
     const regions = {
-      h: docs.find((d) => d.region_type === 'H')?.region_3depth_name,
-      b: docs.find((d) => d.region_type === 'B')?.region_3depth_name,
-      gu: docs[0]?.region_2depth_name,
+      h: areas.find((d) => d.region_type === 'H')?.region_3depth_name,
+      b: areas.find((d) => d.region_type === 'B')?.region_3depth_name,
+      gu: areas[0]?.region_2depth_name,
     };
-    let photo = null;
-    for (const query of photoQueries(name, regions)) {
+    // 지역을 붙인 검색끼리는 넷이 찰 때까지 이어 모은다. 이름만 검색은 하나도 못 찾았을 때만.
+    const near = photoQueries(name, regions);
+    const nameOnly = near.at(-1) === name ? near.pop() : null;
+    const docs = [];
+    for (const query of near) {
       const found = await kakao(`/v2/search/image?query=${encodeURIComponent(query)}&sort=accuracy&size=8`, key);
-      photo = pickPhoto(found.documents);
-      if (photo) break;
+      docs.push(...(found.documents ?? []));
+      if ((pickPhoto(docs)?.photos.length ?? 0) >= MAX_PHOTOS) break;
     }
+    if (!pickPhoto(docs) && nameOnly) {
+      const found = await kakao(`/v2/search/image?query=${encodeURIComponent(nameOnly)}&sort=accuracy&size=8`, key);
+      docs.push(...(found.documents ?? []));
+    }
+    const photo = pickPhoto(docs);
     res.setHeader('Cache-Control', `public, s-maxage=${30 * DAY}, stale-while-revalidate=${DAY}`);
     res.status(200).json(photo ?? { thumb: null });
   } catch {

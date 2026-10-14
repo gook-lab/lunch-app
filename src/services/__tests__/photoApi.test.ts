@@ -23,7 +23,9 @@ describe('/api/photo', () => {
   it('검색어는 가게 이름 + 동, 썸네일은 https 인 첫 결과', () => {
     expect(photoQuery('골목 칼국수', '명동')).toBe('골목 칼국수 명동');
     expect(photoQuery('골목 칼국수', '')).toBe('골목 칼국수');
-    expect(pickPhoto([{ thumbnail_url: 'http://x' }, { thumbnail_url: 'https://y', display_sitename: '블로그' }])).toEqual({
+    expect(
+      pickPhoto([{ thumbnail_url: 'http://x' }, { thumbnail_url: 'https://y', display_sitename: '블로그' }]),
+    ).toEqual({
       thumb: 'https://y',
       source: '블로그',
       photos: ['https://y'],
@@ -57,7 +59,7 @@ describe('/api/photo', () => {
     expect(r.body).toEqual({ thumb: null });
   });
 
-  it('동 이름을 붙여 검색하고, 없으면 다음 지역으로, 결과는 30일 캐시한다', async () => {
+  it('동 이름을 붙여 검색하고, 넷이 안 차면 다음 지역으로 이어 모으고, 결과는 30일 캐시한다', async () => {
     vi.stubEnv('KAKAO_REST_KEY', 'k');
     const f = vi
       .fn()
@@ -72,14 +74,20 @@ describe('/api/photo', () => {
         ),
       )
       .mockResolvedValueOnce(new Response(JSON.stringify({ documents: [] })))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ documents: [{ thumbnail_url: 'https://t', display_sitename: 'S' }] })));
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ documents: [{ thumbnail_url: 'https://t', display_sitename: 'S' }] })),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ documents: [{ thumbnail_url: 'https://u' }] })));
     vi.stubGlobal('fetch', f);
     const r = await call('name=%EA%B0%80%EA%B2%8C&lat=37.5&lng=127');
     expect(decodeURIComponent(String(f.mock.calls[1][0]))).toContain('query=가게 명동');
     // 행정동에서 못 찾으면 법정동으로 한 번 더
     expect(decodeURIComponent(String(f.mock.calls[2][0]))).toContain('query=가게 충무로');
     expect(f.mock.calls[0][1].headers.Authorization).toBe('KakaoAK k');
-    expect(r.body).toEqual({ thumb: 'https://t', source: 'S', photos: ['https://t'] });
+    // 넷이 안 차서 구(중구)까지 이어 모은다. "가게" 는 두 글자라 이름만 검색은 안 한다.
+    expect(decodeURIComponent(String(f.mock.calls[3][0]))).toContain('query=가게 중구');
+    expect(f).toHaveBeenCalledTimes(4);
+    expect(r.body).toEqual({ thumb: 'https://t', source: 'S', photos: ['https://t', 'https://u'] });
     expect(r.headers['Cache-Control']).toContain('s-maxage=2592000');
   });
 });

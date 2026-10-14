@@ -14,8 +14,8 @@ export interface PlacePhoto {
 }
 
 const DAY = 24 * 60 * 60 * 1000;
-// v3: 사진 여러 장(photos). v2: 검색어를 행정동→법정동→구로 넓혔다(10/14). 예전 기억은 버린다.
-const KEY = 'lunch-app:photo3:';
+// v4: 지역 검색을 이어 모아 넷까지. v3: 사진 여러 장(photos). v2: 검색어를 행정동→법정동→구로 넓혔다(10/14). 예전 기억은 버린다.
+const KEY = 'lunch-app:photo4:';
 
 type Cached = { at: number; photo: PlacePhoto | null };
 
