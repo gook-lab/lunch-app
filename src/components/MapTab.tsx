@@ -233,8 +233,9 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
             radius: metersForWalkMinutes(step),
             // 1px·0.35 로는 카카오 지도 위에서 안 보인다. 실제로 안 보였다.
             strokeWeight: 2,
-            // 카카오는 CSS 변수를 못 읽는다. 토큰 값을 꺼내 넘긴다.
-            strokeColor: getComputedStyle(document.documentElement).getPropertyValue('--color-text').trim() || 'black',
+            // 지도 타일은 다크 모드에서도 밝다. --color-text 를 꺼내 쓰면 다크에서 흰 선이 되어
+            // 원이 사라졌다(10/14). 타일 위 선이라 테마와 상관없이 어두운 색으로 고정한다.
+            strokeColor: '#1f1f1f',
             strokeOpacity: 0.6,
             strokeStyle: 'shortdash',
             fillOpacity: 0,
@@ -614,6 +615,15 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
   }, []);
 
 
+  const goOffice = () => {
+    const maps = mapsRef.current;
+    const map = mapRef.current;
+    if (!maps || !map) return;
+    const office = officeCoord();
+    map.setLevel(4);
+    map.panTo(new maps.LatLng(office.lat, office.lng));
+  };
+
   const startPick = (onPick: (coord: Coord) => void) => {
     pickRef.current = onPick;
     setPicking(true);
@@ -754,6 +764,12 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
           <div className="map__canvas" ref={containerRef} aria-label="우리 도보권 지도" />
           {/* "지도 가운데로" 의 가운데가 어디인지 보여 주는 십자. 지도 조작은 막지 않는다. */}
           <span className="map__crosshair" aria-hidden="true" />
+          {/* 지도를 끌다 보면 회사가 어디였는지 잃는다. 한 번에 돌아온다. */}
+          {phase === 'ready' && (
+            <button type="button" className="map__home" onClick={goOffice}>
+              <span aria-hidden="true">🏢 </span>회사로
+            </button>
+          )}
           {/* SDK·타일을 받는 동안 빈 회색 칸만 보이면 고장 난 것 같았다 — 스피너를 지도 위에 띄운다. */}
           {phase === 'loading' && (
             <div className="map__loading">
@@ -765,7 +781,8 @@ export default function MapTab({ places, onChanged, onOfficeChanged, todayId = n
 
         {phase === 'ready' && (
           <p className="muted small">
-            원은 도보 {WALK_STEPS.join('·')}분 거리예요. 지도를 누르면 가게를 넣을 수 있어요.
+            원은 도보 {WALK_STEPS.join('·')}분 거리예요.{' '}
+            {officeSet ? '지도를 누르면 가게를 넣을 수 있어요.' : '지도를 누르면 그 자리를 회사로 정할 수 있어요.'}
           </p>
         )}
       </div>

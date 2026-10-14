@@ -1684,6 +1684,26 @@ html:has(dialog[open]:modal) { overflow: hidden; }
     linear-gradient(var(--color-accent), var(--color-accent)) center / 100% 2px no-repeat;
 }
 
+/* 지도 위 "회사로" — 끌다가 길을 잃으면 한 번에 돌아온다 */
+.map__home {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  z-index: 4;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+.map__home:hover { border-color: var(--color-neutral-600); }
+
 /* 오늘 화면 조건 패널의 회사 위치 한 줄 */
 .today__office {
   display: flex;
