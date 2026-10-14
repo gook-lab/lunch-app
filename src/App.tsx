@@ -87,8 +87,10 @@ const TAB_LABEL: Record<Tab, string> = { roadmap: '점심 고르기', list: '가
 const TAB_ICON: Record<Tab, string> = { roadmap: '🍱', list: '📋', map: '🗺️' };
 
 /**
- * 연출 잠금 해제 상한. 판을 늘린 뒤 핀볼이 가장 길다 — 1등 도착 평균 8~10초,
- * 긴 경기 13초 남짓에 막판 슬로·꼬리·출발 게이트를 더해 17초 안팎. 넉넉히 30초.
+ * 연출 잠금 해제 상한. 핀볼이 가장 길다 — 경기 6,720판(테마 4 × 구슬 2~36개)을 돌려
+ * 출발 게이트(0.9초)부터 끝 장면(1등 뒤 0.7초)까지 잰 값이 중앙 15.0초 · 99% 20.0초 ·
+ * 최악 23.9초(카지노, 구슬 2개)다(10/15 실측). 그다음이 경마·레이싱 다섯 바퀴 19.7초,
+ * 나머지 게임은 10초 안. 30초면 핀볼 최악보다 6초 남는다.
  */
 const SPIN_TIMEOUT_MS = 30_000;
 
@@ -146,6 +148,25 @@ export default function App() {
   const [spinning, setSpinning] = useState(false);
   // 크게 보기. 게임 무대를 화면 전체로 펼친다. 연출·당첨에는 영향이 없다.
   const [expanded, setExpanded] = useState(false);
+  /**
+   * 크게 보기를 켜기 직전의 스크롤 위치. 켜면 html 이 overflow: hidden 이 되면서
+   * 휴대폰에서 scrollY 가 0 으로 튄다. 끄고 나면 맨 위에서 sticky 결과 줄이 판을
+   * 덮었다(리뷰 재현). 끈 뒤 다음 프레임에 제자리로 돌려놓는다 — 그 전엔 레이아웃이
+   * 아직 펼친 무대 기준이라 scrollTo 가 먹지 않는다.
+   */
+  const scrollBeforeExpand = useRef<number | null>(null);
+  const toggleExpanded = () => {
+    if (!expanded) scrollBeforeExpand.current = window.scrollY;
+    setExpanded((v) => !v);
+  };
+  useEffect(() => {
+    if (expanded) return;
+    const y = scrollBeforeExpand.current;
+    if (y === null) return;
+    scrollBeforeExpand.current = null;
+    const raf = requestAnimationFrame(() => window.scrollTo(0, y));
+    return () => cancelAnimationFrame(raf);
+  }, [expanded]);
   useEffect(() => {
     if (!expanded) return;
     const onKey = (e: KeyboardEvent) => {
@@ -231,7 +252,7 @@ export default function App() {
     (next: GameMode) => {
       // 연출 중에는 방식 단추가 잠기지만, "다시 하기" 와 같은 순간에 들어온 클릭은
       // 잠기기 전에 도착한다. 판만 비우고 진행 상태를 두면 새 게임판이
-      // winnerIndex 없이 "진행 중" 에 갇혀 워치독(20초)까지 기다린다(10/8 실측).
+      // winnerIndex 없이 "진행 중" 에 갇혀 워치독(SPIN_TIMEOUT_MS, 30초)까지 기다린다(10/8 실측).
       // 탭 이동(goTab)처럼 연출을 끊는다.
       setSpinning(false);
       closeResult();
@@ -388,7 +409,7 @@ export default function App() {
    * 연출 중 필터 변경, 연출 중 탭 전환. 둘 다 막았지만 게임 컴포넌트가
    * 하나라도 onSpinEnd 를 놓치면 같은 일이 또 난다.
    *
-   * 가장 긴 연출이 핀볼 최대 약 10.5초다(게이트 + 9초 + 정리). 그 두 배를 넘기면 뭔가 잘못된 것이니
+   * 가장 긴 연출은 핀볼로 실측 최악 23.9초다(SPIN_TIMEOUT_MS 주석). 30초를 넘기면 뭔가 잘못된 것이니
    * 결과를 만들지 말고 잠금만 푼다 — 안 본 경기를 당첨으로 기록할 수는 없다.
    */
   // 딴 탭에 있는 동안은 재지 않는다 — 직접 두던 짝 맞추기가 자리 비운 사이 풀리면 안 된다.
@@ -920,7 +941,7 @@ export default function App() {
                     type="button"
                     className="stage__expand"
                     aria-pressed={expanded}
-                    onClick={() => setExpanded((v) => !v)}
+                    onClick={toggleExpanded}
                   >
                     <span aria-hidden="true">{expanded ? '✕ ' : '⤢ '}</span>
                     {expanded ? '작게 보기' : '크게 보기'}

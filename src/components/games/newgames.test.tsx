@@ -38,6 +38,10 @@ const places = (n: number): Place[] =>
     kakaoPlaceId: `k${i}`, active: true, createdBy: 'test',
   }));
 
+/** 이름이 긴 후보. 잘림을 확인할 때 쓴다. */
+const longPlaces = (n: number): Place[] =>
+  places(n).map((p, i) => ({ ...p, name: `할머니 김치찌개${i + 1}` }));
+
 describe('뽑기 기계', () => {
   it('흔들고 떨어뜨린 뒤 당첨 캡슐을 연다', () => {
     for (const n of [1, 5, 20]) {
@@ -84,6 +88,18 @@ describe('플링코', () => {
       expect(wins[0].getAttribute('title')).toBe(`가게${winner + 1}`);
       r.unmount();
     }
+  });
+
+  it('후보가 적어도 판은 칸 7개 폭 — 핀·공이 판을 꽉 채우지 않는다', () => {
+    // 2곳이면 그림 폭이 48 이라 공이 7배로 불어나고 판이 폭보다 1.3배 길었다(리뷰 재현).
+    const r = render(<Plinko candidates={places(2)} winnerIndex={1} spinning={false} run={1} onSpinEnd={() => {}} />);
+    const vb = r.container.querySelector('.plinko__board')?.getAttribute('viewBox')?.split(' ').map(Number) ?? [];
+    expect(vb[2]).toBe(168);
+    // 판 폭 ÷ 높이(--fit)는 1 이상 — 크게 보기 폭 식이 이 값으로 높이에 맞춘다.
+    const fit = Number((r.container.querySelector('.plinko') as HTMLElement).style.getPropertyValue('--fit'));
+    expect(fit).toBeGreaterThan(1);
+    // 당첨 칸(오른쪽) 가운데에 공이 선다.
+    expect(Number(r.container.querySelector('.plinko__ball')?.getAttribute('cx'))).toBeCloseTo(126);
   });
 
   it('움직임 줄이기면 바로 칸을 보여 준다', () => {
@@ -138,6 +154,16 @@ describe('주사위', () => {
   });
 });
 
+describe('주사위 이름 길이', () => {
+  it('칸이 넓으면(후보 2곳·크게 보기) 이름을 다섯 자에서 자르지 않는다', () => {
+    const r = render(<Dice candidates={longPlaces(2)} winnerIndex={null} spinning={false} run={0} onSpinEnd={() => {}} expanded />);
+    expect([...r.container.querySelectorAll('.dice__name')].map((e) => e.textContent)).toEqual([
+      '할머니 김치찌개1',
+      '할머니 김치찌개2',
+    ]);
+  });
+});
+
 describe('폭탄 돌리기', () => {
   it('폭탄은 당첨 자리에서 터진다', () => {
     for (const n of [2, 5, 10, 20]) {
@@ -152,6 +178,24 @@ describe('폭탄 돌리기', () => {
       expect(winSeat?.querySelector('title')?.textContent).toBe(`가게${winner + 1}`);
       r.unmount();
     }
+  });
+
+  it('터질 때는 판 가운데 쪽으로 옮겨 당첨 이름표를 덮지 않는다', () => {
+    const onSpinEnd = vi.fn();
+    const r = render(<Bomb candidates={places(7)} winnerIndex={0} spinning run={3} onSpinEnd={onSpinEnd} />);
+    run(7_500);
+    expect(onSpinEnd).toHaveBeenCalledTimes(1);
+    // 12시 자리(이름표 y=48)에서 터져도 폭탄은 가운데(180)에서 30 안쪽이다.
+    const m = (r.container.querySelector('.bomb__bomb') as HTMLElement).style.transform.match(/translate\(([\d.]+)px, ([\d.]+)px\)/);
+    expect(Math.hypot(Number(m?.[1]) - 180, Number(m?.[2]) - 180)).toBeLessThanOrEqual(31);
+  });
+
+  it('후보가 적으면 이름표를 넓혀 이름을 덜 자른다', () => {
+    const r = render(<Bomb candidates={longPlaces(2)} winnerIndex={null} spinning={false} run={0} onSpinEnd={() => {}} />);
+    expect([...r.container.querySelectorAll('.bomb__name')].map((e) => e.textContent)).toEqual([
+      '할머니 김치찌개1',
+      '할머니 김치찌개2',
+    ]);
   });
 
   it('움직임 줄이기면 바로 당첨 자리를 보여 준다', () => {
@@ -303,6 +347,23 @@ describe('낚시', () => {
     run(7_000);
     expect(onSpinEnd).toHaveBeenCalledTimes(2);
     expect(caught(r.container).map((e) => e.getAttribute('title'))).toEqual(['가게5']);
+  });
+
+  it('낚은 물고기는 줄 끝(바늘)에 매달린다 — 하늘 띠 안, 이름표는 연못 가운데 쪽', () => {
+    reduced = true;
+    for (const [n, winner] of [[7, 0], [7, 3], [2, 1]]) {
+      const r = render(<Fishing candidates={places(n)} winnerIndex={winner} spinning run={1} onSpinEnd={() => {}} />);
+      act(() => { vi.advanceTimersByTime(1); });
+      const fish = caught(r.container)[0] as HTMLElement;
+      const line = r.container.querySelector('.fishing__line') as HTMLElement;
+      // 물고기 자리 = 바늘 자리. 예전엔 바늘 6%·물고기 10% 로 떨어져 있었다.
+      expect(fish.style.left).toBe(line.style.left);
+      expect(fish.style.top).toBe(line.style.height);
+      expect(parseFloat(fish.style.top)).toBeLessThan(20);
+      // 오른쪽 절반이면 이름표를 왼쪽에 — 연못 밖으로 나가지 않게.
+      expect(fish.classList.contains('fishing__fish--tagLeft')).toBe(parseFloat(fish.style.left) >= 50);
+      r.unmount();
+    }
   });
 
   it('움직임 줄이기면 바로 낚아 올린 모습을 보인다', () => {

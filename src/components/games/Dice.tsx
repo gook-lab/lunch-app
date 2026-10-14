@@ -104,6 +104,13 @@ export function Dice({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
   const pos = live ? view.pos : winnerIndex !== null && !spinning ? placeCell(winnerIndex, count) : 0;
   const done = live ? view.done : winnerIndex !== null && !spinning;
   const winner = winnerIndex === null ? null : candidates[winnerIndex];
+  /*
+   * 칸에 들어가는 글자 수. 예전엔 5자로 고정이라 후보 2곳(2×2판) 크게 보기에서 칸이 250px
+   * 넘게 남는데도 이름이 잘렸다(리뷰 재현). 판 폭(.dice 360 · .dice--big 520)을 칸 수로
+   * 나눠 한글 한 자 약 13px 로 센다. 화면이 더 좁으면 CSS 말줄임이 마저 자른다.
+   */
+  const cellPx = (expanded ? 520 : 360) / side;
+  const nameMax = Math.max(3, Math.min(12, Math.floor((cellPx - 10) / 13)));
   // 둘레 칸 → 그 칸의 가게 번호.
   const places = new Map(candidates.map((_, k) => [placeCell(k, count), k]));
   const status =
@@ -155,7 +162,7 @@ export function Dice({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
               <span className="dice__icon" aria-hidden="true">
                 {categoryIcon(p.sub ?? p.category)}
               </span>
-              <span className="dice__name">{shortName(p.name, side > 4 ? 3 : 5)}</span>
+              <span className="dice__name">{shortName(p.name, nameMax)}</span>
               {here && <span className="dice__pawn" aria-hidden="true" />}
             </div>
           );

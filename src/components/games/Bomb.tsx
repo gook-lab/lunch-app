@@ -93,15 +93,35 @@ export function Bomb({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
   const center = boardSize / 2;
   const seatR = 132; // 이름표 폭(최대 88)의 반을 더해도 판(360) 안에 들어오게
   const bombR = seatR - 44;
-  const tagW = Math.max(40, Math.min(88, (2 * Math.PI * seatR) / count - 6));
-  const tagH = count > 10 ? 24 : 30;
-  // 자리 간격(2πr/n)에 들어가는 글자 수. 14곳에서 셋으로 자르니 "골목…" 처럼 두 글자만 남았다.
-  const nameMax = count <= 8 ? 6 : count <= 12 ? 5 : count <= 16 ? 4 : 3;
   const at = (i: number, r: number) => {
     const a = (i / count) * 2 * Math.PI - Math.PI / 2; // 12시부터 시계 방향
     return { x: center + r * Math.cos(a), y: center + r * Math.sin(a) };
   };
-  const bombAt = at(currentSeat, bombR);
+  /*
+   * 이름표 폭 = 자리 간격(2πr/n)과 판 가장자리 중 좁은 쪽. 예전엔 88 로 막아 후보 2곳에도
+   * 여섯 글자에서 잘렸다. 2곳은 12시·6시라 옆으로 넓게 써도 판 안이다.
+   * 크게 보기는 판이 커진 만큼 글자를 그림 단위로 줄여 더 많이 넣는다(화면에선 여전히 더 크다).
+   */
+  const edge = Math.min(
+    ...candidates.map((_, i) => {
+      const { x } = at(i, seatR);
+      return Math.min(x, boardSize - x) - 2;
+    }),
+  );
+  const tagW = Math.max(40, Math.min(160, (2 * Math.PI * seatR) / count - 6, edge * 2));
+  const tagH = count > 10 ? 24 : 30;
+  const fontPx = (count > 10 ? 10 : 12) * (expanded ? 0.84 : 1);
+  // 이름표 폭에 들어가는 글자 수(한글 한 자 ≈ 1em). 14곳에서 셋으로 자르니 "골목…" 처럼 두 글자만 남았다.
+  const nameMax = Math.max(3, Math.floor((tagW - 6) / fontPx));
+  /*
+   * 터질 때는 폭탄을 판 가운데 쪽으로 당긴다. 자리 앞(bombR)에서 터지면 💥(56)와 "펑!"이
+   * 당첨 이름표를 덮어 어디가 걸렸는지 안 보였다(리뷰 재현). "펑!"은 폭탄보다 더 가운데 쪽에.
+   */
+  const boomR = 30;
+  const bombAt = at(currentSeat, done ? boomR : bombR);
+  const popAt = { x: center - bombAt.x, y: center - bombAt.y };
+  const popLen = Math.hypot(popAt.x, popAt.y) || 1;
+  const pop = { x: (popAt.x / popLen) * 34, y: (popAt.y / popLen) * 34 };
 
   const status =
     !live && !done
@@ -137,7 +157,12 @@ export function Bomb({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
               >
                 <title>{p.name}</title>
               </rect>
-              <text textAnchor="middle" dominantBaseline="central" className={count > 10 ? 'bomb__name bomb__name--small' : 'bomb__name'}>
+              <text
+                textAnchor="middle"
+                dominantBaseline="central"
+                className="bomb__name"
+                style={{ fontSize: fontPx }}
+              >
                 {shortName(p.name, nameMax)}
               </text>
             </g>
@@ -154,7 +179,14 @@ export function Bomb({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
               <text textAnchor="middle" dominantBaseline="central" className="bomb__burst" aria-hidden="true">
                 💥
               </text>
-              <text y={-34} textAnchor="middle" className="bomb__pop" aria-hidden="true">
+              <text
+                x={pop.x}
+                y={pop.y}
+                textAnchor="middle"
+                dominantBaseline="central"
+                className="bomb__pop"
+                aria-hidden="true"
+              >
                 펑!
               </text>
             </>

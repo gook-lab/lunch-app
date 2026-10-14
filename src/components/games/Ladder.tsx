@@ -30,6 +30,8 @@ interface Progress {
   t: number;
 }
 
+const clampNum = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
 export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRequestSpin }: GameProps) {
   const count = candidates.length;
   const columns = Math.max(count, 1);
@@ -182,6 +184,20 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
   const head = drawnPts[drawnPts.length - 1];
   const showPath = drawn > 0 && !stale;
 
+  /**
+   * 열린 이름표(가로 쓰기)의 자리. 폭이 칸 하나(100/count %)라 첫·끝 칸을 줄 위에
+   * 가운데 맞추면 반 폭이 판 밖으로 나간다. 후보 2곳이면 끝 칸이 오른쪽으로 27px
+   * 넘쳐 390px 페이지가 가로로 밀렸다(리뷰 재현). 가운데를 판 안으로 당기고,
+   * 글자는 줄 쪽으로 붙여 어느 줄의 칸인지 읽히게 한다.
+   */
+  const openLabelStyle = (slot: number): React.CSSProperties => {
+    const w = 100 / count;
+    const at = (colX(slot) / VIEW_W) * 100;
+    const left = clampNum(at, w / 2, 100 - w / 2);
+    const textAlign = left > at ? 'left' : left < at ? 'right' : 'center';
+    return { left: `${left}%`, width: `${w}%`, textAlign };
+  };
+
   return (
     <div className="ladder">
       <div className="ladder__bar">
@@ -269,11 +285,7 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
             <span
               key={slot}
               className={cls}
-              style={
-                tall || !place
-                  ? { left: `${(colX(slot) / VIEW_W) * 100}%` }
-                  : { left: `${(colX(slot) / VIEW_W) * 100}%`, width: `${100 / count}%` }
-              }
+              style={tall || !place ? { left: `${(colX(slot) / VIEW_W) * 100}%` } : openLabelStyle(slot)}
               title={place?.name}
               aria-label={place ? undefined : `${slot + 1}번 칸, 가려져 있어요`}
             >

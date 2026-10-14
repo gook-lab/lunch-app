@@ -27,6 +27,9 @@ interface FishingState {
   fish: number;
 }
 
+/** 낚아 올린 뒤 바늘 높이(연못 높이의 %). 하늘(SKY) 맨 위 — 매달린 물고기가 하늘 띠에 들어간다. */
+const LAND_HOOK = 3;
+
 /** 물고기 자리는 후보 수마다 한 번 정한다 — 판마다 바뀌면 고른 물고기를 눈으로 따라갈 수 없다. */
 const LAYOUT_SEED = 7;
 
@@ -86,16 +89,21 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
   // 바늘은 겨눈 물고기 입 바로 위. 물고기는 입질 때 바늘 쪽으로 떠오른다.
   const reach = layout.cellH * 0.22;
   const aim = target >= 0 ? layout.fish[target] : null;
+  /*
+   * 낚아 올리면 바늘은 하늘 맨 위(LAND_HOOK)까지 감기고 물고기는 그 바늘에 입이 걸려 매달린다.
+   * 예전엔 바늘만 하늘(6%)에 두고 물고기는 따로 10%에 세로(몸 위·이름표 아래)로 세워,
+   * 줄과 물고기가 떨어져 보이고 이름표가 물속 첫 줄 이름표('숯불 제육')를 덮었다(리뷰 재현).
+   * 이제 몸과 이름표를 가로로 눕혀 하늘 띠 안에 넣는다(Fishing CSS .fishing__fish--win).
+   */
   const hookY = !aim
     ? SKY
     : phase === 'land'
-      ? SKY * 0.3
+      ? LAND_HOOK
       : phase === 'strike'
         ? aim.y - reach - layout.cellH * 0.08
         : aim.y - reach - layout.cellH * 0.18;
-  // 낚아 올린 물고기는 이름표를 길게 보여 주므로 가장자리에서 조금 안쪽으로 당긴다. 줄도 같이 간다.
-  const landX = (x: number) => Math.min(78, Math.max(22, x));
-  const lineX = !aim ? 50 : phase === 'land' ? landX(aim.x) : aim.x;
+  // 매달린 몸이 연못 가장자리에 잘리지 않게만 안쪽으로. 이름표는 연못 가운데 쪽으로 붙는다.
+  const lineX = !aim ? 50 : phase === 'land' ? Math.min(92, Math.max(8, aim.x)) : aim.x;
 
   const status =
     phase === 'land' && winner
@@ -143,8 +151,9 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
           const caught = aimed && phase === 'land';
           // 떠날 때는 연못 바깥쪽으로 잠깐 달아났다가, 줄이 다음 물고기로 옮기면 제자리로 돌아온다.
           const away = f.x < 50 ? -1 : 1;
-          const x = fleeing ? f.x + away * f.range * 2.2 : caught ? landX(f.x) : f.x;
-          const y = caught ? SKY * 0.5 : biting ? f.y - reach : fleeing ? f.y + reach * 0.5 : f.y;
+          const x = fleeing ? f.x + away * f.range * 2.2 : caught ? lineX : f.x;
+          // 낚은 물고기는 바늘 자리(줄 끝)에 붙는다. 몸을 바늘 아래로 내리는 건 CSS 가 한다.
+          const y = caught ? hookY : biting ? f.y - reach : fleeing ? f.y + reach * 0.5 : f.y;
           return (
             <div
               key={p.id}
@@ -154,6 +163,7 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
                 biting ? 'fishing__fish--bite' : '',
                 fleeing ? 'fishing__fish--flee' : '',
                 caught ? 'fishing__fish--win' : '',
+                caught && x >= 50 ? 'fishing__fish--tagLeft' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}

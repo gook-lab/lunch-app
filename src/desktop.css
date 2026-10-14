@@ -163,7 +163,7 @@
  * 예전엔 게임마다 폭만 키우고(prace 880px 등) 무대 전체를 스크롤시켰다. 이제 판(.stage__board)이
  * 남는 높이를 다 갖는 크기 컨테이너가 되고, 게임은 "그 높이에 들어가는 폭" 까지만 큰다.
  * 높이 = 기울기 × 폭 + 고정 부분 을 실측(1440×900, 폭 400·800 에서 잰 높이)해서 거꾸로 푼다.
- *   사다리 0.79w+188 · 뽑기 0.84w+126 · 플링코 1.035w+108 · 경주 0.57w+172 · 핀볼 1.02w+383
+ *   사다리 0.79w+188 · 뽑기 0.84w+126 · 플링코 w/--fit+108 · 경주 0.57w+172 · 핀볼 1.02w+383
  * 핀볼(코스를 카메라가 따라감)과 카드(칸이 줄바꿈)는 비례로 줄지 않아 판 안에서 스크롤한다.
  * 판이 320px 보다 낮아지면(아주 작은 창) 그때만 무대가 스크롤한다.
  */
@@ -177,7 +177,7 @@
 .stage--full .dice--big { width: min(520px, 94vw, 100cqh - 16px); }
 .stage--full .ladder { width: min(92vw, 760px, (100cqh - 204px) / 0.79); }
 .stage--full .gacha--big { width: min(380px, 92vw, (100cqh - 142px) / 0.84); }
-.stage--full .plinko--big { width: min(560px, 94vw, (100cqh - 136px) / 1.035); }
+.stage--full .plinko--big { width: min(560px, 94vw, (100cqh - 136px) * var(--fit, 0.966)); } /* 판 높이 = 폭 ÷ --fit(후보 수마다 다르다, Plinko.tsx) */
 .stage--full .bomb--big { width: min(640px, 94vw, 100cqh - 56px); } /* 판 아래 상태 한 줄(약 40px)까지 */
 .stage--full .balloon--big { width: min(640px, 94vw, (100cqh - 56px) * var(--fit)); } /* 판 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
 .stage--full .fishing--big { width: min(640px, 94vw, (100cqh - 56px) * var(--fit)); } /* 연못 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */

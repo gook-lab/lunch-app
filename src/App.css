@@ -259,6 +259,10 @@ body {
   /* 데스크톱 게임판(약 600×420)에서 272px 은 주변이 텅 비었다(10/9 UI 점검). */
   width: min(340px, 80vw);
   aspect-ratio: 1;
+  /* 도는 원판은 네모 상자라 45도쯤에서 대각선만큼 튀어나와 390px 페이지가 가로로
+     13~26px 흔들렸다(리뷰 재현). 판 바깥은 그리지 않는다. 바늘은 판 안(top: 0)에 둔다. */
+  overflow: clip;
+  overflow-clip-margin: 6px;
   /* 칸 색이 바닥색과 거의 같아 칸 경계가 안 보였다. 밝은 칸과 옅은 강조색 칸을 번갈아. */
   --wheel-a: var(--color-neutral-100);
   --wheel-b: var(--color-accent-200);
@@ -266,7 +270,7 @@ body {
 
 .wheel__needle {
   position: absolute;
-  top: -4px;
+  top: 0;
   left: 50%;
   translate: -50% 0;
   z-index: 2;
@@ -481,7 +485,8 @@ body {
 }
 
 /* 라벨은 세로줄 x 좌표에 절대 배치한다 (Ladder.tsx 참고) */
-.ladder__labels { position: relative; height: 1.5em; margin-top: var(--space-2); }
+/* 당첨 칸이 톡 튈 때(scale 1.18) 끝 칸이 판 밖으로 나가 페이지가 가로로 밀린다. 가로만 자른다. */
+.ladder__labels { position: relative; height: 1.5em; margin-top: var(--space-2); overflow-x: clip; }
 
 .ladder__label {
   position: absolute;
@@ -2684,8 +2689,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .bomb__seat { fill: var(--color-bg); stroke: var(--color-neutral-400); stroke-width: 1.5; transition: fill var(--motion-fast) var(--ease-out); }
 .bomb__seat--hot { fill: var(--color-accent-100); stroke: var(--color-accent); }
 .bomb__seat--win { fill: var(--color-accent); stroke: var(--color-accent); }
-.bomb__name { font-size: 12px; font-weight: 700; fill: var(--color-text); pointer-events: none; }
-.bomb__name--small { font-size: 10px; }
+.bomb__name { font-weight: 700; fill: var(--color-text); pointer-events: none; }
 .bomb__seat--win + .bomb__name { fill: var(--color-bg); }
 .bomb__bomb { transition: transform 90ms linear; }
 .bomb__icon { font-size: 30px; }
@@ -2938,16 +2942,35 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .fishing__fish--bite .fishing__body { animation: fishing-wiggle 180ms var(--ease-inout) infinite alternate; }
 .fishing__fish--flee { animation: none; transition-duration: 260ms; }
 .fishing__fish--flee .fishing__tag { opacity: 0.6; }
-/* 낚아 올림 — 물 위에서 커지며 반짝인다. */
-.fishing__fish--win { z-index: 5; max-width: min(92cqw, calc(var(--cell-w) * 2.2)); animation: none; transition-duration: 600ms; }
+/*
+ * 낚아 올림 — 바늘에 입이 걸려 하늘에 매달린다. 자리(left/top)는 바늘 끝이다.
+ * 몸을 세로로 세우고(입이 위) 이름표는 몸 옆, 연못 가운데 쪽에 붙인다. 몸·이름표를
+ * 위아래로 쌓으면 하늘 띠(SKY 20%)보다 높아 물속 첫 줄 이름표를 덮었다(리뷰 재현).
+ * --bw 는 몸 폭. 몸 가운데를 입(바늘)보다 0.2폭 왼쪽·0.6폭 아래에 둔다 — 세운 몸의 입이 바늘에 닿는 자리.
+ */
+.fishing__fish--win {
+  --bw: clamp(18px, 7.2cqw, 46px);
+  z-index: 5;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  max-width: none;
+  transform: translate(calc(var(--bw) * -0.7), calc(-50% + var(--bw) * 0.6));
+  animation: none;
+  transition-duration: 600ms;
+}
+/* 오른쪽 절반에서 낚으면 이름표를 몸 왼쪽에 — 연못 밖으로 나가지 않게. */
+.fishing__fish--win.fishing__fish--tagLeft {
+  flex-direction: row-reverse;
+  transform: translate(calc(-100% + var(--bw) * 0.3), calc(-50% + var(--bw) * 0.6));
+}
 .fishing__fish--win .fishing__swim { animation: none; }
 .fishing__fish--win .fishing__body {
-  scale: 1.35;
-  rotate: -18deg;
-  /* scale 은 자리를 안 늘린다 — 커진 몸이 이름표를 덮지 않게 아래로 띄운다. */
-  margin-bottom: 0.45em;
+  scale: 1.2;
+  rotate: -70deg;
   animation: fishing-shine 700ms var(--ease-inout) infinite alternate;
 }
+.fishing__fish--win .fishing__tag { max-width: 44cqw; }
 .fishing__fish--win .fishing__tag { border-color: var(--color-accent); background: var(--color-accent); color: var(--color-bg); }
 /* 끝난 판을 다시 그릴 때(방식 전환·크게 보기)는 올라오는 장면을 또 틀지 않는다. */
 .fishing--settled .fishing__fish--win, .fishing--settled .fishing__line { transition: none; }

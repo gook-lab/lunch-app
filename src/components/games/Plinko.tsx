@@ -21,6 +21,13 @@ const S = 24;
 const H = 22;
 const TOP = 10;
 const BOUNCE = 6;
+/**
+ * 판의 최소 폭(그림 단위) — 칸 7개 폭. 판 폭이 후보 수 × S 뿐이면 후보 2곳일 때
+ * 그림 폭이 48 이라 핀·공이 7배로 불어나 판을 꽉 채우고(공 지름 약 90px), 판이
+ * 폭보다 1.3배 길어져 크게 보기에서 칸 이름이 화면 밖으로 밀렸다(리뷰 재현).
+ * 후보가 적으면 칸을 넓히고 줄 간격도 같은 비율로 늘려 핀 모양을 지킨다.
+ */
+const MIN_W = 7 * S;
 
 export function plinkoDuration(count: number): number {
   return Math.max(1, count) * PLINKO_STEP_MS + SETTLE_MS;
@@ -29,8 +36,11 @@ export function plinkoDuration(count: number): number {
 export function Plinko({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
   const count = candidates.length;
   const rows = Math.max(0, count - 1);
-  const W = Math.max(1, count) * S;
-  const boardH = TOP + rows * H + S;
+  const W = Math.max(Math.max(1, count) * S, MIN_W);
+  /** 칸 하나 폭과 줄 간격. 후보 7곳부터는 S·H 그대로다. */
+  const slotW = W / Math.max(1, count);
+  const rowH = (H * slotW) / S;
+  const boardH = TOP + rows * rowH + S;
   const path = useMemo(
     () => (winnerIndex === null ? [] : plinkoPath(winnerIndex, count, seededRandom(run))),
     [winnerIndex, count, run],
@@ -79,14 +89,14 @@ export function Plinko({ candidates, winnerIndex, spinning, run, onSpinEnd, expa
   if (count === 0) return <div className="plinko plinko--empty" />;
 
   const cx = W / 2;
-  const pinX = (r: number, j: number) => cx + (j - r / 2) * S;
-  const pinY = (r: number) => TOP + r * H;
+  const pinX = (r: number, j: number) => cx + (j - r / 2) * slotW;
+  const pinY = (r: number) => TOP + r * rowH;
   // 공이 거치는 점: 맨 위 → 줄마다 맞는 핀 → 도착 칸.
   const points = [
     { x: cx, y: -4 },
     ...hits.map((j, r) => ({ x: pinX(r, j), y: pinY(r) - 5 })),
     {
-      x: (winnerIndex ?? 0) * S + S / 2,
+      x: (winnerIndex ?? 0) * slotW + slotW / 2,
       y: boardH - S / 2,
     },
   ];
@@ -102,7 +112,11 @@ export function Plinko({ candidates, winnerIndex, spinning, run, onSpinEnd, expa
   const landed = t >= 1 && winnerIndex !== null;
 
   return (
-    <div className={expanded ? 'plinko plinko--big' : 'plinko'}>
+    <div
+      className={expanded ? 'plinko plinko--big' : 'plinko'}
+      // 판 폭 ÷ 판 높이. 크게 보기 폭 식(desktop.css)이 후보 수와 상관없이 높이에 맞춘다.
+      style={{ '--fit': (W / (boardH + 8)).toFixed(3) } as React.CSSProperties}
+    >
       <p className="muted small plinko__hint" aria-live="polite">
         {t < 0
           ? `공을 떨어뜨리면 핀을 따라 내려가 ${count}개 칸 중 하나에 들어가요.`
@@ -127,7 +141,7 @@ export function Plinko({ candidates, winnerIndex, spinning, run, onSpinEnd, expa
           }),
         )}
         {Array.from({ length: count + 1 }, (_, k) => (
-          <line key={k} className="plinko__wall" x1={k * S} x2={k * S} y1={boardH - S} y2={boardH} />
+          <line key={k} className="plinko__wall" x1={k * slotW} x2={k * slotW} y1={boardH - S} y2={boardH} />
         ))}
         {(t >= 0 || landed) && <circle className="plinko__ball" cx={ball.x} cy={ball.y} r={6} />}
       </svg>
@@ -139,7 +153,7 @@ export function Plinko({ candidates, winnerIndex, spinning, run, onSpinEnd, expa
             style={{ '--cat-hue': categoryHue(p.category) } as React.CSSProperties}
             title={p.name}
           >
-            {shortName(p.name, count > 10 ? 4 : 6)}
+            {shortName(p.name, count > 10 ? 4 : count > 4 ? 6 : 8)}
           </li>
         ))}
       </ol>

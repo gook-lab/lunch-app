@@ -112,9 +112,15 @@ function marbleHue(i: number): number {
 const marbleColor = (i: number) => `oklch(0.78 0.19 ${marbleHue(i)})`;
 const marbleGlow = (i: number) => `oklch(0.78 0.19 ${marbleHue(i)} / 0.45)`;
 
-/** 프레임 f 에서 아직 안 들어온 구슬 중 가장 아래(선두)의 y. */
+/**
+ * 프레임 f 에서 아직 안 들어온 구슬 중 가장 아래(선두)의 y.
+ * 1등이 들어온 뒤(winnerFrame~)에는 당첨 구슬이 들어간 출구에 묶는다. 안 그러면
+ * 끝 장면(HOLD) 동안 카메라가 2등을 따라 올라가 당첨 구슬이 화면에서 빠졌다.
+ */
 function leaderY(race: RaceResult, f: number): number {
-  const frame = race.frames[clamp(Math.floor(f), 0, race.frames.length - 1)];
+  const fi = clamp(Math.floor(f), 0, race.frames.length - 1);
+  const frame = race.frames[fi];
+  if (fi >= race.winnerFrame) return frame[race.winner]?.y ?? BOARD_H;
   let best = 0;
   for (const m of frame) if (m.y < FINISH_Y && m.y > best) best = m.y;
   return best === 0 ? BOARD_H : best;
@@ -122,9 +128,9 @@ function leaderY(race: RaceResult, f: number): number {
 
 /**
  * 카메라 위치(보이는 창의 위쪽 y). 선두를 창의 60% 높이에 두되, 지난 몇
- * 프레임을 평균내서 선두가 바뀔 때 화면이 튀지 않게 한다.
+ * 프레임을 평균내서 선두가 바뀔 때 화면이 튀지 않게 한다. 끝 장면 위치는 테스트가 잰다.
  */
-function cameraY(race: RaceResult | null, framePos: number, viewH: number, follow: number[] | null = null): number {
+export function cameraY(race: RaceResult | null, framePos: number, viewH: number, follow: number[] | null = null): number {
   if (!race || framePos < 0) return 0;
   // 따라가는 가게의 구슬 중 아직 달리는 가장 앞 구슬을, 다 들어왔으면 다시 선두를.
   const followY = (f: number) => {
