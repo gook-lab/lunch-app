@@ -52,7 +52,7 @@ export const GAME_MODES: { id: GameMode; label: string; action: string }[] = [
   { id: 'dice', label: '주사위', action: '주사위 굴리기' },
   { id: 'horse', label: '경마', action: '경주 시작' },
   { id: 'racing', label: '레이싱', action: '출발하기' },
-  { id: 'bomb', label: '폭탄 돌리기', action: '폭탄 넘기기' },
+  { id: 'bomb', label: '폭탄', action: '폭탄 넘기기' },
 ];
 
 /** 방식 단추 그림. 글자 이름은 그대로 두고 그림은 보조로만 쓴다. */

@@ -178,7 +178,7 @@
 .stage--full .ladder { width: min(92vw, 760px, (100cqh - 204px) / 0.79); }
 .stage--full .gacha--big { width: min(380px, 92vw, (100cqh - 142px) / 0.84); }
 .stage--full .plinko--big { width: min(560px, 94vw, (100cqh - 136px) / 1.035); }
-.stage--full .bomb--big { width: min(640px, 94vw, 100cqh - 16px); }
+.stage--full .bomb--big { width: min(640px, 94vw, 100cqh - 56px); } /* 판 아래 상태 한 줄(약 40px)까지 */
 .stage--full .prace--big { width: min(880px, 96vw, (100cqh - 188px) / 0.57); }
 
 /*
