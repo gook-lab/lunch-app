@@ -5,7 +5,7 @@
  * 총 연출 길이가 3500~6500ms 사이인지 검증한다.
  */
 import { describe, it, expect } from 'vitest';
-import { bombHops, type Hop } from './bomb';
+import { bombHops } from './bomb';
 
 describe('폭탄 돌리기 타임라인', () => {
   it('마지막 홉은 항상 당첨 자리', () => {
@@ -36,14 +36,24 @@ describe('폭탄 돌리기 타임라인', () => {
     }
   });
 
-  it('총 연출 길이가 3500~6500ms 범위', () => {
-    for (const count of [2, 3, 5, 10, 20]) {
-      for (const winner of [0, count - 1]) {
-        for (const start of [0, 1]) {
-          const hops = bombHops(count, start, winner);
-          // 총 길이는 마지막 홉이 도착하는 시간 + 마지막 홉의 지연 정도.
-          // 대략적으로 체크: hopCount는 최소 2*count 이상이므로 총 시간은 대략 3500ms 이상일 것.
-          expect(hops.length).toBeGreaterThanOrEqual(2 * count);
+  it('모든 후보 수·출발·당첨·시드에서: 한 자리씩 시계 방향, 끝은 당첨, 길이 3.5~6.5초, 뜸은 마지막 한 번', () => {
+    for (let count = 2; count <= 20; count += 1) {
+      for (const start of [0, 1, count - 1]) {
+        for (const winner of [0, Math.floor(count / 2), count - 1]) {
+          for (let k = 0; k < 30; k += 1) {
+            const hops = bombHops(count, start, winner, () => k / 30);
+            expect(hops[0].seat).toBe(start);
+            expect(hops.at(-1)!.seat).toBe(winner);
+            for (let i = 1; i < hops.length; i += 1) expect(hops[i].seat).toBe((hops[i - 1].seat + 1) % count);
+            const end = hops.at(-1)!.delayMs;
+            expect(end).toBeGreaterThanOrEqual(3500);
+            expect(end).toBeLessThanOrEqual(6500);
+            // 가장 긴 간격은 마지막 한 칸(당첨 바로 앞 → 당첨)이다. 바퀴마다 같은 자리에서 멈추면 답이 보인다.
+            const gaps = hops.slice(1).map((h, i) => h.delayMs - hops[i].delayMs);
+            const longest = Math.max(...gaps);
+            expect(gaps.at(-1)).toBe(longest);
+            expect(gaps.filter((g) => g === longest)).toHaveLength(1);
+          }
         }
       }
     }

@@ -147,7 +147,7 @@ describe('폭탄 돌리기', () => {
       expect(onSpinEnd).toHaveBeenCalledTimes(1);
       const winSeat = r.container.querySelector('.bomb__seat--win');
       expect(winSeat).toBeTruthy();
-      expect(winSeat?.getAttribute('title')).toBe(`가게${winner + 1}`);
+      expect(winSeat?.querySelector('title')?.textContent).toBe(`가게${winner + 1}`);
       r.unmount();
     }
   });
@@ -158,6 +158,6 @@ describe('폭탄 돌리기', () => {
     const r = render(<Bomb candidates={places(5)} winnerIndex={2} spinning run={1} onSpinEnd={onSpinEnd} />);
     act(() => { vi.advanceTimersByTime(1); });
     expect(onSpinEnd).toHaveBeenCalledTimes(1);
-    expect(r.container.querySelector('.bomb__seat--win')?.getAttribute('title')).toBe('가게3');
+    expect(r.container.querySelector('.bomb__seat--win title')?.textContent).toBe('가게3');
   });
 });

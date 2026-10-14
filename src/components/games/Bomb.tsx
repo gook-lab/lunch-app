@@ -10,7 +10,7 @@ import { shortName } from '../../lib/name';
 import { bombHops } from '../../lib/bomb';
 import { seededRandom } from '../../lib/random';
 import { prefersReducedMotion, type GameProps } from './types';
-import { sfx, sfxLater, type SfxName } from '../../lib/sfx';
+import { sfxLater, type SfxName } from '../../lib/sfx';
 
 interface BombState {
   run: number;
@@ -32,6 +32,9 @@ export function Bomb({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
       return () => window.clearTimeout(t);
     }
 
+    // 이번 판을 시작한다. 이걸 빼면 아래 setState 들이 s.run === run 에 막혀 폭탄이 움직이지 않는다.
+    setState({ run, seatIndex: startSeatRef.current, done: false });
+
     // 폭탄의 경로를 정한다.
     const hops = bombHops(count, startSeatRef.current, winnerIndex, seededRandom(run));
     if (hops.length === 0) {
@@ -40,7 +43,7 @@ export function Bomb({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
     }
 
     // 각 홉마다 음성 효과를 정한다(틱 사운드).
-    const sfxPlan: [number, SfxName, number | undefined][] = hops.slice(0, -1).map(({ delayMs }, i) => [
+    const sfxPlan: [number, SfxName, number | undefined][] = hops.slice(0, -1).map(({ delayMs }) => [
       delayMs,
       'tick',
       undefined,
@@ -53,7 +56,7 @@ export function Bomb({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
     const at = (ms: number, fn: () => void) => timers.push(window.setTimeout(fn, ms));
 
     // 각 홉에서 폭탄 위치를 업데이트한다.
-    hops.forEach(({ seat, delayMs }, i) => {
+    hops.forEach(({ seat, delayMs }) => {
       at(delayMs, () => {
         setState((s) => (s.run === run ? { ...s, seatIndex: seat } : s));
       });
@@ -84,8 +87,9 @@ export function Bomb({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
   const done = live ? state.done : winnerIndex !== null && !spinning;
   const winner = winnerIndex === null ? null : candidates[winnerIndex];
 
-  // 좌표 계산: 정사각형 보드, 자리를 원형으로 배치.
-  const boardSize = Math.min(360, Math.max(1, count) * 30);
+  // 좌표 계산: 정사각형 보드(좌표 360 고정, 화면 크기는 CSS 가 정한다), 자리를 원형으로 배치.
+  // 예전엔 count × 30 이라 두 곳이면 판이 60 이고 반지름이 음수가 됐다.
+  const boardSize = 360;
   const seats: Array<{ index: number; x: number; y: number; angle: number }> = [];
   const center = boardSize / 2;
   const radius = boardSize / 2 - 40; // 여유.
@@ -110,8 +114,6 @@ export function Bomb({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
       <svg
         className="bomb__board"
         viewBox={`0 0 ${boardSize} ${boardSize}`}
-        width={boardSize}
-        height={boardSize}
         role="img"
         aria-label={`${count}개 자리가 원형으로 앉아 있어요. ${Array.from({ length: Math.min(5, count) })
           .map((_, i) => candidates[i]?.name ?? '')
@@ -132,8 +134,9 @@ export function Bomb({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
                 className={['bomb__seat', isCurrent ? 'bomb__seat--hot' : '', isWinner ? 'bomb__seat--win' : '']
                   .filter(Boolean)
                   .join(' ')}
-                title={p.name}
-              />
+              >
+                <title>{p.name}</title>
+              </circle>
               {/* 이름. */}
               <text
                 x={x}
