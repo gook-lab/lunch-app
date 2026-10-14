@@ -2695,9 +2695,130 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 @keyframes bomb-pop { from { opacity: 0; translate: 0 8px; } to { opacity: 1; translate: 0 0; } }
 .bomb__status { margin: 0; font-size: var(--fs-sm); font-weight: 700; color: var(--color-text); text-align: center; }
 
+/* 풍선 터뜨리기 — 가게마다 색 풍선(--hue), 줄 끝에 이름표. 칸 하나는 폭 1 · 높이 1.45(Balloon.tsx CELL_TALL).
+   풍선 크기는 칸(크기 컨테이너)에 맞춰 커지고 줄어든다 — 20곳(6열)도 휴대폰에서 겹치지 않는다. */
+.balloon { width: min(360px, 94vw); display: grid; gap: var(--space-2); justify-items: center; }
+.balloon--big { width: min(640px, 94vw); }
+.balloon--empty { height: 360px; }
+.balloon__board {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--rows), minmax(0, 1fr));
+  width: 100%;
+  aspect-ratio: var(--fit);
+}
+.balloon__item {
+  --bh: min(60cqh, 84cqw);
+  container-type: size;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 2px;
+}
+.balloon__float {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: balloon-bob 2.4s var(--ease-inout) infinite alternate;
+  animation-delay: calc(var(--i) * -370ms);
+}
+.balloon__body {
+  position: relative;
+  z-index: 1;
+  height: var(--bh);
+  aspect-ratio: 5 / 6;
+  border-radius: 50% 50% 50% 50% / 44% 44% 56% 56%;
+  background:
+    radial-gradient(circle at 34% 28%, color-mix(in oklch, var(--color-bg) 80%, transparent) 0 9%, transparent 22%),
+    radial-gradient(circle at 50% 45%, oklch(0.78 0.15 var(--hue)), oklch(0.62 0.17 var(--hue)) 75%);
+  box-shadow: inset -3px -5px 8px oklch(0.45 0.14 var(--hue) / 0.45);
+  transition: scale 260ms var(--ease-out);
+}
+/* 매듭 */
+.balloon__body::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  width: 8px;
+  height: 6px;
+  translate: -50% 0;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  background: oklch(0.55 0.17 var(--hue));
+}
+.balloon__string {
+  width: 1px;
+  height: max(8px, 14cqh);
+  margin-bottom: -6px;
+  background: var(--color-neutral-500);
+}
+.balloon__tag {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  padding: 1px 4px;
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+.balloon--big .balloon__tag { font-size: var(--fs-sm); }
+/* 터짐 — 풍선은 부풀었다 사라지고 줄은 떨어진다. 이름표는 흐리게 남겨 누가 빠졌는지 보인다. */
+.balloon__item--popped .balloon__float { animation: none; }
+.balloon__item--popped .balloon__body { animation: balloon-pop 220ms var(--ease-out) forwards; }
+.balloon__item--popped .balloon__string { animation: balloon-drop 400ms var(--ease-inout) forwards; }
+.balloon__item--popped .balloon__tag { opacity: 0.4; text-decoration: line-through; }
+/* 끝난 판을 다시 그릴 때(방식 전환·크게 보기)는 터지는 장면을 또 틀지 않는다. */
+.balloon--settled .balloon__item--popped .balloon__body,
+.balloon--settled .balloon__item--popped .balloon__string { animation: none; opacity: 0; }
+.balloon--settled .balloon__burst { display: none; }
+.balloon__burst { position: absolute; left: 50%; top: calc(var(--bh) / 2); z-index: 2; pointer-events: none; }
+.balloon__shard {
+  position: absolute;
+  width: 7px;
+  height: 4px;
+  margin: -2px 0 0 -3px;
+  border-radius: 2px;
+  background: oklch(0.66 0.17 var(--hue));
+  animation: balloon-shard 380ms var(--ease-out) forwards;
+}
+/* 남은 하나 — 커지며 반짝인다. */
+.balloon__item--win { z-index: 1; }
+.balloon__item--win .balloon__body {
+  scale: 1.22;
+  animation: balloon-shine 900ms var(--ease-inout) infinite alternate;
+}
+.balloon__item--win .balloon__tag { border-color: var(--color-accent); background: var(--color-accent); color: var(--color-bg); }
+.balloon__status { margin: 0; font-size: var(--fs-sm); font-weight: 700; color: var(--color-text); text-align: center; }
+@keyframes balloon-bob { from { translate: 0 0; rotate: -2deg; } to { translate: 0 -4px; rotate: 2deg; } }
+@keyframes balloon-pop { 0% { scale: 1; opacity: 1; } 40% { scale: 1.3; opacity: 1; } 100% { scale: 1.45; opacity: 0; } }
+@keyframes balloon-drop { to { translate: 0 10px; opacity: 0; } }
+@keyframes balloon-shard {
+  from { transform: rotate(var(--a)) translateX(0); opacity: 1; }
+  to { transform: rotate(var(--a)) translateX(calc(var(--bh) * 0.6)); opacity: 0; }
+}
+@keyframes balloon-shine {
+  from { filter: brightness(1); box-shadow: inset -3px -5px 8px oklch(0.45 0.14 var(--hue) / 0.45), 0 0 0 0 var(--color-accent-100); }
+  to { filter: brightness(1.12); box-shadow: inset -3px -5px 8px oklch(0.45 0.14 var(--hue) / 0.45), 0 0 18px 6px var(--color-accent-100); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gacha__capsule, .gacha__handle, .gacha__out, .dice__die--rolling, .bomb__burst, .bomb__pop { animation: none !important; }
   .bomb__bomb { transition: none; }
+  .balloon__float, .balloon__item--win .balloon__body { animation: none; }
+  .balloon__item--popped .balloon__body, .balloon__item--popped .balloon__string { animation: none; opacity: 0; }
+  .balloon__burst { display: none; }
   .gacha__half { transition: none; }
 }
 

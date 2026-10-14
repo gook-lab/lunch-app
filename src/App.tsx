@@ -22,6 +22,7 @@ import { buzz, playChime, soundOn } from './lib/celebrate';
 import { sfx } from './lib/sfx';
 import {
   Bomb,
+  Balloon,
   CarRace,
   Cards,
   Dice,
@@ -991,6 +992,7 @@ export default function App() {
                           return <Dice key={key} {...game} />;
                         }
                         if (mode === 'bomb') return <Bomb {...game} />;
+                        if (mode === 'balloon') return <Balloon {...game} />;
                         return <Wheel {...game} />;
                       })()}
                     </GameBoundary>

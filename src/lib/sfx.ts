@@ -129,6 +129,11 @@ const SOUNDS = {
     tone(ac, { hz: 320, to: 980, dur: 0.08, type: 'sine', vol: 0.1 });
     noise(ac, { dur: 0.04, hz: 3000, q: 1, vol: 0.05 });
   },
+  /** 풍선이 터질 때 — 짧고 마른 펑. 터질 때마다 높이가 조금 다르다. */
+  burst: (ac: AudioContext) => {
+    noise(ac, { dur: 0.06, hz: rand(1800, 2600), q: 0.6, vol: 0.12, filter: 'highpass' });
+    tone(ac, { hz: rand(180, 240), to: 70, dur: 0.07, type: 'sine', vol: 0.07 });
+  },
   /** 핀볼 범퍼 — 칠 때마다 높이가 조금 다르다. */
   bump: (ac: AudioContext) => tone(ac, { hz: rand(420, 720), to: rand(200, 300), dur: 0.09, type: 'sine', vol: 0.08 }),
   /** 플링코 핀. pitch 0~1 로 높이를 정한다(아래로 갈수록 낮게). */
@@ -180,7 +185,7 @@ const SOUNDS = {
 export type SfxName = keyof typeof SOUNDS;
 
 /** 같은 소리의 최소 간격(ms). */
-const MIN_GAP: Partial<Record<SfxName, number>> = { tick: 28, peg: 35, bump: 45, step: 40 };
+const MIN_GAP: Partial<Record<SfxName, number>> = { tick: 28, peg: 35, bump: 45, step: 40, burst: 40 };
 const last = new Map<SfxName, number>();
 
 /** 효과음 한 번. 소리를 끈 사람에겐 아무 일도 없다. */

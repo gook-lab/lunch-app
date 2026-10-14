@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 /**
- * 뽑기 기계 · 플링코 · 주사위 · 폭탄. 모두 App 이 정한 당첨을 보여 주기만 하고, 끝나면
+ * 뽑기 기계 · 플링코 · 주사위 · 폭탄 · 풍선. 모두 App 이 정한 당첨을 보여 주기만 하고, 끝나면
  * onSpinEnd 를 한 번 부른다. 움직임 줄이기면 바로 결과를 보여 준다.
  */
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Place } from '../../lib/candidates';
+import { Balloon } from './Balloon';
 import { Bomb } from './Bomb';
 import { Dice } from './Dice';
 import { Gacha, MAX_CAPSULES } from './Gacha';
@@ -159,5 +160,76 @@ describe('폭탄 돌리기', () => {
     act(() => { vi.advanceTimersByTime(1); });
     expect(onSpinEnd).toHaveBeenCalledTimes(1);
     expect(r.container.querySelector('.bomb__seat--win title')?.textContent).toBe('가게3');
+  });
+});
+
+describe('풍선 터뜨리기', () => {
+  const left = (c: HTMLElement) => [...c.querySelectorAll('.balloon__item:not(.balloon__item--popped)')];
+
+  it('당첨이 아닌 풍선이 다 터지고 당첨 하나만 남는다', () => {
+    for (const [n, winner] of [[2, 0], [2, 1], [5, 2], [10, 9], [20, 0], [20, 13]]) {
+      const onSpinEnd = vi.fn();
+      const r = render(<Balloon candidates={places(n)} winnerIndex={winner} spinning run={n * 31 + winner} onSpinEnd={onSpinEnd} />);
+      expect(r.container.querySelectorAll('.balloon__item')).toHaveLength(n);
+      expect(r.container.querySelector('[role="img"]')?.getAttribute('aria-label')).toContain('가게1');
+      run(1_000);
+      // 연출이 실제로 움직인다(run 을 이번 판으로 바꾸지 않으면 여기서 멈춘다).
+      if (n >= 10) expect(left(r.container).length).toBeLessThan(n);
+      expect(r.container.querySelector('.balloon__status')?.textContent).toMatch(/^풍선이 터지고 있어요… 남은 풍선 \d+개$/);
+      expect(onSpinEnd).not.toHaveBeenCalled();
+      run(8_000);
+      expect(onSpinEnd).toHaveBeenCalledTimes(1);
+      const rest = left(r.container);
+      expect(rest).toHaveLength(1);
+      expect(rest[0].getAttribute('title')).toBe(`가게${winner + 1}`);
+      expect(rest[0].classList.contains('balloon__item--win')).toBe(true);
+      expect(r.container.querySelector('.balloon__status')?.textContent).toBe(`가게${winner + 1}만 남았어요!`);
+      r.unmount();
+    }
+  });
+
+  it('언마운트하면 타이머가 멈춰 onSpinEnd 를 부르지 않는다', () => {
+    const onSpinEnd = vi.fn();
+    const r = render(<Balloon candidates={places(8)} winnerIndex={3} spinning run={5} onSpinEnd={onSpinEnd} />);
+    run(1_000);
+    r.unmount();
+    run(8_000);
+    expect(onSpinEnd).not.toHaveBeenCalled();
+  });
+
+  it('spinning 이 꺼지면 타이머가 멈춘다', () => {
+    const onSpinEnd = vi.fn();
+    const props = { candidates: places(8), winnerIndex: 3, run: 5, onSpinEnd };
+    const r = render(<Balloon {...props} spinning />);
+    run(1_000);
+    r.rerender(<Balloon {...props} spinning={false} />);
+    run(8_000);
+    expect(onSpinEnd).not.toHaveBeenCalled();
+  });
+
+  it('다음 판은 풍선을 다시 다 띄우고 시작한다', () => {
+    const onSpinEnd = vi.fn();
+    const props = { candidates: places(6), onSpinEnd };
+    const r = render(<Balloon {...props} winnerIndex={1} spinning run={1} />);
+    run(8_000);
+    r.rerender(<Balloon {...props} winnerIndex={1} spinning={false} run={1} />);
+    expect(left(r.container)).toHaveLength(1);
+    r.rerender(<Balloon {...props} winnerIndex={4} spinning run={2} />);
+    expect(left(r.container)).toHaveLength(6);
+    run(8_000);
+    expect(onSpinEnd).toHaveBeenCalledTimes(2);
+    expect(left(r.container).map((e) => e.getAttribute('title'))).toEqual(['가게5']);
+  });
+
+  it('움직임 줄이기면 바로 당첨만 남긴다', () => {
+    reduced = true;
+    const onSpinEnd = vi.fn();
+    const r = render(<Balloon candidates={places(7)} winnerIndex={5} spinning run={1} onSpinEnd={onSpinEnd} />);
+    act(() => { vi.advanceTimersByTime(1); });
+    expect(onSpinEnd).toHaveBeenCalledTimes(1);
+    const rest = left(r.container);
+    expect(rest).toHaveLength(1);
+    expect(rest[0].getAttribute('title')).toBe('가게6');
+    expect(r.container.querySelector('.balloon__status')?.textContent).toBe('가게6만 남았어요!');
   });
 });
