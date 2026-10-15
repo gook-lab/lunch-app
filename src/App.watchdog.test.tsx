@@ -20,6 +20,19 @@ const fx = vi.hoisted(() => ({
 }));
 
 vi.mock('./hooks/useTodayKST', () => ({ useTodayKST: () => '20261008' }));
+vi.mock('./services/parties', () => ({
+  partyUid: async () => 'me',
+  subscribeParties: (_d: string, on: (p: unknown[]) => void) => {
+    on([]);
+    return () => {};
+  },
+  openParty: vi.fn(async () => {}),
+  joinParty: vi.fn(async () => {}),
+  leaveParty: vi.fn(async () => {}),
+  setPartyStatus: vi.fn(async () => {}),
+  cancelParty: vi.fn(async () => {}),
+  savePartyGame: vi.fn(async () => {}),
+}));
 vi.mock('./services/predictions', () => ({
   myUid: async () => 'me',
   subscribeVotes: (_d: string, on: (v: { uid: string; placeId: string; name: string }[]) => void) => {

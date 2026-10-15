@@ -16,6 +16,8 @@ import { useMedia } from './hooks/useMedia';
 import { StatusScreen } from './components/StatusScreen';
 import { Confetti } from './components/Confetti';
 import { Predictions } from './components/Predictions';
+import { Parties } from './components/Parties';
+import { useParties } from './hooks/useParties';
 import { winnersOf } from './lib/predictions';
 import { castVote, clearVote, myUid, subscribeVotes, type Vote } from './services/predictions';
 import { buzz, playChime, soundOn } from './lib/celebrate';
@@ -160,6 +162,8 @@ export default function App() {
     () => ratePromptTarget(visits, places, today, (id) => Boolean(ratings.get(id)?.mine)),
     [visits, places, today, ratings],
   );
+  // 점심 팟. 오늘 팟을 실시간으로 받는다. 팟 게임 당첨도 spin() 과 같은 pickWinner 로 방장이 한 번 정한다.
+  const party = useParties(today);
   // 동료 예측. 오늘 표를 실시간으로 받는다. 당첨에는 쓰지 않는다 — spin() 은 이 값을 보지 않는다.
   const [votes, setVotes] = useState<Vote[]>([]);
   const [uid, setUid] = useState<string | null>(null);
@@ -308,6 +312,12 @@ export default function App() {
 
   const result = useMemo(() => selectCandidates(places, visits, filters, today), [places, visits, filters, today]);
   const recentIds = useMemo(() => recentlyVisitedIds(visits, today), [visits, today]);
+  // 팟 게임 후보 — 지금 조건(도보·최근 1주)에서 메뉴만 팟 메뉴로 바꾼다.
+  const partyCandidatesFor = useCallback(
+    (category: string) =>
+      selectCandidates(places, visits, { ...filters, categories: [category], subs: [] }, today).candidates,
+    [places, visits, filters, today],
+  );
 
   const decidedPlace = useMemo(
     () => (decision ? (places.find((p) => p.id === decision.placeId) ?? null) : null),
@@ -652,11 +662,24 @@ export default function App() {
     />
   );
 
+  const parties = (
+    <Parties
+      day={today}
+      parties={party.parties}
+      myUid={party.uid}
+      places={places}
+      candidatesFor={partyCandidatesFor}
+      preferredMode={mode}
+      actions={party.actions}
+    />
+  );
+
   const filtersPanel = (
     <>
       <CandidateChips result={result} winnerId={winner?.id ?? null} />
       {wide && notice && <p className="notice">{notice}</p>}
       {wide && predictions}
+      {wide && parties}
       <Roadmap
         places={places}
         filters={filters}
@@ -1206,6 +1229,9 @@ export default function App() {
                 {!wide && notice && <p className="notice">{notice}</p>}
               </div>
             </section>
+
+            {/* 휴대폰은 게임 아래에 팟을 둔다. 데스크톱은 오른쪽 칸(filtersPanel) 예측 아래. */}
+            {!wide && parties}
 
             {/* 조건은 게임 옆(데스크톱)·아래(휴대폰)에 둔다. 첫 화면은 게임이 차지한다. */}
             {wide && (

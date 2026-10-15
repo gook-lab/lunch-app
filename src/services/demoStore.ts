@@ -8,7 +8,8 @@
  */
 import type { Place } from '../lib/candidates';
 import { dayIdBefore, todayKST, type DayId } from '../lib/date';
-import type { PlaceVote, Vote } from './types';
+import { defaultPartyTime, minutesOf } from '../lib/party';
+import type { Party, PlaceVote, Vote } from './types';
 
 // 씨앗을 바꾸면 판 번호를 올린다 — 예전 데모 저장분은 새 씨앗으로 다시 시작한다.
 // v3: 카테고리를 메뉴 > 세부로 바꾸며 가게를 다시 깔았다(10/14).
@@ -26,6 +27,8 @@ export interface DemoState {
   votes: Record<DayId, Vote[]>;
   /** 가게별 사람별 별점. 예전 저장분에는 없을 수 있다. */
   ratings?: PlaceVote[];
+  /** 날짜 → 그날 점심 팟. 예전 저장분에는 없을 수 있다. */
+  parties?: Record<DayId, Party[]>;
 }
 
 export const DEMO_UID = 'demo-me';
@@ -86,12 +89,50 @@ function sample(): DemoState {
     { placeId: 'demo-5', uid: 'demo-c', score: 3, name: '서연', review: '양이 조금 적어요' },
     { placeId: 'demo-7', uid: 'demo-a', score: 4, name: '민지' },
   ];
-  return { places, visits, office: { ...ORIGIN }, votes, ratings };
+  // 점심 팟 — 동료 둘이 연 팟. 출발 시각은 지금 뒤로 잡아야 "출발했어요" 로 안 보인다.
+  const first = defaultPartyTime();
+  const later = Math.min(minutesOf(first) + 20, 23 * 60 + 50);
+  const second = `${String(Math.floor(later / 60)).padStart(2, '0')}:${String(later % 60).padStart(2, '0')}`;
+  const now = Date.now();
+  const parties: Record<DayId, Party[]> = {
+    [today]: [
+      {
+        id: 'demo-a',
+        hostUid: 'demo-a',
+        category: '면',
+        time: first,
+        max: 4,
+        memo: '국물 땡기는 날',
+        status: 'open',
+        members: [
+          { uid: 'demo-a', at: now - 600_000 },
+          { uid: 'demo-c', at: now - 300_000 },
+        ],
+        game: null,
+      },
+      {
+        id: 'demo-b',
+        hostUid: 'demo-b',
+        category: '고기',
+        time: second,
+        max: 3,
+        memo: '',
+        status: 'open',
+        members: [
+          { uid: 'demo-b', at: now - 900_000 },
+          { uid: 'demo-d', at: now - 800_000 },
+          { uid: 'demo-e', at: now - 700_000 },
+        ],
+        game: null,
+      },
+    ],
+  };
+  return { places, visits, office: { ...ORIGIN }, votes, ratings, parties };
 }
 
 /** 처음 상태 — 가게·기록 없이, 회사 위치도 정하기 전. */
 function empty(): DemoState {
-  return { places: [], visits: {}, office: null, votes: {}, ratings: [] };
+  return { places: [], visits: {}, office: null, votes: {}, ratings: [], parties: {} };
 }
 
 let memory: DemoState | null = null;
@@ -107,6 +148,7 @@ export function readDemo(): DemoState {
   }
   memory ??= empty();
   memory.ratings ??= [];
+  memory.parties ??= {};
   return memory;
 }
 
@@ -133,7 +175,8 @@ export function hasDemoData(): boolean {
     Object.keys(s.visits).length > 0 ||
     s.office !== null ||
     Object.values(s.votes).some((v) => v.length > 0) ||
-    (s.ratings?.length ?? 0) > 0
+    (s.ratings?.length ?? 0) > 0 ||
+    Object.values(s.parties ?? {}).some((p) => p.length > 0)
   );
 }
 

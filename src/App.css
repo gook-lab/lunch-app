@@ -3878,3 +3878,128 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 .map__next strong { font-size: var(--fs-md); }
 .map__next p { margin: 0; }
 .pf__where { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 점심 팟 — 카테고리 모집 · 익명 아바타. 예측과 같은 점선 상자, 팟 하나는 얇은 카드 */
+.party { display: grid; gap: var(--space-2); padding: var(--space-3); border: 1px dashed var(--color-neutral-400); border-radius: var(--radius-md); }
+.party__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.party__title { margin: 0; font-size: var(--fs-md); font-family: var(--app-mono); letter-spacing: 0.04em; }
+.party__me { margin: 0; font-size: var(--fs-sm); color: var(--color-text); }
+.party__meHint { color: var(--color-neutral-700); font-size: var(--fs-xs); }
+.party__empty { margin: 0; font-size: var(--fs-sm); color: var(--color-neutral-700); }
+.party__list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.party__card {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  min-width: 0;
+}
+.party__card--departed,
+.party__card--closed { background: var(--color-neutral-100); }
+.party__cardHead { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.party__cat {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: oklch(0.9 0.08 var(--cat-hue, 200));
+  font-size: var(--fs-md);
+}
+.party__name { flex: 1; min-width: 0; margin: 0; font-size: var(--fs-sm); overflow-wrap: anywhere; }
+.party__phase {
+  flex: none;
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  background: var(--color-neutral-200);
+  color: var(--color-neutral-800);
+}
+.party__phase--open { background: var(--color-text); color: var(--color-bg); }
+.party__meta { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); margin: 0; font-size: var(--fs-sm); color: var(--color-neutral-800); font-family: var(--app-mono); }
+.party__count { font-weight: 700; color: var(--color-text); }
+.party__memo { margin: 0; font-size: var(--fs-sm); color: var(--color-neutral-800); overflow-wrap: anywhere; }
+.party__memo::before { content: '“'; }
+.party__memo::after { content: '”'; }
+.party__members { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.party__avatar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px var(--space-2) 2px 4px;
+  border-radius: 999px;
+  background: var(--color-neutral-200);
+  font-size: var(--fs-xs);
+  color: var(--color-neutral-800);
+  white-space: nowrap;
+}
+.party__avatar > span:first-child { font-size: var(--fs-md); line-height: 1; }
+.party__avatar--me { background: var(--color-text); color: var(--color-bg); }
+.party__you { margin-left: 2px; font-weight: 700; }
+.party__result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-neutral-100);
+}
+.party__result p { margin: 0; font-size: var(--fs-sm); min-width: 0; overflow-wrap: anywhere; }
+.party__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.party__actions > button { min-height: 40px; }
+.party__ask { font-size: var(--fs-sm); color: var(--color-text); }
+
+.party-sheet { max-height: 92svh; overflow-y: auto; }
+.party-form { display: grid; gap: var(--space-4); }
+.party-form__field { margin: 0; padding: 0; border: 0; min-width: 0; display: grid; gap: var(--space-2); }
+.party-form__field > legend { padding: 0; margin-bottom: var(--space-2); font-size: var(--fs-sm); font-weight: 600; }
+.party-form__menus,
+.party-pick__modes { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.party-form__menu {
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-neutral-400);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.party-form__menu[aria-pressed='true'] { border-color: var(--color-text); background: var(--color-text); color: var(--color-bg); }
+.party-form__menu:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.party-form__pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-4); align-items: start; }
+.party-form__time input { min-height: 44px; }
+.party-form__stepper { display: flex; align-items: center; gap: var(--space-2); }
+.party-form__stepper > button { min-width: 44px; min-height: 44px; font-size: var(--fs-md); }
+.party-form__max { min-width: 3.5em; text-align: center; font-weight: 700; font-family: var(--app-mono); }
+.party-form__actions { display: grid; gap: var(--space-2); }
+
+.party-modal { width: min(560px, calc(100vw - 32px)); max-height: calc(100svh - 32px); padding: var(--space-4); overflow-y: auto; }
+.party-pick { display: grid; gap: var(--space-3); }
+.party-pick__title { margin: 0; font-size: var(--fs-lg); }
+.party-pick__lead,
+.party-pick__note { margin: 0; font-size: var(--fs-sm); color: var(--color-neutral-800); }
+.party-pick__modes { max-height: 40svh; overflow-y: auto; }
+.party-game { display: grid; gap: var(--space-3); }
+.party-game__eyebrow { margin: 0; font-size: var(--fs-sm); font-family: var(--app-mono); color: var(--color-neutral-800); }
+.party-game__board {
+  display: grid;
+  place-items: center;
+  min-height: 300px;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--color-neutral-100);
+  overflow: hidden;
+}
+.party-game__board > * { max-width: 100%; }
+.party-game__result { margin: 0; min-height: 1.6em; text-align: center; font-size: var(--fs-md); }
+.party-game__actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+
+[data-theme='dark'] .party__cat { background: oklch(0.38 0.07 var(--cat-hue, 200)); }

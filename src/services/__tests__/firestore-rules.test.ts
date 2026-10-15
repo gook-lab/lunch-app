@@ -22,7 +22,7 @@ import {
   assertFails,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, setDoc, updateDoc, deleteDoc, getDoc, getDocs, collection, collectionGroup, query, where, documentId, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, deleteDoc, deleteField, FieldPath, getDoc, getDocs, collection, collectionGroup, query, where, documentId, serverTimestamp } from 'firebase/firestore';
 import { todayKST, dayIdBefore } from '../../lib/date';
 
 const hasEmulator = !!process.env.FIRESTORE_EMULATOR_HOST;
@@ -352,6 +352,160 @@ d('firestore.rules', () => {
       await assertSucceeds(getDocs(collectionGroup(db(ALICE), 'ratings')));
       await assertFails(getDocs(collectionGroup(anon(), 'ratings')));
       await assertSucceeds(deleteDoc(ref(BOB)));
+    });
+  });
+
+  describe('parties — 점심 팟', () => {
+    const CAROL = 'carol-anon-uid';
+    // 출발 시각. 23:59 는 KST 23:59 한 분 동안만 "지났다" 가 된다 — 그 1분엔 참여 테스트가 깨질 수 있다.
+    const LATE = '23:59';
+    const path = (host: string, day = TODAY) => `parties/${day}/list/${host}`;
+    const party = (host: string, over: Record<string, unknown> = {}) => ({
+      category: '면',
+      time: LATE,
+      max: 3,
+      memo: '국물 땡기는 날',
+      hostUid: host,
+      status: 'open',
+      members: { [host]: serverTimestamp() },
+      createdAt: serverTimestamp(),
+      ...over,
+    });
+    /** 규칙을 우회해 깔아 두는 팟. */
+    const seedParty = async (over: Record<string, unknown> = {}) => {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore(), path(ALICE)), {
+          category: '면',
+          time: LATE,
+          max: 3,
+          memo: '',
+          hostUid: ALICE,
+          status: 'open',
+          members: { [ALICE]: new Date() },
+          createdAt: new Date(),
+          ...over,
+        });
+      });
+    };
+    const join = (uid: string) => updateDoc(doc(db(uid), path(ALICE)), new FieldPath('members', uid), serverTimestamp());
+    const leave = (uid: string) => updateDoc(doc(db(uid), path(ALICE)), new FieldPath('members', uid), deleteField());
+    const game = (over: Record<string, unknown> = {}) => ({
+      mode: 'wheel',
+      run: 12345,
+      ids: ['p1', 'p2', 'p3'],
+      names: ['골목국수', '진한 라멘', '우동 한 판'],
+      winnerIndex: 1,
+      at: serverTimestamp(),
+      ...over,
+    });
+
+    it('T1 — 오늘, 자기 uid 문서로 혼자 시작하는 팟을 열 수 있다', async () => {
+      await assertSucceeds(setDoc(doc(db(ALICE), path(ALICE)), party(ALICE)));
+    });
+
+    it('T2 — 남의 uid 문서·지난 날짜·인증 없음·방장 위장은 거부', async () => {
+      await assertFails(setDoc(doc(db(ALICE), path(BOB)), party(BOB)));
+      await assertFails(setDoc(doc(db(ALICE), path(BOB)), party(ALICE)));
+      await assertFails(setDoc(doc(db(ALICE), path(ALICE, YESTERDAY)), party(ALICE)));
+      await assertFails(setDoc(doc(db(ALICE), path(ALICE, TOMORROW)), party(ALICE)));
+      await assertFails(setDoc(doc(anon(), path(ALICE)), party(ALICE)));
+    });
+
+    it('T3 — 메뉴·시각·인원·메모·필드를 엄격히 본다', async () => {
+      const ref = doc(db(ALICE), path(ALICE));
+      await assertFails(setDoc(ref, party(ALICE, { category: '한식' })));
+      await assertFails(setDoc(ref, party(ALICE, { time: '24:00' })));
+      await assertFails(setDoc(ref, party(ALICE, { time: '1150' })));
+      await assertFails(setDoc(ref, party(ALICE, { time: '11:5' })));
+      await assertFails(setDoc(ref, party(ALICE, { max: 1 })));
+      await assertFails(setDoc(ref, party(ALICE, { max: 11 })));
+      await assertFails(setDoc(ref, party(ALICE, { max: 3.5 })));
+      await assertFails(setDoc(ref, party(ALICE, { memo: 'ㄱ'.repeat(41) })));
+      await assertFails(setDoc(ref, party(ALICE, { status: 'closed' })));
+      await assertFails(setDoc(ref, party(ALICE, { name: '앨리스' })));
+      await assertFails(setDoc(ref, party(ALICE, { email: 'a@example.com' })));
+      await assertFails(setDoc(ref, party(ALICE, { createdAt: new Date() })));
+      // 처음부터 남을 넣어 두거나, 참여 시각을 지어내면 거부.
+      await assertFails(setDoc(ref, party(ALICE, { members: { [ALICE]: serverTimestamp(), [BOB]: serverTimestamp() } })));
+      await assertFails(setDoc(ref, party(ALICE, { members: { [ALICE]: new Date() } })));
+      await assertFails(setDoc(ref, party(ALICE, { game: game() })));
+      await assertSucceeds(setDoc(ref, party(ALICE, { memo: 'ㄱ'.repeat(40), max: 10, category: '빵·양식' })));
+    });
+
+    it('T4 — 하루 한 팟: 이미 연 팟을 새 팟으로 덮어쓸 수 없다', async () => {
+      await seedParty();
+      await assertFails(setDoc(doc(db(ALICE), path(ALICE)), party(ALICE)));
+    });
+
+    it('T5 — 자기 자신만 참여·나가기, 읽기는 로그인 필요', async () => {
+      await seedParty();
+      await assertSucceeds(join(BOB));
+      await assertSucceeds(getDoc(doc(db(CAROL), path(ALICE))));
+      await assertFails(getDoc(doc(anon(), path(ALICE))));
+      // 남을 넣거나 빼기
+      await assertFails(updateDoc(doc(db(CAROL), path(ALICE)), new FieldPath('members', 'dave'), serverTimestamp()));
+      await assertFails(updateDoc(doc(db(CAROL), path(ALICE)), new FieldPath('members', BOB), deleteField()));
+      // 참여 시각을 지어내기
+      await assertFails(updateDoc(doc(db(CAROL), path(ALICE)), new FieldPath('members', CAROL), new Date()));
+      // 참여하면서 다른 필드 고치기
+      await assertFails(
+        updateDoc(doc(db(CAROL), path(ALICE)), new FieldPath('members', CAROL), serverTimestamp(), 'max', 10),
+      );
+      await assertSucceeds(leave(BOB));
+    });
+
+    it('T6 — 인원이 차면 더 못 들어온다', async () => {
+      await seedParty({ max: 2 });
+      await assertSucceeds(join(BOB));
+      await assertFails(join(CAROL));
+    });
+
+    it('T7 — 마감했거나 출발 시각이 지난 팟에는 못 들어온다(나가기는 된다)', async () => {
+      await seedParty({ status: 'closed', members: { [ALICE]: new Date(), [BOB]: new Date() } });
+      await assertFails(join(CAROL));
+      await assertSucceeds(leave(BOB));
+      await seedParty({ time: '00:00' });
+      await assertFails(join(CAROL));
+    });
+
+    it('T8 — 방장만 마감·다시 모으기, 방장은 나가지 못한다', async () => {
+      await seedParty();
+      await assertFails(updateDoc(doc(db(BOB), path(ALICE)), { status: 'closed' }));
+      await assertSucceeds(updateDoc(doc(db(ALICE), path(ALICE)), { status: 'closed' }));
+      await assertSucceeds(updateDoc(doc(db(ALICE), path(ALICE)), { status: 'open' }));
+      await assertFails(updateDoc(doc(db(ALICE), path(ALICE)), { status: 'gone' }));
+      await assertFails(updateDoc(doc(db(ALICE), path(ALICE)), { max: 10 }));
+      await assertFails(leave(ALICE));
+    });
+
+    it('T9 — 게임 결과는 방장만, 한 번만, 모양을 지켜야 남는다', async () => {
+      await seedParty({ members: { [ALICE]: new Date(), [BOB]: new Date() } });
+      const ref = (uid: string) => doc(db(uid), path(ALICE));
+      await assertFails(updateDoc(ref(BOB), { game: game() }));
+      await assertFails(updateDoc(ref(ALICE), { game: game({ winnerIndex: 3 }) }));
+      await assertFails(updateDoc(ref(ALICE), { game: game({ ids: ['p1'], names: ['골목국수'], winnerIndex: 0 }) }));
+      await assertFails(updateDoc(ref(ALICE), { game: game({ names: ['골목국수'] }) }));
+      await assertFails(updateDoc(ref(ALICE), { game: game({ at: new Date() }) }));
+      await assertFails(updateDoc(ref(ALICE), { game: game({ cheat: true }) }));
+      await assertFails(updateDoc(ref(ALICE), { game: game(), status: 'closed' }));
+      await assertSucceeds(updateDoc(ref(ALICE), { game: game() }));
+      // 다시 뽑기 금지
+      await assertFails(updateDoc(ref(ALICE), { game: game({ winnerIndex: 0 }) }));
+    });
+
+    it('T10 — 취소(삭제)는 방장만, 지난 날 팟은 아무도 못 고친다', async () => {
+      await seedParty();
+      await assertFails(deleteDoc(doc(db(BOB), path(ALICE))));
+      await assertSucceeds(deleteDoc(doc(db(ALICE), path(ALICE))));
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore(), path(ALICE, YESTERDAY)), {
+          category: '면', time: LATE, max: 3, memo: '', hostUid: ALICE, status: 'open',
+          members: { [ALICE]: new Date() }, createdAt: new Date(),
+        });
+      });
+      await assertFails(updateDoc(doc(db(BOB), path(ALICE, YESTERDAY)), new FieldPath('members', BOB), serverTimestamp()));
+      await assertFails(updateDoc(doc(db(ALICE), path(ALICE, YESTERDAY)), { status: 'closed' }));
+      await assertFails(deleteDoc(doc(db(ALICE), path(ALICE, YESTERDAY))));
     });
   });
 

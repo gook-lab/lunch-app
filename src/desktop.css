@@ -255,3 +255,13 @@
   .map__side .pf__field textarea { height: 2.4em; }
   .map__side .pf__field { gap: 2px; }
 }
+
+/* 점심 팟 — 오른쪽 칸 안에서는 예측처럼 테두리를 걷고 가는 선 하나로 나눈다. */
+@media (min-width: 960px) {
+  .today__filters .party {
+    border: 0;
+    border-top: 1px solid var(--color-neutral-300);
+    border-radius: 0;
+    padding: var(--space-3) 0 0;
+  }
+}
