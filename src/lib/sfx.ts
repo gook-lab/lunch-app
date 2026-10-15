@@ -737,3 +737,90 @@ export function bombSfxLater(plan: [ms: number, name: BombSfxName][]): () => voi
   const timers = plan.map(([ms, name]) => window.setTimeout(() => play(name), ms));
   return () => timers.forEach((t) => window.clearTimeout(t));
 }
+
+/* ───────── 돌림판·슬롯 ─────────
+ * 돌림판(끼릭끼릭·휘리릭·역회전)과 슬롯(레버·릴 멈춤·리치·잭팟) 소리. 위 SOUNDS 와 따로 둬서
+ * 다른 게임 소리 목록을 건드리지 않는다(10/15 동시 작업). 켜기·최소 간격·오디오 없음 처리는 sfx() 와 같다.
+ */
+const WHEEL_SLOT_SOUNDS = {
+  /** 끼릭 — 원판을 뒤로 감는 톱니 소리. */
+  ratchet: (ac: AudioContext) => {
+    for (let i = 0; i < 3; i += 1) {
+      noise(ac, { dur: 0.018, hz: rand(2600, 3400), q: 5, vol: 0.09, at: i * 0.032 });
+      tone(ac, { hz: 1900 - i * 120, dur: 0.02, type: 'square', vol: 0.012, at: i * 0.032 });
+    }
+  },
+  /** 휘리릭 — 놓는 순간 바람 가르는 소리. */
+  whirl: (ac: AudioContext) => {
+    noise(ac, { dur: 0.45, hz: 500, to: 2600, q: 1.1, vol: 0.09 });
+    tone(ac, { hz: 300, to: 900, dur: 0.3, type: 'triangle', vol: 0.03 });
+  },
+  /** 역회전 — 뾰잉 하고 거꾸로. */
+  boing: (ac: AudioContext) => {
+    tone(ac, { hz: 700, to: 260, dur: 0.18, type: 'sine', vol: 0.07 });
+    tone(ac, { hz: 260, to: 520, dur: 0.22, type: 'sine', vol: 0.06, at: 0.16 });
+  },
+  /** 툭 — 바늘이 밀어 넘기는·릴이 서는 묵직한 딸깍. */
+  clack: (ac: AudioContext) => {
+    tone(ac, { hz: 210, to: 90, dur: 0.09, type: 'sine', vol: 0.12 });
+    noise(ac, { dur: 0.03, hz: 2200, q: 2, vol: 0.08 });
+  },
+  /** 철컥 — 슬롯 레버. */
+  lever: (ac: AudioContext) => {
+    noise(ac, { dur: 0.05, hz: 1600, q: 1.5, vol: 0.1 });
+    tone(ac, { hz: 140, to: 70, dur: 0.16, type: 'square', vol: 0.03, at: 0.04 });
+    noise(ac, { dur: 0.04, hz: 3000, q: 2, vol: 0.08, at: 0.14 });
+  },
+  /** 리치 — 두 번 올라가는 삐삐. */
+  reach: (ac: AudioContext) => {
+    tone(ac, { hz: 880, to: 1175, dur: 0.12, type: 'square', vol: 0.03 });
+    tone(ac, { hz: 1175, to: 1568, dur: 0.16, type: 'square', vol: 0.03, at: 0.14 });
+  },
+  /** 꽝 — 낮게 부웅. */
+  buzz: (ac: AudioContext) => {
+    tone(ac, { hz: 150, to: 110, dur: 0.38, type: 'sawtooth', vol: 0.03 });
+    tone(ac, { hz: 155, to: 112, dur: 0.38, type: 'square', vol: 0.012 });
+  },
+  /** 잭팟 — 동전이 쏟아지는 짤랑짤랑. */
+  coins: (ac: AudioContext) => {
+    for (let i = 0; i < 10; i += 1) {
+      const at = i * 0.07 + rand(0, 0.03);
+      tone(ac, { hz: rand(1900, 2700), dur: 0.08, type: 'triangle', vol: 0.035, at });
+      tone(ac, { hz: rand(3100, 3900), dur: 0.05, type: 'sine', vol: 0.02, at: at + 0.01 });
+    }
+  },
+  /** 당첨 — 짧은 빰빠밤. */
+  tada: (ac: AudioContext) => {
+    [659, 784, 1047].forEach((hz, i) => tone(ac, { hz, dur: i === 2 ? 0.36 : 0.1, type: 'triangle', vol: 0.06, at: i * 0.1 }));
+  },
+} satisfies Record<string, (ac: AudioContext) => void>;
+
+export type WheelSlotSfx = keyof typeof WHEEL_SLOT_SOUNDS;
+const wheelSlotLast = new Map<WheelSlotSfx, number>();
+
+/** 돌림판·슬롯 소리(또는 공용 소리) 한 번. 소리를 끈 사람에겐 아무 일도 없다. */
+export function wheelSlotSfx(name: WheelSlotSfx | SfxName): void {
+  if (!(name in WHEEL_SLOT_SOUNDS)) {
+    sfx(name as SfxName);
+    return;
+  }
+  if (!enabled()) return;
+  const key = name as WheelSlotSfx;
+  const now = performance.now();
+  if (now - (wheelSlotLast.get(key) ?? -Infinity) < 40) return;
+  wheelSlotLast.set(key, now);
+  const ac = audio();
+  if (!ac) return;
+  try {
+    WHEEL_SLOT_SOUNDS[key](ac);
+  } catch {
+    // 오디오 노드를 못 만드는 환경 — 소리 없이 넘어간다.
+  }
+}
+
+/** 돌림판·슬롯 소리를 나중에 울린다. 취소 함수를 돌려준다. 소리를 끈 사람에겐 아무 일도 없다. */
+export function wheelSlotSfxLater(plan: [ms: number, name: WheelSlotSfx | SfxName][]): () => void {
+  if (!enabled()) return () => {};
+  const timers = plan.map(([ms, name]) => window.setTimeout(() => wheelSlotSfx(name), ms));
+  return () => timers.forEach((t) => window.clearTimeout(t));
+}

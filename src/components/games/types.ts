@@ -102,10 +102,12 @@ export function actionLabel(mode: GameMode): string {
  * 여기 적어두면 두 곳이 어긋날 수 있다. 짝 맞추기도 없다 — 사람이 두는 만큼 걸린다.
  */
 export const SPIN_MS: Record<Exclude<GameMode, 'pinball' | 'memory' | 'plinko' | 'dice' | 'horse' | 'racing' | 'bomb' | 'balloon' | 'fishing' | 'archery' | 'curling' | 'plane' | 'treasure' | 'claw' | 'penalty' | 'bowling'>, number> = {
-  wheel: 2600,
+  // 돌림판: 끼릭끼릭 감기 0.5~0.9초 + 휘리릭 + 결말(멈칫·한 칸 더·역회전) → 5.22초에 멈추고 0.38초 조명. 결말은 lib/wheel.ts.
+  wheel: 5600,
   // 사다리·슬롯은 핀볼에 비해 너무 빨리 끝나 긴장이 쌓일 틈이 없었다(10/9 손맛 리뷰 5·4점).
   ladder: 2800,
-  slot: 2800,
+  // 슬롯: 레버 0.65초 → 릴이 하나씩 선다(리치·멈칫·한 칸 지나침·다시 돌기) → 5.6초에 세 줄, 0.6초 잭팟. 장면은 lib/slot.ts.
+  slot: 6200,
   cards: 3000,
   // 판 수와 상관없이 이 시간 안에 끝난다. 20곳이면 5판이라 판마다 약 0.8초.
   tournament: 4200,

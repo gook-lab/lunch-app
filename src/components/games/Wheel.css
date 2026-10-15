@@ -1,0 +1,234 @@
+/*
+ * 돌림판 — Wheel.tsx 전용. 원판·라벨·가운데 당첨 원의 기본 모양은 App.css "돌림판" 에 있고,
+ * 여기는 한 판의 연출(못·바늘 휨·흐림·금빛 조명·꽃가루·효과 글씨)과 아래 진행자 줄이다.
+ * 첫 화면 게임이라 그림은 CSS·작은 SVG 만 쓴다. 색은 앱 토큰이라 다크에서도 읽힌다 — 금빛만 고정색.
+ */
+.wheelgame {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  --gold: oklch(0.86 0.16 88);
+  --gold-deep: oklch(0.72 0.16 75);
+}
+
+/* 바늘을 키우고(못에 걸려 휘는 게 보이게) 축을 위쪽 끝에 둔다. 휨 각도는 Wheel.tsx 가 rotate 로 쓴다. */
+.wheel .wheel__needle {
+  border-left-width: 11px;
+  border-right-width: 11px;
+  border-top-width: 24px;
+  transform-origin: 50% 0;
+  transition: rotate 60ms linear;
+}
+
+/* 칸 경계 못 — 테두리 바로 안쪽 점. 바늘이 여기에 걸려 딸깍한다. */
+.wheel__spoke::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: var(--color-text);
+}
+
+/* 빠르게 돌 때 칸 이름이 흐려진다 — 빨리 도는 느낌. */
+.wheel__disc--blur .wheel__label { filter: blur(1.4px); opacity: 0.7; }
+
+/* 끼릭끼릭 — 감는 동안 판이 작게 떨린다. */
+.wheel--windup { animation: wheel-strain 190ms steps(2) infinite; }
+@keyframes wheel-strain {
+  0% { translate: -1px 0; }
+  100% { translate: 1px 0; }
+}
+
+/* 멈칫 — 바늘이 금빛으로 달아오른다. */
+.wheel--hold .wheel__needle { filter: drop-shadow(0 0 6px var(--gold)); }
+
+/* 가운데 축 — 돌아가는 동안 보인다. 멈추면 당첨 원이 그 자리를 덮는다. */
+.wheel__hub {
+  position: absolute;
+  inset: 43%;
+  z-index: 1;
+  border-radius: 50%;
+  background: var(--color-bg);
+  border: 2px solid var(--color-text);
+  box-shadow: inset 0 0 0 4px var(--color-accent-200);
+}
+
+/* 효과 글씨 — 원판 한가운데 위에 크게. */
+.wheel__callout {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  translate: -50% -50%;
+  padding: 4px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: var(--fs-lg);
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 2px solid var(--color-text);
+  box-shadow: 3px 3px 0 var(--color-text);
+  animation: wheel-callout 360ms var(--ease-decel) both;
+  pointer-events: none;
+}
+.wheel__callout--tense { background: var(--gold); color: oklch(0.25 0.03 70); border-color: oklch(0.25 0.03 70); box-shadow: 3px 3px 0 oklch(0.25 0.03 70); animation: wheel-callout 360ms var(--ease-decel) both, wheel-shiver 120ms 360ms linear infinite; }
+.wheel__callout--reverse { background: var(--color-accent); color: var(--color-bg); rotate: -6deg; }
+.wheel__callout--wind { rotate: -4deg; animation: wheel-callout 360ms var(--ease-decel) both, wheel-shiver 190ms 360ms steps(2) infinite; }
+@keyframes wheel-callout {
+  0% { opacity: 0; scale: 0.4; }
+  60% { opacity: 1; scale: 1.12; }
+  100% { opacity: 1; scale: 1; }
+}
+@keyframes wheel-shiver {
+  0% { translate: -51% -50%; }
+  50% { translate: -49% -51%; }
+  100% { translate: -51% -50%; }
+}
+
+/* 당첨 — 12시 칸에 금빛 조명(칸이 넓으면 60도 원뿔만), 나머지는 살짝 어둡게. */
+.wheel__spot {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 50%;
+  pointer-events: none;
+  background: conic-gradient(
+    from calc(var(--spot) / -2),
+    oklch(0.9 0.17 92 / 0.5) 0deg var(--spot),
+    oklch(0.15 0.01 260 / 0.32) var(--spot) 360deg
+  );
+  animation: wheel-spot 900ms ease-out both;
+}
+@keyframes wheel-spot {
+  0% { opacity: 0; }
+  30% { opacity: 1; filter: brightness(1.5); }
+  100% { opacity: 1; }
+}
+.wheel__label--win { font-weight: 800; position: relative; z-index: 2; }
+.wheel--landed .wheel__needle { border-top-color: var(--gold-deep); filter: drop-shadow(0 0 8px var(--gold)); }
+.wheel--landed .wheel__center { border-color: var(--gold-deep); box-shadow: 0 0 0 4px var(--gold), 0 0 24px oklch(0.86 0.16 88 / 0.6); }
+
+/* 꽃가루 — 가운데 당첨 원 뒤에서 사방으로 터진다(바늘 밑 당첨 칸을 가리지 않게 금방 흩어진다). */
+.wheel__confetti { position: absolute; left: 50%; top: 50%; z-index: 1; pointer-events: none; }
+.wheel__confetti span {
+  position: absolute;
+  left: -4px;
+  top: -6px;
+  width: 8px;
+  height: 12px;
+  border-radius: 2px;
+  background: oklch(0.75 0.17 var(--h));
+  animation: wheel-confetti calc(var(--d) * 1s) cubic-bezier(0.15, 0.8, 0.3, 1) both;
+}
+@keyframes wheel-confetti {
+  0% { transform: rotate(var(--a)) translateY(-30px) rotate(0) scale(0.4); opacity: 0; }
+  15% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: rotate(var(--a)) translateY(calc(var(--far) * -1px)) rotate(var(--r)) scale(1); opacity: 0; }
+}
+
+/* 진행자 줄 — 얼굴 + 말풍선(상태 한 줄). */
+/* 데스크톱 게임판(약 770×650)에서 340px 원판은 작았다. 아래 진행자 줄까지 들어가게 키운다. */
+@media (min-width: 960px) {
+  .stage:not(.stage--full) .wheel { width: min(440px, 80vw); }
+}
+
+.wheelgame__host {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 100%;
+  min-height: 48px;
+}
+.wheelgame__status {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-neutral-300);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.wheelgame__status::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  translate: 0 -50%;
+  rotate: 45deg;
+  background: inherit;
+  border-left: 1px solid var(--color-neutral-300);
+  border-bottom: 1px solid var(--color-neutral-300);
+}
+.wheel--landed + .wheelgame__host .wheelgame__status { border-color: var(--gold-deep); }
+
+.wheelgame__mc { flex: none; width: 44px; height: 44px; overflow: visible; }
+.wheelgame__mc-face { fill: oklch(0.88 0.06 60); stroke: var(--color-text); stroke-width: 1.5; }
+.wheelgame__mc-hair { fill: oklch(0.32 0.04 40); }
+.wheelgame__mc-eyes { fill: oklch(0.2 0.02 260); }
+.wheelgame__mc-blush { fill: oklch(0.75 0.12 20 / 0.6); }
+.wheelgame__mc-smile,
+.wheelgame__mc-grit,
+.wheelgame__mc-squint { fill: none; stroke: oklch(0.2 0.02 260); stroke-width: 1.8; stroke-linecap: round; }
+.wheelgame__mc-o { fill: oklch(0.35 0.08 20); }
+.wheelgame__mc-bow { fill: var(--color-accent); stroke: var(--color-text); stroke-width: 1; }
+.wheelgame__mc-squint,
+.wheelgame__mc-o,
+.wheelgame__mc-grit { display: none; }
+/* 표정: strain 감는 중(질끈) · tense 멈칫(이 악묾) · shock 역회전·툭(오!) · wow 도는 중 · cheer 당첨 */
+.wheelgame__mc--strain .wheelgame__mc-eyes,
+.wheelgame__mc--strain .wheelgame__mc-smile { display: none; }
+.wheelgame__mc--strain .wheelgame__mc-squint,
+.wheelgame__mc--strain .wheelgame__mc-grit { display: inline; }
+.wheelgame__mc--strain { animation: wheel-strain 190ms steps(2) infinite; }
+.wheelgame__mc--tense .wheelgame__mc-smile { display: none; }
+.wheelgame__mc--tense .wheelgame__mc-grit { display: inline; }
+.wheelgame__mc--tense { animation: wheel-tremble 110ms linear infinite; }
+.wheelgame__mc--shock .wheelgame__mc-smile,
+.wheelgame__mc--wow .wheelgame__mc-smile { display: none; }
+.wheelgame__mc--shock .wheelgame__mc-o,
+.wheelgame__mc--wow .wheelgame__mc-o { display: inline; }
+.wheelgame__mc--shock { animation: wheel-hop 360ms var(--ease-decel) both; }
+.wheelgame__mc--cheer { animation: wheel-hop 420ms var(--ease-decel) 2 both; }
+@keyframes wheel-tremble {
+  0%, 100% { translate: 0 0; }
+  25% { translate: -1px 0; }
+  75% { translate: 1px 0; }
+}
+@keyframes wheel-hop {
+  0%, 100% { translate: 0 0; }
+  40% { translate: 0 -8px; }
+}
+
+:root[data-motion='reduced'] {
+  .wheel--windup,
+  .wheel__callout,
+  .wheel__spot,
+  .wheel__confetti span,
+  .wheelgame__mc { animation: none !important; }
+  .wheel__confetti { display: none; }
+}
+
+[data-theme='dark'] .wheel__spot {
+  background: conic-gradient(
+    from calc(var(--spot) / -2),
+    oklch(0.86 0.16 88 / 0.4) 0deg var(--spot),
+    oklch(0.05 0 0 / 0.45) var(--spot) 360deg
+  );
+}
+[data-theme='dark'] .wheelgame__mc-face { stroke: oklch(0.2 0.02 260); }

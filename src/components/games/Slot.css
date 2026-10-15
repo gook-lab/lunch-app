@@ -1,0 +1,318 @@
+/*
+ * 슬롯 — Slot.tsx 전용. 빨간 기계(.slot__cabinet) 안에 불빛 줄·릴 세 개·당첨 줄·레버가 있고,
+ * 잭팟이면 동전이 쏟아진다. 기계·불빛·동전은 실제 물건 색이라 라이트·다크 모두 같고,
+ * 릴 바탕·글자·상태 줄은 앱 토큰이라 다크에서도 읽힌다. 한 줄 높이와 줄 수는 Slot.tsx 가 정한다.
+ */
+.slot {
+  position: relative;
+  width: min(340px, 92vw);
+  display: grid;
+  gap: var(--space-2);
+  justify-items: center;
+  --cab: oklch(0.47 0.17 25);
+  --cab-deep: oklch(0.34 0.13 22);
+  --cab-edge: oklch(0.24 0.07 20);
+  --gold: oklch(0.86 0.16 88);
+  --gold-deep: oklch(0.7 0.15 72);
+  --bulb-off: oklch(0.55 0.06 60);
+}
+.slot--wide { width: min(520px, 84vw); }
+.slot--big { width: min(92vw, 760px); }
+
+.slot__cabinet {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 40px 12px 12px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--cab), var(--cab-deep));
+  border: 2px solid var(--cab-edge);
+  box-shadow: inset 0 2px 0 oklch(1 0 0 / 0.25), 0 6px 0 var(--cab-edge);
+  overflow: hidden;
+  isolation: isolate;
+}
+.slot--big .slot__cabinet { padding-right: 56px; }
+
+/* ── 불빛 줄 ── */
+.slot__marquee {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 16px;
+  padding: 0 4px 6px;
+}
+.slot__bulb {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--bulb-off);
+  box-shadow: inset 0 -1px 0 oklch(0 0 0 / 0.25);
+}
+.slot__cabinet--spin .slot__bulb { animation: slot-chase 660ms linear infinite; animation-delay: calc(var(--k) * 60ms); }
+.slot__cabinet--reach .slot__bulb { animation: slot-blink 260ms steps(1) infinite; animation-delay: calc(var(--k) * 130ms % 260ms); }
+.slot__cabinet--jackpot .slot__bulb { animation: slot-gold 300ms steps(1) infinite; animation-delay: calc((var(--k) % 2) * 150ms); }
+@keyframes slot-chase {
+  0%, 30% { background: var(--gold); box-shadow: 0 0 8px var(--gold); }
+  31%, 100% { background: var(--bulb-off); }
+}
+@keyframes slot-blink {
+  0% { background: oklch(0.7 0.2 28); box-shadow: 0 0 10px oklch(0.7 0.2 28); }
+  50% { background: var(--bulb-off); box-shadow: none; }
+}
+@keyframes slot-gold {
+  0% { background: var(--gold); box-shadow: 0 0 12px var(--gold); }
+  50% { background: oklch(0.97 0.05 95); box-shadow: 0 0 4px var(--gold); }
+}
+
+/* ── 릴 ── */
+.slot__window {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding: 0;
+}
+.slot__col {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--color-bg);
+  box-shadow: inset 0 0 0 2px var(--cab-edge), inset 0 10px 12px -8px oklch(0 0 0 / 0.35), inset 0 -10px 12px -8px oklch(0 0 0 / 0.35);
+  -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
+  mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
+  transition: box-shadow 200ms;
+}
+.slot__col--lit { box-shadow: inset 0 0 0 3px var(--gold), inset 0 0 18px oklch(0.86 0.16 88 / 0.5); }
+.slot__col--last { animation: slot-last 420ms ease-in-out infinite alternate; }
+@keyframes slot-last {
+  from { box-shadow: inset 0 0 0 2px var(--cab-edge); }
+  to { box-shadow: inset 0 0 0 4px oklch(0.68 0.21 28), inset 0 0 20px oklch(0.68 0.21 28 / 0.5); }
+}
+.slot__reel { will-change: transform; }
+.slot__item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding-inline: 4px;
+  font-family: var(--font-heading);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--color-text);
+  border-bottom: 1px dashed var(--color-neutral-300);
+}
+.slot__item span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 휴대폰 — 릴이 85px 남짓이라 이름을 두 줄로 접는다("할머니 / 김치찌개"). */
+.slot--narrow .slot__item { font-size: var(--fs-sm); line-height: 1.2; padding-inline: 6px; }
+.slot--narrow.slot--big .slot__item { font-size: var(--fs-lg); }
+.slot--narrow .slot__item span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+.slot--wide .slot__item { font-size: var(--fs-lg); }
+.slot--big .slot__item { font-size: var(--fs-xl); }
+/* 빠르게 돌 때 글자가 위아래로 번진다. */
+.slot__reel--blur .slot__item span { filter: blur(1.6px); opacity: 0.75; }
+
+/* 당첨 줄 — 세 릴을 가로지르는 테두리와 양쪽 화살표. */
+.slot__frame {
+  position: absolute;
+  left: -6px;
+  right: -6px;
+  border-top: 3px solid var(--gold);
+  border-bottom: 3px solid var(--gold);
+  pointer-events: none;
+}
+.slot__frame::before,
+.slot__frame::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.slot__frame::before { left: -2px; border-left: 9px solid var(--gold); }
+.slot__frame::after { right: -2px; border-right: 9px solid var(--gold); }
+.slot__cabinet--jackpot .slot__frame { animation: slot-frame 300ms steps(1) infinite; }
+@keyframes slot-frame {
+  0% { border-color: var(--gold); }
+  50% { border-color: oklch(0.97 0.05 95); }
+}
+
+.slot__item--win { animation: slot-clunk 420ms var(--ease-decel) both; }
+.slot__item--win span { color: var(--color-accent); }
+@keyframes slot-clunk {
+  0% { scale: 1; }
+  40% { scale: 1.14; }
+  100% { scale: 1; }
+}
+
+/* 효과 글씨 — 기계 꼭대기(불빛 줄 위). 가운데 줄의 가게 이름을 가리지 않는다. */
+.slot__callout {
+  position: absolute;
+  left: 50%;
+  top: 2px;
+  z-index: 3;
+  translate: -50% 0;
+  padding: 4px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: var(--fs-lg);
+  color: oklch(0.22 0.04 60);
+  background: var(--gold);
+  border: 2px solid oklch(0.22 0.04 60);
+  box-shadow: 3px 3px 0 oklch(0.22 0.04 60);
+  pointer-events: none;
+  animation: slot-callout 380ms var(--ease-decel) both;
+}
+.slot__callout--miss { background: oklch(0.96 0.01 260); rotate: -5deg; }
+.slot__callout--tense { animation: slot-callout 380ms var(--ease-decel) both, slot-shiver 110ms 380ms linear infinite; }
+.slot__callout--win { animation: slot-callout 380ms var(--ease-decel) both, slot-pulse 600ms 380ms ease-in-out infinite alternate; }
+.slot--big .slot__callout { font-size: var(--fs-xl); }
+@keyframes slot-callout {
+  0% { opacity: 0; scale: 0.4; }
+  60% { opacity: 1; scale: 1.15; }
+  100% { opacity: 1; scale: 1; }
+}
+@keyframes slot-shiver {
+  0%, 100% { translate: -51% 0; }
+  50% { translate: -49% -1px; }
+}
+@keyframes slot-pulse {
+  to { scale: 1.08; }
+}
+
+/* ── 레버 ── 기계 오른쪽. 당기면 손잡이가 내려갔다 올라온다. */
+.slot__lever {
+  position: absolute;
+  right: 10px;
+  top: 30px;
+  bottom: 22px;
+  width: 20px;
+  pointer-events: none;
+}
+.slot--big .slot__lever { right: 16px; width: 26px; }
+.slot__stick {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  width: 6px;
+  height: 46%;
+  translate: -50% 0;
+  border-radius: 3px;
+  background: linear-gradient(90deg, oklch(0.75 0.01 260), oklch(0.95 0 0), oklch(0.7 0.01 260));
+  transform-origin: 50% 100%;
+}
+.slot__lever::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: calc(50% - 7px);
+  width: 14px;
+  height: 14px;
+  translate: -50% 0;
+  border-radius: 4px;
+  background: var(--cab-edge);
+}
+.slot__knob {
+  position: absolute;
+  left: 50%;
+  bottom: calc(96% - 10px);
+  width: 20px;
+  height: 20px;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, oklch(0.85 0.12 28), oklch(0.55 0.21 28) 60%, oklch(0.4 0.16 25));
+  box-shadow: 0 2px 0 oklch(0 0 0 / 0.3);
+}
+.slot--big .slot__knob { width: 26px; height: 26px; }
+.slot__lever--pull .slot__stick { animation: slot-stick 640ms cubic-bezier(0.3, 0, 0.2, 1) both; }
+.slot__lever--pull .slot__knob { animation: slot-knob 640ms cubic-bezier(0.3, 0, 0.2, 1) both; }
+@keyframes slot-stick {
+  0% { scale: 1 1; }
+  40%, 55% { scale: 1 -1; }
+  100% { scale: 1 1; }
+}
+@keyframes slot-knob {
+  0% { bottom: calc(96% - 10px); }
+  40%, 55% { bottom: calc(4% - 10px); }
+  100% { bottom: calc(96% - 10px); }
+}
+.slot__cabinet--pull { animation: slot-thunk 640ms ease-out both; }
+@keyframes slot-thunk {
+  0%, 38% { translate: 0 0; }
+  45% { translate: 0 3px; }
+  60% { translate: 0 -1px; }
+  100% { translate: 0 0; }
+}
+.slot__cabinet--miss { animation: slot-shake 360ms ease-out both; }
+@keyframes slot-shake {
+  0%, 100% { translate: 0 0; }
+  20% { translate: -5px 0; }
+  40% { translate: 4px 0; }
+  60% { translate: -3px 0; }
+  80% { translate: 2px 0; }
+}
+
+/* ── 잭팟 동전 ── */
+.slot__coins { position: absolute; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; }
+.slot__coins span {
+  position: absolute;
+  top: -24px;
+  left: var(--x);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, oklch(0.97 0.08 95), var(--gold) 45%, var(--gold-deep));
+  border: 1px solid oklch(0.55 0.12 70);
+  animation: slot-coin calc(var(--d) * 1s) var(--w) cubic-bezier(0.4, 0, 0.8, 0.6) both;
+}
+@keyframes slot-coin {
+  0% { top: -24px; scale: 1 1; opacity: 1; }
+  25% { scale: 0.2 1; }
+  50% { scale: 1 1; }
+  75% { scale: 0.2 1; opacity: 1; }
+  100% { top: 105%; scale: 1 1; opacity: 0.6; }
+}
+
+/* ── 당첨 이름 · 상태 줄 ── */
+.slot__winner {
+  margin: 0;
+  max-width: 100%;
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+  animation: slot-callout 380ms var(--ease-decel) both;
+}
+.slot__meta { font-family: var(--font-body); font-size: var(--fs-sm); font-weight: 400; color: var(--color-neutral-700); }
+.slot__status {
+  margin: 0;
+  min-height: 1.4em;
+  text-align: center;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+:root[data-motion='reduced'] {
+  .slot__bulb,
+  .slot__col--last,
+  .slot__item--win,
+  .slot__callout,
+  .slot__lever span,
+  .slot__cabinet,
+  .slot__frame,
+  .slot__winner { animation: none !important; }
+  .slot__coins { display: none; }
+}

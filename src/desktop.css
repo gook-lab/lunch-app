@@ -173,7 +173,7 @@
   container-type: size;
   overflow: auto;
 }
-.stage--full .wheel { width: min(86vw, 640px, 100cqh - 16px); }
+.stage--full .wheel { width: min(86vw, 640px, 100cqh - 72px); } /* 판 아래 진행자 줄(약 56px)까지 */
 .stage--full .dice--big { width: min(520px, 94vw, 100cqh - 16px); }
 .stage--full .ladder { width: min(92vw, 760px, (100cqh - 204px) / 0.79); }
 .stage--full .gacha--big { width: min(380px, 92vw, (100cqh - 142px) / 0.84); }
