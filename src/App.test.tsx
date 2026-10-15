@@ -15,6 +15,7 @@ import App from './App';
 import { preloadGames } from './components/games';
 import { decideToday } from './services/lunch';
 import { RESULT_DELAY_MS, SPIN_MS, setForceMotion } from './components/games/types';
+import { CARDS_MAX_MS } from './lib/cards';
 
 const fx = vi.hoisted(() => {
   const place = (id: string, name: string) => ({
@@ -439,7 +440,7 @@ describe('사다리 — 사용자가 고르는 출발점', () => {
 });
 
 describe('카드 뒤집기 — 사용자가 고르는 카드', () => {
-  it('고른 카드부터 뒤집히고, 그 카드가 결과 카드와 같다. 다 뒤집히기 전엔 다른 카드는 가려져 있다', () => {
+  it('딜러가 섞은 뒤 나머지가 먼저 꽝으로 뒤집히고, 고른 카드가 마지막에 뒤집혀 결과 카드와 같다', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: '카드' }));
     const cards = screen.getAllByRole('button', { name: /번 카드 고르기$/ });
@@ -449,17 +450,17 @@ describe('카드 뒤집기 — 사용자가 고르는 카드', () => {
     // 섞는 중: 아무 카드도 안 열렸다.
     expect(document.querySelectorAll('.cards__card--open')).toHaveLength(0);
 
-    // 뜸 들이기: 고른 카드만 들썩이고 아직 안 열렸다.
-    act(() => { vi.advanceTimersByTime(SPIN_MS.cards * 0.35); });
-    expect(document.querySelector('.cards__card--lift')?.classList.contains('cards__card--mine')).toBe(true);
-    expect(document.querySelectorAll('.cards__card--open')).toHaveLength(0);
+    // 고른 카드는 다른 카드가 전부 열린 다음에야 열린다.
+    let othersFirst = false;
+    for (let t = 0; t < CARDS_MAX_MS; t += 100) {
+      act(() => { vi.advanceTimersByTime(100); });
+      const mine = document.querySelector('.cards__card--mine');
+      if (mine?.classList.contains('cards__card--open')) break;
+      if (document.querySelectorAll('.cards__card--open').length === cards.length - 1) othersFirst = true;
+    }
+    expect(othersFirst).toBe(true);
 
-    act(() => { vi.advanceTimersByTime(SPIN_MS.cards * 0.25); });
-    const open = document.querySelectorAll('.cards__card--open');
-    expect(open).toHaveLength(1);
-    expect(open[0].classList.contains('cards__card--mine')).toBe(true);
-
-    act(() => { vi.advanceTimersByTime(SPIN_MS.cards); });
+    act(() => { vi.advanceTimersByTime(CARDS_MAX_MS); });
     const mine = document.querySelector('.cards__card--mine');
     expect(mine?.classList.contains('cards__card--win')).toBe(true);
     expect(mine?.getAttribute('aria-label')).toBe(`2번 카드: ${card()}`);

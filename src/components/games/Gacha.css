@@ -1,0 +1,315 @@
+/*
+ * 뽑기 기계 — 컷신·사건·열기. 기계 그림(돔·몸통·손잡이·출구)은 App.css 의 .gacha 절에 있고, 여기는 움직임이다.
+ * 카메라(.gacha__machine--handle·--chute)는 보고 싶은 점을 제자리에 두고 확대한다:
+ * translate((점 - 가운데) × (1 - 배율)) scale(배율). 크기는 보기 상자 폭 기준 cqw.
+ * 쪽지·골드는 실제 물건 색이라 라이트·다크 모두 같다.
+ */
+.gacha__view {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  container-type: inline-size;
+  isolation: isolate;
+  padding-block: 6px 4px;
+  border-radius: var(--radius-md);
+}
+.gacha__machine { transition: transform 380ms var(--ease-inout); }
+/* 손잡이(25%, 84%)를 1.75배로 */
+.gacha__machine--handle { transform: translate(18.75%, -25.5%) scale(1.75); }
+/* 출구(73%, 84%)를 1.7배로 */
+.gacha__machine--chute { transform: translate(-16.1%, -23.8%) scale(1.7); }
+
+.gacha__status {
+  margin: 0;
+  min-height: 1.5em;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-text);
+  text-align: center;
+}
+.gacha--big .gacha__status { font-size: var(--fs-md); }
+
+/* ── 손잡이 컷신 — 레터박스 + 손잡이가 드르륵 돈다 ── */
+.gacha__bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  height: 9%;
+  background: oklch(0.12 0 0);
+  animation: gacha-bar 220ms var(--ease-out) both;
+}
+.gacha__bar--top { top: 0; --from: -100%; }
+.gacha__bar--bottom { bottom: 0; --from: 100%; }
+@keyframes gacha-bar { from { translate: 0 var(--from); } }
+.gacha--crank .gacha__handle { animation: gacha-crank 450ms cubic-bezier(0.5, 0, 0.6, 1) infinite; }
+@keyframes gacha-crank {
+  0% { rotate: 0deg; }
+  30% { rotate: 70deg; }
+  45% { rotate: 62deg; }
+  100% { rotate: 360deg; }
+}
+.gacha--crank .gacha__capsule { animation: gacha-jiggle 180ms linear infinite alternate; animation-delay: calc(var(--i) * -37ms); }
+@keyframes gacha-jiggle { from { translate: -50% -50%; } to { translate: -50% calc(-50% - 4%); } }
+
+/* ── 뒤섞임 ── */
+.gacha--tumble .gacha__capsule {
+  animation: gacha-tumble 520ms var(--ease-inout) infinite;
+  animation-delay: calc(var(--i) * -71ms);
+}
+.gacha--tumble .gacha__dome { animation: gacha-dome 160ms linear infinite alternate; }
+@keyframes gacha-tumble {
+  0%, 100% { translate: -50% -50%; rotate: var(--tilt); }
+  40% { translate: calc(-50% + var(--dx)) calc(-50% + var(--dy)); rotate: calc(var(--tilt) + 180deg); }
+  70% { translate: calc(-50% - var(--dx) / 2) calc(-50% + var(--dy) / 3); rotate: calc(var(--tilt) + 300deg); }
+}
+@keyframes gacha-dome { from { rotate: -0.8deg; } to { rotate: 0.8deg; } }
+
+/* ── 아깝다 — 다른 캡슐이 돔 입구까지 왔다가 되돌아간다. 뚜껑이 투명해 쪽지 이름이 비친다. ── */
+.gacha__peek {
+  position: absolute;
+  z-index: 15;
+  left: 50%;
+  top: 86%;
+  width: 19%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 26%, oklch(1 0 0) 0 9%, transparent 16%),
+    linear-gradient(to bottom, oklch(0.97 0.015 var(--cat-hue) / 0.9) 0 47%, oklch(0.55 0.08 var(--cat-hue)) 47% 53%, oklch(0.78 0.13 var(--cat-hue)) 53%);
+  box-shadow: inset -3px -4px 6px oklch(0.45 0.1 var(--cat-hue) / 0.45), 0 0 0 3px oklch(0.85 0.15 85 / 0.8), 0 0 14px oklch(0.85 0.15 85 / 0.7);
+}
+.gacha__peek--peek { animation: gacha-peek 700ms var(--ease-out) both; }
+.gacha__peek--peek-back { animation: gacha-peekback 400ms cubic-bezier(0.4, 0, 0.8, 0.6) both; }
+@keyframes gacha-peek {
+  0% { top: 30%; rotate: -160deg; }
+  45% { top: 86%; rotate: 8deg; }
+  58% { rotate: -12deg; }
+  70% { rotate: 10deg; }
+  82% { rotate: -8deg; }
+  92% { rotate: 6deg; }
+  100% { top: 86%; rotate: -4deg; }
+}
+@keyframes gacha-peekback {
+  0% { top: 86%; rotate: -4deg; }
+  30% { top: 90%; }
+  100% { top: 40%; rotate: 220deg; opacity: 0.4; }
+}
+.gacha__peektag {
+  position: absolute;
+  left: 50%;
+  bottom: 104%;
+  translate: -50% 0;
+  padding: 1px 6px;
+  border-radius: 6px;
+  white-space: nowrap;
+  font-size: clamp(10px, 4.4cqw, 16px);
+  font-weight: 800;
+  color: oklch(0.25 0.02 60);
+  background: oklch(0.98 0.02 90);
+  box-shadow: 0 1px 3px oklch(0 0 0 / 0.3);
+}
+
+/* ── 떨어짐 · 걸림 · 탁 ── */
+.gacha__out--jam { animation: gacha-jam 750ms linear both; }
+@keyframes gacha-jam {
+  0% { translate: 0 -46px; rotate: -90deg; }
+  25% { translate: 0 -16px; rotate: 18deg; }
+  32%, 48%, 64%, 80%, 96% { translate: -2px -16px; rotate: 14deg; }
+  40%, 56%, 72%, 88%, 100% { translate: 2px -16px; rotate: 22deg; }
+}
+.gacha__out--free { animation: gacha-free 400ms cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+@keyframes gacha-free {
+  0% { translate: 0 -16px; rotate: 18deg; }
+  40% { translate: 0 6px; rotate: -6deg; }
+  100% { translate: 0 0; rotate: 0deg; }
+}
+.gacha--knock .gacha__body { animation: gacha-jolt 300ms linear both; }
+@keyframes gacha-jolt {
+  0%, 100% { translate: 0 0; }
+  15% { translate: -4px 0; }
+  35% { translate: 3px 0; }
+  55% { translate: -2px 0; }
+  75% { translate: 1px 0; }
+}
+.gacha__fist {
+  position: absolute;
+  z-index: 25;
+  left: 74%;
+  top: 70%;
+  font-size: clamp(28px, 13cqw, 52px);
+  line-height: 1;
+  animation: gacha-fist 400ms var(--ease-out) both;
+}
+@keyframes gacha-fist {
+  0% { translate: 60% 0; rotate: -20deg; opacity: 0; }
+  30% { translate: -10% 0; rotate: 0deg; opacity: 1; }
+  45% { translate: 0 0; }
+  100% { translate: 40% 0; opacity: 0; }
+}
+
+/* ── 골드 캡슐 ── */
+.gacha--gold .gacha__out,
+.gacha--gold .gacha__big { filter: drop-shadow(0 0 8px oklch(0.86 0.16 88)) drop-shadow(0 0 3px oklch(0.95 0.1 95)); }
+.gacha--gold .gacha__half--top,
+.gacha--gold .gacha__bighalf--top {
+  background: radial-gradient(circle at 34% 40%, oklch(1 0 0) 0 12%, oklch(0.93 0.12 92) 32%, oklch(0.8 0.15 80));
+}
+.gacha--gold .gacha__half--bottom,
+.gacha--gold .gacha__bighalf--bottom {
+  background: linear-gradient(to bottom, oklch(0.55 0.1 70) 0 10%, oklch(0.84 0.16 86) 10%, oklch(0.66 0.14 72));
+}
+
+/* ── 열기 — 캡슐이 가운데로 날아와 커지고 떨다가 뽁! 쪽지가 펴진다 ── */
+.gacha__reveal {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: color-mix(in oklch, var(--color-bg) 72%, transparent);
+  backdrop-filter: blur(2px);
+  animation: gacha-fade 300ms var(--ease-out) both;
+}
+@keyframes gacha-fade { from { opacity: 0; } }
+.gacha__big {
+  grid-area: 1 / 1;
+  position: relative;
+  width: 40cqw;
+  aspect-ratio: 1;
+  animation: gacha-bigin 900ms cubic-bezier(0.25, 0.9, 0.3, 1) both;
+}
+@keyframes gacha-bigin {
+  0% { translate: 20cqw 40cqw; scale: 0.25; rotate: -260deg; }
+  50% { translate: 0 0; scale: 1; rotate: 0deg; }
+  60% { rotate: -4deg; }
+  68% { rotate: 5deg; }
+  76% { rotate: -7deg; }
+  84% { rotate: 9deg; scale: 1.04; }
+  92% { rotate: -10deg; scale: 1.08; }
+  100% { rotate: 0deg; scale: 1.1; }
+}
+.gacha__bighalf {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  transition: translate 520ms var(--ease-out), rotate 520ms var(--ease-out), opacity 520ms ease-in;
+}
+.gacha__bighalf--top {
+  top: 0;
+  border-radius: 20cqw 20cqw 0 0;
+  background: radial-gradient(circle at 34% 40%, oklch(1 0 0) 0 12%, oklch(0.95 0.02 var(--cat-hue)) 30%, oklch(0.85 0.03 var(--cat-hue)));
+  box-shadow: inset 0 -2px 0 oklch(0.55 0.08 var(--cat-hue));
+}
+.gacha__bighalf--bottom {
+  bottom: 0;
+  border-radius: 0 0 20cqw 20cqw;
+  background: linear-gradient(to bottom, oklch(0.55 0.08 var(--cat-hue)) 0 10%, oklch(0.8 0.13 var(--cat-hue)) 10%, oklch(0.6 0.13 var(--cat-hue)));
+  box-shadow: inset -6px -8px 12px oklch(0.45 0.1 var(--cat-hue) / 0.45);
+}
+.gacha__reveal--popped .gacha__bighalf--top { translate: -26cqw -30cqw; rotate: -60deg; opacity: 0; }
+.gacha__reveal--popped .gacha__bighalf--bottom { translate: 24cqw 34cqw; rotate: 50deg; opacity: 0; }
+
+.gacha__slip {
+  grid-area: 1 / 1;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  width: min(78cqw, 320px);
+  padding: 4cqw 4cqw 3.4cqw;
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 calc(1.4em - 1px), oklch(0.9 0.03 80) calc(1.4em - 1px) 1.4em),
+    oklch(0.985 0.015 90);
+  color: oklch(0.28 0.02 60);
+  text-align: center;
+  box-shadow: 0 6px 18px oklch(0 0 0 / 0.25);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  scale: 0.15 0.04;
+  opacity: 0;
+  transition: scale 480ms cubic-bezier(0.3, 1.45, 0.5, 1) 90ms, opacity 160ms linear 90ms;
+}
+.gacha__slip small { font-size: clamp(11px, 3.8cqw, 14px); font-weight: 700; color: oklch(0.42 0.03 60); }
+.gacha__slip strong { font-size: clamp(18px, 8cqw, 34px); font-weight: 900; line-height: 1.2; color: oklch(0.42 0.17 28); }
+.gacha__slip span { font-size: clamp(11px, 3.8cqw, 14px); color: oklch(0.42 0.03 60); }
+.gacha__reveal--popped .gacha__slip { scale: 1 1; opacity: 1; }
+
+.gacha__rays {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin: -75cqw 0 0 -75cqw;
+  width: 150cqw;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, oklch(0.9 0.12 25 / 0.35) 0 10deg, transparent 10deg 20deg);
+  mask: radial-gradient(closest-side, oklch(0 0 0) 20%, transparent 70%);
+  opacity: 0;
+  transition: opacity 300ms ease-out;
+}
+.gacha--gold .gacha__rays { background: repeating-conic-gradient(from 0deg, oklch(0.88 0.16 88 / 0.55) 0 10deg, transparent 10deg 20deg); }
+.gacha__reveal--popped .gacha__rays { opacity: 1; animation: gacha-rays 6s linear infinite; }
+@keyframes gacha-rays { to { rotate: 360deg; } }
+
+.gacha__sparks { position: absolute; left: 50%; top: 50%; width: 0; height: 0; z-index: 3; }
+.gacha__sparks span {
+  position: absolute;
+  left: -3px;
+  top: -5px;
+  width: 6px;
+  height: 10px;
+  border-radius: 1px;
+  background: oklch(0.78 0.17 var(--h));
+  opacity: 0;
+  animation: gacha-spark 900ms var(--ease-out) forwards;
+}
+@keyframes gacha-spark {
+  0% { opacity: 1; transform: rotate(var(--a)) translateY(-4cqw) rotate(0deg); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(-40cqw * var(--d))) rotate(300deg); }
+}
+
+/* ── 큰 글씨 한 마디 ── */
+.gacha__callout {
+  position: absolute;
+  z-index: 40;
+  top: 14%;
+  left: 50%;
+  translate: -50% 0;
+  font-size: clamp(24px, 13cqw, 60px);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  color: oklch(0.99 0 0);
+  -webkit-text-stroke: 0.14em oklch(0.22 0.02 260);
+  paint-order: stroke fill;
+  letter-spacing: -0.02em;
+  pointer-events: none;
+  animation: gacha-callout 360ms var(--ease-out) both;
+}
+.gacha__callout--crank { top: 16%; color: oklch(0.88 0.15 70); }
+.gacha__callout--peek-back { color: oklch(0.82 0.13 200); }
+.gacha__callout--jam,
+.gacha__callout--knock { top: 18%; color: oklch(0.86 0.15 60); }
+.gacha__callout--open { color: oklch(0.88 0.16 88); }
+.gacha__callout--pop { top: 8%; color: oklch(0.85 0.17 28); font-size: clamp(30px, 16cqw, 72px); }
+@keyframes gacha-callout {
+  0% { scale: 0.3; rotate: -10deg; opacity: 0; }
+  60% { scale: 1.15; rotate: 3deg; opacity: 1; }
+  100% { scale: 1; rotate: -3deg; }
+}
+
+/* 판이 끝난 뒤 다시 그려질 때(크게 보기 전환 등)는 날아오는 장면 없이 열린 모습만. */
+.gacha--settled .gacha__reveal,
+.gacha--settled .gacha__big { animation: none; }
+
+/* 동작 줄이기 — 앱이 "움직임 켜기" 를 반영해 둔 data-motion 을 본다(기기 설정만 보면 켜 둔 사람도 멈춘다). */
+:root[data-motion='reduced'] {
+  .gacha *,
+  .gacha__view { animation: none !important; transition: none !important; }
+  .gacha__callout, .gacha__sparks, .gacha__bar, .gacha__fist { display: none; }
+}

@@ -905,3 +905,83 @@ export function ladderDiceSfxLater(plan: [ms: number, name: LadderDiceSfxName | 
   const timers = plan.map(([ms, name]) => window.setTimeout(() => ladderDiceSfx(name), ms));
   return () => timers.forEach((t) => window.clearTimeout(t));
 }
+
+/* ───────── 뽑기 기계 · 카드 ───────── */
+
+/** 뽑기 기계·카드 소리. 위 SOUNDS 와 따로 둬서 다른 게임 소리 목록을 건드리지 않는다(10/15 동시 작업). */
+const GACHA_CARDS_SOUNDS = {
+  /** 손잡이 톱니 — 드르륵. 짧은 딸깍이 빠르게 이어진다. */
+  crank: (ac: AudioContext) => {
+    for (let i = 0; i < 8; i += 1) {
+      noise(ac, { dur: 0.018, hz: rand(1400, 1900), q: 6, vol: 0.08, at: i * 0.05 });
+      tone(ac, { hz: 210, dur: 0.02, type: 'square', vol: 0.012, at: i * 0.05 });
+    }
+  },
+  /** 출구에 걸린 캡슐을 탁 치는 소리. */
+  knock: (ac: AudioContext) => {
+    tone(ac, { hz: 140, to: 80, dur: 0.1, type: 'sine', vol: 0.14 });
+    noise(ac, { dur: 0.05, hz: 700, q: 1.2, vol: 0.1 });
+  },
+  /** 캡슐이 크게 열리는 뽁 — 공용 pop 보다 크고 밝다. */
+  popOpen: (ac: AudioContext) => {
+    tone(ac, { hz: 280, to: 1200, dur: 0.1, type: 'sine', vol: 0.12 });
+    noise(ac, { dur: 0.06, hz: 3600, q: 0.8, vol: 0.07 });
+    tone(ac, { hz: 1568, dur: 0.18, type: 'triangle', vol: 0.03, at: 0.08 });
+  },
+  /** 골드 캡슐 반짝 — 높은 방울 셋. */
+  sparkle: (ac: AudioContext) => {
+    [1760, 2349, 2794].forEach((hz, i) => tone(ac, { hz, dur: 0.16, type: 'sine', vol: 0.03, at: i * 0.07 }));
+  },
+  /** 리플 셔플 — 촤르륵. 카드 끝이 빠르게 떨어진다. */
+  riffle: (ac: AudioContext) => {
+    for (let i = 0; i < 14; i += 1) noise(ac, { dur: 0.02, hz: rand(2400, 4200), q: 3, vol: 0.06, at: i * 0.028 });
+  },
+  /** 브리지 끝 — 카드가 착 모인다. */
+  snap: (ac: AudioContext) => {
+    noise(ac, { dur: 0.16, hz: 2600, to: 900, q: 0.9, vol: 0.08 });
+    noise(ac, { dur: 0.03, hz: 1600, q: 2, vol: 0.1, at: 0.15 });
+  },
+  /** 카드를 나눠 줄 때 — 휙휙. */
+  deal: (ac: AudioContext) => {
+    for (let i = 0; i < 4; i += 1) noise(ac, { dur: 0.08, hz: 900, to: 3200, q: 1.4, vol: 0.05, at: i * 0.11 });
+  },
+  /** 꽝 — 낮게 뚱. */
+  dud: (ac: AudioContext) => tone(ac, { hz: 230, to: 150, dur: 0.18, type: 'triangle', vol: 0.06 }),
+  /** 조커 — 띠요옹 웃음. */
+  joker: (ac: AudioContext) => {
+    [660, 520, 700, 480].forEach((hz, i) => tone(ac, { hz, to: hz * 1.12, dur: 0.1, type: 'square', vol: 0.02, at: i * 0.09 }));
+  },
+  /** 당첨 카드 빛 — 위로 쓸어 올리는 반짝. */
+  shine: (ac: AudioContext) => {
+    noise(ac, { dur: 0.35, hz: 3000, to: 7000, q: 1.2, vol: 0.04, filter: 'highpass' });
+    [1047, 1319, 1568, 2093].forEach((hz, i) => tone(ac, { hz, dur: i === 3 ? 0.35 : 0.12, type: 'triangle', vol: 0.04, at: i * 0.07 }));
+  },
+} satisfies Record<string, (ac: AudioContext) => void>;
+
+export type GachaCardsSfxName = keyof typeof GACHA_CARDS_SOUNDS;
+
+const gachaCardsLast = new Map<GachaCardsSfxName, number>();
+
+/** 뽑기 기계·카드 소리(또는 공용 소리)를 나중에 울린다. 취소 함수를 돌려준다. 소리를 끈 사람에겐 아무 일도 없다. */
+export function gachaCardsSfxLater(plan: [ms: number, name: GachaCardsSfxName | SfxName][]): () => void {
+  if (!enabled()) return () => {};
+  const play = (name: GachaCardsSfxName | SfxName) => {
+    if (!(name in GACHA_CARDS_SOUNDS)) {
+      sfx(name as SfxName);
+      return;
+    }
+    const key = name as GachaCardsSfxName;
+    const now = performance.now();
+    if (now - (gachaCardsLast.get(key) ?? -Infinity) < 50) return;
+    gachaCardsLast.set(key, now);
+    const ac = audio();
+    if (!ac) return;
+    try {
+      GACHA_CARDS_SOUNDS[key](ac);
+    } catch {
+      // 오디오 노드를 못 만드는 환경 — 소리 없이 넘어간다.
+    }
+  };
+  const timers = plan.map(([ms, name]) => window.setTimeout(() => play(name), ms));
+  return () => timers.forEach((t) => window.clearTimeout(t));
+}

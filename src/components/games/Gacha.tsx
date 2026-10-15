@@ -1,30 +1,49 @@
 /**
- * 뽑기 기계 — 손잡이를 돌리면 돔 안 캡슐이 흔들리다 하나가 떨어지고, 열면 가게가 나온다.
+ * 뽑기 기계 — 손잡이를 돌리면(드르륵 컷신) 돔 안 캡슐이 뒤섞이고 하나가 떨어진다. 크게 열면 뽁! 쪽지에 가게.
  *
- * 당첨은 App 이 정했다(winnerIndex). 돔 안 캡슐에는 이름이 없고 서로 구별되지 않으므로
- * 어느 캡슐이 떨어지든 공정하다 — 떨어진 캡슐을 열어 보면 당첨 가게다. 캡슐 색은 후보들의
- * 카테고리 색을 섞어 둔 것이고, 떨어지는 캡슐은 당첨 가게 카테고리 색이다.
+ * 당첨은 App 이 정했다(winnerIndex). 돔 안 캡슐에는 이름이 없고 서로 구별되지 않으므로 어느 캡슐이
+ * 떨어지든 공정하다 — 열어 본 쪽지가 당첨 가게다. 사건(출구까지 왔다 돌아가는 캡슐 · 출구에 걸림 ·
+ * 골드 캡슐)과 시각은 판 번호 시드로 lib/gacha.ts 가 정하고, 당첨을 바꾸지 않는다.
  *
- * 순서: 흔들기(2.2초, 손잡이 한 바퀴) → 출구로 떨어짐 → 0.5초 뒤 열림 → 끝.
+ * 각본은 단계(steps)마다 이름(say)을 들고 있다. 컴포넌트는 단계 번호만 바꾸고, 움직임은 CSS 가 한다.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { categoryHue } from '../../lib/category';
+import { categoryHue, categoryLabel } from '../../lib/category';
+import { gachaPlan, type GachaSay } from '../../lib/gacha';
 import { withJosa } from '../../lib/josa';
+import { shortName } from '../../lib/name';
 import { seededRandom } from '../../lib/random';
-import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
-import { sfxLater, type SfxName } from '../../lib/sfx';
+import { gachaCardsSfxLater, type GachaCardsSfxName, type SfxName } from '../../lib/sfx';
+import { prefersReducedMotion, type GameProps } from './types';
+import './Gacha.css';
 
-type Phase = 'idle' | 'shake' | 'drop' | 'open';
-
-const SHAKE_MS = 2200;
-const OPEN_AT = SHAKE_MS + 500;
 /** 돔에 그리는 캡슐 수 상한. 넘으면 "캡슐이 N개 더 있어요" 로 적는다. */
 export const MAX_CAPSULES = 20;
+/** 쪽지가 열릴 때 튀는 반짝이 수. */
+const SPARKS = 16;
+
+interface Shown {
+  run: number;
+  step: number;
+}
+
+/** 단계마다 큰 글씨 한 마디. */
+const CALLOUT: Partial<Record<GachaSay, string>> = {
+  crank: '드르륵',
+  'peek-back': '아깝다!',
+  drop: '덜컹!',
+  jam: '어?',
+  knock: '탁!',
+  pop: '뽁!',
+};
 
 export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
   const count = candidates.length;
-  const [shown, setShown] = useState<{ run: number; phase: Phase }>({ run: -1, phase: 'idle' });
-  const phase: Phase = shown.run === run ? shown.phase : winnerIndex !== null && !spinning ? 'open' : 'idle';
+  const [shown, setShown] = useState<Shown>({ run: -1, step: 0 });
+  const plan = useMemo(
+    () => (winnerIndex === null ? null : gachaPlan(count, winnerIndex, seededRandom(run * 7 + 3))),
+    [count, winnerIndex, run],
+  );
 
   // 돔 안 캡슐: 후보 카테고리 색을 판 번호로 섞어 바닥부터 쌓는다. 이름은 없다.
   // 아래 줄일수록 앞(크고 밝게), 위 줄일수록 뒤 — 쌓인 더미가 입체로 보인다.
@@ -60,54 +79,121 @@ export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expan
 
   useEffect(() => {
     if (!spinning || winnerIndex === null || count === 0) return;
-    if (prefersReducedMotion()) {
-      setShown({ run, phase: 'open' });
+    if (prefersReducedMotion() || !plan) {
+      // 움직임 줄이기(또는 한 곳뿐)면 열린 쪽지만 보인다.
+      setShown({ run, step: plan ? plan.steps.length - 1 : 0 });
       const t = window.setTimeout(onSpinEnd, 0);
       return () => window.clearTimeout(t);
     }
-    setShown({ run, phase: 'shake' });
-    const timers = [
-      window.setTimeout(() => setShown({ run, phase: 'drop' }), SHAKE_MS),
-      window.setTimeout(() => setShown({ run, phase: 'open' }), OPEN_AT),
-      window.setTimeout(onSpinEnd, SPIN_MS.gacha),
-    ];
-    // 흔드는 동안 달그락, 캡슐이 떨어지면 쿵, 열리면 뽁.
-    const rattles = Array.from({ length: Math.max(1, Math.floor(SHAKE_MS / 260)) }, (_, k): [number, SfxName] => [
-      k * 260,
-      'rattle',
-    ]);
-    const stopSfx = sfxLater([...rattles, [SHAKE_MS + 120, 'thunk'], [OPEN_AT, 'pop']]);
+    // 이번 판을 시작한다. 이걸 빼면 아래 setState 들이 s.run === run 에 막혀 첫 단계에서 멈춘다.
+    setShown({ run, step: 0 });
+    const timers: number[] = [];
+    plan.steps.forEach((st, k) => {
+      if (k === 0) return;
+      timers.push(window.setTimeout(() => setShown((s) => (s.run === run ? { run, step: k } : s)), st.at));
+    });
+    timers.push(window.setTimeout(onSpinEnd, plan.endMs));
+
+    const sounds: [number, GachaCardsSfxName | SfxName][] = [];
+    for (const st of plan.steps) {
+      if (st.say === 'crank') for (let k = 0; k < plan.cranks; k += 1) sounds.push([k * 450, 'crank']);
+      if (st.say === 'tumble') for (let k = 0; k < 4; k += 1) sounds.push([st.at + k * 270, 'rattle']);
+      if (st.say === 'peek') sounds.push([st.at + 250, 'wobble']);
+      if (st.say === 'peek-back') sounds.push([st.at, 'slip']);
+      if (st.say === 'drop') sounds.push([st.at + 120, 'thunk']);
+      if (st.say === 'jam') sounds.push([st.at, 'bump']);
+      if (st.say === 'knock') sounds.push([st.at, 'knock']);
+      if (st.say === 'open' && plan.gold) sounds.push([st.at, 'sparkle']);
+      if (st.say === 'pop') sounds.push([st.at, 'popOpen']);
+      if (st.say === 'won') sounds.push([st.at, 'chime']);
+    }
+    const stopSfx = gachaCardsSfxLater(sounds);
     return () => {
       timers.forEach((t) => window.clearTimeout(t));
       stopSfx();
     };
-  }, [spinning, winnerIndex, count, run, onSpinEnd]);
+  }, [spinning, winnerIndex, count, run, onSpinEnd, plan]);
 
   if (count === 0) return <div className="gacha gacha--empty" />;
 
+  const live = shown.run === run;
+  // 판이 끝난 뒤 다시 그려질 때(크게 보기 전환 등)는 열린 쪽지를 보인다.
+  const settled = !live && winnerIndex !== null && !spinning;
+  const steps = plan?.steps ?? [];
+  const say: GachaSay | 'idle' = !plan
+    ? winnerIndex !== null && (live || settled)
+      ? 'won'
+      : 'idle'
+    : live
+      ? (steps[shown.step]?.say ?? 'idle')
+      : settled
+        ? 'won'
+        : 'idle';
+  const at = (s: GachaSay) => steps.findIndex((x) => x.say === s);
+  const idx = live ? shown.step : settled ? steps.length - 1 : -1;
+  const reached = (s: GachaSay) => {
+    if (say === 'won' && !plan) return s === 'won' || s === 'pop' || s === 'open';
+    const k = at(s);
+    return k >= 0 && idx >= k;
+  };
+  const dropped = reached('drop');
+  const opening = reached('open');
+  const popped = reached('pop');
+  const gold = plan?.gold ?? false;
   const winner = winnerIndex === null ? null : candidates[winnerIndex];
-  const hint =
-    phase === 'idle'
-      ? `캡슐 ${count}개가 들어 있어요. 손잡이를 돌리면 하나가 나와요.`
-      : phase === 'shake'
-        ? '캡슐을 섞고 있어요…'
-        : phase === 'drop'
-          ? '캡슐이 나왔어요. 열어 볼게요…'
-          : winner
-            ? `${withJosa(winner.name, '이/가')} 나왔어요.`
-            : '';
+  const peek = plan?.peek ?? null;
+  const camera = say === 'crank' ? 'handle' : say === 'jam' || say === 'knock' ? 'chute' : '';
+
+  const status = (() => {
+    const nm = (i: number) => shortName(candidates[i].name, 10);
+    switch (say) {
+      case 'idle':
+        return `캡슐 ${count}개 — 손잡이를 돌려 볼까요?`;
+      case 'crank':
+        return '드르륵… 손잡이를 돌려요';
+      case 'tumble':
+        return '캡슐이 데굴데굴 섞여요…';
+      case 'peek':
+        return peek === null ? '' : `어? ${nm(peek)}… 나오려나요?`;
+      case 'peek-back':
+        return '아깝다! 다시 들어갔어요';
+      case 'drop':
+        return gold ? '덜컹! 어… 골드 캡슐이에요?!' : '덜컹! 캡슐이 나왔어요';
+      case 'jam':
+        return '어? 걸렸어요';
+      case 'knock':
+        return '탁! 빠졌어요';
+      case 'open':
+        return gold ? '골드 캡슐! 열어 볼게요… 두근두근' : '열어 볼게요… 두근두근';
+      case 'pop':
+        return '뽁!';
+      case 'won':
+        return winner ? `뽑았어요! ${withJosa(shortName(winner.name, 14), '이/가')} 나왔어요` : '';
+    }
+  })();
+  const callout = live ? (say === 'open' && gold ? '골드!' : CALLOUT[say as GachaSay]) : undefined;
 
   return (
-    <div className={['gacha', expanded ? 'gacha--big' : '', `gacha--${phase}`].filter(Boolean).join(' ')}>
-      <p className="muted small gacha__hint" aria-live="polite">
-        {hint}
-      </p>
-      <div className="gacha__machine" aria-hidden="true">
-        <div className="gacha__dome">
-          {/* 하나가 나오면 돔에서도 하나(맨 위)가 빠진다. */}
-          {capsules
-            .slice(0, phase === 'drop' || phase === 'open' ? capsules.length - 1 : capsules.length)
-            .map((c, i) => (
+    <div
+      className={[
+        'gacha',
+        expanded ? 'gacha--big' : '',
+        `gacha--${say}`,
+        gold ? 'gacha--gold' : '',
+        settled ? 'gacha--settled' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <div
+        className="gacha__view"
+        role="img"
+        aria-label={`뽑기 기계, 캡슐 ${count}개: ${candidates.map((p) => p.name).join(', ')}`}
+      >
+        <div className={['gacha__machine', camera ? `gacha__machine--${camera}` : ''].filter(Boolean).join(' ')} aria-hidden="true">
+          <div className="gacha__dome">
+            {/* 하나가 나오면 돔에서도 하나(맨 위)가 빠진다. */}
+            {capsules.slice(0, dropped ? capsules.length - 1 : capsules.length).map((c, i) => (
               <span
                 key={i}
                 className="gacha__capsule"
@@ -127,22 +213,90 @@ export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expan
                 }
               />
             ))}
-          <span className="gacha__glare" />
-        </div>
-        <div className="gacha__body">
-          <span className="gacha__slot" />
-          <span className="gacha__handle" />
-          <span className="gacha__chute">
-            {winner && phase !== 'idle' && phase !== 'shake' && (
-              <span className="gacha__out" style={{ '--cat-hue': categoryHue(winner.category) } as React.CSSProperties}>
-                <span className="gacha__half gacha__half--top" />
-                <span className="gacha__half gacha__half--bottom" />
+            {peek !== null && (say === 'peek' || say === 'peek-back') && (
+              <span
+                className={`gacha__peek gacha__peek--${say}`}
+                style={{ '--cat-hue': categoryHue(candidates[peek].category) } as React.CSSProperties}
+              >
+                <span className="gacha__peektag">{shortName(candidates[peek].name, 6)}</span>
               </span>
             )}
-          </span>
+            <span className="gacha__glare" />
+          </div>
+          <div className="gacha__body">
+            <span className="gacha__slot" />
+            <span className="gacha__handle" />
+            <span className="gacha__chute">
+              {winner && dropped && !opening && (
+                <span
+                  className={['gacha__out', say === 'jam' ? 'gacha__out--jam' : '', say === 'knock' ? 'gacha__out--free' : '']
+                    .filter(Boolean)
+                    .join(' ')}
+                  style={{ '--cat-hue': categoryHue(winner.category) } as React.CSSProperties}
+                >
+                  <span className="gacha__half gacha__half--top" />
+                  <span className="gacha__half gacha__half--bottom" />
+                </span>
+              )}
+            </span>
+          </div>
+          <span className="gacha__base" />
         </div>
-        <span className="gacha__base" />
+
+        {say === 'crank' && live && (
+          <>
+            <span className="gacha__bar gacha__bar--top" aria-hidden="true" />
+            <span className="gacha__bar gacha__bar--bottom" aria-hidden="true" />
+          </>
+        )}
+        {say === 'knock' && live && (
+          <span className="gacha__fist" aria-hidden="true">
+            👊
+          </span>
+        )}
+
+        {winner && opening && (
+          <div className={['gacha__reveal', popped ? 'gacha__reveal--popped' : ''].filter(Boolean).join(' ')} aria-hidden="true">
+            <span className="gacha__rays" />
+            <span className="gacha__big" style={{ '--cat-hue': categoryHue(winner.category) } as React.CSSProperties}>
+              <span className="gacha__bighalf gacha__bighalf--top" />
+              <span className="gacha__bighalf gacha__bighalf--bottom" />
+            </span>
+            <span className="gacha__slip">
+              <small>오늘 점심은</small>
+              <strong>{winner.name}</strong>
+              <span>
+                {categoryLabel(winner)} · {winner.walkMin}분
+              </span>
+            </span>
+            {popped && (
+              <span className="gacha__sparks">
+                {Array.from({ length: SPARKS }, (_, k) => (
+                  <span
+                    key={k}
+                    style={
+                      {
+                        '--a': `${(k * 360) / SPARKS + (k % 3) * 7}deg`,
+                        '--h': gold ? 70 + (k % 4) * 8 : (k * 47) % 360,
+                        '--d': `${0.8 + (k % 4) * 0.18}`,
+                      } as React.CSSProperties
+                    }
+                  />
+                ))}
+              </span>
+            )}
+          </div>
+        )}
+
+        {callout && (
+          <span key={`${run}-${shown.step}`} className={`gacha__callout gacha__callout--${say}`} aria-hidden="true">
+            {callout}
+          </span>
+        )}
       </div>
+      <p className="gacha__status" aria-live="polite">
+        {status}
+      </p>
       {count > MAX_CAPSULES && <p className="muted small gacha__more">캡슐이 {count - MAX_CAPSULES}개 더 있어요</p>}
     </div>
   );

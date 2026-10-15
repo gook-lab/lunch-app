@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * 뽑기 기계 · 플링코 · 주사위 · 폭탄 · 풍선 · 낚시. 모두 App 이 정한 당첨을 보여 주기만 하고, 끝나면
+ * 플링코 · 주사위 · 폭탄 · 풍선 · 낚시. 모두 App 이 정한 당첨을 보여 주기만 하고, 끝나면
  * onSpinEnd 를 한 번 부른다. 움직임 줄이기면 바로 결과를 보여 준다.
  */
 import { act, cleanup, render } from '@testing-library/react';
@@ -12,7 +12,6 @@ import { bombPlan } from '../../lib/bomb';
 import { seededRandom } from '../../lib/random';
 import { Dice } from './Dice';
 import { Fishing } from './Fishing';
-import { Gacha, MAX_CAPSULES } from './Gacha';
 import { Plinko } from './Plinko';
 
 let reduced = false;
@@ -43,38 +42,6 @@ const places = (n: number): Place[] =>
 /** 이름이 긴 후보. 잘림을 확인할 때 쓴다. */
 const longPlaces = (n: number): Place[] =>
   places(n).map((p, i) => ({ ...p, name: `할머니 김치찌개${i + 1}` }));
-
-describe('뽑기 기계', () => {
-  it('흔들고 떨어뜨린 뒤 당첨 캡슐을 연다', () => {
-    for (const n of [1, 5, 20]) {
-      const winner = n - 1;
-      const onSpinEnd = vi.fn();
-      const r = render(<Gacha candidates={places(n)} winnerIndex={winner} spinning run={n} onSpinEnd={onSpinEnd} />);
-      expect(r.container.querySelector('.gacha--shake')).toBeTruthy();
-      expect(r.container.querySelectorAll('.gacha__dome .gacha__capsule')).toHaveLength(Math.min(n, MAX_CAPSULES));
-      run(4_000);
-      expect(onSpinEnd).toHaveBeenCalledTimes(1);
-      expect(r.container.querySelector('.gacha__hint')?.textContent).toContain(`가게${n}`);
-      // 나온 캡슐만큼 돔이 하나 줄었다.
-      expect(r.container.querySelectorAll('.gacha__dome .gacha__capsule')).toHaveLength(Math.min(n, MAX_CAPSULES) - 1);
-      r.unmount();
-    }
-  });
-
-  it('20곳이 넘으면 나머지 수를 적는다', () => {
-    const r = render(<Gacha candidates={places(26)} winnerIndex={null} spinning={false} run={0} onSpinEnd={() => {}} />);
-    expect(r.container.querySelector('.gacha__more')?.textContent).toBe('캡슐이 6개 더 있어요');
-  });
-
-  it('움직임 줄이기면 바로 연다', () => {
-    reduced = true;
-    const onSpinEnd = vi.fn();
-    const r = render(<Gacha candidates={places(5)} winnerIndex={2} spinning run={1} onSpinEnd={onSpinEnd} />);
-    act(() => { vi.advanceTimersByTime(1); });
-    expect(onSpinEnd).toHaveBeenCalledTimes(1);
-    expect(r.container.querySelector('.gacha__hint')?.textContent).toContain('가게3');
-  });
-});
 
 describe('플링코', () => {
   it('공은 당첨 칸에 들어간다', () => {

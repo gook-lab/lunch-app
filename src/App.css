@@ -1889,7 +1889,6 @@ html:has(.stage--full) { overflow: hidden; }
 .cards { width: min(360px, 90vw); display: flex; flex-direction: column; gap: var(--space-3); }
 .cards--big { width: min(92vw, 820px); }
 .cards--empty { height: 260px; }
-.cards__hint { text-align: center; }
 .cards__grid {
   list-style: none;
   margin: 0;
@@ -1949,8 +1948,6 @@ html:has(.stage--full) { overflow: hidden; }
 .cards--big .cards__face--front strong { font-size: var(--fs-lg); }
 .cards__card--open .cards__face--back { transform: rotateY(-180deg); }
 .cards__card--open .cards__face--front { transform: rotateY(0deg); }
-/* 나머지 카드는 차례로 뒤집힌다 */
-.cards__card--open:not(.cards__card--mine) .cards__face { transition-delay: calc(var(--i) * 45ms); }
 .cards__card:hover:not(:disabled):not(.cards__card--open) .cards__face--back { transform: translateY(-4px); }
 .cards__card--mine .cards__face--back { outline: 3px solid var(--color-accent); }
 .cards__card--win .cards__face--front {
@@ -1964,15 +1961,6 @@ html:has(.stage--full) { overflow: hidden; }
 /* 물러난 카드는 투명도 대신 이름 색으로 낮춘다. opacity .5 로 흐리면 11px 메뉴·도보 줄이 다크 3.18:1 로 읽기 힘들었다(10/15). */
 .cards__grid--done .cards__card:not(.cards__card--win) .cards__face--front strong { color: var(--color-neutral-700); }
 .cards__grid--done .cards__card--win { translate: 0 -6px; scale: 1.06; filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.18)); }
-.cards__grid--shuffle li { animation: cards-shuffle 360ms var(--ease-inout) infinite alternate; animation-delay: calc(var(--i) * -70ms); }
-@keyframes cards-shuffle {
-  from { transform: translate(-3px, 2px) rotate(-3deg); }
-  to { transform: translate(3px, -2px) rotate(3deg); }
-}
-:root[data-motion='reduced'] {
-  .cards__face { transition: none; }
-  .cards__grid--shuffle li { animation: none; }
-}
 
 @media (min-width: 560px) {
   .modebar { mask-image: none; grid-auto-columns: minmax(72px, 1fr); }
@@ -2229,22 +2217,6 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .mp__near:hover { background: var(--color-neutral-200); }
 .mp__nearName { display: inline-flex; align-items: center; gap: var(--space-1); font-weight: 600; }
 
-/* 카드 뜸 들이기 — 고른 카드가 떠올라 점점 세게 떨린다. 고른 카드는 천천히(640ms) 뒤집는다. */
-.cards__card--lift { z-index: 1; }
-.cards__card--lift .cards__face--back { animation: cards-lift 750ms var(--ease-inout) both; }
-.cards__card--mine .cards__face { transition-duration: 640ms; }
-@keyframes cards-lift {
-  0% { transform: translateY(0) rotate(0); }
-  30% { transform: translateY(-10px) rotate(-1deg); }
-  50% { transform: translateY(-12px) rotate(2deg); }
-  65% { transform: translateY(-12px) rotate(-3deg); }
-  80% { transform: translateY(-13px) rotate(4deg); }
-  90% { transform: translateY(-13px) rotate(-4deg); }
-  100% { transform: translateY(-12px) rotate(0); }
-}
-:root[data-motion='reduced'] {
-  .cards__card--lift .cards__face--back { animation: none; }
-}
 .list__headRow { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
 
 /* 목록 두 칸 묶음 — 휴대폰에선 위에서 아래로 쌓는다. */
@@ -2446,7 +2418,6 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .gacha { display: grid; justify-items: center; gap: var(--space-2); width: min(280px, 84vw); }
 .gacha--big { width: min(380px, 92vw); }
 .gacha--empty { height: 260px; }
-.gacha__hint { margin: 0; text-align: center; min-height: 2.6em; }
 .gacha__machine { display: grid; justify-items: center; width: 100%; perspective: 600px; }
 .gacha__dome {
   position: relative;
@@ -2486,10 +2457,6 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
     inset -3px -4px 6px oklch(0.45 0.1 var(--cat-hue) / 0.45),
     inset 2px 2px 3px var(--color-bg),
     0 2px 3px oklch(0.4 0.05 var(--cat-hue) / 0.35);
-}
-.gacha--shake .gacha__capsule {
-  animation: gacha-tumble 560ms var(--ease-inout) infinite;
-  animation-delay: calc(var(--i) * -71ms);
 }
 .gacha__body {
   position: relative;
@@ -2533,7 +2500,6 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   border-radius: 5px;
   background: linear-gradient(to bottom, var(--color-accent-400), var(--color-accent-700));
 }
-.gacha--shake .gacha__handle { animation: gacha-turn 2200ms var(--ease-inout) both; }
 .gacha__chute {
   position: relative;
   display: grid;
@@ -2577,20 +2543,12 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   border-radius: 0 0 15px 15px;
   background: linear-gradient(to bottom, oklch(0.55 0.08 var(--cat-hue)) 0 12%, oklch(0.8 0.13 var(--cat-hue)) 12%, oklch(0.6 0.13 var(--cat-hue)));
 }
-.gacha--open .gacha__half--top { transform: translate(-6px, -10px) rotate(-55deg); }
-@keyframes gacha-tumble {
-  0%, 100% { translate: -50% -50%; rotate: var(--tilt); }
-  40% { translate: calc(-50% + var(--dx)) calc(-50% + var(--dy)); rotate: calc(var(--tilt) + 180deg); }
-  70% { translate: calc(-50% - var(--dx) / 2) calc(-50% + var(--dy) / 3); rotate: calc(var(--tilt) + 300deg); }
-}
-@keyframes gacha-turn { to { rotate: 360deg; } }
 @keyframes gacha-drop {
   0% { translate: 0 -46px; rotate: -90deg; }
   70% { translate: 0 4px; rotate: 10deg; }
   85% { translate: 0 -3px; }
   100% { translate: 0 0; rotate: 0deg; }
 }
-@keyframes gacha-open { from { opacity: 0; scale: 0.6; translate: 0 -24px; } }
 
 /* 플링코 — 밝은 판. SVG 폭과 칸 줄 폭이 같아 칸이 핀 아래 맞는다 */
 .plinko { display: grid; gap: var(--space-1); width: min(360px, 92vw); }
@@ -3095,14 +3053,13 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gacha__capsule, .gacha__handle, .gacha__out, .dice__die--rolling, .bomb__burst, .bomb__pop { animation: none !important; }
+  .dice__die--rolling, .bomb__burst, .bomb__pop { animation: none !important; }
   .bomb__bomb { transition: none; }
   .balloon__float, .balloon__item--win .balloon__body { animation: none; }
   .balloon__item--popped .balloon__body, .balloon__item--popped .balloon__string { animation: none; opacity: 0; }
   .balloon__burst { display: none; }
   .fishing__fish, .fishing__swim, .fishing__body, .fishing__float, .fishing__line { animation: none !important; transition: none !important; }
   .fishing__shadow { display: none; }
-  .gacha__half { transition: none; }
 }
 
 /* 모달을 닫은 뒤 게임 아래 한 줄 결과.
