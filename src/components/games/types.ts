@@ -36,7 +36,7 @@ export interface GameProps {
   onActivity?: () => void;
 }
 
-export type GameMode = 'wheel' | 'ladder' | 'slot' | 'pinball' | 'cards' | 'memory' | 'tournament' | 'gacha' | 'plinko' | 'dice' | 'horse' | 'racing' | 'bomb' | 'balloon' | 'fishing' | 'archery' | 'curling' | 'plane';
+export type GameMode = 'wheel' | 'ladder' | 'slot' | 'pinball' | 'cards' | 'memory' | 'tournament' | 'gacha' | 'plinko' | 'dice' | 'horse' | 'racing' | 'bomb' | 'balloon' | 'fishing' | 'archery' | 'curling' | 'plane' | 'treasure' | 'claw' | 'penalty' | 'bowling';
 
 /** label 은 칩에, action 은 실행 버튼에 쓴다. "돌리기" 는 슬롯·핀볼에 안 맞는다. */
 export const GAME_MODES: { id: GameMode; label: string; action: string }[] = [
@@ -58,6 +58,10 @@ export const GAME_MODES: { id: GameMode; label: string; action: string }[] = [
   { id: 'archery', label: '활쏘기', action: '활 쏘기' },
   { id: 'curling', label: '컬링', action: '스톤 밀기' },
   { id: 'plane', label: '종이비행기', action: '비행기 날리기' },
+  { id: 'treasure', label: '보물찾기', action: '보물 파기' },
+  { id: 'claw', label: '인형뽑기', action: '집게 내리기' },
+  { id: 'penalty', label: '승부차기', action: '슛 쏘기' },
+  { id: 'bowling', label: '볼링', action: '볼링공 던지기' },
 ];
 
 /** 방식 단추 그림. 글자 이름은 그대로 두고 그림은 보조로만 쓴다. */
@@ -80,6 +84,10 @@ export const MODE_ICON: Record<GameMode, string> = {
   archery: '🏹',
   curling: '🥌',
   plane: '✈️',
+  treasure: '🗺️',
+  claw: '🧸',
+  penalty: '⚽',
+  bowling: '🎳',
 };
 
 export function actionLabel(mode: GameMode): string {
@@ -89,10 +97,10 @@ export function actionLabel(mode: GameMode): string {
 /**
  * 모드마다 연출 길이가 다르다. 결과는 같다.
  *
- * 핀볼·플링코·주사위·경마·레이싱·폭탄·풍선·낚시·활쏘기·컬링·종이비행기는 여기 없다 — 재생 길이가 경기마다 달라 컴포넌트가 정한다.
+ * 핀볼·플링코·주사위·경마·레이싱·폭탄·풍선·낚시·활쏘기·컬링·종이비행기·보물찾기·인형뽑기·승부차기·볼링은 여기 없다 — 재생 길이가 경기마다 달라 컴포넌트가 정한다.
  * 여기 적어두면 두 곳이 어긋날 수 있다. 짝 맞추기도 없다 — 사람이 두는 만큼 걸린다.
  */
-export const SPIN_MS: Record<Exclude<GameMode, 'pinball' | 'memory' | 'plinko' | 'dice' | 'horse' | 'racing' | 'bomb' | 'balloon' | 'fishing' | 'archery' | 'curling' | 'plane'>, number> = {
+export const SPIN_MS: Record<Exclude<GameMode, 'pinball' | 'memory' | 'plinko' | 'dice' | 'horse' | 'racing' | 'bomb' | 'balloon' | 'fishing' | 'archery' | 'curling' | 'plane' | 'treasure' | 'claw' | 'penalty' | 'bowling'>, number> = {
   wheel: 2600,
   // 사다리·슬롯은 핀볼에 비해 너무 빨리 끝나 긴장이 쌓일 틈이 없었다(10/9 손맛 리뷰 5·4점).
   ladder: 2800,

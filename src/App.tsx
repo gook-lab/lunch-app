@@ -29,6 +29,10 @@ import {
   Archery,
   Curling,
   PaperPlane,
+  Treasure,
+  Claw,
+  Penalty,
+  Bowling,
   Dice,
   Gacha,
   HorseRace,
@@ -1122,6 +1126,10 @@ export default function App() {
                         if (mode === 'archery') return <Archery {...game} />;
                         if (mode === 'curling') return <Curling {...game} />;
                         if (mode === 'plane') return <PaperPlane {...game} />;
+                        if (mode === 'treasure') return <Treasure {...game} />;
+                        if (mode === 'claw') return <Claw {...game} />;
+                        if (mode === 'penalty') return <Penalty {...game} />;
+                        if (mode === 'bowling') return <Bowling {...game} />;
                         return <Wheel {...game} />;
                       })()}
                     </GameBoundary>
