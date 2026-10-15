@@ -657,3 +657,83 @@ export function bowlSfxLater(plan: [ms: number, name: BowlSfxName | SfxName][]):
   const timers = plan.map(([ms, name]) => window.setTimeout(() => play(name), ms));
   return () => timers.forEach((t) => window.clearTimeout(t));
 }
+
+/* ───────── 폭탄 돌리기 ───────── */
+
+/** 폭탄 소리. 위 SOUNDS 와 따로 둬서 다른 게임 소리 목록을 건드리지 않는다(10/15 동시 작업). */
+const BOMB_SOUNDS = {
+  /** 심지에 불이 붙는 치익. */
+  fuse: (ac: AudioContext) => {
+    noise(ac, { dur: 0.32, hz: 5200, to: 3200, q: 0.8, vol: 0.06, filter: 'highpass' });
+    tone(ac, { hz: 2400, to: 1800, dur: 0.05, type: 'square', vol: 0.012 });
+  },
+  /** 시계 초침 째깍 — 짧고 마른 딸깍 두 겹. */
+  clock: (ac: AudioContext) => {
+    noise(ac, { dur: 0.018, hz: 3800, q: 6, vol: 0.09 });
+    tone(ac, { hz: 2100, dur: 0.02, type: 'square', vol: 0.014 });
+  },
+  /** 폭탄이 휙 날아가는 바람 소리. */
+  whoosh: (ac: AudioContext) => noise(ac, { dur: 0.13, hz: rand(700, 900), to: rand(2400, 3000), q: 1.4, vol: 0.06 }),
+  /** 앗 뜨거! — 위로 꺾이는 짧은 비명 + 손에서 튀는 톡. */
+  hot: (ac: AudioContext) => {
+    tone(ac, { hz: 520, to: 1250, dur: 0.12, type: 'sawtooth', vol: 0.025 });
+    tone(ac, { hz: 1250, to: 880, dur: 0.1, type: 'triangle', vol: 0.03, at: 0.12 });
+    noise(ac, { dur: 0.03, hz: 2200, q: 2, vol: 0.06, at: 0.05 });
+  },
+  /** 심지가 끝까지 타 들어가는 치이이익 — 길게, 점점 높게. */
+  hiss: (ac: AudioContext) => noise(ac, { dur: 0.72, hz: 3000, to: 7000, q: 0.7, vol: 0.07, filter: 'highpass' }),
+  /** 불발 — 피식 하고 김빠지는 소리. */
+  puff: (ac: AudioContext) => {
+    noise(ac, { dur: 0.35, hz: 700, to: 220, q: 0.8, vol: 0.08, filter: 'lowpass' });
+    tone(ac, { hz: 300, to: 120, dur: 0.3, type: 'sine', vol: 0.05 });
+  },
+  /** 삐-익 — 높은 경고음 하나가 길게, 끝에 살짝 꺾인다. */
+  beep: (ac: AudioContext) => {
+    tone(ac, { hz: 1760, dur: 0.5, type: 'square', vol: 0.025 });
+    tone(ac, { hz: 1760, to: 1500, dur: 0.16, type: 'square', vol: 0.02, at: 0.5 });
+  },
+  /** 3·2·1 카운트 — 낮은 띵. */
+  count: (ac: AudioContext) => {
+    tone(ac, { hz: 880, dur: 0.16, type: 'triangle', vol: 0.06 });
+    tone(ac, { hz: 440, dur: 0.2, type: 'sine', vol: 0.05 });
+  },
+  /** 받아치기 — 퍽. */
+  kick: (ac: AudioContext) => {
+    noise(ac, { dur: 0.06, hz: 1200, q: 1, vol: 0.12 });
+    tone(ac, { hz: 220, to: 90, dur: 0.1, type: 'sine', vol: 0.1 });
+  },
+  /** 심장 쿵-쿵. */
+  thump: (ac: AudioContext) => {
+    tone(ac, { hz: 70, to: 45, dur: 0.14, type: 'sine', vol: 0.2 });
+    tone(ac, { hz: 62, to: 40, dur: 0.12, type: 'sine', vol: 0.14, at: 0.16 });
+  },
+  /** 펑 — 낮게 깔리는 폭발 + 높은 파편. */
+  boom: (ac: AudioContext) => {
+    noise(ac, { dur: 0.9, hz: 900, to: 120, q: 0.5, vol: 0.22, filter: 'lowpass' });
+    tone(ac, { hz: 110, to: 32, dur: 0.8, type: 'sine', vol: 0.24 });
+    for (let i = 0; i < 4; i += 1) noise(ac, { dur: 0.05, hz: rand(2400, 4200), q: 2, vol: 0.05, at: 0.08 + i * 0.07 });
+  },
+} satisfies Record<string, (ac: AudioContext) => void>;
+
+export type BombSfxName = keyof typeof BOMB_SOUNDS;
+
+const bombLast = new Map<BombSfxName, number>();
+
+/** 폭탄 소리를 나중에 울린다. 취소 함수를 돌려준다. 소리를 끈 사람에겐 아무 일도 없다. */
+export function bombSfxLater(plan: [ms: number, name: BombSfxName][]): () => void {
+  if (!enabled()) return () => {};
+  const play = (name: BombSfxName) => {
+    const now = performance.now();
+    if (now - (bombLast.get(name) ?? -Infinity) < 40) return;
+    bombLast.set(name, now);
+    const ac = audio();
+    if (!ac) return;
+    try {
+      BOMB_SOUNDS[name](ac);
+    } catch {
+      // 오디오 노드를 못 만드는 환경 — 소리 없이 넘어간다.
+    }
+  };
+  const timers = plan.map(([ms, name]) => window.setTimeout(() => play(name), ms));
+  return () => timers.forEach((t) => window.clearTimeout(t));
+}

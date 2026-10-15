@@ -8,6 +8,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Place } from '../../lib/candidates';
 import { Balloon } from './Balloon';
 import { Bomb } from './Bomb';
+import { bombPlan } from '../../lib/bomb';
+import { seededRandom } from '../../lib/random';
 import { Dice } from './Dice';
 import { Fishing } from './Fishing';
 import { Gacha, MAX_CAPSULES } from './Gacha';
@@ -228,6 +230,88 @@ describe('폭탄 돌리기', () => {
       '할머니 김치찌개1',
       '할머니 김치찌개2',
     ]);
+  });
+
+  /** 원하는 사건이 나오는 판 번호를 찾는다(각본은 판 번호 시드라 컴포넌트와 같다). */
+  const findRun = (n: number, winner: number, ok: (p: NonNullable<ReturnType<typeof bombPlan>>) => boolean) => {
+    for (let r = 1; r < 500; r += 1) {
+      const p = bombPlan(n, 0, winner, seededRandom(r));
+      if (p && ok(p)) return { run: r, plan: p };
+    }
+    throw new Error('사건이 나오는 판이 없다');
+  };
+  const status = (c: HTMLElement) => c.querySelector('.bomb__status')?.textContent ?? '';
+
+  it('사건마다 상태 줄이 바뀐다 — 불발·삐-익·앗 뜨거·받아치기·3·2·1, 그래도 끝은 당첨', () => {
+    const cases: [(p: NonNullable<ReturnType<typeof bombPlan>>) => boolean, string, RegExp][] = [
+      [(p) => p.stop === 'dud', 'dud', /불발/],
+      [(p) => p.stop === 'beep', 'beep', /^삐-익! .+에서 터지나요\?$/],
+      [(p) => p.fumbles > 0, 'fumble', /^앗 뜨거!/],
+      [(p) => p.final === 'kick', 'kick', /받아쳤어요!$/],
+      [(p) => p.bounce, 'back', /도로 넘겼어요!$/],
+    ];
+    for (const [ok, cue, text] of cases) {
+      const { run: no, plan } = findRun(6, 4, ok);
+      const onSpinEnd = vi.fn();
+      const r = render(<Bomb candidates={places(6)} winnerIndex={4} spinning run={no} onSpinEnd={onSpinEnd} />);
+      const beat = plan.beats.find((b) => b.cue === cue)!;
+      act(() => { vi.advanceTimersByTime(beat.atMs + 1); });
+      expect(status(r.container), cue).toMatch(text);
+      if (cue === 'dud') expect(r.container.querySelector('.bomb__callout')?.textContent).toBe('휴… 불발!');
+      if (cue === 'beep') expect(r.container.querySelector('.bomb__stage--freeze')).toBeTruthy();
+      run(8_000);
+      expect(onSpinEnd).toHaveBeenCalledTimes(1);
+      expect(status(r.container)).toBe('펑! 오늘은 가게5!');
+      expect(r.container.querySelector('.bomb__seat--win title')?.textContent).toBe('가게5');
+      r.unmount();
+    }
+  });
+
+  it('마지막엔 큰 숫자 3·2·1 이 차례로 뜨고, 펑에 번쩍·흔들림·꽃가루가 터진다', () => {
+    const { run: no, plan } = findRun(5, 1, () => true);
+    const onSpinEnd = vi.fn();
+    const r = render(<Bomb candidates={places(5)} winnerIndex={1} spinning run={no} onSpinEnd={onSpinEnd} />);
+    let now = 0;
+    const until = (ms: number) => {
+      act(() => { vi.advanceTimersByTime(ms - now); });
+      now = ms;
+    };
+    for (const cue of ['three', 'two', 'one'] as const) {
+      const b = plan.beats.find((x) => x.cue === cue)!;
+      until(b.atMs + 1);
+      expect(r.container.querySelector('.bomb__count')?.textContent).toBe(String(b.count));
+    }
+    until(plan.boomMs + 1);
+    expect(r.container.querySelector('.bomb__count')).toBeNull();
+    expect(r.container.querySelector('.bomb__flash')).toBeTruthy();
+    expect(r.container.querySelector('.bomb__stage--boom')).toBeTruthy();
+    expect(r.container.querySelectorAll('.bomb__confetti').length).toBeGreaterThan(10);
+    expect(onSpinEnd).not.toHaveBeenCalled(); // 끝 장면을 볼 틈
+    until(plan.endMs + 1);
+    expect(onSpinEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it('판 도중에 멈추거나(spinning=false) 사라지면 타이머가 남지 않는다', () => {
+    const onSpinEnd = vi.fn();
+    const r = render(<Bomb candidates={places(5)} winnerIndex={2} spinning run={4} onSpinEnd={onSpinEnd} />);
+    run(1_000);
+    r.rerender(<Bomb candidates={places(5)} winnerIndex={2} spinning={false} run={4} onSpinEnd={onSpinEnd} />);
+    run(8_000);
+    expect(onSpinEnd).not.toHaveBeenCalled();
+    r.rerender(<Bomb candidates={places(5)} winnerIndex={2} spinning run={5} onSpinEnd={onSpinEnd} />);
+    run(1_000);
+    r.unmount();
+    run(8_000);
+    expect(onSpinEnd).not.toHaveBeenCalled();
+  });
+
+  it('한 곳뿐이면 바로 터진 모습, onSpinEnd 한 번', () => {
+    const onSpinEnd = vi.fn();
+    const r = render(<Bomb candidates={places(1)} winnerIndex={0} spinning run={1} onSpinEnd={onSpinEnd} />);
+    run(500);
+    expect(onSpinEnd).toHaveBeenCalledTimes(1);
+    expect(r.container.querySelector('.bomb__seat--win title')?.textContent).toBe('가게1');
+    expect(status(r.container)).toBe('펑! 오늘은 가게1!');
   });
 
   it('움직임 줄이기면 바로 당첨 자리를 보여 준다', () => {
