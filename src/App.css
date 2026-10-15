@@ -2984,6 +2984,13 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   }
   .result-bar__meta { display: none; }
 }
+/* 좁은 휴대폰: 단추가 셋이라(결정·결과·다시) 이름이 잘린다. 이름 한 줄, 단추 한 줄로. */
+@media (max-width: 480px) {
+  .result-bar { height: auto; flex-wrap: wrap; padding: var(--space-2); }
+  .result-bar__text { flex-basis: 100%; padding-left: var(--space-1); }
+  .result-bar__actions { flex: 1 1 100%; }
+  .result-bar__actions > * { flex: 1; padding-inline: var(--space-2); }
+}
 
 /* 화면 진입 — 탭을 열 때 살짝 올라오며 나타난다(MODUL reveal 프리셋: slow · decel).
    fill 은 backwards — 끝난 뒤 transform 이 남으면 크게 보기(position: fixed)가 패널에 갇힌다. */
@@ -4009,7 +4016,8 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 .party-form__menu[aria-pressed='true'] { border-color: var(--color-text); background: var(--color-text); color: var(--color-bg); }
 .party-form__menu:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 .party-form__pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-4); align-items: start; }
-.party-form__time input { min-height: 44px; }
+.party-form__times { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
+.party-form__slot { justify-content: center; font-family: var(--app-mono); font-variant-numeric: tabular-nums; }
 .party-form__stepper { display: flex; align-items: center; gap: var(--space-2); }
 .party-form__stepper > button { min-width: 44px; min-height: 44px; font-size: var(--fs-md); }
 .party-form__max { min-width: 3.5em; text-align: center; font-weight: 700; font-family: var(--app-mono); }

@@ -12,7 +12,14 @@ const NOTE: Record<ShareResult, string> = {
 // 데모는 기록이 보낸 사람 브라우저에만 있어, 앱 주소를 보내면 받은 사람은 빈 화면을 본다. 가게 링크만 보낸다.
 const APP_URL = () => (import.meta.env.VITE_DEMO === '1' ? null : window.location.origin);
 
-export function ShareButton({ place }: { place: Pick<Place, 'name' | 'category' | 'sub' | 'walkMin' | 'lat' | 'lng' | 'kakaoPlaceId'> }) {
+export function ShareButton({
+  place,
+  primary = false,
+}: {
+  place: Pick<Place, 'name' | 'category' | 'sub' | 'walkMin' | 'lat' | 'lng' | 'kakaoPlaceId'>;
+  /** 결정한 직후처럼 알리기가 다음 할 일일 때. */
+  primary?: boolean;
+}) {
   const [result, setResult] = useState<ShareResult | null>(null);
 
   useEffect(() => {
@@ -25,8 +32,8 @@ export function ShareButton({ place }: { place: Pick<Place, 'name' | 'category' 
     <div className="share">
       <Button
         block
-        size="sm"
-        variant="secondary"
+        size={primary ? 'lg' : 'sm'}
+        variant={primary ? 'primary' : 'secondary'}
         onClick={async () => setResult(await sharePlace(shareMessage(place, APP_URL())))}
       >
         📤 동료에게 알리기

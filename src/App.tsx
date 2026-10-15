@@ -787,8 +787,9 @@ export default function App() {
           <p className="confirmed" role="status" tabIndex={-1} ref={focusIfLost}>
             오늘 점심으로 정했어요
           </p>
+          {/* 정한 다음 할 일은 같이 갈 사람에게 알리기. 가장 큰 단추로 둔다. */}
+          <ShareButton place={winner} primary />
           <DirectionsLink place={winner} />
-          <ShareButton place={winner} />
           <Button block variant="secondary" onClick={spin} disabled={spinning}>
             그래도 다시 하기
           </Button>
@@ -1230,7 +1231,23 @@ export default function App() {
                       </span>
                     </p>
                     <div className="result-bar__actions">
-                      <Button ref={resultBarRef} onClick={() => setResultOpen(true)}>
+                      {/* 결과 창을 닫으면 결정하려고 창을 다시 열어야 했다. 결정 기록이 거의 안 쌓여(3건, 10/16)
+                          여기서도 바로 정하게 한다. 정한 뒤엔 결과 보기만 남는다. */}
+                      {!confirmed && (
+                        <Button
+                          onClick={() => {
+                            onDecide(winner);
+                            // 결과 창을 열어 "정했어요" 와 큰 알리기 단추를 보여 준다. 다른 곳으로 이미 정해 바꿀지
+                            // 묻는 시트가 뜨는 경우엔 열지 않는다 — 시트 위에 창이 덮인다.
+                            if (!decision || decision.placeId === winner.id) setResultOpen(true);
+                          }}
+                          loading={saving}
+                          disabled={spinning}
+                        >
+                          여기로 결정
+                        </Button>
+                      )}
+                      <Button ref={resultBarRef} variant={confirmed ? 'primary' : 'secondary'} onClick={() => setResultOpen(true)}>
                         결과 보기
                       </Button>
                       {/* 정한 뒤엔 모달과 같은 말로. 여기서만 "다시 하기" 라 오늘 기록이 바뀌는 줄 몰랐다(10/15). */}

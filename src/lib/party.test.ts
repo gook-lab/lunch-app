@@ -10,6 +10,7 @@ import {
   partyCandidates,
   partyInputProblem,
   partyPhase,
+  partyTimeSlots,
   readGame,
   readParty,
   sortParties,
@@ -182,5 +183,24 @@ describe('팟 게임판', () => {
     }
     // 40곳 중 30곳이니 마지막 가게도 대략 3/4 확률로 들어간다.
     expect(lastSeen).toBeGreaterThan(100);
+  });
+});
+
+describe('출발 시각 칸', () => {
+  it('점심 전이면 11:30 부터 10분 간격, 기본값 11:50 이 들어 있다', () => {
+    const slots = partyTimeSlots(kst(10, 5));
+    expect(slots).toEqual(['11:30', '11:40', '11:50', '12:00', '12:10', '12:20', '12:30', '12:40']);
+    expect(slots).toContain(defaultPartyTime(kst(10, 5)));
+  });
+
+  it('점심 시간엔 지금부터 10분 뒤 칸부터', () => {
+    const slots = partyTimeSlots(kst(12, 3));
+    expect(slots[0]).toBe('12:20');
+    expect(slots[0]).toBe(defaultPartyTime(kst(12, 3)));
+    for (const t of slots) expect(partyInputProblem({ category: '면', time: t, max: 4, memo: '' }, kst(12, 3))).toBeNull();
+  });
+
+  it('밤 늦게는 23:50 에서 끊는다', () => {
+    expect(partyTimeSlots(kst(23, 25))).toEqual(['23:40', '23:50']);
   });
 });

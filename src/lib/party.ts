@@ -79,6 +79,20 @@ export function defaultPartyTime(now: Date = new Date()): string {
   return `${String(Math.floor(next / 60)).padStart(2, '0')}:${String(next % 60).padStart(2, '0')}`;
 }
 
+/**
+ * 출발 시각 칸. 브라우저 시간 입력칸은 기기 언어에 따라 "06:20 PM" 처럼 나와(10/15) 단추로 고르게 한다.
+ * 점심 전(11:20 전)이면 11:30 부터, 아니면 지금부터 10분 뒤 칸부터 10분 간격. 23:50 을 넘지 않는다.
+ * defaultPartyTime 이 늘 이 안에 있다.
+ */
+export function partyTimeSlots(now: Date = new Date(), count = 8): string[] {
+  const m = nowMinutesKST(now);
+  const first = m < 11 * 60 + 20 ? 11 * 60 + 30 : Math.ceil((m + 10) / 10) * 10;
+  const out: string[] = [];
+  for (let t = first; out.length < count && t <= 23 * 60 + 50; t += 10)
+    out.push(`${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`);
+  return out;
+}
+
 /** 보내기 전 검사. 문제가 없으면 null, 있으면 사람이 읽을 한 마디. */
 export function partyInputProblem(input: PartyInput, now: Date = new Date()): string | null {
   if (!(CATEGORIES as readonly string[]).includes(input.category)) return '메뉴를 골라 주세요';

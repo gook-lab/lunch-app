@@ -23,6 +23,7 @@ import {
   PHASE_LABEL,
   clampMax,
   defaultPartyTime,
+  partyTimeSlots,
   gameBoard,
   isMember,
   modeLabel,
@@ -343,6 +344,8 @@ interface FormProps {
 
 function PartyForm({ busy, problem, onSubmit, onCancel }: FormProps) {
   const [category, setCategory] = useState<string | null>(null);
+  // 시간 칸은 폼을 연 순간 기준으로 한 번 만든다. 열어 둔 채 시각이 지나면 보낼 때 검사가 잡는다.
+  const [slots] = useState(() => partyTimeSlots());
   const [time, setTime] = useState(() => defaultPartyTime());
   const [max, setMax] = useState(PARTY_DEFAULT_MAX);
   const [memo, setMemo] = useState('');
@@ -371,16 +374,23 @@ function PartyForm({ busy, problem, onSubmit, onCancel }: FormProps) {
           ))}
         </div>
       </fieldset>
+      <fieldset className="party-form__field">
+        <legend>출발 시각</legend>
+        <div className="party-form__times">
+          {slots.map((t) => (
+            <button
+              key={t}
+              type="button"
+              className="party-form__menu party-form__slot"
+              aria-pressed={time === t}
+              onClick={() => setTime(t)}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      </fieldset>
       <div className="party-form__pair">
-        <Input
-          label="출발 시각"
-          type="time"
-          step={300}
-          required
-          value={time}
-          onChange={(e) => setTime(e.target.value)}
-          fieldProps={{ className: 'party-form__time' }}
-        />
         <fieldset className="party-form__field">
           <legend>최대 인원</legend>
           <div className="party-form__stepper">

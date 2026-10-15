@@ -73,6 +73,9 @@ const runButton = () => screen.getByRole('button', { name: /돌리기 \(\d+곳 �
 // 결과는 모달 안 티켓, 모달을 닫았거나 뜨기 전이면 게임 아래 한 줄 결과에 있다.
 const card = () =>
   (document.querySelector('dialog[open] .ticket__name') ?? document.querySelector('.result-bar strong'))?.textContent?.trim() ?? null;
+// "여기로 결정" 은 결과 모달과 게임 아래 한 줄 결과 두 곳에 있다. 모달 쪽.
+const modalDecide = () =>
+  within(document.querySelector('dialog[open]') as HTMLElement).getByRole('button', { name: '여기로 결정' });
 const lockedButtons = () =>
   [...document.querySelectorAll('button')].filter((b) => b.disabled).map((b) => b.textContent?.trim());
 
@@ -137,7 +140,7 @@ describe('결과 모달', () => {
 
     fireEvent.click(reopen);
     expect((screen.getByRole('dialog', { name: '오늘의 점심 결과' }) as HTMLDialogElement).open).toBe(true);
-    expect(screen.getByRole('button', { name: '여기로 결정' })).toBeTruthy();
+    expect(modalDecide()).toBeTruthy();
   });
 
   it('꽃가루는 게임이 끝나 처음 뜰 때만 터지고, "결과 보기" 로 다시 열 땐 안 터진다', () => {
@@ -166,7 +169,7 @@ describe('결과 모달', () => {
     startWheel();
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
     fireEvent.click(screen.getByRole('button', { name: '결과 보기' }));
-    expect(screen.getByRole('button', { name: '여기로 결정' })).toBeTruthy();
+    expect(modalDecide()).toBeTruthy();
   });
 });
 
@@ -372,7 +375,7 @@ describe('결정 저장 실패', () => {
     vi.mocked(decideToday).mockRejectedValueOnce(new Error('offline'));
     startWheel();
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '여기로 결정' })); });
+    await act(async () => { fireEvent.click(modalDecide()); });
     expect(screen.getByRole('alert').textContent).toBe('저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.');
   });
 
@@ -382,13 +385,13 @@ describe('결정 저장 실패', () => {
     vi.mocked(decideToday).mockImplementationOnce(() => new Promise<void>((r) => { done = r; }));
     startWheel();
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '여기로 결정' })); });
+    await act(async () => { fireEvent.click(modalDecide()); });
     const waitingText = '연결이 끊겨 아직 저장 못 했어요. 연결되면 자동으로 저장돼요.';
     expect(screen.queryByText(waitingText)).toBeNull();
 
     await act(async () => { vi.advanceTimersByTime(8000); });
     expect(screen.getByText(waitingText)).toBeTruthy();
-    expect((screen.getByRole('button', { name: '여기로 결정' }) as HTMLButtonElement).disabled).toBe(false);
+    expect((modalDecide() as HTMLButtonElement).disabled).toBe(false);
 
     await act(async () => { done(); });
     expect(screen.queryByText(waitingText)).toBeNull();
@@ -401,7 +404,7 @@ describe('여기로 결정', () => {
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
     expect(card()).toBe('가집');
 
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '여기로 결정' })); });
+    await act(async () => { fireEvent.click(modalDecide()); });
 
     expect(decideToday).toHaveBeenCalledTimes(1);
     expect(decideToday).toHaveBeenCalledWith('20261008', 'a', 'wheel');
@@ -410,7 +413,7 @@ describe('여기로 결정', () => {
   it('같은 순간 두 번 눌러도 기록은 한 번만 쓴다', async () => {
     startWheel();
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
-    const decide = screen.getByRole('button', { name: '여기로 결정' });
+    const decide = modalDecide();
     await act(async () => {
       decide.click();
       decide.click();
@@ -424,12 +427,25 @@ describe('여기로 결정', () => {
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
     expect(card()).toBe('가집');
 
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '여기로 결정' })); });
+    await act(async () => { fireEvent.click(modalDecide()); });
     expect(decideToday).not.toHaveBeenCalled();
     expect(screen.getByText('나집에서 가집으로 바꿀까요?')).toBeTruthy();
 
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: '바꾸기' })); });
     expect(decideToday).toHaveBeenCalledWith('20261008', 'a', 'wheel');
+  });
+});
+
+describe('한 줄 결과에서 바로 결정', () => {
+  it('결과 창을 닫아도 게임 아래 한 줄에서 바로 정하고, 정하면 결정 단추는 사라진다', async () => {
+    startWheel();
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
+    fireEvent.click(screen.getByRole('button', { name: '닫고 게임 보기' }));
+    const bar = document.querySelector('.result-bar') as HTMLElement;
+    await act(async () => { fireEvent.click(within(bar).getByRole('button', { name: '여기로 결정' })); });
+    expect(decideToday).toHaveBeenCalledWith('20261008', 'a', 'wheel');
+    // 정하면 결과 창을 다시 열어 알리기 단추를 보여 준다.
+    expect((screen.getByRole('dialog', { name: '오늘의 점심 결과' }) as HTMLDialogElement).open).toBe(true);
   });
 });
 

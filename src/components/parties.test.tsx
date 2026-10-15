@@ -124,7 +124,13 @@ describe('점심 팟', () => {
     fireEvent.click(screen.getByRole('button', { name: '팟 모으기' }));
     const sheet = screen.getByRole('dialog', { name: '점심 팟 모으기' });
     fireEvent.click(within(sheet).getByRole('button', { name: /밥/ }));
-    fireEvent.change(within(sheet).getByLabelText('출발 시각'), { target: { value: '09:00' } });
+    // 시각은 단추로 고른다(브라우저 시간 칸은 "06:20 PM" 처럼 나왔다). 고른 칸이 기본으로 눌려 있다.
+    const slots = within(within(sheet).getByRole('group', { name: '출발 시각' })).getAllByRole('button');
+    expect(slots.length).toBeGreaterThan(1);
+    expect(slots.filter((b) => b.getAttribute('aria-pressed') === 'true')).toHaveLength(1);
+    fireEvent.click(slots[0]);
+    // 폼을 연 채로 그 시각이 지나 버렸다.
+    vi.setSystemTime(NOW.getTime() + 12 * 60 * 60 * 1000);
     await act(async () => {
       fireEvent.click(within(sheet).getByRole('button', { name: '팟 열기' }));
     });
