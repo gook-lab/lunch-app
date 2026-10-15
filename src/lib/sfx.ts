@@ -590,3 +590,70 @@ export function penaltySfxLater(plan: [ms: number, name: PenaltySfxName | SfxNam
   );
   return () => timers.forEach((t) => window.clearTimeout(t));
 }
+/* ───────── 볼링 ───────── */
+
+/** 볼링 소리. 위 SOUNDS 와 따로 둬서 다른 게임 소리 목록을 건드리지 않는다(10/15 동시 작업). */
+const BOWL_SOUNDS = {
+  /** 공이 레인을 구르는 낮은 우르르. */
+  roll: (ac: AudioContext) => {
+    noise(ac, { dur: 0.75, hz: 140, to: 220, q: 0.8, vol: 0.07, filter: 'lowpass' });
+    tone(ac, { hz: 58, to: 70, dur: 0.7, type: 'sine', vol: 0.03 });
+  },
+  /** 핀이 와르르 — 짧은 나무 부딪힘을 여러 번. */
+  crash: (ac: AudioContext) => {
+    for (let i = 0; i < 6; i += 1) {
+      const at = i * 0.035 + rand(0, 0.02);
+      noise(ac, { dur: 0.06, hz: rand(1400, 2600), q: 2.5, vol: 0.1, at });
+      tone(ac, { hz: rand(500, 820), to: rand(260, 380), dur: 0.08, type: 'triangle', vol: 0.04, at });
+    }
+  },
+  /** 핀 하나가 쓰러지는 톡. */
+  tok: (ac: AudioContext) => {
+    noise(ac, { dur: 0.05, hz: rand(1600, 2200), q: 3, vol: 0.09 });
+    tone(ac, { hz: rand(620, 760), to: 360, dur: 0.07, type: 'triangle', vol: 0.04 });
+  },
+  /** 거터에 빠지는 텅 — 낮고 빈 소리. */
+  gutter: (ac: AudioContext) => {
+    tone(ac, { hz: 160, to: 90, dur: 0.22, type: 'sine', vol: 0.07 });
+    noise(ac, { dur: 0.5, hz: 260, to: 160, q: 1, vol: 0.05, filter: 'lowpass', at: 0.05 });
+  },
+  /** 치우는 바가 내려와 쓸어 가는 기계음. */
+  rake: (ac: AudioContext) => {
+    tone(ac, { hz: 110, to: 150, dur: 0.32, type: 'square', vol: 0.012 });
+    noise(ac, { dur: 0.3, hz: 900, to: 500, q: 1.2, vol: 0.04 });
+  },
+  /** 끝까지 버텼어요 — 짧은 팡파르. */
+  fanfare: (ac: AudioContext) => {
+    [523, 659, 784, 1047].forEach((hz, i) =>
+      tone(ac, { hz, dur: i === 3 ? 0.4 : 0.12, type: 'triangle', vol: 0.05, at: i * 0.09 }),
+    );
+  },
+} satisfies Record<string, (ac: AudioContext) => void>;
+
+export type BowlSfxName = keyof typeof BOWL_SOUNDS;
+
+const bowlLast = new Map<BowlSfxName, number>();
+
+/** 볼링 소리(또는 공용 소리)를 나중에 울린다. 취소 함수를 돌려준다. 소리를 끈 사람에겐 아무 일도 없다. */
+export function bowlSfxLater(plan: [ms: number, name: BowlSfxName | SfxName][]): () => void {
+  if (!enabled()) return () => {};
+  const play = (name: BowlSfxName | SfxName) => {
+    if (!(name in BOWL_SOUNDS)) {
+      sfx(name as SfxName);
+      return;
+    }
+    const key = name as BowlSfxName;
+    const now = performance.now();
+    if (now - (bowlLast.get(key) ?? -Infinity) < 50) return;
+    bowlLast.set(key, now);
+    const ac = audio();
+    if (!ac) return;
+    try {
+      BOWL_SOUNDS[key](ac);
+    } catch {
+      // 오디오 노드를 못 만드는 환경 — 소리 없이 넘어간다.
+    }
+  };
+  const timers = plan.map(([ms, name]) => window.setTimeout(() => play(name), ms));
+  return () => timers.forEach((t) => window.clearTimeout(t));
+}

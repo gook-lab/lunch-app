@@ -1,0 +1,468 @@
+/*
+ * 볼링 — Bowling.tsx 전용. 화면 상자(.bowling__box) 안에 카메라가 움직이는 레인 전체(.bowling__world)와
+ * 화면에 붙은 효과(.bowling__fx), 마지막 공 컷신(.bowling__cut)이 겹쳐 있다. 좌표는 레인 폭 100 단위라
+ * 크기·자리를 모두 상자 폭 기준 cqw 로 잡는다(lib/bowling.ts). 이름표·상태 줄은 앱 토큰을 써서 다크에서도 읽힌다.
+ * 핀(흰색·빨간 띠)과 공 색은 실제 물건 색이라 라이트·다크 모두 같고, 레인 나무색만 다크에서 어두워진다.
+ */
+.bowling { width: min(360px, 94vw); display: grid; gap: var(--space-2); justify-items: center; }
+.bowling--big { width: min(640px, 94vw); }
+.bowling--empty { height: 320px; }
+
+.bowling__box {
+  --wood: oklch(0.84 0.075 70);
+  --wood2: oklch(0.8 0.08 66);
+  --deck: oklch(0.88 0.06 74);
+  --approach: oklch(0.9 0.045 78);
+  --gutter: oklch(0.66 0.015 260);
+  --gutter2: oklch(0.52 0.015 260);
+  --wall: oklch(0.42 0.02 260);
+  --pit: oklch(0.2 0.01 260);
+  --mark: oklch(0.5 0.13 30);
+  --line: oklch(0.32 0.02 260);
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--fit);
+  container-type: inline-size;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-neutral-300);
+  background: var(--pit);
+}
+[data-theme='dark'] .bowling__box {
+  --wood: oklch(0.47 0.06 58);
+  --wood2: oklch(0.44 0.06 56);
+  --deck: oklch(0.52 0.055 62);
+  --approach: oklch(0.55 0.04 70);
+  --gutter: oklch(0.34 0.01 260);
+  --gutter2: oklch(0.26 0.01 260);
+  --wall: oklch(0.22 0.01 260);
+  --pit: oklch(0.13 0.005 260);
+  --mark: oklch(0.72 0.13 40);
+  --line: oklch(0.85 0.02 90);
+}
+
+/* ── 레인 전체(카메라가 따라다닌다) ── */
+.bowling__world { position: absolute; left: 0; top: 0; width: 100cqw; transform-origin: 0 0; will-change: transform; }
+.bowling__world > span { position: absolute; }
+.bowling__wall { top: 0; bottom: 0; width: 3cqw; background: var(--wall); }
+.bowling__wall--l { left: 0; }
+.bowling__wall--r { right: 0; }
+.bowling__gutter { top: 0; bottom: 0; width: 5.5cqw; background: linear-gradient(90deg, var(--gutter2), var(--gutter) 50%, var(--gutter2)); }
+.bowling__gutter--l { left: 3cqw; }
+.bowling__gutter--r { right: 3cqw; }
+.bowling__lane {
+  top: 0;
+  bottom: 0;
+  left: 8.5cqw;
+  width: 83cqw;
+  background:
+    linear-gradient(90deg, oklch(1 0 0 / 0) 30%, oklch(1 0 0 / 0.18) 50%, oklch(1 0 0 / 0) 70%),
+    repeating-linear-gradient(90deg, var(--wood) 0 2.37cqw, var(--wood2) 2.37cqw 2.47cqw, var(--wood) 2.47cqw 4.74cqw, oklch(from var(--wood) calc(l - 0.02) c h) 4.74cqw 4.84cqw);
+  box-shadow: inset 0.4cqw 0 0 oklch(0 0 0 / 0.15), inset -0.4cqw 0 0 oklch(0 0 0 / 0.15);
+}
+.bowling__deck { left: 8.5cqw; width: 83cqw; background: linear-gradient(to bottom, var(--deck) 80%, transparent); opacity: 0.85; }
+.bowling__approach { left: 0; right: 0; bottom: 0; background: var(--approach); }
+.bowling__foul { left: 0; right: 0; height: 0.8cqw; translate: 0 -50%; background: var(--line); }
+.bowling__dots {
+  left: 20cqw;
+  width: 60cqw;
+  height: 1.2cqw;
+  background: radial-gradient(circle closest-side, var(--mark) 60%, transparent 70%) 0 0 / 6cqw 1.2cqw repeat-x;
+}
+.bowling__arrows > span {
+  position: absolute;
+  width: 2.6cqw;
+  height: 5cqw;
+  translate: -50% 0;
+  background: var(--mark);
+  clip-path: polygon(50% 0, 100% 100%, 50% 78%, 0 100%);
+}
+.bowling__pit {
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to bottom, var(--pit) 70%, oklch(from var(--pit) calc(l + 0.08) c h));
+  box-shadow: 0 0.6cqw 1cqw oklch(0 0 0 / 0.25);
+}
+/* 핀 자리 표시 — 쓰러진 핀이 치워지면 빈자리가 보인다. */
+.bowling__spot {
+  width: 2.4cqw;
+  height: 1.1cqw;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: oklch(0.35 0.03 60 / 0.35);
+}
+
+/* ── 핀 — 자리(left/top)는 바닥 가운데. 몸은 바닥을 축으로 기운다(--rot). ── */
+.bowling__pin { position: absolute; width: 0; height: 0; }
+.bowling__body {
+  position: absolute;
+  left: -1.8cqw;
+  bottom: -0.4cqw;
+  width: 3.6cqw;
+  height: 9cqw;
+  overflow: visible;
+  transform-origin: 50% 96%;
+  transform: translateY(calc(var(--lift) * -2.2cqw)) rotate(var(--rot));
+  filter: drop-shadow(0 0.25cqw 0.2cqw oklch(0.2 0.02 60 / 0.45));
+}
+.bowling__pin-shape { fill: oklch(0.975 0.006 90); stroke: oklch(0.3 0.01 260 / 0.55); stroke-width: 0.9; }
+.bowling__pin-stripe { fill: oklch(0.6 0.21 27); }
+.bowling__pin-gloss { fill: oklch(1 0 0 / 0.75); }
+.bowling__pin--lift .bowling__body { filter: drop-shadow(0 1.6cqw 0.8cqw oklch(0 0 0 / 0.35)); }
+.bowling__tag {
+  position: absolute;
+  left: 0;
+  bottom: calc((9 * (1 - var(--lay) * 0.72) + 0.9 + var(--lift) * 2.2) * 1cqw);
+  translate: -50% 0;
+  max-width: var(--tag-w);
+  padding: 0 3px;
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bowling--big .bowling__tag { font-size: var(--fs-sm); padding: 0 5px; }
+/* 쓰러진 핀 이름표 — 지워진 듯 흐리게(투명도 대신 색으로: 작은 글씨 대비 유지). */
+.bowling__pin--down .bowling__tag {
+  background: var(--color-neutral-100);
+  color: var(--color-neutral-700);
+  border-color: transparent;
+  text-decoration: line-through;
+  font-weight: 600;
+}
+.bowling__pin--wobble .bowling__tag { border-color: var(--color-accent); }
+/* 끝 장면 — 쓰러진 핀 이름표는 물러나고 버틴 핀 이름만 남는다. */
+.bowling__box--done .bowling__pin--down .bowling__tag { opacity: 0; transition: opacity 300ms var(--ease-out); }
+/* 당첨 — 끝까지 버틴 핀이 빛난다. */
+.bowling__pin--win .bowling__body {
+  animation: bowling-win 700ms var(--ease-out) both;
+  filter: drop-shadow(0 0 0.6cqw oklch(0.92 0.16 92)) drop-shadow(0 0 2.2cqw oklch(0.85 0.17 85 / 0.9));
+}
+.bowling__pin--win .bowling__tag {
+  max-width: none;
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-bg);
+  font-size: var(--fs-sm);
+  animation: bowling-tag-pop 420ms var(--ease-out) both;
+}
+@keyframes bowling-win {
+  0% { transform: rotate(0deg) scale(1); }
+  35% { transform: translateY(-1.6cqw) rotate(-6deg) scale(1.18); }
+  65% { transform: translateY(0) rotate(4deg) scale(1.1); }
+  100% { transform: rotate(0deg) scale(1.12); }
+}
+@keyframes bowling-tag-pop { from { scale: 0.6; } 60% { scale: 1.12; } }
+.bowling__halo {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 13cqw;
+  height: 4.6cqw;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, oklch(0.95 0.15 92 / 0.95), oklch(0.9 0.16 85 / 0.45) 55%, transparent);
+  animation: bowling-halo 1200ms var(--ease-out) both;
+}
+@keyframes bowling-halo { from { scale: 0.2; opacity: 0; } 40% { opacity: 1; } to { scale: 1; } }
+
+/* 꽃가루 — 당첨 핀 머리에서 터진다. */
+.bowling__confetti { position: absolute; left: 0; top: -8cqw; }
+.bowling__confetti span {
+  position: absolute;
+  left: -2.5px;
+  top: -4px;
+  width: 5px;
+  height: 8px;
+  border-radius: 1px;
+  background: oklch(0.76 0.17 var(--h));
+  opacity: 0;
+  animation: bowling-confetti 1000ms var(--ease-out) 60ms forwards;
+}
+@keyframes bowling-confetti {
+  0% { opacity: 1; transform: rotate(var(--a)) translateY(-2cqw) rotate(0deg); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(-14cqw * var(--d))) rotate(320deg); }
+}
+
+/* ── 공 — 자리는 가운데. 구멍 셋이 굴러가는 만큼 돈다. ── */
+.bowling__ball {
+  position: absolute;
+  z-index: 300;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, oklch(0.8 0.12 280) 0 6%, oklch(0.5 0.22 285) 30%, oklch(0.28 0.14 285) 80%);
+  box-shadow: 0 0.6cqw 0.8cqw oklch(0 0 0 / 0.35);
+}
+.bowling__ball--gutter { box-shadow: 0 0.2cqw 0.3cqw oklch(0 0 0 / 0.5); scale: 0.92; }
+.bowling__holes {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  rotate: var(--spin);
+  background:
+    radial-gradient(circle at 42% 30%, oklch(0.12 0.03 285) 0 7%, transparent 8%),
+    radial-gradient(circle at 60% 30%, oklch(0.12 0.03 285) 0 7%, transparent 8%),
+    radial-gradient(circle at 51% 52%, oklch(0.12 0.03 285) 0 9%, transparent 10%);
+}
+
+/* ── 핀 정리 바 — 앞에서 뒤로 쓸고 지나간다. ── */
+.bowling__bar {
+  position: absolute;
+  z-index: 250;
+  left: 8.5cqw;
+  width: 83cqw;
+  height: 2.6cqw;
+  translate: 0 -50%;
+  border-radius: 0.6cqw;
+  background:
+    repeating-linear-gradient(45deg, oklch(0.85 0.16 90) 0 2cqw, oklch(0.3 0.02 260) 2cqw 4cqw);
+  box-shadow: 0 0.6cqw 1cqw oklch(0 0 0 / 0.35);
+}
+
+/* ── 볼러(뒷모습) ── */
+.bowling__bowler { position: absolute; z-index: 200; width: 12cqw; translate: -50% -86%; }
+.bowling__mini { display: block; width: 100%; overflow: visible; }
+.bowling__mini-shadow { fill: oklch(0.2 0 0 / 0.2); }
+.bowling__mini-leg { fill: oklch(0.35 0.04 260); }
+.bowling__mini-shirt { fill: oklch(0.6 0.17 250); }
+.bowling__mini-stripe { fill: oklch(0.95 0.02 250); }
+.bowling__mini-head { fill: oklch(0.82 0.07 60); }
+.bowling__mini-hair { fill: oklch(0.3 0.04 50); }
+.bowling__mini-ball { fill: oklch(0.42 0.2 285); stroke: oklch(0.25 0.1 285); stroke-width: 1; }
+.bowling__mini-arm { transform-box: view-box; transform-origin: 29.5px 20px; }
+.bowling__bowler--swing { animation: bowling-step var(--wind) var(--ease-inout) both; }
+.bowling__bowler--swing .bowling__mini-arm { animation: bowling-arm var(--wind) var(--ease-inout) both; }
+.bowling__bowler--follow .bowling__mini-arm { rotate: -150deg; transition: rotate 160ms var(--ease-out); }
+@keyframes bowling-step { to { translate: -50% -100%; } }
+@keyframes bowling-arm {
+  0% { rotate: 0deg; }
+  45% { rotate: 50deg; }
+  100% { rotate: -40deg; }
+}
+
+/* ── 휘청 말풍선 · 킥백 팅 ── */
+.bowling__bubble {
+  position: absolute;
+  z-index: 420;
+  translate: -50% -100%;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: oklch(0.99 0 0);
+  color: oklch(0.25 0.02 260);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 1px 0 oklch(0.25 0.02 260 / 0.5), 0 0 0 1px oklch(0.25 0.02 260 / 0.35);
+  animation: bowling-bob 420ms var(--ease-inout) infinite alternate;
+}
+.bowling__bubble--fall { background: oklch(0.6 0.21 27); color: oklch(0.99 0 0); animation: bowling-pop 300ms var(--ease-out) both; }
+.bowling__bubble--stay { background: oklch(0.88 0.16 92); color: oklch(0.25 0.02 260); animation: bowling-pop 300ms var(--ease-out) both; }
+@keyframes bowling-bob { from { translate: -50% -100%; } to { translate: -50% -125%; } }
+.bowling__ting {
+  position: absolute;
+  z-index: 410;
+  translate: -50% -50%;
+  font-size: clamp(14px, 6cqw, 30px);
+  font-weight: 900;
+  color: oklch(0.9 0.08 220);
+  -webkit-text-stroke: 0.14em oklch(0.22 0.02 260);
+  paint-order: stroke fill;
+  animation: bowling-pop 300ms var(--ease-out) both;
+}
+
+/* ── 화면에 붙은 효과 ── */
+.bowling__fx { position: absolute; inset: 0; z-index: 7; pointer-events: none; }
+.bowling__frames {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 999px;
+  background: oklch(0.2 0.02 260 / 0.6);
+}
+.bowling__f {
+  width: 12px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, oklch(0.8 0.12 280) 0 8%, oklch(0.5 0.22 285) 40%, oklch(0.3 0.14 285));
+}
+.bowling__f--final { box-shadow: 0 0 0 1.5px oklch(0.88 0.17 92); }
+.bowling__f--used { opacity: 0.25; }
+.bowling__letter {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9%;
+  background: oklch(0.12 0 0);
+  animation: bowling-bar 220ms var(--ease-out) both;
+}
+.bowling__letter--top { top: 0; --from: -100%; }
+.bowling__letter--bottom { bottom: 0; --from: 100%; }
+@keyframes bowling-bar { from { translate: 0 var(--from); } }
+.bowling__callout {
+  position: absolute;
+  top: 16%;
+  left: 50%;
+  translate: -50% 0;
+  font-size: clamp(22px, 11cqw, 56px);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  color: oklch(0.99 0 0);
+  -webkit-text-stroke: 0.14em oklch(0.22 0.02 260);
+  paint-order: stroke fill;
+  letter-spacing: -0.02em;
+  animation: bowling-pop 360ms var(--ease-out) both;
+}
+.bowling__callout--big { color: oklch(0.85 0.17 70); font-size: clamp(28px, 15cqw, 76px); }
+.bowling__callout--split { color: oklch(0.82 0.13 200); }
+.bowling__callout--sad { color: oklch(0.82 0.03 260); top: auto; bottom: 18%; }
+.bowling__callout--ting { color: oklch(0.9 0.08 220); }
+.bowling__callout--win { top: auto; bottom: 7%; color: oklch(0.88 0.17 92); font-size: clamp(20px, 9cqw, 48px); }
+@keyframes bowling-pop {
+  0% { scale: 0.3; rotate: -10deg; opacity: 0; }
+  60% { scale: 1.15; rotate: 3deg; opacity: 1; }
+  100% { scale: 1; rotate: -3deg; }
+}
+
+/* ── 컷신 — 마지막 공, 볼러 옆모습 백스윙(휙~) ── */
+.bowling__cut { position: absolute; inset: 0; z-index: 8; overflow: hidden; }
+.bowling__cut-bg {
+  position: absolute;
+  inset: -6%;
+  background:
+    repeating-linear-gradient(90deg, oklch(0.84 0.075 70) 0 5cqw, oklch(0.8 0.08 66) 5cqw 5.3cqw),
+    oklch(0.84 0.075 70);
+  background-size: 100% 22%, auto;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-color: oklch(0.32 0.04 280);
+  animation: bowling-cut-in 200ms var(--ease-out) both;
+}
+.bowling__cut-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 22% 0;
+  background:
+    radial-gradient(ellipse 18% 30% at 20% 10%, oklch(0.9 0.1 90 / 0.5), transparent 70%),
+    radial-gradient(ellipse 18% 30% at 70% 10%, oklch(0.85 0.12 320 / 0.45), transparent 70%),
+    linear-gradient(to bottom, oklch(0.3 0.06 285), oklch(0.42 0.08 300));
+}
+[data-theme='dark'] .bowling__cut-bg { filter: brightness(0.8); }
+@keyframes bowling-cut-in { from { opacity: 0; scale: 1.15; } }
+.bowling__hero {
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  width: 92%;
+  max-height: 86%;
+  translate: -50% -50%;
+  overflow: visible;
+  transform-origin: 46% 60%;
+  animation: bowling-push var(--cut) var(--ease-out) forwards;
+}
+@keyframes bowling-push { from { scale: 1; } to { scale: 1.18; } }
+.bowling__h-floor { fill: oklch(0.8 0.08 66); }
+.bowling__h-floorline { stroke: oklch(0.55 0.06 60); stroke-width: 2; }
+.bowling__h-shadow { fill: oklch(0.2 0 0 / 0.22); }
+.bowling__h-leg { fill: none; stroke: oklch(0.35 0.04 260); stroke-width: 13; stroke-linecap: round; stroke-linejoin: round; }
+.bowling__h-shoe { fill: oklch(0.6 0.18 25); }
+.bowling__h-body { fill: oklch(0.6 0.17 250); stroke: oklch(0.38 0.1 255); stroke-width: 2; }
+.bowling__h-stripe { stroke: oklch(0.95 0.02 250); stroke-width: 5; }
+.bowling__h-arm-l { fill: none; stroke: oklch(0.6 0.17 250); stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+.bowling__h-head { fill: oklch(0.88 0.06 60); stroke: oklch(0.45 0.06 50); stroke-width: 2; }
+.bowling__h-hair { fill: oklch(0.3 0.04 50); }
+.bowling__h-eye { fill: oklch(0.18 0.01 260); }
+.bowling__h-brow { stroke: oklch(0.3 0.04 50); stroke-width: 2.6; stroke-linecap: round; }
+.bowling__h-mouth { fill: none; stroke: oklch(0.35 0.06 30); stroke-width: 2.2; stroke-linecap: round; }
+.bowling__h-arm { stroke: oklch(0.6 0.17 250); stroke-width: 11; stroke-linecap: round; }
+.bowling__h-ballbody { fill: oklch(0.45 0.21 285); stroke: oklch(0.28 0.12 285); stroke-width: 2; }
+.bowling__h-hole { fill: oklch(0.15 0.04 285); }
+/* 어깨를 축으로: 앞(아래) → 뒤로 크게 젖힘(휙~) → 앞으로 내던짐. */
+.bowling__h-swing { transform-box: view-box; transform-origin: 118px 74px; animation: bowling-swing var(--cut) cubic-bezier(0.45, 0, 0.4, 1) forwards; }
+@keyframes bowling-swing {
+  0% { rotate: 10deg; }
+  55% { rotate: 128deg; }
+  66% { rotate: 122deg; }
+  100% { rotate: -38deg; }
+}
+.bowling__cut--out .bowling__h-swing { animation: none; rotate: -42deg; }
+/* 공을 놓으면 오른쪽으로 굴러 나간다 — 팔에서 떨어져 바닥으로. */
+.bowling__cut--out .bowling__h-ball { animation: bowling-throw 200ms cubic-bezier(0.5, 0, 1, 0.6) forwards; }
+@keyframes bowling-throw { to { translate: 140px 30px; } }
+.bowling__vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 55%, transparent 40%, oklch(0.1 0.04 20 / 0.75) 100%);
+  opacity: 0;
+  animation: bowling-fade-in var(--cut) var(--ease-out) forwards;
+}
+@keyframes bowling-fade-in { to { opacity: 1; } }
+.bowling__speed {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: repeating-linear-gradient(90deg, oklch(1 0 0 / 0.85) 0 16cqw, transparent 16cqw 30cqw);
+  -webkit-mask-image: repeating-linear-gradient(to bottom, transparent 0 4cqw, #000 4cqw 4.5cqw, transparent 4.5cqw 7.3cqw);
+  mask-image: repeating-linear-gradient(to bottom, transparent 0 4cqw, #000 4cqw 4.5cqw, transparent 4.5cqw 7.3cqw);
+}
+.bowling__cut--out .bowling__speed { opacity: 1; animation: bowling-speed 200ms linear infinite; }
+@keyframes bowling-speed { from { background-position: 0 0; } to { background-position: 60cqw 0; } }
+.bowling__cut .bowling__letter { height: 10%; z-index: 1; animation-duration: 260ms; }
+.bowling__caption {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: 1.5%;
+  translate: -50% 0;
+  color: oklch(0.88 0.17 92);
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+.bowling__sfx {
+  position: absolute;
+  z-index: 2;
+  left: 8%;
+  top: 16%;
+  font-size: clamp(26px, 14cqw, 72px);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  color: oklch(0.99 0 0);
+  -webkit-text-stroke: 0.14em oklch(0.22 0.02 260);
+  paint-order: stroke fill;
+  opacity: 0;
+  rotate: -10deg;
+  animation: bowling-whoosh var(--cut) linear forwards;
+}
+@keyframes bowling-whoosh {
+  0%, 38% { opacity: 0; translate: 2cqw 0; scale: 0.6; }
+  52% { opacity: 1; translate: 0 0; scale: 1.15; }
+  80% { opacity: 1; translate: -1cqw 0; scale: 1; }
+  100% { opacity: 0.9; translate: -2cqw 0; scale: 1; }
+}
+.bowling__cut--out { animation: bowling-cut-out 200ms var(--ease-out) forwards; pointer-events: none; }
+@keyframes bowling-cut-out { to { opacity: 0; scale: 1.12; } }
+
+.bowling__status { margin: 0; font-size: var(--fs-sm); font-weight: 700; color: var(--color-text); text-align: center; }
+
+/* 동작 줄이기 — 앱이 "움직임 켜기" 를 반영해 둔 data-motion 을 본다(기기 설정만 보면 켜 둔 사람도 멈춘다). */
+[data-motion='reduced'] .bowling *,
+[data-motion='reduced'] .bowling__box { animation: none !important; transition: none !important; }
+[data-motion='reduced'] .bowling__confetti,
+[data-motion='reduced'] .bowling__cut,
+[data-motion='reduced'] .bowling__fx { display: none; }

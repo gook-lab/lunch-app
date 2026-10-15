@@ -187,6 +187,7 @@
 .stage--full .treasure--big { width: min(640px, 94vw, (100cqh - 56px) * var(--fit)); } /* 지도 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
 .stage--full .claw--big { width: min(640px, 94vw, (100cqh - 56px) * var(--fit)); } /* 함 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
 .stage--full .penalty--big { width: min(640px, 94vw, (100cqh - 56px) * var(--fit)); } /* 경기장 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
+.stage--full .bowling--big { width: min(640px, 94vw, (100cqh - 56px) * var(--fit)); } /* 레인 화면 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
 .stage--full .prace--big { width: min(880px, 96vw, (100cqh - 188px) / 0.57); }
 
 /*
