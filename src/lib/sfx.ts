@@ -320,3 +320,50 @@ export function archerySfxLater(plan: [ms: number, name: ArcherySfx | SfxName][]
   const timers = plan.map(([ms, name]) => window.setTimeout(() => archerySfx(name), ms));
   return () => timers.forEach((t) => window.clearTimeout(t));
 }
+
+/* ───────── 종이비행기 전용 소리 ─────────
+ * 위 SOUNDS 와 같은 규칙이다 — 소리를 끈 사람에겐 아무 일도 없고, 같은 소리는 최소 간격을 둔다.
+ * 종이비행기만 쓰는 소리라 따로 두고, planeSfxLater 가 위 SOUNDS 와 섞어 울린다.
+ */
+const PLANE_SOUNDS = {
+  /** 종이가 구겨지는 바스락. */
+  crumple: (ac: AudioContext) => {
+    for (let i = 0; i < 6; i += 1)
+      noise(ac, { dur: 0.035, hz: rand(2500, 5500), q: 3, vol: 0.06, at: i * 0.035 + rand(0, 0.012) });
+  },
+  /** 비둘기 구구. */
+  coo: (ac: AudioContext) => {
+    tone(ac, { hz: 430, to: 360, dur: 0.16, type: 'sine', vol: 0.06 });
+    tone(ac, { hz: 400, to: 330, dur: 0.2, type: 'sine', vol: 0.06, at: 0.2 });
+  },
+  /** 유리창에 부딪힘 — 쨍. */
+  glass: (ac: AudioContext) => {
+    tone(ac, { hz: 2600, dur: 0.14, type: 'sine', vol: 0.04 });
+    noise(ac, { dur: 0.05, hz: 5000, q: 1, vol: 0.05, filter: 'highpass' });
+  },
+} satisfies Record<string, (ac: AudioContext) => void>;
+
+export type PlaneSfxName = keyof typeof PLANE_SOUNDS;
+
+const planeLast = new Map<PlaneSfxName, number>();
+
+/** 종이비행기 효과음 예약. SfxName 과 PlaneSfxName 을 섞어 받는다. cancel 로 한꺼번에 취소. */
+export function planeSfxLater(plan: [ms: number, name: SfxName | PlaneSfxName][]): () => void {
+  if (!enabled()) return () => {};
+  const play = (name: SfxName | PlaneSfxName) => {
+    if (!(name in PLANE_SOUNDS)) return sfx(name as SfxName);
+    const key = name as PlaneSfxName;
+    const now = performance.now();
+    if (now - (planeLast.get(key) ?? -Infinity) < 60) return;
+    planeLast.set(key, now);
+    const ac = audio();
+    if (!ac) return;
+    try {
+      PLANE_SOUNDS[key](ac);
+    } catch {
+      // 오디오 노드를 못 만드는 환경 — 소리 없이 넘어간다.
+    }
+  };
+  const timers = plan.map(([ms, name]) => window.setTimeout(() => play(name), ms));
+  return () => timers.forEach((t) => window.clearTimeout(t));
+}

@@ -1,0 +1,348 @@
+/* 종이비행기 — 왼쪽은 이름표 책상(--desk), 가운데는 하늘, 오른쪽은 점심 테이블(--table~100%).
+   레인마다 비행기 한 대. 비행기 자리(left/top %)·기울기는 JS 가 주고(Web Animations), 여기선 생김새만 그린다.
+   크기는 장면 폭(cqw)에 맞춰 커지고 줄어든다 — 15곳도 390px 에서 레인 22px 에 이름표가 들어간다. */
+.plane { width: min(560px, 94vw); display: grid; gap: var(--space-2); justify-items: center; }
+.plane--big { width: min(880px, 96vw); }
+.plane--empty { height: 300px; }
+.plane__scene {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--fit);
+  container-type: inline-size;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-neutral-300);
+  background:
+    /* 책상 */
+    linear-gradient(to right, var(--color-surface) 0 var(--desk), oklch(0.62 0.06 60) var(--desk) calc(var(--desk) + 3px), transparent 0),
+    /* 구름 */
+    radial-gradient(ellipse 9% 5% at 40% 12%, oklch(1 0 0 / 0.9) 60%, transparent 62%),
+    radial-gradient(ellipse 7% 4% at 45% 10%, oklch(1 0 0 / 0.9) 60%, transparent 62%),
+    radial-gradient(ellipse 10% 5% at 72% 48%, oklch(1 0 0 / 0.75) 60%, transparent 62%),
+    radial-gradient(ellipse 6% 3.5% at 76% 46%, oklch(1 0 0 / 0.75) 60%, transparent 62%),
+    linear-gradient(to bottom, oklch(0.88 0.05 230), oklch(0.96 0.025 215));
+}
+[data-theme='dark'] .plane__scene {
+  background:
+    linear-gradient(to right, var(--color-surface) 0 var(--desk), oklch(0.42 0.05 60) var(--desk) calc(var(--desk) + 3px), transparent 0),
+    radial-gradient(circle at 70% 9%, oklch(0.95 0.04 95) 0 1.6%, transparent 1.8%),
+    radial-gradient(ellipse 9% 5% at 40% 14%, oklch(0.45 0.03 250 / 0.7) 60%, transparent 62%),
+    radial-gradient(ellipse 10% 5% at 72% 48%, oklch(0.45 0.03 250 / 0.55) 60%, transparent 62%),
+    linear-gradient(to bottom, oklch(0.22 0.05 265), oklch(0.32 0.05 250));
+}
+
+/* 표지판 — 책상·점심 테이블. 맨 위 하늘 띠(--head) 안. */
+.plane__sign {
+  position: absolute;
+  top: 0;
+  z-index: 2;
+  height: var(--head);
+  display: flex;
+  align-items: center;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+.plane__sign--start { left: 6px; }
+.plane__sign--table { top: calc(var(--head) / 2); right: 4px; height: auto; padding: 2px 5px; border-radius: var(--radius-sm); translate: 0 -50%; }
+.plane__sign--lit { background: var(--color-accent); color: var(--color-bg); animation: plane-sign 600ms var(--ease-out) both; }
+
+/* 창밖 건물들 — 바닥 위로 낮게 깔린 실루엣, 창문이 줄지어 있다. */
+.plane__city {
+  position: absolute;
+  left: var(--desk);
+  right: 0;
+  bottom: var(--foot);
+  height: min(22%, 13cqw);
+  background:
+    repeating-linear-gradient(to right, transparent 0 5px, oklch(0.97 0.01 230 / 0.5) 5px 8px) 0 0 / 100% 100%,
+    oklch(0.8 0.03 240);
+  clip-path: polygon(0 40%, 9% 40%, 9% 15%, 18% 15%, 18% 55%, 27% 55%, 27% 5%, 33% 5%, 33% 35%, 44% 35%, 44% 60%, 52% 60%, 52% 20%, 61% 20%, 61% 45%, 70% 45%, 70% 10%, 78% 10%, 78% 50%, 88% 50%, 88% 30%, 100% 30%, 100% 100%, 0 100%);
+  opacity: 0.45;
+}
+[data-theme='dark'] .plane__city {
+  background:
+    repeating-linear-gradient(to right, transparent 0 5px, oklch(0.85 0.12 90 / 0.35) 5px 7px) 0 0 / 100% 100%,
+    oklch(0.2 0.03 260);
+  opacity: 0.6;
+}
+
+/* 점심 테이블 — 연한 체크 식탁보. 내려앉은 비행기가 묻히지 않게 대비를 낮춘다. */
+.plane__table {
+  position: absolute;
+  left: var(--table);
+  right: 0;
+  top: var(--head);
+  bottom: var(--foot);
+  border-left: 3px solid oklch(0.55 0.08 55);
+  background: repeating-conic-gradient(oklch(0.9 0.05 25) 0 25%, oklch(0.98 0.01 60) 0 50%) 0 0 / 14px 14px;
+}
+[data-theme='dark'] .plane__table {
+  border-left-color: oklch(0.45 0.06 55);
+  background: repeating-conic-gradient(oklch(0.38 0.06 25) 0 25%, oklch(0.32 0.02 60) 0 50%) 0 0 / 14px 14px;
+}
+/* 사무실 바닥 */
+.plane__floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--foot);
+  background: repeating-linear-gradient(to right, oklch(0.78 0.05 65) 0 30px, oklch(0.74 0.05 65) 30px 32px);
+}
+[data-theme='dark'] .plane__floor { background: repeating-linear-gradient(to right, oklch(0.36 0.03 60) 0 30px, oklch(0.32 0.03 60) 30px 32px); }
+
+/* 레인 — 이름표는 책상 위에. 레인끼리는 옅은 점선으로 나눈다. */
+.plane__lane {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  border-top: 1px dashed oklch(0.55 0.03 240 / 0.18);
+}
+[data-theme='dark'] .plane__lane { border-top-color: oklch(0.85 0.02 240 / 0.12); }
+.plane__tag {
+  position: relative;
+  z-index: 2;
+  max-width: calc(var(--desk) - 10px);
+  margin-left: 4px;
+  padding: 0 4px 0 6px;
+  border: 1px solid var(--color-neutral-300);
+  border-left: 4px solid oklch(0.72 0.12 var(--hue));
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.plane--big .plane__tag { font-size: var(--fs-sm); }
+/* 레인이 넉넉하면(후보 몇 곳) 이름을 두 줄까지 — 긴 이름도 다 보인다. */
+.plane--roomy .plane__tag {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+/* 떨어진 비행기 — 이름표에 줄을 긋는다. 글자는 11px 라 neutral-700 이 최소선(대비 4.5:1). */
+.plane__lane--out .plane__tag { color: var(--color-neutral-700); background: var(--color-surface); text-decoration: line-through; }
+.plane__lane--win { background: linear-gradient(to right, transparent var(--desk), oklch(0.85 0.1 85 / 0.35) 60%, transparent var(--table)); }
+.plane__lane--win .plane__tag { border-color: var(--color-accent); background: var(--color-accent); color: var(--color-bg); }
+[data-theme='dark'] .plane__lane--win { background: linear-gradient(to right, transparent var(--desk), oklch(0.7 0.1 85 / 0.22) 60%, transparent var(--table)); }
+
+/* 비행기 — 색종이 한 장을 접은 모양. 오른쪽이 기수. */
+.plane__craft {
+  position: absolute;
+  z-index: 4;
+  width: var(--pw);
+  aspect-ratio: 2;
+  pointer-events: none;
+  will-change: left, top, transform;
+}
+.plane__paper {
+  position: absolute;
+  inset: 0;
+  filter: drop-shadow(0 1px 1px oklch(0.3 0.05 var(--hue) / 0.5));
+  transition: opacity 200ms var(--ease-out), scale 200ms var(--ease-out);
+}
+.plane__wing,
+.plane__fold { position: absolute; inset: 0; }
+.plane__wing {
+  background: linear-gradient(to bottom, oklch(0.98 0.03 var(--hue)), oklch(0.86 0.09 var(--hue)));
+  clip-path: polygon(0 4%, 100% 52%, 24% 60%);
+}
+.plane__fold {
+  background: linear-gradient(to bottom, oklch(0.74 0.12 var(--hue)), oklch(0.62 0.13 var(--hue)));
+  clip-path: polygon(24% 60%, 100% 52%, 6% 100%, 14% 66%);
+}
+/* 구겨진 종이 뭉치 — 평소엔 숨겨 둔다. */
+.plane__ball {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 52%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 46% 54% 50% 48% / 52% 46% 54% 48%;
+  background:
+    linear-gradient(35deg, transparent 44%, oklch(0.55 0.08 var(--hue) / 0.55) 45% 48%, transparent 49%),
+    linear-gradient(-60deg, transparent 52%, oklch(0.55 0.08 var(--hue) / 0.5) 53% 56%, transparent 57%),
+    linear-gradient(100deg, transparent 30%, oklch(0.6 0.08 var(--hue) / 0.4) 31% 33%, transparent 34%),
+    radial-gradient(circle at 35% 30%, oklch(0.97 0.03 var(--hue)), oklch(0.78 0.09 var(--hue)));
+  box-shadow: 0 1px 2px oklch(0.3 0.05 var(--hue) / 0.5);
+  opacity: 0;
+  scale: 0.3;
+  transition: opacity 180ms var(--ease-out), scale 240ms var(--ease-out);
+}
+.plane__craft--falling { z-index: 5; }
+.plane__craft--crumpled .plane__paper { opacity: 0; scale: 0.4; }
+.plane__craft--crumpled .plane__ball { opacity: 1; scale: 1; }
+/* 떨어진 비행기는 색을 빼고 흐리게 — 아직 나는 비행기와 한눈에 갈린다(글자가 아니라 그림이라 투명도를 쓴다). */
+.plane__craft--down { z-index: 3; }
+.plane__craft--down .plane__paper { filter: grayscale(0.85); opacity: 0.55; }
+.plane__craft--down .plane__ball { filter: grayscale(0.85); }
+.plane__craft--crumpled .plane__paper { opacity: 0; }
+.plane__craft--crumpled .plane__ball { opacity: 0.7; }
+.plane__craft--win { z-index: 6; }
+.plane__craft--win .plane__paper { scale: 1.15; animation: plane-shine 700ms var(--ease-inout) infinite alternate; }
+/* 내려앉은 자리에 접시 — 체크 식탁보 위에서도 비행기가 보인다. */
+.plane__craft--win::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 72%;
+  width: 120%;
+  aspect-ratio: 3.2;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 40%, oklch(0.99 0 0) 0 55%, oklch(0.86 0.01 250) 60% 70%, transparent 72%);
+}
+
+/* 유리창 — 비행기 앞에 나타나고, 부딪히면 금이 간다. */
+.plane__window {
+  position: absolute;
+  z-index: 3;
+  width: max(8px, calc(var(--pw) * 0.34));
+  translate: 0 -50%;
+  border: 2px solid oklch(0.5 0.03 250);
+  border-radius: 2px;
+  background:
+    linear-gradient(to bottom, transparent calc(50% - 1px), oklch(0.5 0.03 250) calc(50% - 1px) calc(50% + 1px), transparent 0),
+    linear-gradient(115deg, oklch(0.85 0.06 220 / 0.55), oklch(0.98 0.02 220 / 0.85) 45%, oklch(0.85 0.06 220 / 0.55));
+  animation: plane-fade-in 260ms var(--ease-out) both;
+}
+[data-theme='dark'] .plane__window {
+  border-color: oklch(0.75 0.03 250);
+  background:
+    linear-gradient(to bottom, transparent calc(50% - 1px), oklch(0.75 0.03 250) calc(50% - 1px) calc(50% + 1px), transparent 0),
+    linear-gradient(115deg, oklch(0.55 0.06 220 / 0.55), oklch(0.8 0.04 220 / 0.7) 45%, oklch(0.55 0.06 220 / 0.55));
+}
+.plane__window--cracked::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(62deg, transparent 44%, oklch(0.25 0.02 250 / 0.75) 45% 50%, transparent 51%),
+    linear-gradient(-48deg, transparent 47%, oklch(0.25 0.02 250 / 0.7) 48% 53%, transparent 54%),
+    linear-gradient(10deg, transparent 58%, oklch(0.25 0.02 250 / 0.6) 59% 63%, transparent 64%);
+}
+.plane__window--cracked { animation: plane-shake 220ms var(--ease-out); }
+
+/* 돌풍 — 오른쪽에서 왼쪽으로 바람 줄기가 지나간다(비행기를 뒤로 민다). */
+.plane__wind { position: absolute; inset: 0 0 0 var(--desk); z-index: 7; overflow: hidden; pointer-events: none; }
+.plane__gust {
+  position: absolute;
+  left: 100%;
+  width: 34cqw;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(to left, transparent, oklch(0.55 0.08 235 / 0.7) 30%, oklch(0.55 0.08 235 / 0.7) 70%, transparent);
+  animation: plane-gust var(--dur) linear calc(var(--k) * 60ms) both;
+}
+.plane__gust:nth-child(odd) { width: 22cqw; }
+[data-theme='dark'] .plane__gust { background: linear-gradient(to left, transparent, oklch(0.92 0.02 240 / 0.75) 30%, oklch(0.92 0.02 240 / 0.75) 70%, transparent); }
+
+/* 비둘기 */
+.plane__pigeon {
+  position: absolute;
+  z-index: 8;
+  font-size: max(14px, calc(var(--pw) * 0.62));
+  line-height: 1;
+  translate: -50% -50%;
+  animation: plane-pigeon 1300ms linear both;
+}
+
+/* 에어컨 — 바닥에 놓여 위로 바람을 올려 보낸다. */
+.plane__ac {
+  position: absolute;
+  bottom: 0;
+  z-index: 3;
+  width: max(22px, calc(var(--pw) * 0.95));
+  height: var(--reach);
+  translate: -50% 0;
+  animation: plane-ac var(--dur) linear both;
+}
+.plane__unit {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2px;
+  height: max(9px, calc(var(--pw) * 0.34));
+  border: 1px solid var(--color-neutral-400);
+  border-radius: 3px;
+  background: repeating-linear-gradient(to bottom, var(--color-bg) 0 2px, var(--color-neutral-300) 2px 3px);
+}
+.plane__breeze {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 0;
+  bottom: max(11px, calc(var(--pw) * 0.34 + 2px));
+  background: repeating-linear-gradient(to top, oklch(0.75 0.1 210 / 0) 0 7px, oklch(0.7 0.11 210 / 0.6) 7px 10px);
+  mask-image: linear-gradient(to top, black 40%, transparent);
+  animation: plane-breeze-in 260ms var(--ease-out) var(--lift) both, plane-breeze 380ms linear infinite;
+}
+[data-theme='dark'] .plane__breeze { background: repeating-linear-gradient(to top, oklch(0.85 0.08 210 / 0) 0 7px, oklch(0.85 0.08 210 / 0.6) 7px 10px); }
+
+/* 축하 — 테이블 위로 색종이 조각이 터진다. */
+.plane__confetti { position: absolute; z-index: 9; width: 0; height: 0; }
+.plane__confetti > span {
+  position: absolute;
+  left: -2px;
+  top: -4px;
+  width: 4px;
+  height: 8px;
+  border-radius: 1px;
+  background: oklch(0.72 0.16 var(--hue));
+  animation: plane-confetti 900ms var(--ease-out) both;
+}
+
+.plane__status { margin: 0; font-size: var(--fs-sm); font-weight: 700; color: var(--color-text); text-align: center; }
+
+@keyframes plane-shine {
+  from { filter: brightness(1) drop-shadow(0 0 0 var(--color-accent-100)); }
+  to { filter: brightness(1.1) drop-shadow(0 0 6px var(--color-accent-300)); }
+}
+@keyframes plane-sign { from { scale: 1; } 50% { scale: 1.25; } to { scale: 1; } }
+@keyframes plane-fade-in { from { opacity: 0; scale: 1 0.6; } }
+@keyframes plane-shake { 25% { translate: 2px -50%; } 75% { translate: -2px -50%; } }
+@keyframes plane-gust {
+  0% { translate: 0 0; opacity: 0; }
+  15%, 80% { opacity: 1; }
+  100% { translate: -150cqw 0; opacity: 0; }
+}
+@keyframes plane-pigeon {
+  0% { left: var(--x0); top: var(--y0); opacity: 0; }
+  10% { opacity: 1; }
+  54% { left: var(--x1); top: var(--y1); rotate: 0deg; }
+  62% { rotate: 25deg; }
+  100% { left: var(--x2); top: var(--y2); rotate: -10deg; opacity: 0; }
+}
+@keyframes plane-ac {
+  0% { opacity: 0; }
+  12%, 82% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes plane-breeze-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes plane-breeze { from { background-position: 0 0; } to { background-position: 0 -10px; } }
+@keyframes plane-confetti {
+  from { transform: rotate(var(--a)) translateY(0); opacity: 1; }
+  to { transform: rotate(var(--a)) translateY(calc(var(--pw) * -1.3 * var(--d))) rotate(200deg); opacity: 0; }
+}
+
+/* 앱에서 움직임을 줄였으면(App 이 data-motion 을 단다) 마지막 장면만 — 꾸밈 애니메이션도 끈다. */
+[data-motion='reduced'] .plane__scene *,
+[data-motion='reduced'] .plane__scene *::after { animation: none !important; transition: none !important; }
+[data-motion='reduced'] .plane__wind,
+[data-motion='reduced'] .plane__pigeon,
+[data-motion='reduced'] .plane__ac,
+[data-motion='reduced'] .plane__confetti { display: none; }
