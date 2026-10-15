@@ -13,6 +13,7 @@ import { recentNote, type RecentSummary } from '../lib/messages';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Button, Input, Menu } from '@gook-lab/ui';
 import { LunchStats } from './LunchStats';
+import { WeeklyReport } from './WeeklyReport';
 import { CATEGORIES, categoryLabel } from '../lib/category';
 import { CategoryPicker } from './CategoryPicker';
 import type { Place, Visit } from '../lib/candidates';
@@ -408,6 +409,7 @@ export function PlaceList({ places, visits, today, onChanged, recent, onShowOnMa
         </p>
       )}
       <div className="lt__side">
+        <WeeklyReport places={places} visits={visits} today={today} />
         <LunchStats places={places} visits={visits} today={today} />
         <History places={places} visits={visits} today={today} onShowOnMap={onShowOnMap} />
       </div>

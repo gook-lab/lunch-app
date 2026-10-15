@@ -58,6 +58,8 @@ interface Props {
   /** 방장이 처음 볼 게임 — 지금 고른 게임이 팟에서 되면 그것, 아니면 첫 게임. */
   preferredMode: GameMode;
   actions: PartyActions;
+  /** 팟 알림 목록 */
+  alerts?: Array<{ type: 'newMember' | 'departingSoon'; partyId: string; partyCategory: string; memberName?: string }>;
 }
 
 /** 출발 시각이 지났는지 30초마다 다시 본다. */
@@ -72,7 +74,7 @@ function useNow(): Date {
 
 const menuIcon = (category: string) => MENUS.find((m) => m.id === category)?.icon ?? '🍴';
 
-export function Parties({ day, parties, myUid, places, candidatesFor, preferredMode, actions }: Props) {
+export function Parties({ day, parties, myUid, places, candidatesFor, preferredMode, actions, alerts = [] }: Props) {
   const now = useNow();
   const sorted = useMemo(() => sortParties(parties, now), [parties, now]);
   const hosting = myUid !== null && parties.some((p) => p.hostUid === myUid);
@@ -84,6 +86,26 @@ export function Parties({ day, parties, myUid, places, candidatesFor, preferredM
   const [cancelAsk, setCancelAsk] = useState<string | null>(null);
   // 게임: 방장이 고르는 중(pick) 또는 저장된 판을 보는 중(watch).
   const [gameFor, setGameFor] = useState<{ partyId: string; view: 'pick' | 'watch' } | null>(null);
+  // 해제한 알림 추적
+  const [dismissedAlerts, setDismissedAlerts] = useState(new Set<string>());
+
+  // 표시할 알림
+  const visibleAlerts = useMemo(
+    () => alerts.filter((a) => !dismissedAlerts.has(`${a.type}-${a.partyId}`)),
+    [alerts, dismissedAlerts],
+  );
+
+  // 알림 텍스트 생성
+  const alertMessage = (alert: typeof alerts[0]): string => {
+    if (alert.type === 'newMember' && alert.memberName) {
+      const avatar = avatarOf(alert.memberName, day);
+      return `${avatar.label}님이 ${alert.partyCategory} 팟에 들어왔어요`;
+    }
+    if (alert.type === 'departingSoon') {
+      return `${alert.partyCategory} 팟이 10분 뒤 출발해요`;
+    }
+    return '팟 알림이 있어요';
+  };
 
   const run = async (key: string, task: () => Promise<void>, fail = '저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.') => {
     setBusy(key);
@@ -125,6 +147,30 @@ export function Parties({ day, parties, myUid, places, candidatesFor, preferredM
           <strong>{me.label}</strong>
           <span className="party__meHint"> · 오늘 하루 이 이름으로 보여요</span>
         </p>
+      )}
+
+      {visibleAlerts.length > 0 && (
+        <div className="party__alerts">
+          {visibleAlerts.map((alert) => (
+            <div
+              key={`${alert.type}-${alert.partyId}`}
+              className="notice notice--info"
+              role="status"
+            >
+              <span>{alertMessage(alert)}</span>
+              <button
+                type="button"
+                className="notice__dismiss"
+                aria-label="알림 닫기"
+                onClick={() => {
+                  setDismissedAlerts((prev) => new Set(prev).add(`${alert.type}-${alert.partyId}`));
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
       )}
 
       {sorted.length === 0 ? (

@@ -211,3 +211,72 @@ export function gameBoard(game: PartyGame, places: readonly Place[], category: s
     name: game.names[i],
   }));
 }
+
+/**
+ * 팟 알림 종류: 새 사람이 참여했거나, 출발이 곧이다.
+ * partyAlerts 가 여러 알림을 반환할 수 있으므로 배열로 둔다.
+ */
+export interface PartyAlert {
+  type: 'newMember' | 'departingSoon';
+  partyId: string;
+  partyCategory: string;
+  memberName?: string; // newMember 일 때 새로 들어온 사람 이름
+}
+
+/**
+ * 팟 알림 감지: 이전·지금 팟 목록을 비교해 새 알림을 찾는다.
+ *
+ * 감지하는 조건:
+ * - newMember: 내가 호스트인 팟에 새로 들어온 사람이 있다
+ * - departingSoon: 내가 참여한 팟이 10분 뒤에 출발한다
+ *
+ * 초기 로드(prev 가 없음)에서는 알림하지 않는다.
+ * 중복 알림을 피하려고 partyId 로 중복 제거한다.
+ */
+export function partyAlerts(
+  prev: Party[] | null,
+  next: Party[],
+  myUid: string | null,
+  nowMinutes: number,
+): PartyAlert[] {
+  if (prev === null || myUid === null) return []; // 초기 로드 또는 로그인 안 됨
+
+  const alerts: PartyAlert[] = [];
+  const alerted = new Set<string>();
+
+  // 호스트 팟에 새 사람 감지
+  for (const party of next) {
+    if (party.hostUid === myUid) {
+      const prevParty = prev.find((p) => p.id === party.id);
+      if (prevParty && party.members.length > prevParty.members.length) {
+        const newMember = party.members[party.members.length - 1];
+        if (!alerted.has(`newMember-${party.id}`)) {
+          alerts.push({
+            type: 'newMember',
+            partyId: party.id,
+            partyCategory: party.category,
+            memberName: newMember.uid, // uid는 avatarOf로 이름 변환됨
+          });
+          alerted.add(`newMember-${party.id}`);
+        }
+      }
+    }
+  }
+
+  // 참여한 팟의 출발 10분 전 감지
+  for (const party of next) {
+    if (isMember(party, myUid) && !alerted.has(`departingSoon-${party.id}`)) {
+      const departureMinutes = minutesOf(party.time);
+      if (departureMinutes - nowMinutes === 10) {
+        alerts.push({
+          type: 'departingSoon',
+          partyId: party.id,
+          partyCategory: party.category,
+        });
+        alerted.add(`departingSoon-${party.id}`);
+      }
+    }
+  }
+
+  return alerts;
+}

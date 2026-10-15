@@ -545,6 +545,15 @@ export default function App() {
     setSaveWaiting(false);
   }, [today]);
 
+  // 팟 알림 개수를 document.title 에 반영한다.
+  useEffect(() => {
+    if (party.alerts.length > 0) {
+      document.title = `(${party.alerts.length}) 오늘 점심`;
+    } else {
+      document.title = '오늘 점심';
+    }
+  }, [party.alerts.length]);
+
   // 공 개수를 바꾸면 지난 판을 내려놓는다(조건 바꾸기와 같다). 얼려 둔 판이 남아 있으면
   // 바꾼 개수가 화면에 안 보이고, 지난 경기와 구슬 수도 안 맞는다.
   const changeBalls = useCallback((update: (prev: Record<string, number>) => Record<string, number>) => {
@@ -710,6 +719,7 @@ export default function App() {
       candidatesFor={partyCandidatesFor}
       preferredMode={mode}
       actions={party.actions}
+      alerts={party.alerts}
     />
   );
 
@@ -936,10 +946,10 @@ export default function App() {
                 {TAB_ICON[t]}
               </span>
               {TAB_LABEL[t]}
-              {t === 'roadmap' && tab !== 'roadmap' && (spinning || resultOpen) && (
+              {t === 'roadmap' && tab !== 'roadmap' && (spinning || resultOpen || party.alerts.length > 0) && (
                 <span className={resultOpen ? 'tabs__badge tabs__badge--done' : 'tabs__badge'}>
                   <span className="sr-only">, </span>
-                  {resultOpen ? '결과' : '게임 중'}
+                  {resultOpen ? '결과' : party.alerts.length > 0 ? '알림' : '게임 중'}
                 </span>
               )}
             </button>

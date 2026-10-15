@@ -4,6 +4,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import type { DayId } from '../lib/date';
+import { nowMinutesKST, partyAlerts, type PartyAlert } from '../lib/party';
 import {
   cancelParty,
   joinParty,
@@ -17,10 +18,18 @@ import {
 } from '../services/parties';
 import type { PartyActions } from '../components/Parties';
 
-export function useParties(day: DayId): { parties: Party[]; uid: string | null; actions: PartyActions } {
+export function useParties(day: DayId): {
+  parties: Party[];
+  uid: string | null;
+  alerts: PartyAlert[];
+  actions: PartyActions;
+} {
   // 받은 날짜와 같이 둔다. 날이 바뀐 직후 새 목록이 오기 전에는 어제 팟을 보여 주지 않는다.
   const [got, setGot] = useState<{ day: DayId; list: Party[] }>({ day, list: [] });
   const [uid, setUid] = useState<string | null>(null);
+  const [prevParties, setPrevParties] = useState<Party[] | null>(null);
+  const [alerts, setAlerts] = useState<PartyAlert[]>([]);
+
   useEffect(() => {
     let live = true;
     partyUid()
@@ -28,14 +37,26 @@ export function useParties(day: DayId): { parties: Party[]; uid: string | null; 
       .catch(() => {});
     const stop = subscribeParties(
       day,
-      (list) => setGot({ day, list }),
+      (list) => {
+        setGot({ day, list });
+        // 팟 목록이 업데이트되면 새 알림 감지
+        if (live && uid !== null) {
+          const nowMin = nowMinutesKST();
+          const newAlerts = partyAlerts(prevParties, list, uid, nowMin);
+          if (newAlerts.length > 0) {
+            setAlerts(newAlerts);
+          }
+          setPrevParties(list);
+        }
+      },
       () => setGot({ day, list: [] }),
     );
     return () => {
       live = false;
       stop();
     };
-  }, [day]);
+  }, [day, uid, prevParties]);
+
   const actions = useMemo<PartyActions>(
     () => ({
       open: (input) => openParty(day, input),
@@ -47,5 +68,6 @@ export function useParties(day: DayId): { parties: Party[]; uid: string | null; 
     }),
     [day],
   );
-  return { parties: got.day === day ? got.list : [], uid, actions };
+
+  return { parties: got.day === day ? got.list : [], uid, alerts, actions };
 }
