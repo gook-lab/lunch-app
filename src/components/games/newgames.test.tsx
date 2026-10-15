@@ -50,7 +50,7 @@ describe('플링코', () => {
       const r = render(<Plinko candidates={places(n)} winnerIndex={winner} spinning run={n + winner} onSpinEnd={onSpinEnd} />);
       expect(r.container.querySelectorAll('.plinko__slot')).toHaveLength(n);
       expect(r.container.querySelectorAll('.plinko__pin')).toHaveLength((n * (n - 1)) / 2);
-      run(5_000);
+      run(7_400);
       expect(onSpinEnd).toHaveBeenCalledTimes(1);
       const wins = r.container.querySelectorAll('.plinko__slot--win');
       expect(wins).toHaveLength(1);
@@ -64,9 +64,9 @@ describe('플링코', () => {
     const r = render(<Plinko candidates={places(2)} winnerIndex={1} spinning={false} run={1} onSpinEnd={() => {}} />);
     const vb = r.container.querySelector('.plinko__board')?.getAttribute('viewBox')?.split(' ').map(Number) ?? [];
     expect(vb[2]).toBe(168);
-    // 판 폭 ÷ 높이(--fit)는 1 이상 — 크게 보기 폭 식이 이 값으로 높이에 맞춘다.
+    // 그림 폭 ÷ 높이(--fit, 이름표 띠까지 포함)는 0.9 이상 — 판이 폭보다 많이 길지 않다. 크게 보기 폭 식이 이 값으로 높이에 맞춘다.
     const fit = Number((r.container.querySelector('.plinko') as HTMLElement).style.getPropertyValue('--fit'));
-    expect(fit).toBeGreaterThan(1);
+    expect(fit).toBeGreaterThan(0.9);
     // 당첨 칸(오른쪽) 가운데에 공이 선다.
     expect(Number(r.container.querySelector('.plinko__ball')?.getAttribute('cx'))).toBeCloseTo(126);
   });
@@ -525,10 +525,31 @@ describe('낚시', () => {
 });
 
 describe('플링코 연출 시간 — 후보가 적어도 너무 짧지 않다', () => {
-  it('후보 2곳도 공이 칸에 닿기까지 2.2초 이상, 20곳은 줄당 170ms 그대로', async () => {
-    const { plinkoDuration, plinkoStepMs, PLINKO_STEP_MS } = await import('./Plinko');
-    expect(2 * plinkoStepMs(2)).toBeGreaterThanOrEqual(2200);
-    expect(plinkoDuration(2)).toBeGreaterThan(2200);
-    expect(plinkoStepMs(20)).toBe(PLINKO_STEP_MS);
+  it('후보 2곳도 4.5초 이상, 20곳도 7초 안에 끝난다', async () => {
+    const { plinkoDuration } = await import('./Plinko');
+    for (let s = 0; s < 30; s += 1) {
+      expect(plinkoDuration(2, s % 2, s)).toBeGreaterThanOrEqual(4500);
+      expect(plinkoDuration(20, s % 20, s)).toBeLessThanOrEqual(7000);
+    }
+    expect(plinkoDuration(1, 0, 1)).toBe(0);
+  });
+
+  it('끝나면 상태 줄이 골인 문구로 바뀐다', () => {
+    const onSpinEnd = vi.fn();
+    const r = render(<Plinko candidates={places(8)} winnerIndex={5} spinning run={3} onSpinEnd={onSpinEnd} />);
+    const say = () => r.container.querySelector('.plinko__status')?.textContent ?? '';
+    expect(say()).not.toContain('골인');
+    run(7_400);
+    expect(onSpinEnd).toHaveBeenCalledTimes(1);
+    expect(say()).toBe('골인! 가게6 칸에 쏙 들어갔어요');
+  });
+
+  it('판 도중 언마운트하면 onSpinEnd 를 부르지 않는다', () => {
+    const onSpinEnd = vi.fn();
+    const r = render(<Plinko candidates={places(6)} winnerIndex={2} spinning run={9} onSpinEnd={onSpinEnd} />);
+    run(1_000);
+    r.unmount();
+    run(8_000);
+    expect(onSpinEnd).not.toHaveBeenCalled();
   });
 });

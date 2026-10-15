@@ -178,7 +178,7 @@
 .stage--full .ladder { width: min(92vw, 760px, (100cqh - 236px) / 0.79); } /* 바닥 칸 아래 상태 한 줄(약 30px)까지 */
 .stage--full .gacha--big { width: min(380px, 92vw, (100cqh - 142px) / 0.84); }
 @media (min-width: 960px) { .stage--full .cards--big { width: min(820px, 94vw, (100cqh - 64px - var(--rows) * 14px) * var(--fit)); } } /* 카드 판 높이 = 폭 ÷ --fit + 상태 줄·줄 간격(Cards.tsx) */
-.stage--full .plinko--big { width: min(560px, 94vw, (100cqh - 136px) * var(--fit, 0.966)); } /* 판 높이 = 폭 ÷ --fit(후보 수마다 다르다, Plinko.tsx) */
+.stage--full .plinko--big { width: min(560px, 94vw, (100cqh - 56px) * var(--fit, 0.8)); } /* 그림 높이(판 + 이름표 띠) = 폭 ÷ --fit(후보 수마다 다르다, lib/plinko.ts). 56px 는 상태 줄 */
 .stage--full .bomb--big { width: min(640px, 94vw, 100cqh - 56px); } /* 판 아래 상태 한 줄(약 40px)까지 */
 .stage--full .balloon--big { width: min(640px, 94vw, (100cqh - 56px) * var(--fit)); } /* 판 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
 .stage--full .fishing--big { width: min(640px, 94vw, (100cqh - 56px) * var(--fit)); } /* 연못 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */

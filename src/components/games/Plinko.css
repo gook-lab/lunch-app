@@ -1,0 +1,215 @@
+/*
+ * 플링코 — 보는 창(.plinko__view) 안에 그림 한 장(.plinko__world: SVG 판 + 이름표 띠)이 있고,
+ * 카메라는 JS(lib/plinko.ts cameraAt)가 매 프레임 transform 으로 옮긴다. 화면 효과(검은 띠·큰 글씨·번쩍)는
+ * 카메라와 상관없이 창에 붙는다. 판 색은 테마를 따르고, 공·범퍼·꽃가루는 물건 색이라 라이트·다크가 같다.
+ */
+.plinko {
+  width: min(360px, 92vw);
+  display: grid;
+  gap: var(--space-2);
+  container-type: inline-size;
+  --pk-back: oklch(0.975 0.008 250);
+  --pk-back-2: oklch(0.94 0.02 250);
+  --pk-pin: var(--color-neutral-400);
+  --pk-wall: var(--color-neutral-400);
+  --pk-rail: oklch(0.55 0.02 260);
+  --pk-metal: oklch(0.72 0.02 260);
+  --pk-metal-2: oklch(0.45 0.03 260);
+  --pk-label: var(--color-neutral-700);
+  --pk-trail: oklch(0.8 0.1 25);
+}
+[data-theme='dark'] .plinko {
+  --pk-back: oklch(0.25 0.02 260);
+  --pk-back-2: oklch(0.21 0.02 260);
+  --pk-pin: oklch(0.62 0.01 260);
+  --pk-wall: oklch(0.55 0.015 260);
+  --pk-rail: oklch(0.6 0.02 260);
+  --pk-metal: oklch(0.7 0.02 260);
+  --pk-metal-2: oklch(0.5 0.03 260);
+  --pk-trail: oklch(0.68 0.14 25);
+}
+.plinko--big { width: min(560px, 94vw); }
+.plinko--empty { height: 260px; }
+
+.plinko__view {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md, 12px);
+  background: var(--pk-back-2);
+  box-shadow: inset 0 0 0 1px var(--color-divider);
+}
+.plinko__world { position: relative; transform-origin: 0 0; will-change: transform; }
+.plinko__board { display: block; width: 100%; height: auto; }
+.plinko__back { fill: var(--pk-back); }
+
+/* ── 핀 · 범퍼 ── */
+.plinko__pin { fill: var(--pk-pin); }
+.plinko__pin--hit { fill: var(--pk-trail); }
+.plinko__pin--now { fill: var(--color-accent); }
+.plinko__bumper-ring { fill: none; stroke: oklch(0.7 0.15 200); stroke-width: 1.3; stroke-dasharray: 2.2 1.4; }
+.plinko__bumper-core { fill: oklch(0.62 0.15 220); stroke: oklch(0.95 0.03 220); stroke-width: 1.4; }
+.plinko__bumper--hit .plinko__bumper-core { fill: oklch(0.9 0.16 95); stroke: oklch(0.62 0.15 220); }
+.plinko__bumper--hit .plinko__bumper-ring { stroke: oklch(0.86 0.17 92); stroke-width: 2.2; stroke-dasharray: none; }
+
+/* ── 칸 ── */
+.plinko__bin { fill: oklch(0.8 0.08 var(--cat-hue) / 0.16); transition: fill 300ms var(--ease-out); }
+.plinko__bin--win { fill: oklch(0.86 0.16 92 / 0.85); }
+.plinko__bin--miss { fill: var(--color-neutral-200); }
+.plinko__wall { stroke: var(--pk-wall); stroke-width: 1.4; stroke-linecap: round; }
+.plinko__wall--edge { stroke: oklch(0.7 0.19 45); stroke-width: 2.4; }
+
+/* ── 드로퍼 ── */
+.plinko__rail { stroke: var(--pk-rail); stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 3 2; }
+.plinko__carriage { fill: var(--pk-metal-2); }
+.plinko__lamp { fill: oklch(0.85 0.17 92); }
+.plinko__dropper--move .plinko__lamp { animation: plinko-blink 260ms steps(2) infinite; }
+.plinko__claw { fill: none; stroke: var(--pk-metal); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 140ms var(--ease-out); transform-box: view-box; }
+.plinko__dropper--open .plinko__claw--l { transform: translate(-3px, -2px) rotate(-14deg); }
+.plinko__dropper--open .plinko__claw--r { transform: translate(3px, -2px) rotate(14deg); }
+@keyframes plinko-blink { 50% { fill: oklch(0.7 0.2 25); } }
+
+/* ── 공 ── */
+.plinko__ball { fill: oklch(0.62 0.2 25); stroke: oklch(1 0 0 / 0.85); stroke-width: 1.3; }
+.plinko__shine { fill: oklch(1 0 0 / 0.75); pointer-events: none; }
+.plinko__trail { fill: oklch(0.62 0.2 25); }
+.plinko__glow { fill: oklch(0.86 0.16 92 / 0.4); }
+.plinko__miss { fill: var(--color-neutral-700); font-weight: 800; }
+.plinko__decoy { fill: var(--color-neutral-400); stroke: var(--color-neutral-600); stroke-width: 1; stroke-dasharray: 2 1.5; }
+
+/* ── 이름표 띠(칸 아래) ── */
+.plinko__slots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.plinko__slot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  padding: 0.6cqw 0;
+  color: var(--pk-label);
+  font-size: clamp(10px, 2.9cqw, 16px);
+  line-height: 1.1;
+  writing-mode: vertical-rl;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: color 200ms var(--ease-out);
+}
+.plinko--wide .plinko__slot {
+  writing-mode: horizontal-tb;
+  justify-content: center;
+  text-align: center;
+  padding: 0 1.5cqw;
+  font-size: clamp(12px, 4cqw, 20px);
+  white-space: normal;
+  word-break: keep-all;
+}
+.plinko__slot--win { color: var(--color-text); font-weight: 800; }
+[data-theme='dark'] .plinko__slot--win { color: oklch(0.2 0.02 260); }
+.plinko__slot--miss { text-decoration: line-through; }
+.plinko__slot--near { color: oklch(0.55 0.19 45); font-weight: 700; }
+[data-theme='dark'] .plinko__slot--near { color: oklch(0.8 0.15 60); }
+
+/* ── 화면 효과 ── */
+.plinko__view--bump .plinko__world { animation: plinko-shake 260ms linear; }
+@keyframes plinko-shake {
+  0%, 100% { translate: 0 0; }
+  25% { translate: 1.2% -0.6%; }
+  50% { translate: -1% 0.8%; }
+  75% { translate: 0.6% -0.4%; }
+}
+.plinko__fx { position: absolute; inset: 0; pointer-events: none; }
+.plinko__bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 7%;
+  background: oklch(0.12 0 0);
+  animation: plinko-bar 240ms var(--ease-out) both;
+}
+.plinko__bar--top { top: 0; --from: -100%; }
+.plinko__bar--bottom { bottom: 0; --from: 100%; }
+@keyframes plinko-bar { from { translate: 0 var(--from); } }
+.plinko__view--slow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, oklch(0.1 0 0 / 0.28));
+}
+.plinko__flash {
+  position: absolute;
+  inset: 0;
+  background: oklch(1 0 0 / 0.75);
+  animation: plinko-flash 380ms var(--ease-out) forwards;
+}
+@keyframes plinko-flash { to { opacity: 0; } }
+
+.plinko__callout {
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  translate: -50% -50%;
+  font-size: clamp(22px, 11cqw, 56px);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  color: oklch(0.99 0 0);
+  -webkit-text-stroke: 0.13em oklch(0.22 0.02 280);
+  paint-order: stroke fill;
+  animation: plinko-pop 900ms var(--ease-out) forwards;
+}
+.plinko__callout--soft { font-size: clamp(18px, 8cqw, 40px); top: 62%; -webkit-text-stroke-width: 0.09em; }
+.plinko__callout--warn { color: oklch(0.9 0.16 92); }
+.plinko__callout--bad { color: oklch(0.85 0.1 240); }
+.plinko__callout--bump { color: oklch(0.88 0.17 92); font-size: clamp(26px, 14cqw, 68px); }
+.plinko__callout--close { color: oklch(0.82 0.16 60); top: 28%; }
+.plinko__callout--win { color: oklch(0.9 0.17 92); top: 24%; animation: plinko-win 700ms var(--ease-out) forwards; }
+@keyframes plinko-pop {
+  0% { opacity: 0; scale: 0.4; }
+  18% { opacity: 1; scale: 1.15; }
+  30% { scale: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; scale: 1.05; }
+}
+@keyframes plinko-win {
+  0% { opacity: 0; scale: 0.3; rotate: -8deg; }
+  50% { opacity: 1; scale: 1.2; rotate: 3deg; }
+  100% { opacity: 1; scale: 1; rotate: -3deg; }
+}
+
+/* 꽃가루 — 당첨 칸에서 위로 터진다. */
+.plinko__confetti { position: absolute; width: 0; height: 0; z-index: 2; }
+.plinko__confetti span {
+  position: absolute;
+  left: -2.5px;
+  top: -4px;
+  width: 5px;
+  height: 8px;
+  border-radius: 1px;
+  background: oklch(0.76 0.17 var(--h));
+  opacity: 0;
+  animation: plinko-confetti 1000ms var(--ease-out) 40ms forwards;
+}
+@keyframes plinko-confetti {
+  0% { opacity: 1; transform: rotate(var(--a)) translateY(0) rotate(0deg); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(-30cqw * var(--d))) rotate(320deg); }
+}
+
+.plinko__status { margin: 0; font-size: var(--fs-sm); font-weight: 700; color: var(--color-text); text-align: center; min-height: 1.5em; }
+
+/* 판이 끝난 뒤 다시 그려질 때는 바로 그 자리. */
+.plinko--settled .plinko__bin { transition: none; }
+
+/* 동작 줄이기 — 앱이 "움직임 켜기" 를 반영해 둔 data-motion 을 본다. */
+:root[data-motion='reduced'] {
+  .plinko * { animation: none !important; transition: none !important; }
+  .plinko__confetti, .plinko__callout, .plinko__flash { display: none; }
+}

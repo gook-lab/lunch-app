@@ -1061,3 +1061,56 @@ export function tournbalSfxLater(plan: [ms: number, name: TournbalSfx | SfxName]
   const timers = plan.map(([ms, name]) => window.setTimeout(() => play(name), ms));
   return () => timers.forEach((t) => window.clearTimeout(t));
 }
+
+/* ───────── 플링코 ───────── */
+
+/** 플링코 소리. 위 SOUNDS 와 따로 둬서 다른 게임 소리 목록을 건드리지 않는다(10/15 동시 작업). */
+const PLINKO_SOUNDS = {
+  /** 드로퍼가 좌우로 움직이는 드르륵 — 짧은 딸깍을 촘촘히. */
+  whirr: (ac: AudioContext) => {
+    for (let i = 0; i < 9; i += 1) noise(ac, { dur: 0.025, hz: rand(1100, 1600), q: 3, vol: 0.05, at: i * 0.07 });
+    tone(ac, { hz: 140, to: 180, dur: 0.6, type: 'square', vol: 0.008 });
+  },
+  /** 드로퍼 집게가 열리는 철컥. */
+  clack: (ac: AudioContext) => {
+    noise(ac, { dur: 0.04, hz: 2600, q: 2, vol: 0.09 });
+    tone(ac, { hz: 700, to: 420, dur: 0.06, type: 'square', vol: 0.02 });
+  },
+  /** 핀볼 범퍼 — 띠용 올라가는 소리. */
+  boing: (ac: AudioContext) => {
+    tone(ac, { hz: 260, to: 900, dur: 0.16, type: 'sine', vol: 0.09 });
+    tone(ac, { hz: 520, to: 1400, dur: 0.12, type: 'triangle', vol: 0.03, at: 0.03 });
+  },
+  /** 칸 벽 위에서 데굴 — 낮게 떨리는 소리. */
+  teeter: (ac: AudioContext) => {
+    for (let i = 0; i < 4; i += 1) tone(ac, { hz: i % 2 ? 300 : 360, dur: 0.1, type: 'sine', vol: 0.045, at: i * 0.12 });
+  },
+  /** 골인 — 짧은 팡파르. */
+  fanfare: (ac: AudioContext) => {
+    [523, 659, 784, 1047].forEach((hz, i) =>
+      tone(ac, { hz, dur: i === 3 ? 0.42 : 0.12, type: 'triangle', vol: 0.06, at: i * 0.085 }),
+    );
+  },
+} satisfies Record<string, (ac: AudioContext) => void>;
+
+export type PlinkoSfxName = keyof typeof PLINKO_SOUNDS;
+
+/** 플링코 소리(또는 공용 소리 — 핀 똑은 높이 arg 를 받는다)를 나중에 울린다. 취소 함수를 돌려준다. */
+export function plinkoSfxLater(plan: [ms: number, name: PlinkoSfxName | SfxName, arg?: number][]): () => void {
+  if (!enabled()) return () => {};
+  const play = (name: PlinkoSfxName | SfxName, arg?: number) => {
+    if (!(name in PLINKO_SOUNDS)) {
+      sfx(name as SfxName, arg);
+      return;
+    }
+    const ac = audio();
+    if (!ac) return;
+    try {
+      PLINKO_SOUNDS[name as PlinkoSfxName](ac);
+    } catch {
+      // 오디오 노드를 못 만드는 환경 — 소리 없이 넘어간다.
+    }
+  };
+  const timers = plan.map(([ms, name, arg]) => window.setTimeout(() => play(name, arg), ms));
+  return () => timers.forEach((t) => window.clearTimeout(t));
+}

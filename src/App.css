@@ -2432,32 +2432,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   100% { translate: 0 0; rotate: 0deg; }
 }
 
-/* 플링코 — 밝은 판. SVG 폭과 칸 줄 폭이 같아 칸이 핀 아래 맞는다 */
-.plinko { display: grid; gap: var(--space-1); width: min(360px, 92vw); }
-.plinko--big { width: min(560px, 94vw); }
-.plinko--empty { height: 260px; }
-.plinko__hint { margin: 0; text-align: center; }
-.plinko__board { display: block; width: 100%; height: auto; }
-.plinko__pin { fill: var(--color-neutral-400); transition: r var(--motion-fast) var(--ease-out); }
-.plinko__pin--hit { fill: var(--color-accent-300); }
-.plinko__pin--now { fill: var(--color-accent); }
-.plinko__wall { stroke: var(--color-neutral-300); stroke-width: 1; }
-.plinko__ball { fill: var(--color-accent-600); stroke: var(--color-bg); stroke-width: 1.5; }
-.plinko__slots { display: grid; margin: 0; padding: 0; list-style: none; }
-.plinko__slot {
-  display: flex;
-  align-items: center;
-  min-height: 64px;
-  max-height: 96px;
-  padding: var(--space-1) 0;
-  border-top: 3px solid oklch(0.75 0.12 var(--cat-hue));
-  color: var(--color-neutral-700);
-  font-size: var(--fs-xs);
-  line-height: 1.1;
-  writing-mode: vertical-rl;
-  overflow: hidden;
-}
-.plinko__slot--win { background: var(--color-accent-100); color: var(--color-text); font-weight: 700; }
+/* 플링코 — Plinko.css 로 옮겼다(컷신·카메라·범퍼). */
 
 /* 주사위 말판 — 둘레 칸 · 가운데 주사위 */
 .dice { width: min(360px, 92vw); }
