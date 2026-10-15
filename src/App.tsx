@@ -138,6 +138,9 @@ function focusIfLost(node: HTMLElement | null) {
  * 고른 게임 칸이 보이게 게임 줄을 처음 한 번 밀어 둔다. 이벤트 게임을 앞에 두면서(10/15) 기본값 돌림판이
  * 휴대폰 가로 줄 밖으로 밀려났다. 페이지는 움직이지 않고 줄 안쪽만 민다(데스크톱은 세로 레일).
  */
+/** 처음 온 사람의 게임. 컷신·이벤트가 있는 활쏘기로 시작한다(10/15 사용자). games/index.ts 가 바로 싣는다. */
+const DEFAULT_MODE: GameMode = 'archery';
+
 function revealPickedMode(node: HTMLElement | null) {
   const on = node?.querySelector<HTMLElement>('.modebar__item--on');
   if (!node || !on) return;
@@ -271,9 +274,9 @@ export default function App() {
   const [mode, setMode] = useState<GameMode>(() => {
     try {
       const saved = localStorage.getItem('lunch-app:mode');
-      return GAME_MODES.some((m) => m.id === saved) ? (saved as GameMode) : 'wheel';
+      return GAME_MODES.some((m) => m.id === saved) ? (saved as GameMode) : DEFAULT_MODE;
     } catch {
-      return 'wheel';
+      return DEFAULT_MODE;
     }
   });
 
