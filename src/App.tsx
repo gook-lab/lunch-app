@@ -134,6 +134,19 @@ function focusIfLost(node: HTMLElement | null) {
   }
 }
 
+/**
+ * 고른 게임 칸이 보이게 게임 줄을 처음 한 번 밀어 둔다. 이벤트 게임을 앞에 두면서(10/15) 기본값 돌림판이
+ * 휴대폰 가로 줄 밖으로 밀려났다. 페이지는 움직이지 않고 줄 안쪽만 민다(데스크톱은 세로 레일).
+ */
+function revealPickedMode(node: HTMLElement | null) {
+  const on = node?.querySelector<HTMLElement>('.modebar__item--on');
+  if (!node || !on) return;
+  const box = node.getBoundingClientRect();
+  const item = on.getBoundingClientRect();
+  if (item.right > box.right || item.left < box.left) node.scrollLeft += item.left - box.left - 8;
+  if (item.bottom > box.bottom || item.top < box.top) node.scrollTop += item.top - box.top - 8;
+}
+
 export default function App() {
   const today = useTodayKST();
   const { state, error, places, visits, today: decision, refreshing, reload, officeKey } = useLunchData(today);
@@ -758,7 +771,7 @@ export default function App() {
    * 보이므로 DOM 도 칩 뒤다. 자리(grid)는 CSS 가 정하므로 화면은 그대로다.
    */
   const modebar = (
-    <div className="modebar" role="group" aria-label="방식">
+    <div className="modebar" role="group" aria-label="방식" ref={revealPickedMode}>
       {GAME_MODES.map((m) => (
         <button
           key={m.id}
