@@ -545,13 +545,11 @@ export default function App() {
     setSaveWaiting(false);
   }, [today]);
 
-  // 팟 알림 개수를 document.title 에 반영한다.
+  // 팟 알림이 있으면 탭 제목 앞에 개수를 단다. 다른 창을 보고 있어도 브라우저 탭에서 보인다.
+  const baseTitle = useRef(document.title);
   useEffect(() => {
-    if (party.alerts.length > 0) {
-      document.title = `(${party.alerts.length}) 오늘 점심`;
-    } else {
-      document.title = '오늘 점심';
-    }
+    const n = party.alerts.length;
+    document.title = n > 0 ? `(${n}) ${baseTitle.current}` : baseTitle.current;
   }, [party.alerts.length]);
 
   // 공 개수를 바꾸면 지난 판을 내려놓는다(조건 바꾸기와 같다). 얼려 둔 판이 남아 있으면
@@ -720,6 +718,7 @@ export default function App() {
       preferredMode={mode}
       actions={party.actions}
       alerts={party.alerts}
+      onDismissAlert={party.dismissAlert}
     />
   );
 

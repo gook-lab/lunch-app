@@ -5,7 +5,7 @@
  * 모드가 없는 예전 기록은 무시한다.
  */
 import type { Place, Visit } from './candidates';
-import type { DayId } from './date';
+import { daysBetween, type DayId } from './date';
 
 export interface WeeklyReport {
   /** 이번 주 결정 건 수 */
@@ -40,25 +40,16 @@ function getWeekStart(date: DayId): DayId {
 }
 
 /**
- * 주(Mon~Fri)의 업무일만 필터링. Mon~Fri 한 주.
- */
-function isWeekday(date: DayId): boolean {
-  const y = parseInt(date.slice(0, 4), 10);
-  const m = parseInt(date.slice(4, 6), 10) - 1;
-  const d = parseInt(date.slice(6, 8), 10);
-  const utcDate = new Date(Date.UTC(y, m, d));
-  const dayOfWeek = utcDate.getUTCDay();
-  return dayOfWeek >= 1 && dayOfWeek <= 5; // Mon=1, Tue=2, ..., Fri=5
-}
-
-/**
  * 지난 캘린더 주의 업무일(Mon~Fri) 결정만 필터링.
  * today 가 속한 주의 월요일부터 금요일까지의 기록.
  */
 function getWeeklyVisits(visits: Visit[], today: DayId): Visit[] {
   const weekStart = getWeekStart(today);
-  const weekEnd = String(parseInt(weekStart, 10) + 4).padStart(8, '0'); // 월~금은 4일 차이
-  return visits.filter((v) => v.id >= weekStart && v.id <= weekEnd && isWeekday(v.id));
+  // 날짜 문자열에 4를 더하면 달이 바뀌는 주(9/28~10/2)에 20260932 가 된다. 날 수로 잰다.
+  return visits.filter((v) => {
+    const d = daysBetween(weekStart, v.id);
+    return d >= 0 && d <= 4;
+  });
 }
 
 /**
@@ -72,6 +63,13 @@ function dayLabel(date: DayId): string {
   const dayOfWeek = utcDate.getUTCDay();
   const labels = ['일', '월', '화', '수', '목', '금', '토'];
   return labels[dayOfWeek];
+}
+
+/** 두 번 이상이고 동점이 없는 1등. 없으면 null. */
+function topOf(count: Map<string, number>): string | null {
+  const [first, second] = [...count.entries()].sort((a, b) => b[1] - a[1]);
+  if (!first || first[1] < 2 || (second && second[1] === first[1])) return null;
+  return first[0];
 }
 
 /**
@@ -108,17 +106,9 @@ export function weeklyReport(visits: Visit[], places: Place[], today: DayId): We
     placesByDay.get(visit.id)!.push({ placeId: visit.placeId, mode: visit.mode });
   }
 
-  // 가장 자주 고른 카테고리
-  let topCategory: string | null = null;
-  if (categoryCount.size > 0) {
-    topCategory = [...categoryCount.entries()].sort((a, b) => b[1] - a[1])[0][0];
-  }
-
-  // 가장 자주 쓴 게임 모드
-  let topMode: string | null = null;
-  if (modeCount.size > 0) {
-    topMode = [...modeCount.entries()].sort((a, b) => b[1] - a[1])[0][0];
-  }
+  // "자주" 는 두 번 이상, 그리고 혼자 1등일 때만 말한다. 한 번씩이면 아무 메뉴나 "자주" 가 되어 버린다.
+  const topCategory = topOf(categoryCount);
+  const topMode = topOf(modeCount);
 
   // 방문 가게 리스트 (날짜 라벨과 함께)
   const placesResult: Array<{ place: Place; dayLabel: string; mode?: string }> = [];

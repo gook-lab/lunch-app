@@ -1,10 +1,13 @@
 /**
- * 오늘 점심 팟 — 실시간 목록과 내 uid, 오늘 날짜에 묶은 동작.
+ * 오늘 점심 팟 — 실시간 목록과 내 uid, 오늘 날짜에 묶은 동작, 그리고 알림.
  * 날이 바뀌면(useTodayKST) 새 날 목록으로 갈아탄다. 어제 팟은 규칙상 고칠 수도 없다.
+ *
+ * 알림은 두 가지다(lib/party.ts). 내가 연 팟에 누가 들어옴 — 목록이 올 때 바로 전 목록과 비교한다.
+ * 내가 든 팟이 10분 안에 출발함 — 30초마다 본다. 같은 알림(key)은 닫아도 다시 띄우지 않는다.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DayId } from '../lib/date';
-import { nowMinutesKST, partyAlerts, type PartyAlert } from '../lib/party';
+import { departingAlerts, joinAlerts, nowMinutesKST, type PartyAlert } from '../lib/party';
 import {
   cancelParty,
   joinParty,
@@ -18,44 +21,68 @@ import {
 } from '../services/parties';
 import type { PartyActions } from '../components/Parties';
 
+const DEPART_CHECK_MS = 30_000;
+
 export function useParties(day: DayId): {
   parties: Party[];
   uid: string | null;
-  alerts: PartyAlert[];
   actions: PartyActions;
+  alerts: PartyAlert[];
+  dismissAlert: (key: string) => void;
 } {
   // 받은 날짜와 같이 둔다. 날이 바뀐 직후 새 목록이 오기 전에는 어제 팟을 보여 주지 않는다.
   const [got, setGot] = useState<{ day: DayId; list: Party[] }>({ day, list: [] });
   const [uid, setUid] = useState<string | null>(null);
-  const [prevParties, setPrevParties] = useState<Party[] | null>(null);
-  const [alerts, setAlerts] = useState<PartyAlert[]>([]);
+  const [alerts, setAlerts] = useState<{ day: DayId; list: PartyAlert[] }>({ day, list: [] });
+  // 콜백 안에서 쓰는 최신 값. 상태로 두면 구독을 다시 걸어야 한다.
+  const uidRef = useRef<string | null>(null);
+  const listRef = useRef<Party[] | null>(null);
+  const seen = useRef(new Set<string>());
+
+  const push = useCallback(
+    (found: PartyAlert[]) => {
+      const fresh = found.filter((a) => !seen.current.has(a.key));
+      if (fresh.length === 0) return;
+      for (const a of fresh) seen.current.add(a.key);
+      setAlerts((prev) => ({ day, list: [...(prev.day === day ? prev.list : []), ...fresh] }));
+    },
+    [day],
+  );
 
   useEffect(() => {
     let live = true;
+    listRef.current = null; // 이 날의 첫 목록은 비교할 전 목록이 없다 — 알리지 않는다.
+    seen.current = new Set();
     partyUid()
-      .then((u) => live && setUid(u))
+      .then((u) => {
+        if (!live) return;
+        uidRef.current = u;
+        setUid(u);
+      })
       .catch(() => {});
     const stop = subscribeParties(
       day,
       (list) => {
         setGot({ day, list });
-        // 팟 목록이 업데이트되면 새 알림 감지
-        if (live && uid !== null) {
-          const nowMin = nowMinutesKST();
-          const newAlerts = partyAlerts(prevParties, list, uid, nowMin);
-          if (newAlerts.length > 0) {
-            setAlerts(newAlerts);
-          }
-          setPrevParties(list);
-        }
+        push(joinAlerts(listRef.current, list, uidRef.current));
+        push(departingAlerts(list, uidRef.current, nowMinutesKST()));
+        listRef.current = list;
       },
       () => setGot({ day, list: [] }),
     );
+    const timer = window.setInterval(() => {
+      if (listRef.current) push(departingAlerts(listRef.current, uidRef.current, nowMinutesKST()));
+    }, DEPART_CHECK_MS);
     return () => {
       live = false;
       stop();
+      window.clearInterval(timer);
     };
-  }, [day, uid, prevParties]);
+  }, [day, push]);
+
+  const dismissAlert = useCallback((key: string) => {
+    setAlerts((prev) => ({ ...prev, list: prev.list.filter((a) => a.key !== key) }));
+  }, []);
 
   const actions = useMemo<PartyActions>(
     () => ({
@@ -68,6 +95,11 @@ export function useParties(day: DayId): {
     }),
     [day],
   );
-
-  return { parties: got.day === day ? got.list : [], uid, alerts, actions };
+  return {
+    parties: got.day === day ? got.list : [],
+    uid,
+    actions,
+    alerts: alerts.day === day ? alerts.list : [],
+    dismissAlert,
+  };
 }

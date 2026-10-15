@@ -8,7 +8,8 @@ import {
   isValidTime,
   nowMinutesKST,
   partyCandidates,
-  partyAlerts,
+  departingAlerts,
+  joinAlerts,
   partyInputProblem,
   partyPhase,
   partyTimeSlots,
@@ -207,104 +208,39 @@ describe('출발 시각 칸', () => {
 });
 
 describe('팟 알림', () => {
-  it('초기 로드에서는 알림하지 않는다', () => {
-    const next = [party({ id: 'p1', hostUid: 'me', members: [{ uid: 'me', at: 1 }, { uid: 'u1', at: 2 }] })];
-    const alerts = partyAlerts(null, next, 'me', 700);
-    expect(alerts).toEqual([]);
+  const host = (members: string[], over: Partial<Party> = {}) =>
+    party({ id: 'me', hostUid: 'me', members: members.map((uid, i) => ({ uid, at: i + 1 })), ...over });
+
+  it('첫 목록에서는 알리지 않는다', () => {
+    expect(joinAlerts(null, [host(['me', 'a'])], 'me')).toEqual([]);
   });
 
-  it('로그인 안 되면 알림하지 않는다', () => {
-    const prev = [party({ id: 'p1', hostUid: 'me', members: [{ uid: 'me', at: 1 }] })];
-    const next = [party({ id: 'p1', hostUid: 'me', members: [{ uid: 'me', at: 1 }, { uid: 'u1', at: 2 }] })];
-    const alerts = partyAlerts(prev, next, null, 700);
-    expect(alerts).toEqual([]);
+  it('내 팟에 새로 들어온 사람만 알린다', () => {
+    const alerts = joinAlerts([host(['me'])], [host(['me', 'a', 'b'])], 'me');
+    expect(alerts.map((a) => a.uid)).toEqual(['a', 'b']);
+    expect(alerts[0]).toMatchObject({ type: 'joined', partyId: 'me', category: '면' });
   });
 
-  it('내가 호스트인 팟에 새로 들어온 사람을 감지한다', () => {
-    const prev = [party({ id: 'p1', hostUid: 'me', time: '13:00', members: [{ uid: 'me', at: 1 }] })];
-    const next = [party({ id: 'p1', hostUid: 'me', time: '13:00', members: [{ uid: 'me', at: 1 }, { uid: 'u1', at: 2 }] })];
-    const alerts = partyAlerts(prev, next, 'me', 700);
-    expect(alerts).toHaveLength(1);
-    expect(alerts[0]).toEqual({
-      type: 'newMember',
-      partyId: 'p1',
-      partyCategory: '면',
-      memberName: 'u1',
-    });
+  it('남의 팟에 사람이 들어온 건 알리지 않는다', () => {
+    const other = (m: string[]) => party({ id: 'x', hostUid: 'x', members: m.map((uid, i) => ({ uid, at: i })) });
+    expect(joinAlerts([other(['x', 'me'])], [other(['x', 'me', 'a'])], 'me')).toEqual([]);
   });
 
-  it('여러 사람이 들어오면 마지막 사람만 알린다', () => {
-    const prev = [party({ id: 'p1', hostUid: 'me', time: '13:00', members: [{ uid: 'me', at: 1 }] })];
-    const next = [
-      party({
-        id: 'p1',
-        hostUid: 'me',
-        time: '13:00',
-        members: [
-          { uid: 'me', at: 1 },
-          { uid: 'u1', at: 2 },
-          { uid: 'u2', at: 3 },
-        ],
-      }),
-    ];
-    const alerts = partyAlerts(prev, next, 'me', 700);
-    expect(alerts).toHaveLength(1);
-    expect(alerts[0].memberName).toBe('u2');
+  it('나간 사람은 알리지 않고, 다시 들어오면 다른 키로 다시 알린다', () => {
+    expect(joinAlerts([host(['me', 'a'])], [host(['me'])], 'me')).toEqual([]);
+    const first = joinAlerts([host(['me'])], [party({ id: 'me', hostUid: 'me', members: [{ uid: 'me', at: 1 }, { uid: 'a', at: 5 }] })], 'me');
+    const again = joinAlerts([host(['me'])], [party({ id: 'me', hostUid: 'me', members: [{ uid: 'me', at: 1 }, { uid: 'a', at: 9 }] })], 'me');
+    expect(first[0].key).not.toBe(again[0].key);
   });
 
-  it('호스트가 아닌 팟의 새 멤버는 무시한다', () => {
-    const prev = [party({ id: 'p1', hostUid: 'other', time: '13:00', members: [{ uid: 'other', at: 1 }, { uid: 'me', at: 2 }] })];
-    const next = [
-      party({
-        id: 'p1',
-        hostUid: 'other',
-        time: '13:00',
-        members: [{ uid: 'other', at: 1 }, { uid: 'me', at: 2 }, { uid: 'u1', at: 3 }],
-      }),
-    ];
-    const alerts = partyAlerts(prev, next, 'me', 700);
-    expect(alerts).toEqual([]);
-  });
-
-  it('내가 참여한 팟이 10분 뒤에 출발하면 알린다', () => {
-    const prev = [party({ id: 'p1', time: '12:00', members: [{ uid: 'other', at: 1 }, { uid: 'me', at: 2 }] })];
-    const next = [party({ id: 'p1', time: '12:00', members: [{ uid: 'other', at: 1 }, { uid: 'me', at: 2 }] })];
-    // 11:50 = 710 분, 12:00 = 720 분. 차이 = 10분
-    const alerts = partyAlerts(prev, next, 'me', 710);
-    expect(alerts).toHaveLength(1);
-    expect(alerts[0]).toEqual({
-      type: 'departingSoon',
-      partyId: 'p1',
-      partyCategory: '면',
-    });
-  });
-
-  it('호스트인 팟의 출발 알림도 받는다', () => {
-    const prev = [party({ id: 'p1', hostUid: 'me', time: '12:00', members: [{ uid: 'me', at: 1 }] })];
-    const next = [party({ id: 'p1', hostUid: 'me', time: '12:00', members: [{ uid: 'me', at: 1 }] })];
-    const alerts = partyAlerts(prev, next, 'me', 710);
-    expect(alerts).toHaveLength(1);
-    expect(alerts[0].type).toBe('departingSoon');
-  });
-
-  it('10분 미만 또는 초과할 때는 알림하지 않는다', () => {
-    const prev = [party({ id: 'p1', time: '12:00', members: [{ uid: 'other', at: 1 }, { uid: 'me', at: 2 }] })];
-    const next = [party({ id: 'p1', time: '12:00', members: [{ uid: 'other', at: 1 }, { uid: 'me', at: 2 }] })];
-    // 11분 뒤
-    expect(partyAlerts(prev, next, 'me', 709)).toEqual([]);
-    // 9분 뒤
-    expect(partyAlerts(prev, next, 'me', 711)).toEqual([]);
-  });
-
-  it('같은 팟의 중복 알림을 피한다', () => {
-    const prev = [party({ id: 'p1', hostUid: 'me', time: '13:00', members: [{ uid: 'me', at: 1 }] })];
-    const next = [party({ id: 'p1', hostUid: 'me', time: '13:00', members: [{ uid: 'me', at: 1 }, { uid: 'u1', at: 2 }] })];
-    const alerts1 = partyAlerts(prev, next, 'me', 700);
-    // 중복 방지 로직은 한 번의 partyAlerts 호출 내에서만 작동
-    const alerts2 = partyAlerts(prev, next, 'me', 700);
-    expect(alerts1).toHaveLength(1);
-    expect(alerts1[0].type).toBe('newMember');
-    expect(alerts2).toHaveLength(1);
-    expect(alerts2[0].type).toBe('newMember');
+  it('출발 10분 안으로 들어온, 내가 든 팟만 곧 출발로 알린다', () => {
+    const mine = party({ id: 'p', time: '12:00', members: [{ uid: 'me', at: 1 }] });
+    const notMine = party({ id: 'q', time: '12:00', members: [{ uid: 'x', at: 1 }] });
+    const at = (hh: number, mm: number) => hh * 60 + mm;
+    expect(departingAlerts([mine, notMine], 'me', at(11, 49))).toEqual([]);
+    expect(departingAlerts([mine, notMine], 'me', at(11, 50)).map((a) => a.key)).toEqual(['depart-p']);
+    expect(departingAlerts([mine], 'me', at(11, 59))).toHaveLength(1);
+    expect(departingAlerts([mine], 'me', at(12, 0))).toEqual([]);
+    expect(departingAlerts([mine], null, at(11, 55))).toEqual([]);
   });
 });

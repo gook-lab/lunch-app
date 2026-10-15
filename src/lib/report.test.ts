@@ -60,11 +60,25 @@ describe('이번 주 점심 리포트', () => {
     const places = [place('p1', '면', '라멘'), place('p2', '면', '우동')];
     const visits: Visit[] = [
       { id: MON, placeId: 'p1', mode: 'wheel' },
-      { id: TUE, placeId: 'p2' }, // mode 없음
+      { id: TUE, placeId: 'p2', mode: 'wheel' },
+      { id: WED, placeId: 'p2' }, // mode 없음
     ];
     const report = weeklyReport(visits, places, FRI);
-    expect(report.decisionCount).toBe(2);
+    expect(report.decisionCount).toBe(3);
     expect(report.topMode).toBe('wheel'); // mode 가 있는 것만
+  });
+
+  it('한 번씩뿐이거나 동점이면 "자주" 를 말하지 않는다', () => {
+    const places = [place('p1', '면', '라멘'), place('p2', '밥', '덮밥')];
+    const once = weeklyReport([{ id: MON, placeId: 'p1', mode: 'wheel' }], places, FRI);
+    expect(once.topCategory).toBeNull();
+    expect(once.topMode).toBeNull();
+    const tie = weeklyReport(
+      [MON, TUE].map((id) => ({ id, placeId: 'p1' })).concat([WED, FRI].map((id) => ({ id, placeId: 'p2' }))),
+      places,
+      FRI,
+    );
+    expect(tie.topCategory).toBeNull();
   });
 
   it('가장 자주 쓴 게임 모드를 찾는다', () => {
@@ -118,5 +132,11 @@ describe('이번 주 점심 리포트', () => {
     const visits: Visit[] = [{ id: MON, placeId: 'p1' }];
     const report = weeklyReport(visits, places, FRI);
     expect(report.places[0].mode).toBeUndefined();
+  });
+
+  it('달이 바뀌는 주도 금요일까지 센다', () => {
+    const p = [place('a', '밥', '가집')];
+    const r = weeklyReport([{ id: '20260928', placeId: 'a' }, { id: '20261001', placeId: 'a' }], p, '20260930');
+    expect(r.decisionCount).toBe(2);
   });
 });
