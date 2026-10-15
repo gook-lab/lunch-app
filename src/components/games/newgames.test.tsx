@@ -304,7 +304,10 @@ describe('풍선 터뜨리기', () => {
       run(1_000);
       // 연출이 실제로 움직인다(run 을 이번 판으로 바꾸지 않으면 여기서 멈춘다).
       if (n >= 10) expect(left(r.container).length).toBeLessThan(n);
-      expect(r.container.querySelector('.balloon__status')?.textContent).toMatch(/^풍선이 터지고 있어요… 남은 풍선 \d+개$/);
+      // 진행 중 문구는 사건(다트·살아남기·연쇄·대결)마다 바뀐다. 아직 결과 문구는 아니다.
+      const mid = r.container.querySelector('.balloon__status')?.textContent ?? '';
+      expect(mid).toMatch(/남은 풍선 \d+개|다트|터질까|살았다|마지막 두 풍선|부풀어|아슬아슬|탈락/);
+      expect(mid).not.toMatch(/만 남았어요/);
       expect(onSpinEnd).not.toHaveBeenCalled();
       run(8_000);
       expect(onSpinEnd).toHaveBeenCalledTimes(1);
@@ -315,6 +318,24 @@ describe('풍선 터뜨리기', () => {
       expect(r.container.querySelector('.balloon__status')?.textContent).toBe(`가게${winner + 1}만 남았어요!`);
       r.unmount();
     }
+  });
+
+  it('다트·살아남기·마지막 대결이 나오고, 그 사이 당첨 풍선은 한 번도 터지지 않는다', () => {
+    const seen = new Set<string>();
+    for (let k = 1; k <= 6; k += 1) {
+      const winner = k % 9;
+      const r = render(<Balloon candidates={places(9)} winnerIndex={winner} spinning run={k} onSpinEnd={() => {}} />);
+      for (let t = 0; t < 7300; t += 50) {
+        act(() => { vi.advanceTimersByTime(50); });
+        const c = r.container;
+        if (c.querySelector('.balloon__dart')) seen.add('dart');
+        if (c.querySelector('.balloon__item--duel')) seen.add('duel');
+        if (/살았다/.test(c.querySelector('.balloon__status')?.textContent ?? '')) seen.add('save');
+        expect(c.querySelectorAll('.balloon__item')[winner].classList.contains('balloon__item--popped')).toBe(false);
+      }
+      r.unmount();
+    }
+    expect([...seen].sort()).toEqual(['dart', 'duel', 'save']);
   });
 
   it('언마운트하면 타이머가 멈춰 onSpinEnd 를 부르지 않는다', () => {

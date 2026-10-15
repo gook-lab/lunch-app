@@ -109,8 +109,9 @@ export const SPIN_MS: Record<Exclude<GameMode, 'pinball' | 'memory' | 'plinko' |
   ladder: 6400,
   // 슬롯: 레버 0.65초 → 릴이 하나씩 선다(리치·멈칫·한 칸 지나침·다시 돌기) → 5.6초에 세 줄, 0.6초 잭팟. 장면은 lib/slot.ts.
   slot: 6200,
-  // 판 수와 상관없이 이 시간 안에 끝난다. 20곳이면 5판이라 판마다 약 0.8초.
-  tournament: 4200,
+  // 토너먼트는 상한이다 — 실제 길이는 lib/tournament.ts 의 tournamentPlan 이 판 수로 정한다(2곳 약 4.6초 · 20곳 약 7초).
+  // 4.2초 고정일 때 VS 컷신·눈싸움·역전을 넣을 틈이 없었다(10/15 게임 업그레이드).
+  tournament: 7200,
 };
 
 /** 게임이 끝나고 결과 모달을 열기까지. 마지막 장면을 볼 틈만 — 700ms 는 늦게 뜬다고 했다(10/13 사용자). */

@@ -1967,112 +1967,7 @@ html:has(.stage--full) { overflow: hidden; }
   .modebar__item { flex: 1 0 auto; }
 }
 
-/* ── 토너먼트 ─────────────────────────────────────────────── */
-.tour { display: grid; gap: var(--space-3); padding: var(--space-2) 0; }
-.tour--empty { min-height: 200px; }
-.tour__hint { text-align: center; }
-.tour__entries {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--space-2);
-}
-.tour__entry {
-  min-height: 44px;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--color-neutral-400);
-  border-radius: var(--radius-lg);
-  background: var(--color-bg);
-  color: var(--color-text);
-  font: inherit;
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  cursor: pointer;
-}
-.tour__entry--cheer { border-color: var(--color-accent); background: var(--color-accent); color: var(--color-bg); }
-.tour__entry:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
-.tour__steps {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  justify-content: center;
-  gap: var(--space-1);
-  font-size: var(--fs-xs);
-  font-weight: 700;
-}
-.tour__step {
-  padding: 2px var(--space-2);
-  border-radius: var(--radius-sm);
-  color: var(--color-neutral-700);
-  background: var(--color-neutral-100);
-}
-.tour__step--past { color: var(--color-neutral-700); text-decoration: line-through; }
-.tour__step--now { background: var(--color-text); color: var(--color-bg); }
-.tour__matches {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: var(--space-2);
-}
-.tour__match {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-2);
-  border: 1px solid var(--color-neutral-300);
-  border-radius: var(--radius-md);
-  background: var(--color-bg);
-  animation: tour-in 0.25s ease-out both;
-}
-.tour__side {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: center;
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  padding: 2px;
-  border-radius: var(--radius-sm);
-  transition: opacity 0.2s, background-color 0.2s;
-}
-.tour__side--bye { color: var(--color-neutral-700); font-weight: 400; font-style: italic; }
-.tour__side--win { background: var(--color-accent); color: var(--color-bg); }
-.tour__side--lose { opacity: 0.45; text-decoration: line-through; }
-.tour__side--cheer::before { content: '📣'; margin-right: 2px; }
-.tour__vs { font-size: var(--fs-xs); font-weight: 700; color: var(--color-neutral-700); }
-.tour__champion {
-  display: grid;
-  justify-items: center;
-  gap: var(--space-1);
-  padding: var(--space-4) var(--space-3);
-  border: 2px solid var(--color-accent);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  animation: tour-in 0.35s ease-out both;
-}
-.tour__champion > span:first-child {
-  font-size: 40px;
-  line-height: 1;
-  animation: trophy-drop 520ms var(--ease-decel) both;
-}
-@keyframes trophy-drop {
-  0% { translate: 0 -24px; scale: 0.6; opacity: 0; }
-  60% { translate: 0 4px; scale: 1.15; opacity: 1; }
-  100% { translate: 0 0; scale: 1; }
-}
-.tour__champion strong { font-size: var(--fs-lg); text-align: center; }
-.tour--big .tour__matches { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
-.tour--big .tour__side { font-size: var(--fs-md); }
-@keyframes tour-in { from { opacity: 0; translate: 0 6px; } }
 :root[data-motion='reduced'] {
-  .tour__match, .tour__champion, .tour__champion > span:first-child { animation: none; }
   .cards__grid--done .cards__card { transition: none; }
 }
 
@@ -2172,19 +2067,6 @@ input:focus-visible,
 textarea:focus-visible,
 select:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
 input[aria-invalid='true'] { border-color: var(--color-accent); }
-
-/* 토너먼트 — 경기 승자가 튀어나오고 진 쪽은 천천히 꺼진다. 결과가 한꺼번에 바뀌어 나열식으로 보였다(10/9 손맛 리뷰). */
-.tour__side--win { animation: tour-win 320ms var(--ease-decel) both; }
-.tour__side--lose { transition: opacity 400ms var(--ease-out); }
-@keyframes tour-win {
-  0% { scale: 0.92; }
-  60% { scale: 1.06; }
-  100% { scale: 1; }
-}
-:root[data-motion='reduced'] {
-  .tour__side--win { animation: none; }
-  .tour__side--lose { transition: none; }
-}
 
 /* 지도 칩·지도 핀도 보이는 모양은 그대로, 누르는 영역만 넓힌다(위 .chip::before 묶음). */
 .map__cat { position: relative; }

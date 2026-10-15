@@ -1,0 +1,480 @@
+/*
+ * 토너먼트 — 위에 판 진행 줄(.tour__steps, 지난 판 사이 선이 불 켜진다), 가운데 무대(.tour__stage)에
+ * 이번 판 대진 카드들, 그 위로 VS 컷신(.tour__cut)이 덮인다. 끝나면 무대가 트로피 장면(.tour__champion)이 된다.
+ * 컷신은 경기장 조명처럼 어두운 남색 바탕에 빨강(왼쪽)·파랑(오른쪽) 카드라 라이트·다크 모두 같은 색이다.
+ * 크기는 무대 폭(cqw)에 맞춰 커지고 줄어든다 — 390px 에서도 카드 둘과 VS 가 한 줄에 들어간다.
+ */
+.tour { width: min(560px, 94vw); display: grid; gap: var(--space-3); padding: var(--space-2) 0; }
+.tour--big { width: min(820px, 94vw); }
+.tour--empty { min-height: 200px; }
+.tour__hint { margin: 0; text-align: center; font-size: var(--fs-sm); color: var(--color-neutral-700); }
+.tour--live .tour__hint { font-weight: 700; color: var(--color-text); min-height: 1.5em; }
+
+/* ── 응원 고르기 ── */
+.tour__entries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+.tour__entry {
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-neutral-400);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.tour__entry--cheer { border-color: var(--color-accent); background: var(--color-accent); color: var(--color-bg); }
+.tour__entry:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+/* ── 진행 줄 — 판 이름 사이 선이 지나간 판마다 불 켜진다 ── */
+.tour__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+.tour__step {
+  position: relative;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--color-neutral-700);
+  background: var(--color-neutral-100);
+  white-space: nowrap;
+  transition: background-color 240ms var(--ease-out), color 240ms var(--ease-out);
+}
+/* 앞 칸과 잇는 선. 지나간 판 다음 칸이면 켜진다. */
+.tour__step + .tour__step::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  width: 14px;
+  height: 2px;
+  translate: 0 -50%;
+  background: var(--color-neutral-300);
+}
+.tour__step--past + .tour__step::before { background: var(--color-accent); box-shadow: 0 0 6px var(--color-accent); }
+.tour__step--past { color: var(--color-accent-800); background: var(--color-accent-100); }
+.tour__step--now { background: var(--color-text); color: var(--color-bg); animation: tour-now 900ms var(--ease-inout) infinite alternate; }
+.tour__step--cup.tour__step--now { background: var(--color-accent); animation: none; }
+@keyframes tour-now { to { box-shadow: 0 0 0 3px var(--color-accent-200); } }
+
+/* ── 무대 ── */
+.tour__stage {
+  position: relative;
+  container-type: inline-size;
+  min-height: 236px;
+  display: grid;
+  align-content: center;
+  gap: var(--space-2);
+}
+.tour--big .tour__stage { min-height: 320px; }
+.tour__matches {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-2);
+}
+.tour--big .tour__matches { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.tour__match {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  animation: tour-card-in 300ms var(--ease-decel) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+@keyframes tour-card-in { from { opacity: 0; translate: 0 10px; scale: 0.96; } }
+.tour__match--feature { border-color: var(--color-accent); }
+.tour__side {
+  /* 이름은 두 줄까지 — 390px 두 칸에서 "할머니 김치찌개" 가 "할머니 …" 로 잘렸다. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+  text-align: center;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  transition: opacity 400ms var(--ease-out), background-color 200ms;
+}
+.tour--big .tour__side { font-size: var(--fs-md); }
+.tour__vs { font-size: var(--fs-xs); font-weight: 800; color: var(--color-neutral-700); }
+/* 맞부딪침 — 양쪽 이름이 가운데로 쾅쾅. */
+.tour__match--clash .tour__side:first-child { animation: tour-bump-l 260ms var(--ease-inout) infinite alternate; }
+.tour__match--clash .tour__side:nth-child(3) { animation: tour-bump-r 260ms var(--ease-inout) infinite alternate; }
+.tour__match--clash .tour__vs { color: var(--color-accent); animation: tour-vs-pulse 260ms var(--ease-inout) infinite alternate; }
+@keyframes tour-bump-l { to { translate: 5px 0; } }
+@keyframes tour-bump-r { to { translate: -5px 0; } }
+@keyframes tour-vs-pulse { to { scale: 1.35; } }
+/* 진 쪽이 잠깐 앞서 보인다(역전 연출). */
+.tour__side--lead { background: var(--color-accent-100); color: var(--color-accent-800); box-shadow: inset 0 0 0 2px var(--color-accent); }
+.tour__side--win {
+  position: relative;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  animation: tour-win 360ms var(--ease-decel) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+/* 이긴 이름에 빛줄기가 한 번 지나간다 — 다음 판으로 올라가는 선. */
+.tour__side--win::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, oklch(1 0 0 / 0.55) 50%, transparent 70%);
+  translate: -100% 0;
+  animation: tour-sweep 600ms var(--ease-out) 120ms forwards;
+}
+.tour__side--lose { opacity: 0.45; text-decoration: line-through; }
+.tour__side--cheer::before { content: '📣'; margin-right: 2px; }
+@keyframes tour-win { 0% { scale: 0.92; } 60% { scale: 1.08; } 100% { scale: 1; } }
+@keyframes tour-sweep { to { translate: 100% 0; } }
+.tour__match--upset::after {
+  content: '역전!';
+  position: absolute;
+  top: -9px;
+  right: 6px;
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  background: oklch(0.42 0.17 25);
+  color: oklch(0.99 0 0);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  line-height: 18px;
+  rotate: 4deg;
+  animation: tour-pop 320ms var(--ease-decel) both;
+}
+.tour__byes { margin: 0; text-align: center; font-size: var(--fs-xs); color: var(--color-neutral-700); }
+
+/* ── VS 컷신 ── */
+.tour__cut {
+  position: absolute;
+  inset: -4px;
+  z-index: 3;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-items: center;
+  justify-items: center;
+  padding: 10px 10px 14px;
+  color: oklch(0.99 0 0);
+  animation: tour-cut-in 180ms var(--ease-out) both;
+}
+@keyframes tour-cut-in { from { opacity: 0; } }
+.tour__cut--out { animation: tour-cut-out 220ms var(--ease-out) forwards; }
+@keyframes tour-cut-out { to { opacity: 0; scale: 1.06; } }
+.tour__cut-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 60% 70% at 50% 46%, oklch(0.36 0.09 280) 0%, oklch(0.2 0.05 270) 60%, oklch(0.14 0.03 265) 100%);
+}
+/* 결승 — 스포트라이트 두 줄기. */
+.tour__cut--final .tour__cut-bg::before,
+.tour__cut--final .tour__cut-bg::after {
+  content: '';
+  position: absolute;
+  top: -10%;
+  width: 40%;
+  height: 120%;
+  background: linear-gradient(180deg, oklch(1 0.05 95 / 0.22), transparent 80%);
+  clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%);
+}
+.tour__cut--final .tour__cut-bg::before { left: 6%; rotate: -14deg; }
+.tour__cut--final .tour__cut-bg::after { right: 6%; rotate: 14deg; }
+.tour__bar { position: absolute; left: 0; right: 0; height: 14px; background: oklch(0.08 0 0); z-index: 2; animation: tour-bar 300ms var(--ease-out) both; }
+/* 영화 띠 안쪽으로 라벨·게이지가 들어오게. */
+.tour__cut--final { padding-top: 20px; padding-bottom: 26px; }
+.tour__bar--top { top: 0; transform-origin: top; }
+.tour__bar--bottom { bottom: 0; transform-origin: bottom; }
+@keyframes tour-bar { from { scale: 1 0; } }
+.tour__label {
+  position: relative;
+  z-index: 3;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: oklch(0.99 0 0 / 0.14);
+  font-size: clamp(11px, 3.2cqw, 15px);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  animation: tour-pop 300ms var(--ease-decel) both;
+}
+.tour__cut--final .tour__label { background: oklch(0.82 0.15 85); color: oklch(0.2 0.03 70); }
+
+.tour__ring {
+  position: relative;
+  /* K.O. 때 이긴 카드가 커지고 진 카드가 튕겨 나갈 자리를 양옆에 남긴다. */
+  width: min(94%, 640px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
+}
+.tour__card {
+  --card: oklch(0.58 0.19 25);
+  --card-2: oklch(0.45 0.17 25);
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: clamp(10px, 4cqw, 20px) 8px clamp(10px, 3.4cqw, 18px);
+  border: 2px solid oklch(1 0 0 / 0.75);
+  border-radius: var(--radius-md);
+  background: linear-gradient(160deg, var(--card), var(--card-2));
+  box-shadow: 0 6px 18px oklch(0 0 0 / 0.4);
+  animation: tour-slam-l 380ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.tour__card--b {
+  --card: oklch(0.56 0.15 255);
+  --card-2: oklch(0.42 0.14 258);
+  animation-name: tour-slam-r;
+}
+@keyframes tour-slam-l { 0% { translate: -130% 0; rotate: -14deg; } 70% { translate: 6% 0; rotate: 2deg; } 100% { translate: 0 0; rotate: -2deg; } }
+@keyframes tour-slam-r { 0% { translate: 130% 0; rotate: 14deg; } 70% { translate: -6% 0; rotate: -2deg; } 100% { translate: 0 0; rotate: 2deg; } }
+.tour__card-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: clamp(14px, 4.6cqw, 24px);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 0 oklch(0 0 0 / 0.3);
+}
+/* 눈 — 눈싸움 때 가늘어진다. */
+.tour__eyes { display: flex; gap: clamp(8px, 3cqw, 14px); }
+.tour__eyes span {
+  width: clamp(7px, 2.2cqw, 11px);
+  height: clamp(9px, 2.8cqw, 14px);
+  border-radius: 50%;
+  background: oklch(0.99 0 0);
+  box-shadow: inset 0 -3px 0 oklch(0.2 0.02 260);
+  transition: scale 200ms var(--ease-out);
+}
+.tour__card--b .tour__eyes { flex-direction: row-reverse; }
+.tour__cut--stare .tour__eyes span { scale: 1 0.35; }
+.tour__cut--stare .tour__card--a { animation: tour-slam-l 380ms cubic-bezier(0.2, 1.4, 0.4, 1) both, tour-lean-l 700ms var(--ease-inout) 380ms infinite alternate; }
+.tour__cut--stare .tour__card--b { animation: tour-slam-r 380ms cubic-bezier(0.2, 1.4, 0.4, 1) both, tour-lean-r 700ms var(--ease-inout) 380ms infinite alternate; }
+@keyframes tour-lean-l { to { translate: 5% 0; rotate: 0deg; } }
+@keyframes tour-lean-r { to { translate: -5% 0; rotate: 0deg; } }
+/* 싸움 — 서로 부딪친다. */
+.tour__cut--fighting:not(.tour__cut--ko):not(.tour__cut--out) .tour__card--a { animation: tour-hit-l 240ms var(--ease-inout) infinite alternate; }
+.tour__cut--fighting:not(.tour__cut--ko):not(.tour__cut--out) .tour__card--b { animation: tour-hit-r 240ms var(--ease-inout) infinite alternate; }
+@keyframes tour-hit-l { from { translate: 0 0; rotate: -2deg; } to { translate: 9% 0; rotate: 3deg; } }
+@keyframes tour-hit-r { from { translate: 0 0; rotate: 2deg; } to { translate: -9% 0; rotate: -3deg; } }
+/* K.O. — 진 카드는 튕겨 나가 회색, 이긴 카드는 커지며 빛난다. */
+.tour__card--lose { animation: tour-ko-a 520ms var(--ease-out) forwards; filter: grayscale(0.85) brightness(0.7); }
+.tour__card--b.tour__card--lose { animation-name: tour-ko-b; }
+@keyframes tour-ko-a { to { translate: -22% 16%; rotate: -24deg; scale: 0.82; } }
+@keyframes tour-ko-b { to { translate: 22% 16%; rotate: 24deg; scale: 0.82; } }
+.tour__card--win { animation: tour-champ 520ms var(--ease-decel) forwards; box-shadow: 0 0 0 3px oklch(0.85 0.16 90), 0 0 28px oklch(0.85 0.16 90 / 0.7); z-index: 1; }
+@keyframes tour-champ { 0% { scale: 1; } 50% { scale: 1.12; } 100% { scale: 1.05; rotate: 0deg; } }
+.tour__stamp {
+  position: absolute;
+  top: -14px;
+  right: 50%;
+  translate: 50% 0;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: oklch(0.85 0.16 90);
+  color: oklch(0.22 0.04 70);
+  font-size: clamp(12px, 3.6cqw, 18px);
+  font-weight: 900;
+  rotate: -6deg;
+  animation: tour-stamp 300ms var(--ease-decel) 80ms both;
+}
+@keyframes tour-stamp { from { scale: 2.4; opacity: 0; } }
+
+/* VS 와 번개 */
+.tour__vsmark { position: relative; display: grid; place-items: center; width: clamp(42px, 13cqw, 76px); aspect-ratio: 1; z-index: 2; }
+.tour__bolt {
+  position: absolute;
+  height: 130%;
+  fill: oklch(0.86 0.16 92);
+  filter: drop-shadow(0 0 6px oklch(0.86 0.16 92));
+  animation: tour-bolt 380ms steps(2) 200ms both;
+}
+@keyframes tour-bolt { 0% { opacity: 0; scale: 0.4; } 40% { opacity: 1; scale: 1.25; } 70% { opacity: 0.4; } 100% { opacity: 1; scale: 1; } }
+.tour__vs-text {
+  position: relative;
+  font-size: clamp(20px, 7cqw, 40px);
+  font-weight: 900;
+  font-style: italic;
+  color: oklch(0.99 0 0);
+  -webkit-text-stroke: 0.12em oklch(0.24 0.06 280);
+  paint-order: stroke fill;
+  animation: tour-pop 340ms var(--ease-decel) 180ms both;
+}
+.tour__crackle {
+  position: absolute;
+  left: -120%;
+  width: 340%;
+  height: 22px;
+  top: calc(50% - 11px);
+  z-index: -1;
+  fill: none;
+  stroke: oklch(0.88 0.12 230);
+  stroke-width: 2.4;
+  filter: drop-shadow(0 0 4px oklch(0.8 0.15 230));
+  animation: tour-crackle 140ms steps(2) infinite;
+}
+@keyframes tour-crackle { 50% { opacity: 0.25; translate: 0 2px; } }
+.tour__sparks { position: absolute; inset: 10%; z-index: -1; border-radius: 50%; background: radial-gradient(circle, oklch(0.95 0.12 90) 0 18%, oklch(0.85 0.16 70 / 0.6) 30%, transparent 62%); animation: tour-spark 240ms var(--ease-out) infinite alternate; }
+@keyframes tour-spark { from { scale: 0.6; opacity: 0.6; } to { scale: 1.5; opacity: 1; } }
+
+/* 힘 게이지 — 왼쪽(빨강) 몫. 싸움 동안 --g0…--g4 를 0·30·60·85·100% 자리에서 지난다. */
+.tour__gauge {
+  position: relative;
+  width: min(100%, 420px);
+  height: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: linear-gradient(90deg, oklch(0.45 0.13 258), oklch(0.58 0.15 255));
+  box-shadow: 0 0 0 2px oklch(1 0 0 / 0.6);
+  animation: tour-pop 260ms var(--ease-decel) 260ms both;
+}
+.tour__gauge-a {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 50%;
+  background: linear-gradient(90deg, oklch(0.5 0.17 25), oklch(0.64 0.2 30));
+  box-shadow: 2px 0 0 oklch(0.99 0 0);
+}
+.tour__gauge--go .tour__gauge-a { animation: tour-gauge var(--fight) linear forwards; }
+@keyframes tour-gauge {
+  0% { width: var(--g0); }
+  30% { width: var(--g1); }
+  60% { width: var(--g2); }
+  85% { width: var(--g3); }
+  100% { width: var(--g4); }
+}
+.tour__gauge-mid { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; background: oklch(0.99 0 0 / 0.7); }
+
+.tour__dots { position: absolute; top: 22%; font-size: clamp(22px, 8cqw, 40px); font-weight: 900; letter-spacing: 0.1em; animation: tour-dots 600ms steps(3) infinite; }
+@keyframes tour-dots { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.tour__shout {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  z-index: 4;
+  translate: -50% 0;
+  white-space: nowrap;
+  font-size: clamp(26px, 11cqw, 60px);
+  font-weight: 900;
+  line-height: 1;
+  color: oklch(0.88 0.17 92);
+  -webkit-text-stroke: 0.14em oklch(0.22 0.04 280);
+  paint-order: stroke fill;
+  animation: tour-shout 420ms var(--ease-decel) both;
+}
+.tour__shout--swap { color: oklch(0.78 0.19 30); }
+.tour__shout--close { color: oklch(0.86 0.1 220); }
+.tour__shout--ko { top: 20%; font-size: clamp(30px, 13cqw, 70px); }
+@keyframes tour-shout { 0% { scale: 0.2; rotate: -14deg; opacity: 0; } 60% { scale: 1.2; rotate: 4deg; opacity: 1; } 100% { scale: 1; rotate: -4deg; } }
+.tour__flash { position: absolute; inset: 0; z-index: 3; background: radial-gradient(circle, oklch(1 0.05 95 / 0.9), transparent 65%); animation: tour-flash 420ms var(--ease-out) forwards; pointer-events: none; }
+@keyframes tour-flash { from { opacity: 1; scale: 0.5; } to { opacity: 0; scale: 1.6; } }
+.tour__cut--ko { animation: tour-shake 260ms linear; }
+@keyframes tour-shake {
+  0%, 100% { translate: 0 0; }
+  25% { translate: -5px 2px; }
+  50% { translate: 5px -2px; }
+  75% { translate: -3px 1px; }
+}
+@keyframes tour-pop { from { scale: 0.3; opacity: 0; } 70% { scale: 1.12; opacity: 1; } }
+
+/* ── 트로피 ── */
+.tour__champion {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  padding: var(--space-6) var(--space-3) var(--space-4);
+  border: 2px solid var(--color-accent);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  animation: tour-card-in 300ms var(--ease-out) both;
+}
+.tour__rays {
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  width: 520px;
+  height: 520px;
+  margin: -260px 0 0 -260px;
+  background: repeating-conic-gradient(from 0deg, var(--color-accent-100) 0 8deg, transparent 8deg 20deg);
+  border-radius: 50%;
+  mask-image: radial-gradient(circle, #000 20%, transparent 62%);
+  animation: tour-rays 6s linear infinite, tour-cut-in 500ms var(--ease-out) both;
+  pointer-events: none;
+}
+@keyframes tour-rays { to { rotate: 360deg; } }
+.tour__cup {
+  position: relative;
+  font-size: clamp(48px, 16cqw, 72px);
+  line-height: 1;
+  filter: drop-shadow(0 4px 10px oklch(0.75 0.15 85 / 0.6));
+  animation: tour-lift 900ms cubic-bezier(0.2, 1.2, 0.4, 1) both;
+}
+@keyframes tour-lift {
+  0% { translate: 0 60px; scale: 0.5; opacity: 0; }
+  45% { translate: 0 -14px; scale: 1.15; opacity: 1; rotate: -6deg; }
+  70% { rotate: 6deg; }
+  100% { translate: 0 0; scale: 1; rotate: 0deg; }
+}
+.tour__champion strong { position: relative; font-size: var(--fs-lg, 18px); text-align: center; animation: tour-pop 360ms var(--ease-decel) 260ms both; }
+.tour--big .tour__champion strong { font-size: 26px; }
+.tour__champion > .muted { position: relative; }
+.tour__confetti { position: absolute; left: 50%; top: 45%; }
+.tour__confetti span {
+  position: absolute;
+  left: -3px;
+  top: -5px;
+  width: 6px;
+  height: 10px;
+  border-radius: 1px;
+  background: oklch(0.74 0.17 var(--h));
+  opacity: 0;
+  animation: tour-confetti 1100ms var(--ease-out) 300ms forwards;
+}
+@keyframes tour-confetti {
+  0% { opacity: 1; transform: rotate(var(--a)) translateY(-10px) rotate(0deg); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(-90px * var(--d))) rotate(300deg); }
+}
+/* 끝난 판을 다시 그릴 때는 트로피를 또 들지 않는다. */
+.tour--settled *, .tour--settled *::before, .tour--settled *::after { animation: none !important; }
+.tour--settled .tour__confetti { display: none; }
+
+:root[data-motion='reduced'] {
+  .tour *, .tour *::before, .tour *::after { animation: none !important; transition: none !important; }
+  .tour__confetti, .tour__cut { display: none; }
+}

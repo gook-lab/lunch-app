@@ -985,3 +985,79 @@ export function gachaCardsSfxLater(plan: [ms: number, name: GachaCardsSfxName | 
   const timers = plan.map(([ms, name]) => window.setTimeout(() => play(name), ms));
   return () => timers.forEach((t) => window.clearTimeout(t));
 }
+
+/* ───────── 토너먼트 · 풍선 ───────── */
+
+/** 토너먼트·풍선 소리. 위 SOUNDS 와 따로 둬서 다른 게임 소리 목록을 건드리지 않는다(10/15 동시 작업). */
+const TOURNBAL_SOUNDS = {
+  /** VS 카드가 쾅 박히는 소리 — 낮은 쿵에 짧은 잡음. */
+  slam: (ac: AudioContext) => {
+    tone(ac, { hz: 140, to: 55, dur: 0.2, type: 'sine', vol: 0.14 });
+    noise(ac, { dur: 0.12, hz: 600, to: 200, q: 0.8, vol: 0.09, filter: 'lowpass' });
+  },
+  /** VS 번개 — 지지직. */
+  zap: (ac: AudioContext) => {
+    for (let i = 0; i < 4; i += 1) noise(ac, { dur: 0.04, hz: rand(3000, 6000), q: 3, vol: 0.06, at: i * 0.035 });
+    tone(ac, { hz: 1800, to: 400, dur: 0.18, type: 'sawtooth', vol: 0.015 });
+  },
+  /** 결승 눈싸움 — 두근. */
+  heartbeat: (ac: AudioContext) => {
+    tone(ac, { hz: 70, to: 50, dur: 0.12, type: 'sine', vol: 0.16 });
+    tone(ac, { hz: 64, to: 46, dur: 0.14, type: 'sine', vol: 0.12, at: 0.18 });
+  },
+  /** K.O. — 퍽 하고 울리는 종. */
+  ko: (ac: AudioContext) => {
+    noise(ac, { dur: 0.1, hz: 900, to: 300, q: 0.7, vol: 0.14, filter: 'lowpass' });
+    tone(ac, { hz: 1046, dur: 0.5, type: 'triangle', vol: 0.05, at: 0.04 });
+    tone(ac, { hz: 1568, dur: 0.4, type: 'triangle', vol: 0.025, at: 0.04 });
+  },
+  /** 트로피 — 빰빠밤. */
+  trophy: (ac: AudioContext) => {
+    [523, 659, 784, 1047, 1319].forEach((hz, i) =>
+      tone(ac, { hz, dur: i === 4 ? 0.5 : 0.11, type: 'triangle', vol: 0.05, at: i * 0.08 }),
+    );
+  },
+  /** 풍선 펌프 — 쉬익 하고 부푼다. */
+  pump: (ac: AudioContext) => {
+    noise(ac, { dur: 0.16, hz: 1200, to: 2400, q: 1.4, vol: 0.06 });
+    tone(ac, { hz: 300, to: 420, dur: 0.14, type: 'sine', vol: 0.03 });
+  },
+  /** 고무가 늘어나는 끼익(터질락 말락). */
+  squeak: (ac: AudioContext) => tone(ac, { hz: rand(820, 980), to: rand(1150, 1300), dur: 0.16, type: 'sine', vol: 0.04 }),
+  /** 다트가 고무에 튕기는 보잉. */
+  boing: (ac: AudioContext) => {
+    tone(ac, { hz: 220, to: 520, dur: 0.12, type: 'sine', vol: 0.08 });
+    tone(ac, { hz: 520, to: 260, dur: 0.18, type: 'sine', vol: 0.05, at: 0.1 });
+  },
+  /** 돌풍 — 휘잉. */
+  gust: (ac: AudioContext) => noise(ac, { dur: 0.6, hz: 300, to: 1400, q: 0.9, vol: 0.07 }),
+  /** 다트가 날아가는 휙. */
+  dart: (ac: AudioContext) => noise(ac, { dur: 0.1, hz: 2500, to: 5000, q: 2, vol: 0.04 }),
+} satisfies Record<string, (ac: AudioContext) => void>;
+
+export type TournbalSfx = keyof typeof TOURNBAL_SOUNDS;
+const tournbalLast = new Map<TournbalSfx, number>();
+
+/** 토너먼트·풍선 소리(또는 공용 소리)를 나중에 울린다. 취소 함수를 돌려준다. 소리를 끈 사람에겐 아무 일도 없다. */
+export function tournbalSfxLater(plan: [ms: number, name: TournbalSfx | SfxName][]): () => void {
+  if (!enabled()) return () => {};
+  const play = (name: TournbalSfx | SfxName) => {
+    if (!(name in TOURNBAL_SOUNDS)) {
+      sfx(name as SfxName);
+      return;
+    }
+    const key = name as TournbalSfx;
+    const now = performance.now();
+    if (now - (tournbalLast.get(key) ?? -Infinity) < 45) return;
+    tournbalLast.set(key, now);
+    const ac = audio();
+    if (!ac) return;
+    try {
+      TOURNBAL_SOUNDS[key](ac);
+    } catch {
+      // 오디오 노드를 못 만드는 환경 — 소리 없이 넘어간다.
+    }
+  };
+  const timers = plan.map(([ms, name]) => window.setTimeout(() => play(name), ms));
+  return () => timers.forEach((t) => window.clearTimeout(t));
+}
