@@ -1,0 +1,397 @@
+/*
+ * 컬링 — Curling.tsx 전용. 좌표는 시트 폭 100 · 길이 SHEET_L(120) 단위라
+ * 스톤·스위퍼 크기는 시트 폭 기준 cqw 로 잡는다(스톤 지름 = 2R = 8cqw).
+ * 이름표·상태 줄은 앱 토큰(--color-bg/--color-text/--color-accent)을 써서 다크에서도 그대로 읽힌다.
+ */
+.curling {
+  width: min(360px, 94vw);
+  display: grid;
+  gap: var(--space-2);
+  justify-items: center;
+}
+.curling--big {
+  width: min(640px, 94vw);
+}
+.curling--empty {
+  height: 360px;
+}
+
+.curling__sheet {
+  /* 얼음·하우스 색. 다크는 아래에서 바꾼다. */
+  --ice-top: oklch(0.975 0.012 225);
+  --ice-bottom: oklch(0.93 0.025 222);
+  --pebble: oklch(0.86 0.03 225 / 0.55);
+  --ring-12: oklch(0.6 0.14 250);
+  --ring-4: oklch(0.6 0.19 25);
+  --ring-white: oklch(0.985 0.005 225);
+  --mark: oklch(0.55 0.05 240 / 0.55);
+  --hog: oklch(0.58 0.17 25 / 0.55);
+  --tape: oklch(0.8 0.16 85);
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--fit);
+  container-type: inline-size;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-neutral-300);
+  background:
+    radial-gradient(circle at 30% 40%, var(--pebble) 0 0.6px, transparent 1.2px) 0 0 / 9px 9px,
+    radial-gradient(circle at 70% 80%, var(--pebble) 0 0.6px, transparent 1.2px) 0 0 / 13px 13px,
+    linear-gradient(to bottom, var(--ice-top), var(--ice-bottom));
+}
+[data-theme='dark'] .curling__sheet {
+  --ice-top: oklch(0.34 0.03 240);
+  --ice-bottom: oklch(0.27 0.035 245);
+  --pebble: oklch(0.45 0.03 240 / 0.5);
+  --ring-12: oklch(0.5 0.12 250);
+  --ring-4: oklch(0.52 0.16 25);
+  --ring-white: oklch(0.4 0.025 240);
+  --mark: oklch(0.7 0.04 240 / 0.45);
+  --hog: oklch(0.65 0.15 25 / 0.55);
+  --tape: oklch(0.85 0.15 85);
+}
+
+.curling__ice {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.curling__ring {
+  stroke: none;
+}
+.curling__ring--12 {
+  fill: var(--ring-12);
+}
+.curling__ring--8 {
+  fill: var(--ring-white);
+}
+.curling__ring--4 {
+  fill: var(--ring-4);
+}
+.curling__ring--button {
+  fill: var(--ring-white);
+}
+.curling__line {
+  stroke: var(--mark);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+}
+.curling__line--hog {
+  stroke: var(--hog);
+  stroke-width: 2px;
+}
+/* 측정 테이프 — 버튼에서 스톤까지 노란 줄자, 눈금은 점선으로. */
+.curling__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.curling__pin {
+  fill: var(--tape);
+  stroke: oklch(0.3 0.05 85);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+}
+.curling__tape {
+  stroke: var(--tape);
+  stroke-width: 4px;
+  stroke-dasharray: 2 3;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 1px oklch(0.3 0.05 85 / 0.7));
+}
+.curling__tape--win {
+  stroke: var(--color-accent);
+  stroke-dasharray: none;
+}
+
+/* ───── 스톤 ───── */
+.curling__stone {
+  position: absolute;
+  z-index: 2;
+  width: 8cqw;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+}
+.curling__stone--moving {
+  z-index: 4;
+}
+/* 판이 시작할 때만 새 자리로 미끄러져 간다. 그 밖엔 매 장면 자리를 바로 그린다(rAF). */
+.curling--rack .curling__stone {
+  transition:
+    left 240ms var(--ease-inout),
+    top 240ms var(--ease-inout);
+}
+.curling__granite {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  rotate: var(--rot, 0deg);
+  background:
+    radial-gradient(circle at 35% 30%, oklch(0.9 0.005 250 / 0.7) 0 8%, transparent 30%),
+    radial-gradient(circle, oklch(0.68 0.01 250) 0 58%, oklch(0.52 0.012 250) 70%, oklch(0.42 0.012 250) 100%);
+  box-shadow: 0 1px 2px oklch(0.2 0.02 250 / 0.45);
+}
+/* 손잡이 덮개(가게마다 색) + 손잡이 막대. 막대가 돌아 스톤이 도는 게 보인다. */
+.curling__cap {
+  position: absolute;
+  inset: 22%;
+  border-radius: 50%;
+  background: oklch(0.66 0.15 var(--hue, 250));
+  box-shadow: inset 0 -1px 2px oklch(0.25 0.05 var(--hue, 250) / 0.5);
+}
+.curling__cap::after {
+  content: '';
+  position: absolute;
+  left: 18%;
+  right: -12%;
+  top: 38%;
+  height: 24%;
+  border-radius: 999px;
+  background: oklch(0.42 0.1 var(--hue, 250));
+}
+/* 우리 스톤 — 앱 강조색 덮개. 이름표가 없다. */
+.curling__stone--ours .curling__cap {
+  background: var(--color-accent);
+  box-shadow: inset 0 -1px 2px oklch(0.2 0.05 25 / 0.5);
+}
+.curling__stone--ours .curling__cap::after {
+  background: oklch(0.98 0 0);
+}
+
+.curling__tag {
+  position: absolute;
+  left: 50%;
+  top: 66%;
+  z-index: 1;
+  translate: -50% 0;
+  padding: 0 4px;
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.curling--big .curling__tag {
+  font-size: var(--fs-sm);
+}
+/* 측정 2등 — 버튼 바로 위라 이름표를 스톤 위에 단다(아래에 달면 버튼·테이프와 겹친다). */
+.curling__stone--tagUp .curling__tag {
+  top: auto;
+  bottom: 66%;
+}
+
+/* 가장자리에 걸쳐 흔들린다. */
+.curling__stone--teeter .curling__granite {
+  animation: curling-teeter 160ms var(--ease-inout) infinite alternate;
+}
+/* 측정 중인 두 스톤 — 테두리가 깜빡인다. */
+.curling__stone--measured .curling__granite {
+  outline: 2px dashed var(--tape, oklch(0.8 0.16 85));
+  outline-offset: 2px;
+}
+/* 당첨 — 반짝이며 살짝 커지고 이름표가 강조색으로. */
+.curling__stone--win {
+  z-index: 5;
+}
+.curling__stone--win .curling__granite {
+  animation: curling-shine 700ms var(--ease-inout) infinite alternate;
+}
+.curling__stone--win .curling__tag {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+/* ───── 스위퍼 ───── 위에서 본 작은 사람: 털모자 머리 + 빗자루 솔이 좌우로 닦는다. */
+.curling__sweeper {
+  position: absolute;
+  z-index: 6;
+  width: 4.6cqw;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+}
+.curling__body {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 60%, oklch(0.2 0 0) 0 7%, transparent 8%),
+    radial-gradient(circle at 64% 60%, oklch(0.2 0 0) 0 7%, transparent 8%),
+    radial-gradient(circle at 50% 76%, oklch(0.7 0.15 20) 0 6%, transparent 7%),
+    linear-gradient(to bottom, var(--color-accent) 0 42%, oklch(0.9 0.04 60) 42%);
+  box-shadow:
+    0 0 0 1.5px oklch(0.98 0 0),
+    0 1px 2px oklch(0.2 0.02 250 / 0.5);
+}
+/* 털모자 방울 */
+.curling__body::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -18%;
+  width: 34%;
+  aspect-ratio: 1;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: oklch(0.98 0 0);
+}
+/* 빗자루 솔 — 스위퍼 앞(위)에서 좌우로 쓱쓱. */
+.curling__broom {
+  position: absolute;
+  left: 50%;
+  top: -70%;
+  width: 120%;
+  height: 34%;
+  translate: -50% 0;
+  border-radius: 3px;
+  background: repeating-linear-gradient(90deg, oklch(0.42 0.06 60) 0 2px, oklch(0.55 0.08 60) 2px 4px);
+  animation: curling-brush 220ms var(--ease-inout) infinite alternate;
+}
+.curling__sweeper--b .curling__broom {
+  animation-delay: -110ms;
+}
+.curling__sweeper--hard .curling__broom {
+  animation-duration: 90ms;
+}
+.curling__sweeper--hard .curling__body {
+  animation: curling-hop 180ms var(--ease-inout) infinite alternate;
+}
+
+.curling__shout {
+  position: absolute;
+  z-index: 7;
+  translate: -50% -100%;
+  padding: 1px 6px;
+  border: 1.5px solid var(--color-text);
+  border-radius: 10px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  white-space: nowrap;
+  animation: curling-shout 240ms var(--ease-inout) infinite alternate;
+}
+.curling--big .curling__shout {
+  font-size: var(--fs-sm);
+}
+
+/* 부딪친 자리 — 만화식 별 "탕!" */
+.curling__burst {
+  position: absolute;
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  width: 13cqw;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  clip-path: polygon(
+    50% 0,
+    61% 30%,
+    95% 20%,
+    72% 47%,
+    100% 68%,
+    65% 68%,
+    62% 100%,
+    46% 74%,
+    18% 96%,
+    28% 64%,
+    0 52%,
+    30% 40%,
+    12% 10%,
+    42% 26%
+  );
+  background: oklch(0.88 0.16 90);
+  color: oklch(0.25 0.05 40);
+  font-size: var(--fs-xs);
+  font-weight: 900;
+  animation: curling-burst 420ms var(--ease-out) both;
+}
+.curling--big .curling__burst {
+  font-size: var(--fs-sm);
+}
+
+.curling__status {
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-text);
+  text-align: center;
+}
+
+@keyframes curling-brush {
+  from {
+    translate: -64% 0;
+  }
+  to {
+    translate: -36% 0;
+  }
+}
+@keyframes curling-hop {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: 0 -8%;
+  }
+}
+@keyframes curling-shout {
+  from {
+    scale: 1;
+  }
+  to {
+    scale: 1.08;
+  }
+}
+@keyframes curling-teeter {
+  from {
+    translate: -5% 0;
+    rotate: calc(var(--rot, 0deg) - 6deg);
+  }
+  to {
+    translate: 5% 0;
+    rotate: calc(var(--rot, 0deg) + 6deg);
+  }
+}
+@keyframes curling-burst {
+  0% {
+    scale: 0.3;
+    opacity: 0;
+  }
+  30% {
+    scale: 1.1;
+    opacity: 1;
+  }
+  100% {
+    scale: 1;
+    opacity: 0;
+  }
+}
+@keyframes curling-shine {
+  from {
+    filter: brightness(1) drop-shadow(0 0 0 var(--color-accent));
+  }
+  to {
+    filter: brightness(1.12) drop-shadow(0 0 6px var(--color-accent));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .curling__stone,
+  .curling__granite,
+  .curling__broom,
+  .curling__body,
+  .curling__shout,
+  .curling__burst {
+    animation: none !important;
+    transition: none !important;
+  }
+}

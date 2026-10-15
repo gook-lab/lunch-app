@@ -367,3 +367,48 @@ export function planeSfxLater(plan: [ms: number, name: SfxName | PlaneSfxName][]
   const timers = plan.map(([ms, name]) => window.setTimeout(() => play(name), ms));
   return () => timers.forEach((t) => window.clearTimeout(t));
 }
+
+/* ───────── 컬링 ───────── */
+
+/** 컬링 소리. 위 SOUNDS 와 따로 둬서 다른 게임 소리 목록을 건드리지 않는다. */
+const CURL_SOUNDS = {
+  /** 스톤이 얼음을 미끄러지는 낮은 우르르. */
+  rumble: (ac: AudioContext) => {
+    noise(ac, { dur: 0.9, hz: 160, to: 110, q: 0.9, vol: 0.07, filter: 'lowpass' });
+    tone(ac, { hz: 62, to: 52, dur: 0.8, type: 'sine', vol: 0.035 });
+  },
+  /** 스톤끼리 부딪치는 딱 — 화강암이라 맑고 짧다. */
+  clack: (ac: AudioContext) => {
+    noise(ac, { dur: 0.05, hz: rand(2200, 2800), q: 3, vol: 0.14 });
+    tone(ac, { hz: rand(820, 960), to: 520, dur: 0.09, type: 'triangle', vol: 0.07 });
+  },
+  /** 스위퍼 빗자루 쓱. */
+  sweep: (ac: AudioContext) => noise(ac, { dur: 0.12, hz: rand(3000, 4200), q: 0.7, vol: 0.05, filter: 'highpass' }),
+  /** 측정 테이프가 풀리는 찌릭. */
+  tape: (ac: AudioContext) => {
+    for (let i = 0; i < 6; i += 1) noise(ac, { dur: 0.018, hz: 5200, q: 4, vol: 0.05, at: i * 0.045 });
+  },
+} satisfies Record<string, (ac: AudioContext) => void>;
+
+export type CurlSfxName = keyof typeof CURL_SOUNDS;
+
+/** 컬링 소리(또는 공용 소리)를 나중에 울린다. 취소는 sfxLater 와 같다. 소리를 끈 사람에겐 아무 일도 없다. */
+export function curlSfxLater(plan: [ms: number, name: CurlSfxName | SfxName][]): () => void {
+  if (!enabled()) return () => {};
+  const timers = plan.map(([ms, name]) =>
+    window.setTimeout(() => {
+      if (!(name in CURL_SOUNDS)) {
+        sfx(name as SfxName);
+        return;
+      }
+      const ac = audio();
+      if (!ac) return;
+      try {
+        CURL_SOUNDS[name as CurlSfxName](ac);
+      } catch {
+        // 오디오 노드를 못 만드는 환경 — 소리 없이 넘어간다.
+      }
+    }, ms),
+  );
+  return () => timers.forEach((t) => window.clearTimeout(t));
+}
