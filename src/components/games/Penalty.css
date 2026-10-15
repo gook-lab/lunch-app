@@ -1,0 +1,751 @@
+/*
+ * 승부차기 — 경기장(.penalty__pitch) 안에 카메라가 움직이는 세계(.penalty__world)와 화면에 붙은 효과(.penalty__fx),
+ * 슛마다 덮이는 컷신(.penalty__cut)이 겹쳐 있다. 자리(left/top %)·카메라·궤적은 JS(lib/penalty.ts)가 주고
+ * 움직임은 CSS 가 한다. 크기는 경기장 폭(cqw)에 맞춰 커지고 줄어든다 — 15곳(5·5·5)도 휴대폰에서 이름표가 겹치지 않는다.
+ * 잔디·골대·공 색은 실제 경기장 색이라 라이트·다크가 크게 다르지 않다. 다크는 야간 경기(조명)로 그린다.
+ */
+.penalty { width: min(360px, 94vw); display: grid; gap: var(--space-2); justify-items: center; }
+.penalty--big { width: min(640px, 94vw); }
+.penalty--empty { height: 320px; }
+
+.penalty__pitch {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--fit);
+  container-type: inline-size;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: var(--radius-md);
+  background: oklch(0.7 0.13 140);
+  --grass: oklch(0.72 0.14 140);
+  --grass2: oklch(0.67 0.14 140);
+  --seat: oklch(0.5 0.06 255);
+  --seat2: oklch(0.44 0.06 255);
+  --board: oklch(0.32 0.04 260);
+  --board-ink: oklch(0.92 0.12 95);
+  --net-bg: oklch(0.55 0.05 160 / 0.55);
+  --net-line: oklch(1 0 0 / 0.55);
+  --chalk: oklch(0.98 0 0 / 0.9);
+  --post: oklch(0.99 0 0);
+  --ink: oklch(0.22 0.02 260);
+}
+[data-theme='dark'] .penalty__pitch {
+  --grass: oklch(0.45 0.1 145);
+  --grass2: oklch(0.41 0.1 145);
+  --seat: oklch(0.28 0.04 265);
+  --seat2: oklch(0.24 0.04 265);
+  --board: oklch(0.2 0.03 260);
+  --net-bg: oklch(0.2 0.03 200 / 0.6);
+  --net-line: oklch(0.95 0 0 / 0.42);
+  --chalk: oklch(0.95 0 0 / 0.8);
+  --post: oklch(0.96 0 0);
+  background: oklch(0.42 0.1 145);
+}
+
+/* ── 세계(카메라가 따라다닌다) ── */
+.penalty__world {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+  transition: transform 320ms var(--ease-inout);
+  background:
+    linear-gradient(to bottom, transparent var(--g-bottom), oklch(1 1 0 / 0) var(--g-bottom)),
+    repeating-linear-gradient(to bottom, var(--grass) 0 7cqw, var(--grass2) 7cqw 14cqw);
+}
+/* 다크 — 야간 경기. 위에서 조명이 쏟아진다. */
+[data-theme='dark'] .penalty__world {
+  background:
+    radial-gradient(ellipse 60cqw 40cqw at 50% var(--g-bottom), oklch(1 0.03 100 / 0.1), transparent 70%),
+    repeating-linear-gradient(to bottom, var(--grass) 0 7cqw, var(--grass2) 7cqw 14cqw);
+}
+.penalty__world--fly { transition: none; animation: penalty-cam var(--fly) linear forwards; }
+.penalty__world--settle { transform: none; transition: transform 460ms var(--ease-out); }
+.penalty--settled .penalty__world { transition: none; }
+@keyframes penalty-cam {
+  0% { transform: var(--c0); }
+  25% { transform: var(--c1); }
+  50% { transform: var(--c2); }
+  75% { transform: var(--c3); }
+  100% { transform: var(--c4); }
+}
+
+/* ── 관중석 · 광고판 ── */
+.penalty__stands {
+  /* 세계 전체를 덮지만 칠하는 건 위쪽 띠뿐 — 안쪽 자리(%)를 세계 높이로 잰다. */
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: linear-gradient(to bottom, var(--seat2), var(--seat) var(--stands), var(--board) var(--stands) var(--g-top), transparent var(--g-top));
+}
+.penalty__crowd {
+  position: absolute;
+  inset: 0 0 auto;
+  height: calc(var(--stands) - 4cqw);
+  opacity: 0.85;
+  background:
+    radial-gradient(circle 1.2cqw at 1.6cqw 1.6cqw, oklch(0.78 0.08 60) 90%, transparent),
+    radial-gradient(circle 1.2cqw at 4.6cqw 3.6cqw, oklch(0.6 0.1 30) 90%, transparent),
+    radial-gradient(circle 1.2cqw at 3.1cqw 1.6cqw, oklch(0.85 0.1 95) 90%, transparent);
+  background-size: 6cqw 4cqw, 6cqw 4cqw, 9cqw 4cqw;
+}
+[data-theme='dark'] .penalty__crowd { opacity: 0.55; }
+.penalty__fans {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--stands) - 4.6cqw);
+  display: flex;
+  justify-content: space-around;
+}
+.penalty__fans span {
+  width: 3.4cqw;
+  height: 5cqw;
+  border-radius: 50% 50% 30% 30%;
+  background:
+    radial-gradient(circle at 50% 30%, oklch(0.82 0.06 60) 0 30%, transparent 31%),
+    linear-gradient(to bottom, transparent 52%, oklch(0.68 0.16 var(--h)) 52%);
+}
+.penalty__stands--groan .penalty__fans span { animation: penalty-groan 600ms var(--ease-out) forwards; }
+.penalty__stands--wave .penalty__fans span { animation: penalty-wave 520ms var(--ease-out) calc(var(--i) * 34ms) 2 both; }
+@keyframes penalty-groan { to { translate: 0 1.4cqw; } }
+@keyframes penalty-wave {
+  0%, 100% { translate: 0 0; }
+  45% { translate: 0 -2.6cqw; }
+}
+.penalty__board {
+  position: absolute;
+  left: 0;
+  top: var(--stands);
+  height: calc(var(--g-top) - var(--stands));
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  padding-left: 100%;
+  color: var(--board-ink);
+  font-size: clamp(7px, 2.4cqw, 13px);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  animation: penalty-board 14s linear infinite;
+}
+@keyframes penalty-board { to { translate: -100% 0; } }
+
+/* ── 골문 ── */
+.penalty__net {
+  position: absolute;
+  z-index: 1;
+  background:
+    repeating-linear-gradient(45deg, var(--net-line) 0 1px, transparent 1px 2.6cqw),
+    repeating-linear-gradient(-45deg, var(--net-line) 0 1px, transparent 1px 2.6cqw),
+    linear-gradient(to bottom, var(--net-bg), oklch(0.4 0.05 160 / 0.45));
+}
+.penalty__frame {
+  position: absolute;
+  z-index: 4;
+  box-sizing: content-box;
+  margin: -1.3cqw 0 0 -1.3cqw;
+  border: 1.3cqw solid var(--post);
+  border-bottom: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 1px oklch(0.2 0 0 / 0.45));
+}
+.penalty__frame--ring { animation: penalty-ring 360ms linear; }
+@keyframes penalty-ring {
+  0%, 100% { translate: 0 0; }
+  20% { translate: -0.5cqw 0.2cqw; }
+  40% { translate: 0.5cqw -0.2cqw; }
+  60% { translate: -0.3cqw 0; }
+  80% { translate: 0.2cqw 0; }
+}
+/* 골라인 · 골 에어리어 */
+.penalty__box {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9%;
+  border-top: 2px solid var(--chalk);
+}
+.penalty__box::before {
+  content: '';
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  top: 0;
+  height: 100%;
+  border: 2px solid var(--chalk);
+  border-top: 0;
+}
+.penalty__spot {
+  position: absolute;
+  width: 2.2cqw;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  translate: -50% 40%;
+  background: var(--chalk);
+}
+
+/* ── 구역 ── */
+.penalty__zone {
+  /* z-index 를 두지 않는다 — 구역 테·바탕은 골키퍼(2) 아래, 이름표(3)만 골키퍼 위로 올라온다. */
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 0.8cqw;
+  border: 1px dashed oklch(1 0 0 / 0.45);
+  transition: background-color 200ms var(--ease-out);
+}
+.penalty__tag {
+  position: relative;
+  z-index: 3;
+  max-width: 92%;
+  padding: 0 4px;
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.penalty--big .penalty__tag { font-size: var(--fs-sm); }
+.penalty__zone--near { background: oklch(0.85 0.16 70 / 0.38); animation: penalty-near 520ms var(--ease-out); }
+@keyframes penalty-near { 0% { background: oklch(0.95 0.15 90 / 0.8); } }
+.penalty__zone--hit { background: oklch(0.95 0.12 95 / 0.5); }
+.penalty__zone--win {
+  z-index: 5;
+  border: 2px solid var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+  box-shadow: 0 0 0 2px oklch(1 0 0 / 0.8), 0 0 18px 4px var(--color-accent);
+}
+.penalty__zone--win .penalty__tag {
+  max-width: none;
+  flex-shrink: 0;
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-bg);
+  font-size: var(--fs-sm);
+  animation: penalty-tag 420ms var(--ease-out) both;
+}
+/* 골대 옆 구역은 전체 이름이 경기장 밖으로 나가지 않게 골대 쪽에 붙인다. */
+.penalty__zone--win.penalty__zone--l { justify-content: flex-start; }
+.penalty__zone--win.penalty__zone--r { justify-content: flex-end; }
+@keyframes penalty-tag { 0% { scale: 0.6; } 60% { scale: 1.15; } 100% { scale: 1; } }
+
+/* ── 골키퍼 — 발이 left/top 에 온다. 다이빙은 몸 가운데를 --kdx·--kdy 만큼 옮기고 --krot 만큼 눕는다. ── */
+.penalty__keeper {
+  position: absolute;
+  z-index: 2;
+  width: calc(var(--kh) * 0.62);
+  height: var(--kh);
+  translate: -50% -100%;
+  transform-origin: 50% 50%;
+}
+.penalty__keeper-body { display: block; width: 100%; height: 100%; animation: penalty-shuffle 900ms var(--ease-inout) infinite alternate; }
+.penalty__keeper--dive .penalty__keeper-body { animation: none; }
+.penalty__keeper--dive { animation: penalty-dive var(--kdur) var(--ease-out) var(--kdelay) both; }
+/* 몸을 날리는 동안엔 이름표 위로 — 마지막 장면(settle)에선 다시 이름표 아래로. */
+.penalty__world:not(.penalty__world--settle) .penalty__keeper--dive { z-index: 5; }
+.penalty__keeper--catch .penalty__keeper-body { animation: penalty-hug 300ms var(--ease-out); }
+@keyframes penalty-shuffle { from { translate: -1.6cqw 0; } to { translate: 1.6cqw 0; } }
+@keyframes penalty-dive {
+  from { transform: none; }
+  to { transform: translate(var(--kdx), var(--kdy)) rotate(var(--krot)); }
+}
+@keyframes penalty-hug { 50% { scale: 0.9 1.06; } }
+.penalty__keeper-svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.penalty__k-shadow { fill: oklch(0.2 0 0 / 0.22); }
+.penalty__k-leg { fill: oklch(0.3 0.03 260); }
+.penalty__k-shorts { fill: oklch(0.25 0.03 260); }
+.penalty__k-shirt { fill: oklch(0.88 0.2 125); stroke: oklch(0.45 0.12 130); stroke-width: 1.5; }
+.penalty__k-arm { fill: none; stroke: oklch(0.88 0.2 125); stroke-width: 7; stroke-linecap: round; }
+.penalty__k-glove { fill: oklch(0.98 0 0); stroke: oklch(0.35 0.02 260); stroke-width: 1.6; }
+.penalty__k-head { fill: oklch(0.82 0.07 55); stroke: oklch(0.42 0.06 50); stroke-width: 1.4; }
+.penalty__k-hair { fill: oklch(0.3 0.04 50); }
+.penalty__k-eye { fill: oklch(0.18 0.01 260); }
+.penalty__k-mouth { fill: none; stroke: oklch(0.35 0.06 30); stroke-width: 1.4; stroke-linecap: round; }
+.penalty__k-num { fill: oklch(0.3 0.08 130); font-size: 14px; font-weight: 900; text-anchor: middle; }
+
+/* ── 키커(뒷모습) ── */
+.penalty__kicker {
+  position: absolute;
+  z-index: 3;
+  width: clamp(26px, 10cqw, 68px);
+  translate: -50% -100%;
+}
+.penalty__mini { display: block; width: 100%; overflow: visible; }
+.penalty__mini-shadow { fill: oklch(0.2 0 0 / 0.2); }
+.penalty__mini-leg { fill: oklch(0.82 0.07 55); }
+.penalty__mini-body { fill: oklch(0.55 0.2 27); stroke: oklch(0.38 0.14 27); stroke-width: 1.2; }
+.penalty__mini-num { fill: oklch(0.98 0 0); font-size: 10px; font-weight: 900; text-anchor: middle; }
+.penalty__mini-head { fill: oklch(0.3 0.04 50); }
+.penalty__kicker--shot .penalty__mini-leg--kick { transform-box: fill-box; transform-origin: 50% 0; rotate: -38deg; transition: rotate 120ms var(--ease-out); }
+.penalty__kicker--shot { animation: penalty-follow 300ms var(--ease-out); }
+@keyframes penalty-follow { 40% { translate: -40% -104%; } }
+
+/* ── 공 — 가운데가 left/top. 크기는 --s(멀어질수록 작게). ── */
+.penalty__ball {
+  position: absolute;
+  z-index: 6;
+  width: 7cqw;
+  aspect-ratio: 1;
+  margin: -3.5cqw 0 0 -3.5cqw;
+  scale: var(--s, 1);
+  filter: drop-shadow(0 0.6cqw 0.4cqw oklch(0.15 0 0 / 0.35));
+}
+.penalty__ball-skin {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, oklch(0.2 0 0) 0 17%, transparent 18%),
+    radial-gradient(circle at 12% 30%, oklch(0.2 0 0) 0 11%, transparent 12%),
+    radial-gradient(circle at 88% 30%, oklch(0.2 0 0) 0 11%, transparent 12%),
+    radial-gradient(circle at 26% 88%, oklch(0.2 0 0) 0 11%, transparent 12%),
+    radial-gradient(circle at 74% 88%, oklch(0.2 0 0) 0 11%, transparent 12%),
+    radial-gradient(circle at 36% 30%, oklch(1 0 0) 0 30%, oklch(0.88 0 0) 100%);
+  box-shadow: inset 0 0 0 0.25cqw oklch(0.3 0 0 / 0.6);
+}
+.penalty__ball-skin--spin { animation: penalty-spin 260ms linear infinite; }
+.penalty__ball--slow .penalty__ball-skin--spin { animation-duration: 520ms; }
+@keyframes penalty-spin { to { rotate: 360deg; } }
+.penalty__ball--fly { animation: penalty-fly var(--fly) linear forwards; }
+@keyframes penalty-fly {
+  0% { left: var(--x0); top: var(--y0); scale: var(--s0); }
+  25% { left: var(--x1); top: var(--y1); scale: var(--s1); }
+  50% { left: var(--x2); top: var(--y2); scale: var(--s2); }
+  75% { left: var(--x3); top: var(--y3); scale: var(--s3); }
+  100% { left: var(--x4); top: var(--y4); scale: var(--s4); }
+}
+/* 마지막 슛은 공 뒤로 빛 꼬리 */
+.penalty__ball--slow { filter: drop-shadow(0 0 1.6cqw oklch(1 0.1 95 / 0.95)); }
+
+/* 닿은 뒤 — 사건마다. --dir 은 공이 튀는 쪽(−1 왼쪽·1 오른쪽). */
+.penalty__ball--save { animation: penalty-deflect 560ms var(--ease-out) forwards; }
+.penalty__ball--post { animation: penalty-rebound 620ms var(--ease-out) forwards; }
+.penalty__ball--over { animation: penalty-over 480ms var(--ease-out) forwards; }
+.penalty__ball--catch { animation: penalty-squish 300ms var(--ease-out); }
+.penalty__ball--bar { animation: penalty-bar 700ms linear forwards; }
+.penalty__ball--goal,
+.penalty__ball--late,
+.penalty__ball--panenka { animation: penalty-in 300ms var(--ease-out) forwards; }
+.penalty__ball--in { scale: 0.38; z-index: 2; }
+@keyframes penalty-deflect {
+  0% { transform: none; }
+  25% { transform: translate(calc(var(--dir) * 3cqw), -2cqw) rotate(calc(var(--dir) * 90deg)); scale: 0.5; }
+  100% { transform: translate(calc(var(--dir) * 26cqw), -8cqw) rotate(calc(var(--dir) * 540deg)); opacity: 0; }
+}
+@keyframes penalty-rebound {
+  0% { transform: none; }
+  30% { transform: translate(calc(var(--dir) * 6cqw), 6cqw) rotate(calc(var(--dir) * 200deg)); scale: 0.6; }
+  100% { transform: translate(calc(var(--dir) * 14cqw), 34cqw) rotate(calc(var(--dir) * 600deg)); scale: 1.4; opacity: 0.2; }
+}
+@keyframes penalty-over {
+  to { transform: translate(0, -14cqw); scale: 0.25; opacity: 0; }
+}
+@keyframes penalty-squish { 40% { scale: 0.32 0.5; } }
+/* 크로스바 → 골라인 바로 앞에 쿵 → 한 번 튀고 옆으로 굴러 나간다. */
+@keyframes penalty-bar {
+  0% { transform: none; animation-timing-function: cubic-bezier(0.5, 0, 1, 0.6); }
+  40% { transform: translate(0, var(--drop)); scale: 0.5; animation-timing-function: cubic-bezier(0, 0.4, 0.5, 1); }
+  60% { transform: translate(calc(var(--dir) * 2cqw), calc(var(--drop) - 5cqw)); scale: 0.52; animation-timing-function: cubic-bezier(0.5, 0, 1, 0.6); }
+  78% { transform: translate(calc(var(--dir) * 4cqw), var(--drop)); scale: 0.54; }
+  100% { transform: translate(calc(var(--dir) * 12cqw), calc(var(--drop) + 1cqw)) rotate(calc(var(--dir) * 300deg)); scale: 0.56; }
+}
+@keyframes penalty-in {
+  0% { scale: 0.42; }
+  40% { scale: 0.32; }
+  100% { scale: 0.38; }
+}
+
+/* 골망 출렁 — 동그란 물결이 퍼진다. */
+.penalty__ripple { position: absolute; z-index: 2; width: 0; height: 0; }
+.penalty__ripple span {
+  position: absolute;
+  left: -10cqw;
+  top: -10cqw;
+  width: 20cqw;
+  height: 20cqw;
+  border-radius: 50%;
+  border: 0.8cqw solid oklch(1 0 0 / 0.85);
+  opacity: 0;
+  animation: penalty-ripple 900ms var(--ease-out) forwards;
+}
+.penalty__ripple span:nth-child(2) { animation-delay: 160ms; }
+.penalty__ripple span:nth-child(3) { animation-delay: 320ms; }
+@keyframes penalty-ripple {
+  0% { opacity: 1; scale: 0.1; }
+  100% { opacity: 0; scale: 1.3; }
+}
+.penalty--settled .penalty__ripple { display: none; }
+
+.penalty__spark {
+  position: absolute;
+  z-index: 7;
+  width: 9cqw;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  background: oklch(0.95 0.14 95);
+  clip-path: polygon(50% 0, 58% 36%, 92% 14%, 66% 46%, 100% 56%, 62% 62%, 76% 96%, 50% 70%, 22% 94%, 36% 60%, 0 52%, 34% 42%, 10% 12%, 44% 34%);
+  animation: penalty-spark 420ms var(--ease-out) both;
+}
+@keyframes penalty-spark {
+  0% { scale: 0.2; opacity: 1; }
+  50% { scale: 1.3; opacity: 1; }
+  100% { scale: 1; opacity: 0; }
+}
+
+/* 꽃가루 — 골망에서 터진다. */
+.penalty__confetti { position: absolute; z-index: 7; width: 0; height: 0; }
+.penalty__confetti span {
+  position: absolute;
+  left: -2.5px;
+  top: -4px;
+  width: 5px;
+  height: 8px;
+  border-radius: 1px;
+  background: oklch(0.76 0.17 var(--h));
+  opacity: 0;
+  animation: penalty-confetti 1100ms var(--ease-out) 40ms forwards;
+}
+@keyframes penalty-confetti {
+  0% { opacity: 1; transform: rotate(var(--a)) translateY(-2cqw) rotate(0deg); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(-22cqw * var(--d))) rotate(320deg); }
+}
+
+/* ── 화면에 붙은 효과 ── */
+.penalty__fx { position: absolute; inset: 0; z-index: 8; pointer-events: none; }
+.penalty__tally {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 999px;
+  background: oklch(0.2 0.02 260 / 0.6);
+}
+.penalty__t {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: oklch(0.98 0 0 / 0.35);
+  box-shadow: inset 0 0 0 1.5px oklch(0.98 0 0 / 0.7);
+}
+.penalty__t--now { box-shadow: inset 0 0 0 1.5px oklch(0.98 0 0), 0 0 0 2px oklch(0.88 0.17 92); }
+.penalty__t--out { background: oklch(0.62 0.2 28); }
+.penalty__t--in { background: oklch(0.78 0.18 145); }
+.penalty__bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9%;
+  background: oklch(0.12 0 0);
+  animation: penalty-bar-in 220ms var(--ease-out) both;
+}
+.penalty__bar--top { top: 0; --from: -100%; }
+.penalty__bar--bottom { bottom: 0; --from: 100%; }
+@keyframes penalty-bar-in { from { translate: 0 var(--from); } }
+.penalty__slow {
+  position: absolute;
+  top: 2.4%;
+  left: 3%;
+  z-index: 1;
+  color: oklch(0.88 0.17 92);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  animation: penalty-blink 500ms steps(2) infinite;
+}
+@keyframes penalty-blink { 50% { opacity: 0.35; } }
+.penalty__flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, oklch(1 0.05 95 / 0.95) 0 8%, oklch(1 0.05 95 / 0.4) 30%, transparent 60%);
+  animation: penalty-flash 380ms var(--ease-out) forwards;
+}
+@keyframes penalty-flash { from { opacity: 1; scale: 0.6; } to { opacity: 0; scale: 1.6; } }
+.penalty__callout {
+  position: absolute;
+  bottom: 15%;
+  left: 50%;
+  translate: -50% 0;
+  font-size: clamp(22px, 11cqw, 56px);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  color: oklch(0.99 0 0);
+  -webkit-text-stroke: 0.14em oklch(0.22 0.02 260);
+  paint-order: stroke fill;
+  letter-spacing: -0.02em;
+  animation: penalty-pop 360ms var(--ease-out) both;
+}
+.penalty__callout--goal { color: oklch(0.88 0.17 92); font-size: clamp(30px, 16cqw, 84px); }
+.penalty__callout--save { color: oklch(0.88 0.2 125); }
+.penalty__callout--ting { color: oklch(0.88 0.08 220); }
+.penalty__callout--soft { top: auto; bottom: 16%; font-size: clamp(18px, 7cqw, 36px); color: oklch(0.92 0.08 330); }
+@keyframes penalty-pop {
+  0% { scale: 0.3; rotate: -10deg; opacity: 0; }
+  60% { scale: 1.15; rotate: 3deg; opacity: 1; }
+  100% { scale: 1; rotate: -4deg; }
+}
+.penalty__banner {
+  position: absolute;
+  left: 50%;
+  bottom: 6%;
+  max-width: 92%;
+  translate: -50% 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: oklch(0.18 0.02 260 / 0.82);
+  color: oklch(0.98 0 0);
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  animation: penalty-pop 420ms var(--ease-out) 120ms both;
+}
+.penalty__banner b { color: oklch(0.88 0.17 92); }
+.penalty--big .penalty__banner { font-size: var(--fs-md, 15px); }
+.penalty--settled .penalty__banner { animation: none; }
+.penalty__pitch--shake { animation: penalty-shake 200ms linear; }
+.penalty__pitch--hit { animation: penalty-shake 260ms linear; }
+@keyframes penalty-shake {
+  0%, 100% { translate: 0 0; }
+  20% { translate: -4px 2px; }
+  40% { translate: 4px -2px; }
+  60% { translate: -3px -1px; }
+  80% { translate: 2px 1px; }
+}
+
+/* ── 컷신 ── */
+.penalty__cut { position: absolute; inset: 0; z-index: 9; overflow: hidden; }
+.penalty__cut-bg {
+  position: absolute;
+  inset: -6%;
+  background:
+    repeating-linear-gradient(90deg, oklch(0.74 0.14 140) 0 12cqw, oklch(0.69 0.14 140) 12cqw 24cqw),
+    oklch(0.72 0.14 140);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0 62%, #000 62%);
+  mask-image: linear-gradient(to bottom, transparent 0 62%, #000 62%);
+}
+.penalty__cut::before {
+  /* 관중석 흐림 — 위 62% */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle 2cqw at 3cqw 3cqw, oklch(0.75 0.1 60 / 0.8) 70%, transparent),
+    linear-gradient(to bottom, oklch(0.48 0.06 255), oklch(0.6 0.05 240) 62%, oklch(0.72 0.14 140) 62%);
+  background-size: 8cqw 7cqw, auto;
+}
+[data-theme='dark'] .penalty__cut::before {
+  background:
+    radial-gradient(circle 2cqw at 3cqw 3cqw, oklch(0.6 0.06 60 / 0.5) 70%, transparent),
+    linear-gradient(to bottom, oklch(0.2 0.04 265), oklch(0.3 0.04 260) 62%, oklch(0.45 0.1 145) 62%);
+  background-size: 8cqw 7cqw, auto;
+}
+[data-theme='dark'] .penalty__cut-bg {
+  background: repeating-linear-gradient(90deg, oklch(0.47 0.1 145) 0 12cqw, oklch(0.42 0.1 145) 12cqw 24cqw);
+}
+.penalty__cut--run .penalty__cut-bg { animation: penalty-scroll 300ms linear infinite; }
+@keyframes penalty-scroll { to { translate: -24cqw 0; } }
+
+/* 눈싸움 — 대각선으로 나뉜 두 얼굴 */
+.penalty__stare { position: absolute; inset: 0; animation: penalty-cut-in 180ms var(--ease-out) both; }
+@keyframes penalty-cut-in { from { opacity: 0; scale: 1.15; } }
+.penalty__face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+}
+.penalty__face svg { width: 52%; height: 86%; overflow: visible; }
+.penalty__face--kicker {
+  justify-content: flex-start;
+  padding-left: 2%;
+  background: linear-gradient(135deg, oklch(0.62 0.2 27), oklch(0.5 0.18 27));
+  clip-path: polygon(0 0, 58% 0, 42% 100%, 0 100%);
+  animation: penalty-slide-l var(--stare) var(--ease-out) both;
+}
+.penalty__face--keeper {
+  justify-content: flex-end;
+  padding-right: 2%;
+  background: linear-gradient(135deg, oklch(0.78 0.18 125), oklch(0.66 0.17 130));
+  clip-path: polygon(58% 0, 100% 0, 100% 100%, 42% 100%);
+  animation: penalty-slide-r var(--stare) var(--ease-out) both;
+}
+@keyframes penalty-slide-l { from { translate: -12% 0; } to { translate: 0 0; } }
+@keyframes penalty-slide-r { from { translate: 12% 0; } to { translate: 0 0; } }
+.penalty__f-skin { fill: oklch(0.85 0.06 60); stroke: oklch(0.4 0.06 50); stroke-width: 2.5; }
+.penalty__f-hair { fill: oklch(0.3 0.04 50); }
+.penalty__f-hair--keeper { fill: oklch(0.55 0.1 70); }
+.penalty__f-brow { stroke: oklch(0.25 0.03 50); stroke-width: 5; stroke-linecap: round; }
+.penalty__f-eye { fill: none; stroke: oklch(0.18 0.01 260); stroke-width: 5; stroke-linecap: round; }
+.penalty__f-dot { fill: oklch(0.18 0.01 260); }
+.penalty__f-mouth { fill: none; stroke: oklch(0.35 0.06 30); stroke-width: 4; stroke-linecap: round; }
+.penalty__f-sweat { fill: oklch(0.85 0.08 230); animation: penalty-sweat var(--stare) ease-in both; }
+@keyframes penalty-sweat { from { translate: 0 -6px; opacity: 0; } 40% { opacity: 1; } to { translate: 0 6px; } }
+.penalty__f-glove { fill: oklch(0.98 0 0); stroke: oklch(0.35 0.02 260); stroke-width: 2.5; animation: penalty-clap 260ms var(--ease-inout) infinite alternate; }
+@keyframes penalty-clap { to { translate: 0 -4px; } }
+.penalty__bolt {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 22cqw;
+  height: 44cqw;
+  translate: -50% -60%;
+  z-index: 1;
+  isolation: isolate;
+  filter: drop-shadow(0 0 8px oklch(1 0.1 95 / 0.9));
+  animation: penalty-bolt 160ms steps(2) infinite;
+}
+.penalty__bolt::before,
+.penalty__bolt::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(58% 0, 20% 55%, 48% 55%, 34% 100%, 82% 40%, 52% 40%, 70% 0);
+}
+/* 짙은 테(뒤, 조금 크게) + 노란 번개(앞) */
+.penalty__bolt::after { z-index: -1; background: oklch(0.25 0.05 60); scale: 1.14 1.08; }
+.penalty__bolt::before { background: oklch(0.92 0.18 95); }
+@keyframes penalty-bolt { 50% { scale: 0.9; rotate: 4deg; } }
+
+/* 도움닫기 · 뻥 — 키커 옆모습 */
+.penalty__hero {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 96%;
+  max-height: 88%;
+  translate: -50% -50%;
+  overflow: visible;
+}
+.penalty__cut--run .penalty__h-runner { animation: penalty-runin var(--run) var(--ease-out) both; }
+@keyframes penalty-runin { from { translate: -70px 0; } }
+.penalty__cut--run .penalty__h-leg--back { transform-box: fill-box; transform-origin: 50% 0; animation: penalty-stride 150ms linear infinite alternate; }
+.penalty__cut--run .penalty__h-kickleg { transform-box: fill-box; transform-origin: 50% 0; animation: penalty-stride 150ms linear infinite alternate-reverse; }
+@keyframes penalty-stride { from { rotate: -28deg; } to { rotate: 28deg; } }
+.penalty__cut--run .penalty__h-runner { --bob: 1; }
+.penalty__cut--kick .penalty__h-kickleg { transform-box: fill-box; transform-origin: 50% 0; animation: penalty-swing 140ms cubic-bezier(0.5, 0, 1, 0.6) forwards; }
+@keyframes penalty-swing { from { rotate: 30deg; } to { rotate: -62deg; } }
+.penalty__cut--kick .penalty__h-ball { transform-box: fill-box; transform-origin: 50% 50%; animation: penalty-launch 170ms cubic-bezier(0.5, 0, 1, 0.6) 30ms forwards; }
+@keyframes penalty-launch {
+  0% { transform: none; }
+  20% { transform: scale(0.7, 1.25); }
+  100% { transform: translate(140px, -70px) rotate(540deg) scale(0.8); }
+}
+.penalty__h-shadow { fill: oklch(0.2 0 0 / 0.22); }
+.penalty__h-leg { fill: oklch(0.82 0.07 55); stroke: oklch(0.45 0.06 50); stroke-width: 1.5; }
+.penalty__h-boot { fill: oklch(0.25 0.02 260); }
+.penalty__h-shirt { fill: oklch(0.58 0.2 27); stroke: oklch(0.38 0.14 27); stroke-width: 2; }
+.penalty__h-num { fill: oklch(0.98 0 0); font-size: 26px; font-weight: 900; text-anchor: middle; }
+.penalty__h-shorts { fill: oklch(0.98 0 0); stroke: oklch(0.6 0 0); stroke-width: 1.5; }
+.penalty__h-arm { stroke: oklch(0.82 0.07 55); stroke-width: 10; stroke-linecap: round; }
+.penalty__h-head { fill: oklch(0.85 0.06 60); stroke: oklch(0.42 0.06 50); stroke-width: 2; }
+.penalty__h-hair { fill: oklch(0.3 0.04 50); }
+.penalty__h-eye { fill: oklch(0.18 0.01 260); }
+.penalty__h-mouth { fill: none; stroke: oklch(0.35 0.06 30); stroke-width: 2.4; stroke-linecap: round; }
+.penalty__h-ballskin { fill: oklch(0.99 0 0); stroke: oklch(0.25 0 0); stroke-width: 2; }
+.penalty__h-ballspot { fill: oklch(0.22 0 0); }
+
+.penalty__vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 55% 60%, transparent 40%, oklch(0.1 0 0 / 0.6) 100%);
+}
+.penalty__cut--final .penalty__vignette { background: radial-gradient(ellipse at 55% 60%, transparent 30%, oklch(0.1 0.04 20 / 0.85) 100%); }
+.penalty__focus {
+  position: absolute;
+  inset: -20%;
+  background: repeating-conic-gradient(from 0deg at 50% 50%, transparent 0 4deg, oklch(1 0 0 / 0.55) 4deg 5deg, transparent 5deg 9deg);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 26%, #000 60%);
+  mask-image: radial-gradient(circle at 50% 50%, transparent 26%, #000 60%);
+  animation: penalty-focus 260ms steps(2) infinite;
+}
+[data-theme='dark'] .penalty__focus { background: repeating-conic-gradient(from 0deg at 50% 50%, transparent 0 4deg, oklch(1 0 0 / 0.32) 4deg 5deg, transparent 5deg 9deg); }
+@keyframes penalty-focus { from { rotate: 0deg; } to { rotate: 4deg; } }
+.penalty__speed {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: repeating-linear-gradient(90deg, oklch(1 0 0 / 0.9) 0 16cqw, transparent 16cqw 30cqw);
+  -webkit-mask-image: repeating-linear-gradient(to bottom, transparent 0 4cqw, #000 4cqw 4.5cqw, transparent 4.5cqw 7.3cqw);
+  mask-image: repeating-linear-gradient(to bottom, transparent 0 4cqw, #000 4cqw 4.5cqw, transparent 4.5cqw 7.3cqw);
+}
+.penalty__cut--kick .penalty__speed { opacity: 1; animation: penalty-speed 200ms linear infinite; }
+@keyframes penalty-speed { from { background-position: 0 0; } to { background-position: -60cqw 0; } }
+.penalty__cut .penalty__bar { animation-duration: 260ms; height: 10%; z-index: 1; }
+.penalty__caption {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: 1.5%;
+  translate: -50% 0;
+  color: oklch(0.97 0 0);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px oklch(0 0 0 / 0.6);
+}
+.penalty__cut--final .penalty__caption { color: oklch(0.88 0.17 92); font-size: var(--fs-sm); }
+.penalty__sfx {
+  position: absolute;
+  z-index: 2;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  color: oklch(0.99 0 0);
+  -webkit-text-stroke: 0.14em oklch(0.22 0.02 260);
+  paint-order: stroke fill;
+}
+.penalty__sfx--stare {
+  left: 50%;
+  bottom: 12%;
+  translate: -50% 0;
+  font-size: clamp(16px, 7cqw, 34px);
+  animation: penalty-pop 300ms var(--ease-out) 80ms both;
+}
+.penalty__sfx--run {
+  left: 6%;
+  top: 14%;
+  font-size: clamp(16px, 7cqw, 34px);
+  rotate: -8deg;
+  animation: penalty-creak var(--run) linear both;
+}
+@keyframes penalty-creak {
+  0% { opacity: 0; }
+  20% { opacity: 1; translate: -1px 0; }
+  45% { translate: 1px -1px; }
+  70% { translate: -1px 1px; }
+  100% { opacity: 1; translate: 0 0; scale: 1.12; }
+}
+.penalty__sfx--kick {
+  right: 6%;
+  top: 18%;
+  font-size: clamp(34px, 18cqw, 92px);
+  color: oklch(0.88 0.17 92);
+  opacity: 0;
+}
+.penalty__cut--kick .penalty__sfx--run { animation: none; opacity: 0; }
+.penalty__cut--kick .penalty__sfx--kick { animation: penalty-pop 200ms var(--ease-out) forwards; }
+/* 날기 시작하면 컷신이 번지며 경기장으로 넘어간다. */
+.penalty__cut--out { animation: penalty-cut-out 200ms var(--ease-out) forwards; pointer-events: none; }
+@keyframes penalty-cut-out { to { opacity: 0; scale: 1.15; } }
+
+.penalty__status { margin: 0; font-size: var(--fs-sm); font-weight: 700; color: var(--color-text); text-align: center; }
+
+/* 동작 줄이기 — 앱이 "움직임 켜기" 를 반영해 둔 data-motion 을 본다(기기 설정만 보면 켜 둔 사람도 멈춘다). */
+:root[data-motion='reduced'] {
+  .penalty *,
+  .penalty__pitch { animation: none !important; transition: none !important; }
+  .penalty__confetti, .penalty__cut, .penalty__fx .penalty__callout, .penalty__ripple { display: none; }
+}

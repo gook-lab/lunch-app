@@ -525,3 +525,68 @@ export function clawSfxLater(plan: [ms: number, name: ClawSfxName | SfxName][]):
   const timers = plan.map(([ms, name]) => window.setTimeout(() => clawSfx(name), ms));
   return () => timers.forEach((t) => window.clearTimeout(t));
 }
+/* ───────── 승부차기 ───────── */
+
+/** 승부차기 소리. 위 SOUNDS 와 따로 둬서 다른 게임 소리 목록을 건드리지 않는다. */
+const PENALTY_SOUNDS = {
+  /** 심판 호루라기 — 짧게 삑. */
+  whistle: (ac: AudioContext) => {
+    tone(ac, { hz: 2900, dur: 0.22, type: 'square', vol: 0.02 });
+    tone(ac, { hz: 3050, dur: 0.22, type: 'square', vol: 0.012 });
+  },
+  /** 도움닫기 발소리 — 다다닥. */
+  steps: (ac: AudioContext) => {
+    for (let i = 0; i < 4; i += 1) noise(ac, { dur: 0.04, hz: rand(500, 800), q: 1.5, vol: 0.07, at: i * 0.09 });
+  },
+  /** 뻥 — 낮고 둔한 킥. */
+  kick: (ac: AudioContext) => {
+    tone(ac, { hz: 150, to: 55, dur: 0.16, type: 'sine', vol: 0.18 });
+    noise(ac, { dur: 0.06, hz: 900, q: 0.8, vol: 0.1 });
+  },
+  /** 골대 — 깡. 쇠가 울린다. */
+  clang: (ac: AudioContext) => {
+    tone(ac, { hz: 1180, dur: 0.5, type: 'triangle', vol: 0.06 });
+    tone(ac, { hz: 1770, dur: 0.35, type: 'sine', vol: 0.035 });
+    noise(ac, { dur: 0.04, hz: 4200, q: 1, vol: 0.06, filter: 'highpass' });
+  },
+  /** 장갑에 맞음 — 퍽. */
+  glove: (ac: AudioContext) => {
+    noise(ac, { dur: 0.08, hz: 600, to: 300, q: 0.9, vol: 0.14, filter: 'lowpass' });
+    tone(ac, { hz: 200, to: 90, dur: 0.08, type: 'sine', vol: 0.08 });
+  },
+  /** 골망 — 촤르륵. */
+  net: (ac: AudioContext) => noise(ac, { dur: 0.32, hz: 2600, to: 1200, q: 0.7, vol: 0.08 }),
+  /** 관중 탄식 — 아아~ 내려간다. */
+  groan: (ac: AudioContext) => {
+    noise(ac, { dur: 0.7, hz: 700, to: 300, q: 2, vol: 0.06 });
+    tone(ac, { hz: 320, to: 210, dur: 0.6, type: 'sawtooth', vol: 0.012 });
+  },
+  /** 관중 함성 — 와아. */
+  roar: (ac: AudioContext) => {
+    noise(ac, { dur: 1.1, hz: 900, to: 1400, q: 0.8, vol: 0.1 });
+    noise(ac, { dur: 0.9, hz: 2200, q: 1.2, vol: 0.04, at: 0.05 });
+  },
+} satisfies Record<string, (ac: AudioContext) => void>;
+
+export type PenaltySfxName = keyof typeof PENALTY_SOUNDS;
+
+/** 승부차기 소리(또는 공용 소리)를 나중에 울린다. 취소는 sfxLater 와 같다. 소리를 끈 사람에겐 아무 일도 없다. */
+export function penaltySfxLater(plan: [ms: number, name: PenaltySfxName | SfxName][]): () => void {
+  if (!enabled()) return () => {};
+  const timers = plan.map(([ms, name]) =>
+    window.setTimeout(() => {
+      if (!(name in PENALTY_SOUNDS)) {
+        sfx(name as SfxName);
+        return;
+      }
+      const ac = audio();
+      if (!ac) return;
+      try {
+        PENALTY_SOUNDS[name as PenaltySfxName](ac);
+      } catch {
+        // 오디오 노드를 못 만드는 환경 — 소리 없이 넘어간다.
+      }
+    }, ms),
+  );
+  return () => timers.forEach((t) => window.clearTimeout(t));
+}
