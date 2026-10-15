@@ -1,0 +1,627 @@
+/*
+ * 보물찾기 — 지도(.treasure__range) 안에 카메라가 움직이는 세계(.treasure__world)와 화면에 붙은 효과(.treasure__fx)가 겹쳐 있다.
+ * 자리(left/top %)·카메라·길은 JS(lib/treasure.ts)가 주고 움직임은 CSS 가 한다. 크기는 지도 폭(cqw)에 맞춰 커지고 줄어든다
+ * — 15곳(4열)도 휴대폰에서 이름표가 겹치지 않는다. 금화·상자·해적 색은 그림 색이라 라이트·다크 모두 같고,
+ * 양피지·모래·바다·잉크만 다크에서 어둡게 바꾼다.
+ */
+.treasure { width: min(360px, 94vw); display: grid; gap: var(--space-2); justify-items: center; }
+.treasure--big { width: min(640px, 94vw); }
+.treasure--empty { height: 320px; }
+
+.treasure__range {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--fit);
+  container-type: inline-size;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: var(--radius-md);
+  --paper: oklch(0.93 0.05 85);
+  --paper-edge: oklch(0.78 0.08 65);
+  --sea: oklch(0.82 0.07 215);
+  --sea-line: oklch(0.7 0.08 220);
+  --sand: oklch(0.89 0.08 88);
+  --sand-edge: oklch(0.8 0.09 80);
+  --grass: oklch(0.8 0.1 135);
+  --ink: oklch(0.36 0.06 50);
+  --x: oklch(0.56 0.2 28);
+  --trail: oklch(0.52 0.17 30);
+  --hole: oklch(0.32 0.05 55);
+  --dirt: oklch(0.55 0.08 60);
+  background: var(--paper);
+}
+[data-theme='dark'] .treasure__range {
+  --paper: oklch(0.34 0.04 70);
+  --paper-edge: oklch(0.22 0.03 60);
+  --sea: oklch(0.36 0.06 235);
+  --sea-line: oklch(0.48 0.07 230);
+  --sand: oklch(0.47 0.06 80);
+  --sand-edge: oklch(0.4 0.06 75);
+  --grass: oklch(0.45 0.08 140);
+  --ink: oklch(0.86 0.05 80);
+  --x: oklch(0.72 0.18 30);
+  --trail: oklch(0.78 0.14 45);
+  --hole: oklch(0.2 0.03 55);
+  --dirt: oklch(0.5 0.07 60);
+}
+
+/* ── 세계(카메라가 따라다닌다) — 양피지 위에 바다 물결 ── */
+.treasure__world {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+  transition: transform 340ms var(--ease-inout);
+  background:
+    radial-gradient(ellipse at 50% 50%, transparent 62%, color-mix(in oklch, var(--paper-edge) 70%, transparent) 100%),
+    repeating-radial-gradient(circle at 12% 88%, transparent 0 3.2cqw, color-mix(in oklch, var(--sea-line) 55%, transparent) 3.2cqw 3.5cqw),
+    linear-gradient(var(--sea), var(--sea));
+}
+.treasure__world--walk { transition: transform var(--walk) linear; }
+.treasure__world--settle { transform: none; transition: transform 460ms var(--ease-out); }
+.treasure--settled .treasure__world { transition: none; }
+.treasure__world--gust { animation: treasure-gust 460ms var(--ease-out); }
+@keyframes treasure-gust {
+  0% { translate: 0 0; rotate: 0deg; }
+  30% { translate: 9% -3%; rotate: 4deg; }
+  60% { translate: -4% 1%; rotate: -2deg; }
+  100% { translate: 0 0; rotate: 0deg; }
+}
+.treasure__range--gust { animation: treasure-flutter 460ms linear; }
+@keyframes treasure-flutter {
+  0%, 100% { skew: 0deg 0deg; }
+  25% { skew: -2deg 0.6deg; }
+  50% { skew: 1.5deg -0.4deg; }
+  75% { skew: -0.8deg 0.2deg; }
+}
+
+/* 섬 — 모래, 점선 해안선, 안쪽에 풀밭 */
+.treasure__island {
+  position: absolute;
+  left: 2.5%;
+  right: 2.5%;
+  border-radius: 14% 18% 16% 12% / 18% 14% 20% 16%;
+  background:
+    radial-gradient(ellipse 30% 22% at 30% 40%, color-mix(in oklch, var(--grass) 55%, transparent) 60%, transparent 62%),
+    radial-gradient(ellipse 26% 18% at 74% 62%, color-mix(in oklch, var(--grass) 45%, transparent) 60%, transparent 62%),
+    var(--sand);
+  box-shadow: 0 0 0 0.8cqw var(--sand-edge), 0 0 0 1.6cqw color-mix(in oklch, var(--sea) 60%, var(--paper));
+  outline: 0.35cqw dashed color-mix(in oklch, var(--ink) 45%, transparent);
+  outline-offset: 2.4cqw;
+}
+.treasure__title {
+  position: absolute;
+  left: 4%;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  padding: 0 2.4cqw;
+  border-radius: 1cqw;
+  background: var(--paper);
+  box-shadow: 0 0 0 0.4cqw var(--ink);
+  color: var(--ink);
+  font-size: clamp(11px, 4cqw, 22px);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.treasure__compass { position: absolute; right: 4%; z-index: 1; aspect-ratio: 1; }
+.treasure__compass-ring { fill: var(--paper); stroke: var(--ink); stroke-width: 2; }
+.treasure__compass-ns,
+.treasure__compass-ew { fill: color-mix(in oklch, var(--ink) 55%, transparent); }
+.treasure__compass-n { fill: var(--x); }
+.treasure__boat { position: absolute; left: 3%; z-index: 1; width: max(28px, 11cqw); translate: 0 -70%; animation: treasure-bob 2.4s var(--ease-inout) infinite alternate; }
+.treasure__boat-mast { stroke: oklch(0.4 0.06 55); stroke-width: 2; }
+.treasure__boat-sail { fill: oklch(0.97 0.01 90); stroke: oklch(0.4 0.06 55); stroke-width: 1; }
+.treasure__boat-sail2 { fill: oklch(0.62 0.19 28); }
+.treasure__boat-hull { fill: oklch(0.5 0.09 50); stroke: oklch(0.33 0.06 50); stroke-width: 1.2; }
+@keyframes treasure-bob { from { rotate: -3deg; } to { rotate: 3deg; translate: 0 -64%; } }
+.treasure__palm { position: absolute; right: 5%; z-index: 1; width: max(26px, 10cqw); translate: 0 -80%; }
+.treasure__palm-trunk { fill: none; stroke: oklch(0.5 0.08 60); stroke-width: 3; stroke-linecap: round; }
+.treasure__palm-leaf { fill: oklch(0.6 0.15 145); }
+.treasure__palm-nut { fill: oklch(0.42 0.06 55); }
+
+/* 점선 길 — 지나온 길이 남는다. 지금 걷는 길은 발밑까지만 그린다(mask). */
+.treasure__trail { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.treasure__trail-line { fill: none; stroke: var(--trail); stroke-width: 0.7; stroke-linecap: round; stroke-dasharray: 0.2 1.8; }
+.treasure__trail-mask { fill: none; stroke: #fff; stroke-width: 4; stroke-dasharray: 1 1; stroke-dashoffset: 1; animation: treasure-draw var(--walk) linear forwards; }
+@keyframes treasure-draw { to { stroke-dashoffset: 0; } }
+
+/* ── X 자리 ── */
+.treasure__spot {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: calc(var(--cell) * 0.84);
+  transform: translate(-50%, calc(var(--size) * -0.5));
+}
+.treasure__mark { position: relative; display: block; width: var(--size); aspect-ratio: 1; }
+.treasure__x { position: absolute; inset: 0; rotate: var(--tilt); }
+.treasure__x::before,
+.treasure__x::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 118%;
+  height: 22%;
+  border-radius: 999px;
+  background: var(--x);
+  translate: -50% -50%;
+  rotate: 45deg;
+  box-shadow: 0 0.3cqw 0 color-mix(in oklch, var(--x) 55%, black);
+}
+.treasure__x::after { rotate: -45deg; }
+.treasure__hole {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  width: 150%;
+  height: 62%;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 40%, var(--hole) 0 55%, var(--dirt) 58% 100%);
+  scale: 0;
+  transition: scale 260ms var(--ease-out);
+}
+.treasure__spot--dug .treasure__x { opacity: 0; scale: 0.5; transition: opacity 200ms, scale 200ms; }
+.treasure__spot--dug .treasure__hole { scale: 1; }
+/* 앵무새가 가리킨 X — 콩콩 뛰며 빛난다 */
+.treasure__spot--hint .treasure__mark::before {
+  content: '';
+  position: absolute;
+  inset: -55%;
+  border-radius: 50%;
+  border: 1cqw solid oklch(0.82 0.17 85);
+  box-shadow: 0 0 0 0.4cqw oklch(0.45 0.1 60 / 0.6), inset 0 0 0 0.4cqw oklch(0.45 0.1 60 / 0.6);
+  animation: treasure-ring 520ms var(--ease-out) infinite;
+}
+.treasure__spot--hint .treasure__mark::after {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(circle, oklch(0.92 0.16 92 / 0.85) 0 45%, oklch(0.92 0.16 92 / 0) 70%);
+}
+.treasure__spot--hint .treasure__x { animation: treasure-boing 520ms var(--ease-out) infinite; }
+@keyframes treasure-ring { from { scale: 0.5; opacity: 1; } to { scale: 1.3; opacity: 0; } }
+@keyframes treasure-boing { 0%, 100% { translate: 0 0; } 40% { translate: 0 -30%; } }
+
+.treasure__tag {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  padding: 0 4px;
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.treasure--big .treasure__tag { font-size: var(--fs-sm); }
+.treasure__spot--win { z-index: 6; }
+.treasure__spot--win .treasure__tag {
+  z-index: 6;
+  max-width: calc(var(--cell) * 1.7);
+  white-space: normal;
+  text-align: center;
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+/* 흙 알갱이 — 파는 동안 구덩이에서 튄다 */
+.treasure__dirt { position: absolute; left: 50%; top: 50%; z-index: 4; }
+.treasure__dirt span {
+  position: absolute;
+  left: -0.9cqw;
+  top: -0.9cqw;
+  width: 1.8cqw;
+  aspect-ratio: 1;
+  border-radius: 40%;
+  background: var(--dirt);
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--dirt) 60%, black);
+  opacity: 0;
+  animation: treasure-dirt 360ms var(--ease-out) var(--t) infinite;
+}
+.treasure__dirt--late span { animation-delay: calc(var(--t) + 260ms); }
+@keyframes treasure-dirt {
+  0% { opacity: 1; transform: rotate(var(--a)) translateY(0) scale(1); }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--size) * -1.6 * var(--d))) scale(0.6); }
+}
+
+/* ── 파낸 것 ── */
+.treasure__puff {
+  position: absolute;
+  inset: -40%;
+  border-radius: 50%;
+  border: 1cqw dotted var(--dirt);
+  animation: treasure-puff 460ms var(--ease-out) forwards;
+}
+@keyframes treasure-puff { from { scale: 0.3; opacity: 1; } to { scale: 1.4; opacity: 0; } }
+
+.treasure__boot {
+  position: absolute;
+  z-index: 4;
+  left: 70%;
+  bottom: 10%;
+  width: calc(var(--size) * 1.1);
+  rotate: 18deg;
+  overflow: visible;
+}
+.treasure__boot--live { animation: treasure-boot 520ms var(--ease-out) both; }
+@keyframes treasure-boot {
+  0% { translate: -60% 60%; rotate: 0deg; scale: 0.4; }
+  45% { translate: -30% -120%; rotate: -160deg; scale: 1.1; }
+  80% { translate: 0 6%; rotate: 24deg; scale: 1; }
+  100% { translate: 0 0; rotate: 18deg; }
+}
+.treasure__boot-body { fill: oklch(0.45 0.07 55); stroke: oklch(0.28 0.04 50); stroke-width: 1.2; }
+.treasure__boot-top { fill: oklch(0.36 0.06 55); }
+.treasure__boot-sole { stroke: oklch(0.28 0.04 50); stroke-width: 2; }
+.treasure__boot-patch { stroke: oklch(0.75 0.06 80); stroke-width: 1; }
+
+.treasure__chest {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  bottom: 30%;
+  width: calc(var(--size) * 1.6);
+  translate: -50% 0;
+  overflow: visible;
+  filter: drop-shadow(0 0.4cqw 0 oklch(0.2 0.02 50 / 0.35));
+}
+.treasure__chest-body { fill: oklch(0.55 0.11 55); stroke: oklch(0.3 0.06 50); stroke-width: 1.4; }
+.treasure__chest-band { fill: oklch(0.78 0.14 85); }
+.treasure__chest-lock { fill: oklch(0.85 0.15 90); stroke: oklch(0.45 0.08 70); stroke-width: 1; }
+.treasure__chest-inside { fill: oklch(0.22 0.04 40); opacity: 0; }
+.treasure__lid { transform-box: view-box; transform-origin: 4px 22px; }
+.treasure__chest--open .treasure__lid { transform: translateY(-3px) rotate(-26deg); }
+.treasure__chest--open .treasure__chest-inside { opacity: 1; }
+.treasure__gold,
+.treasure__one-coin,
+.treasure__mimic-face { opacity: 0; }
+.treasure__chest--open .treasure__gold,
+.treasure__chest--open .treasure__one-coin,
+.treasure__chest--open .treasure__mimic-face { opacity: 1; }
+.treasure__gold { fill: oklch(0.86 0.17 90); stroke: oklch(0.6 0.13 75); stroke-width: 0.8; }
+.treasure__gem { fill: oklch(0.65 0.2 15); stroke: oklch(0.4 0.12 15); }
+.treasure__one-coin { fill: oklch(0.86 0.17 90); stroke: oklch(0.6 0.13 75); stroke-width: 1; }
+.treasure__one-coin-mark { stroke: oklch(0.6 0.13 75); stroke-width: 1.2; stroke-linecap: round; }
+.treasure__chest-glow { fill: oklch(0.92 0.15 92 / 0.55); opacity: 0; }
+.treasure__chest--treasure.treasure__chest--open .treasure__chest-glow { opacity: 1; animation: treasure-glow 900ms var(--ease-inout) infinite alternate; }
+@keyframes treasure-glow { from { scale: 0.9; } to { scale: 1.15; } }
+.treasure__chest-glow { transform-box: fill-box; transform-origin: center; }
+/* 미믹 — 보라빛 상자, 이빨·눈·혀 */
+.treasure__chest--mimic .treasure__chest-body { fill: oklch(0.5 0.1 330); stroke: oklch(0.28 0.06 330); }
+.treasure__mimic-teeth { fill: oklch(0.98 0 0); stroke: oklch(0.3 0.02 0); stroke-width: 0.6; }
+.treasure__mimic-eye { fill: oklch(0.9 0.2 110); }
+.treasure__mimic-tongue { fill: oklch(0.65 0.2 0); }
+
+/* 지금 막 나오는 상자 — 구덩이에서 솟고, 뚜껑이 열린다. */
+.treasure__chest--live { animation: treasure-rise 340ms var(--ease-out) both; }
+@keyframes treasure-rise {
+  0% { translate: -50% 70%; scale: 0.5; opacity: 0; }
+  60% { translate: -50% -14%; scale: 1.08; opacity: 1; }
+  100% { translate: -50% 0; scale: 1; }
+}
+.treasure__chest--live.treasure__chest--open .treasure__lid { animation: treasure-lid 260ms var(--ease-out) 200ms both; }
+.treasure__chest--live.treasure__chest--open .treasure__one-coin { animation: treasure-one-coin 320ms var(--ease-out) 200ms both; transform-box: fill-box; transform-origin: center; }
+.treasure__chest--live.treasure__chest--open .treasure__mimic-face,
+.treasure__chest--live.treasure__chest--open .treasure__gold,
+.treasure__chest--live.treasure__chest--open .treasure__chest-inside { animation: treasure-show 1ms linear 220ms both; }
+@keyframes treasure-show { from { opacity: 0; } to { opacity: 1; } }
+@keyframes treasure-lid { from { transform: none; } to { transform: translateY(-3px) rotate(-26deg); } }
+@keyframes treasure-one-coin {
+  0% { transform: translateY(6px) scale(0.6, 0.6); }
+  50% { transform: translateY(-12px) scale(0.2, 1); }
+  75% { transform: translateY(-9px) scale(1, 1); }
+  100% { transform: translateY(-4px) scale(1, 1); }
+}
+/* 미믹은 열리자마자 덥석덥석 */
+.treasure__chest--live.treasure__chest--mimic.treasure__chest--open .treasure__lid { animation: treasure-chomp 460ms linear 160ms both; }
+.treasure__chest--live.treasure__chest--mimic { animation: treasure-rise 340ms var(--ease-out) both, treasure-lunge 300ms var(--ease-out) 300ms; }
+@keyframes treasure-chomp {
+  0% { transform: none; }
+  25% { transform: translateY(-4px) rotate(-38deg); }
+  40% { transform: none; }
+  65% { transform: translateY(-4px) rotate(-38deg); }
+  80% { transform: none; }
+  100% { transform: translateY(-3px) rotate(-26deg); }
+}
+@keyframes treasure-lunge { 50% { translate: -80% -6%; rotate: -10deg; } }
+/* 진짜 보물 — 솟으면서 덜컹덜컹, 열리면 금빛 */
+.treasure__chest--treasure.treasure__chest--live:not(.treasure__chest--open) { animation: treasure-rise 340ms var(--ease-out) both, treasure-rattle 160ms linear 340ms infinite; }
+@keyframes treasure-rattle { 0%, 100% { rotate: 0deg; } 25% { rotate: -4deg; } 75% { rotate: 4deg; } }
+.treasure__chest--treasure.treasure__chest--live.treasure__chest--open { animation: none; }
+.treasure__chest--treasure.treasure__chest--open .treasure__lid { animation: treasure-lid 280ms var(--ease-out) both; }
+.treasure--settled .treasure__chest--treasure .treasure__lid { animation: none; }
+.treasure__spot--win .treasure__chest { width: calc(var(--size) * 1.8); }
+
+/* 금빛 줄기와 동전 */
+.treasure__rays {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 30%;
+  width: calc(var(--size) * 6);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, oklch(0.93 0.15 92 / 0.75) 0 10deg, transparent 10deg 24deg);
+  -webkit-mask-image: radial-gradient(circle, #000 18%, transparent 68%);
+  mask-image: radial-gradient(circle, #000 18%, transparent 68%);
+  animation: treasure-rays 3.6s linear infinite, treasure-fade-in 320ms var(--ease-out) both;
+  pointer-events: none;
+}
+@keyframes treasure-rays { to { rotate: 360deg; } }
+@keyframes treasure-fade-in { from { opacity: 0; scale: 0.4; } }
+.treasure__coins { position: absolute; left: 50%; top: 20%; z-index: 5; }
+.treasure__coins span {
+  position: absolute;
+  left: -1.4cqw;
+  top: -1.4cqw;
+  width: 2.8cqw;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, oklch(0.97 0.1 95) 0 18%, oklch(0.84 0.17 88) 22% 70%, oklch(0.66 0.14 75) 74%);
+  box-shadow: 0 0 0 1px oklch(0.55 0.12 70);
+  opacity: 0;
+  animation: treasure-coin 900ms var(--ease-out) var(--t) forwards;
+}
+@keyframes treasure-coin {
+  0% { opacity: 1; transform: rotate(var(--a)) translateY(0) scale(0.6, 1); }
+  60% { opacity: 1; transform: rotate(var(--a)) translateY(calc(var(--size) * -2.4 * var(--d))) scale(0.2, 1); }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--size) * -2.9 * var(--d))) scale(1, 1); }
+}
+
+/* ── 해적 — 발끝이 left/top. 삽 끝이 X 에 닿게 X 왼쪽에 선다. ── */
+.treasure__pirate {
+  position: absolute;
+  z-index: 5;
+  width: clamp(26px, calc(var(--cell) * 0.38), 76px);
+  translate: -41.7% -94%;
+  transition: left 260ms var(--ease-out), top 260ms var(--ease-out);
+}
+.treasure__pirate--cheer { z-index: 7; }
+.treasure__body { display: block; position: relative; }
+.treasure__pirate-svg { display: block; width: 100%; overflow: visible; }
+.treasure__pirate--move { animation: treasure-walk var(--walk) linear forwards; }
+@keyframes treasure-walk {
+  0% { left: var(--x0); top: var(--y0); }
+  25% { left: var(--x1); top: var(--y1); }
+  50% { left: var(--x2); top: var(--y2); }
+  75% { left: var(--x3); top: var(--y3); }
+  100% { left: var(--x4); top: var(--y4); }
+}
+.treasure__pirate--flip .treasure__pirate-svg { scale: -1 1; }
+.treasure__pirate--walk .treasure__body { animation: treasure-hop 150ms var(--ease-out) infinite alternate; }
+@keyframes treasure-hop { from { translate: 0 0; rotate: -4deg; } to { translate: 0 -16%; rotate: 4deg; } }
+.treasure__pirate--enter { animation: treasure-enter 420ms var(--ease-out) 420ms both; }
+@keyframes treasure-enter { 0% { scale: 0; opacity: 0; } 70% { scale: 1.15; opacity: 1; } 100% { scale: 1; } }
+.treasure__p-shadow { fill: oklch(0.2 0 0 / 0.2); }
+.treasure__p-leg { fill: oklch(0.36 0.05 260); }
+.treasure__p-boot { fill: oklch(0.25 0.03 50); }
+.treasure__p-shirt { fill: oklch(0.98 0.01 90); stroke: oklch(0.3 0.03 260); stroke-width: 1.2; }
+.treasure__p-stripe { stroke: oklch(0.58 0.2 28); stroke-width: 2.2; }
+.treasure__p-belt { fill: oklch(0.32 0.05 50); }
+.treasure__p-head { fill: oklch(0.86 0.07 60); stroke: oklch(0.45 0.06 50); stroke-width: 1.2; }
+.treasure__p-bandana { fill: oklch(0.6 0.21 28); stroke: oklch(0.38 0.12 28); stroke-width: 0.8; }
+.treasure__p-dot { fill: oklch(0.98 0 0); }
+.treasure__p-strap { stroke: oklch(0.18 0 0); stroke-width: 1; }
+.treasure__p-patch { fill: oklch(0.18 0 0); }
+.treasure__p-eye { fill: oklch(0.18 0.01 260); }
+.treasure__p-blush { fill: oklch(0.72 0.14 15 / 0.55); }
+.treasure__p-mouth { fill: none; stroke: oklch(0.35 0.06 30); stroke-width: 1.4; stroke-linecap: round; }
+.treasure__p-hand { fill: oklch(0.86 0.07 60); stroke: oklch(0.45 0.06 50); stroke-width: 1; }
+.treasure__s-handle { stroke: oklch(0.5 0.08 60); stroke-width: 2.4; stroke-linecap: round; }
+.treasure__s-blade { fill: oklch(0.78 0.01 260); stroke: oklch(0.42 0.01 260); stroke-width: 1; }
+.treasure__shovel { transform-box: view-box; transform-origin: 29px 31px; }
+.treasure__p-torso { transform-box: view-box; transform-origin: 20px 42px; }
+/* 파바박 — 삽을 내리찍고 퍼 올린다 */
+.treasure__pirate--dig .treasure__shovel,
+.treasure__pirate--deep .treasure__shovel { animation: treasure-shovel 180ms linear infinite alternate; }
+.treasure__pirate--dig .treasure__p-torso,
+.treasure__pirate--deep .treasure__p-torso { animation: treasure-lean 180ms linear infinite alternate; }
+.treasure__pirate--deep .treasure__shovel,
+.treasure__pirate--deep .treasure__p-torso { animation-delay: 260ms; }
+@keyframes treasure-shovel { from { transform: rotate(-38deg); } to { transform: rotate(12deg); } }
+@keyframes treasure-lean { from { transform: rotate(-3deg); } to { transform: rotate(6deg) translateY(1px); } }
+.treasure__pirate--hold .treasure__body { animation: treasure-sway 230ms linear infinite alternate; }
+@keyframes treasure-sway { from { rotate: -8deg; } to { rotate: 6deg; translate: 6% 0; } }
+.treasure__pirate--ouch .treasure__body { animation: treasure-ouch 380ms var(--ease-out); }
+@keyframes treasure-ouch {
+  0% { translate: 0 0; }
+  20% { translate: -6% -46%; rotate: -14deg; }
+  40% { translate: 6% -40%; rotate: 12deg; }
+  70% { translate: -3% -8%; rotate: -6deg; }
+  100% { translate: 0 0; rotate: 0deg; }
+}
+.treasure__pirate--startle .treasure__body { animation: treasure-startle 420ms var(--ease-out) 260ms both; }
+@keyframes treasure-startle {
+  0% { translate: 0 0; }
+  40% { translate: -40% -30%; rotate: -18deg; }
+  100% { translate: -26% 0; rotate: -8deg; }
+}
+.treasure__pirate--sad .treasure__p-torso { transform: rotate(5deg) translateY(2px); transition: transform 200ms var(--ease-out); }
+.treasure__pirate--sad .treasure__shovel { transform: rotate(18deg); transition: transform 200ms var(--ease-out); }
+.treasure__pirate--wow .treasure__body { animation: treasure-wow 340ms var(--ease-out); }
+@keyframes treasure-wow { 50% { translate: 0 -18%; } }
+.treasure__pirate--cheer .treasure__body { animation: treasure-cheer 360ms var(--ease-out) 3 alternate; }
+.treasure__pirate--cheer .treasure__shovel { transform: rotate(-70deg); }
+.treasure--settled .treasure__pirate--cheer .treasure__body { animation: none; }
+@keyframes treasure-cheer { from { translate: 0 0; } to { translate: 0 -24%; } }
+.treasure__think {
+  position: absolute;
+  left: 82%;
+  top: -34%;
+  translate: -50% 0;
+  color: oklch(0.99 0 0);
+  -webkit-text-stroke: 0.16em oklch(0.24 0.03 50);
+  paint-order: stroke fill;
+  font-size: clamp(16px, 6cqw, 32px);
+  font-weight: 900;
+  line-height: 1;
+  animation: treasure-think 540ms var(--ease-out) both;
+}
+@keyframes treasure-think { 0% { opacity: 0; scale: 0.3; } 25%, 50% { opacity: 1; scale: 1.1; } 70%, 100% { opacity: 0; scale: 1; } }
+
+/* 앵무새 — 날아와 해적 어깨 위에서 거짓 힌트 */
+.treasure__parrot { position: absolute; z-index: 1; left: 62%; top: -38%; width: 62%; animation: treasure-parrot-in 300ms var(--ease-out) both; }
+.treasure__parrot--leave { animation: treasure-parrot-out 420ms var(--ease-in, ease-in) forwards; }
+@keyframes treasure-parrot-in { from { translate: 180% -200%; rotate: 30deg; } to { translate: 0 0; rotate: 0deg; } }
+@keyframes treasure-parrot-out { to { translate: 240% -260%; rotate: -20deg; opacity: 0; } }
+.treasure__parrot-svg { display: block; width: 100%; overflow: visible; animation: treasure-squawk 170ms linear 300ms 3 alternate; }
+@keyframes treasure-squawk { to { rotate: -12deg; translate: 0 -8%; } }
+.treasure__pr-body { fill: oklch(0.6 0.22 28); stroke: oklch(0.36 0.12 28); stroke-width: 0.8; }
+.treasure__pr-wing { fill: oklch(0.55 0.15 245); }
+.treasure__pr-tail { fill: oklch(0.85 0.16 92); }
+.treasure__pr-eye { fill: oklch(0.15 0 0); }
+.treasure__pr-beak { fill: oklch(0.85 0.04 90); stroke: oklch(0.4 0.02 80); stroke-width: 0.6; }
+.treasure__bubble {
+  position: absolute;
+  left: 40%;
+  bottom: 96%;
+  padding: 1px 6px;
+  border: 1.5px solid oklch(0.25 0.02 260);
+  border-radius: 8px;
+  background: oklch(0.99 0 0);
+  color: oklch(0.22 0.02 260);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  white-space: nowrap;
+  animation: treasure-pop 260ms var(--ease-out) 180ms both;
+}
+
+/* 꽃게 — 구덩이 오른쪽에서 나와 해적 발을 집는다 */
+.treasure__crab {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--size) * 1.1);
+  overflow: visible;
+  animation: treasure-crab 380ms var(--ease-out) both;
+}
+@keyframes treasure-crab {
+  0% { translate: calc(var(--cell) * 0.1) -40%; scale: 0.4; }
+  20% { translate: calc(var(--cell) * 0.02) -20%; scale: 1; }
+  40% { translate: calc(var(--cell) * -0.08) 0; rotate: 6deg; }
+  60% { translate: calc(var(--cell) * -0.17) 0; rotate: -6deg; }
+  100% { translate: calc(var(--cell) * -0.2) 0; rotate: 0deg; }
+}
+.treasure__c-body,
+.treasure__c-claw { fill: oklch(0.6 0.2 30); stroke: oklch(0.38 0.12 30); stroke-width: 0.8; }
+.treasure__c-leg { stroke: oklch(0.45 0.15 30); stroke-width: 1.4; stroke-linecap: round; }
+.treasure__c-eye { fill: oklch(0.15 0 0); stroke: oklch(0.98 0 0); stroke-width: 0.6; }
+
+/* ── 화면에 붙은 효과 ── */
+.treasure__fx { position: absolute; inset: 0; z-index: 7; pointer-events: none; overflow: hidden; }
+/* 인트로 — 지도가 왼쪽부터 펼쳐지고 X 가 차례로 떨어진다 */
+.treasure__range--intro .treasure__world { animation: treasure-unroll 520ms var(--ease-out) both; }
+@keyframes treasure-unroll { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.treasure__roll {
+  position: absolute;
+  top: -2%;
+  bottom: -2%;
+  left: 0;
+  width: 6cqw;
+  border-radius: 3cqw;
+  background: linear-gradient(90deg, var(--paper-edge), var(--paper) 45%, var(--paper-edge));
+  box-shadow: 0 0 2cqw oklch(0.2 0.02 50 / 0.35);
+  animation: treasure-roll 520ms var(--ease-out) both;
+}
+@keyframes treasure-roll { from { left: -3cqw; } 95% { opacity: 1; } to { left: 100%; opacity: 0; } }
+.treasure__range--intro .treasure__spot { animation: treasure-drop 340ms var(--ease-out) calc(300ms + var(--i) * (320ms / var(--n))) both; }
+@keyframes treasure-drop {
+  0% { opacity: 0; translate: 0 -10cqw; scale: 1.8; }
+  70% { opacity: 1; translate: 0 0.6cqw; scale: 0.92; }
+  100% { opacity: 1; translate: 0 0; scale: 1; }
+}
+.treasure__wind {
+  position: absolute;
+  inset: 8% -10%;
+  background: repeating-linear-gradient(90deg, oklch(1 0 0 / 0.85) 0 10cqw, transparent 10cqw 26cqw);
+  -webkit-mask-image: repeating-linear-gradient(to bottom, transparent 0 7cqw, #000 7cqw 7.6cqw, transparent 7.6cqw 13cqw);
+  mask-image: repeating-linear-gradient(to bottom, transparent 0 7cqw, #000 7cqw 7.6cqw, transparent 7.6cqw 13cqw);
+  animation: treasure-wind 300ms linear infinite;
+}
+@keyframes treasure-wind { from { background-position: 0 0; } to { background-position: 26cqw 0; } }
+.treasure__leaf {
+  position: absolute;
+  left: -8%;
+  top: calc(20% + var(--k) * 24%);
+  width: 5cqw;
+  aspect-ratio: 2;
+  border-radius: 0 100% 0 100%;
+  background: oklch(0.62 0.15 145);
+  animation: treasure-leaf 460ms linear calc(var(--k) * 70ms) both;
+}
+@keyframes treasure-leaf {
+  from { translate: 0 0; rotate: 0deg; }
+  to { translate: 120cqw -8cqw; rotate: 540deg; }
+}
+.treasure__vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, transparent 42%, oklch(0.12 0.02 50 / 0.55) 100%);
+  animation: treasure-fade 300ms var(--ease-out) both;
+}
+@keyframes treasure-fade { from { opacity: 0; } }
+.treasure__flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, oklch(1 0.08 95 / 0.95) 0 10%, oklch(0.95 0.12 92 / 0.45) 32%, transparent 62%);
+  animation: treasure-flash 420ms var(--ease-out) forwards;
+}
+@keyframes treasure-flash { from { opacity: 1; scale: 0.6; } to { opacity: 0; scale: 1.6; } }
+.treasure__callout {
+  position: absolute;
+  top: 9%;
+  left: 50%;
+  translate: -50% 0;
+  font-size: clamp(20px, 9cqw, 48px);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  color: oklch(0.99 0 0);
+  -webkit-text-stroke: 0.14em oklch(0.24 0.03 50);
+  paint-order: stroke fill;
+  letter-spacing: -0.02em;
+  animation: treasure-pop 320ms var(--ease-out) both;
+}
+.treasure__callout--dirt { color: oklch(0.78 0.11 65); }
+.treasure__callout--ouch { color: oklch(0.7 0.2 28); }
+.treasure__callout--miss { color: oklch(0.86 0.03 250); }
+.treasure__callout--close { color: oklch(0.82 0.15 65); }
+.treasure__callout--wind { top: auto; bottom: 12%; font-size: clamp(18px, 7cqw, 36px); color: oklch(0.9 0.06 220); }
+.treasure__callout--gold { color: oklch(0.88 0.17 92); font-size: clamp(26px, 12cqw, 64px); }
+@keyframes treasure-pop {
+  0% { scale: 0.3; rotate: -10deg; opacity: 0; }
+  60% { scale: 1.15; rotate: 3deg; opacity: 1; }
+  100% { scale: 1; rotate: -4deg; }
+}
+.treasure__range--hit { animation: treasure-shake 260ms linear; }
+@keyframes treasure-shake {
+  0%, 100% { translate: 0 0; }
+  20% { translate: -4px 2px; }
+  40% { translate: 4px -2px; }
+  60% { translate: -3px -1px; }
+  80% { translate: 2px 1px; }
+}
+.treasure__status { margin: 0; font-size: var(--fs-sm); font-weight: 700; color: var(--color-text); text-align: center; }
+
+/* 동작 줄이기 — 앱이 "움직임 켜기" 를 반영해 둔 data-motion 을 본다(기기 설정만 보면 켜 둔 사람도 멈춘다). */
+:root[data-motion='reduced'] {
+  .treasure *,
+  .treasure__range { animation: none !important; transition: none !important; }
+  .treasure__fx, .treasure__coins, .treasure__dirt { display: none; }
+}

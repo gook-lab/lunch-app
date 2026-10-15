@@ -412,3 +412,67 @@ export function curlSfxLater(plan: [ms: number, name: CurlSfxName | SfxName][]):
   );
   return () => timers.forEach((t) => window.clearTimeout(t));
 }
+/* ───────── 보물찾기 ───────── */
+
+/** 보물찾기 소리. 위 SOUNDS 와 따로 둬서 다른 게임 소리 목록을 건드리지 않는다. */
+const TREASURE_SOUNDS = {
+  /** 지도가 펼쳐지는 사르륵. */
+  unroll: (ac: AudioContext) => noise(ac, { dur: 0.45, hz: 1800, to: 4200, q: 0.8, vol: 0.05 }),
+  /** 삽질 파바박 — 흙을 퍼내는 짧은 사각 소리 세 번. */
+  shovel: (ac: AudioContext) => {
+    for (let i = 0; i < 3; i += 1) noise(ac, { dur: 0.06, hz: rand(700, 1100), q: 1.4, vol: 0.09, at: i * 0.11 });
+  },
+  /** 삽이 상자에 닿는 퉁. */
+  clunk: (ac: AudioContext) => {
+    tone(ac, { hz: 180, to: 120, dur: 0.14, type: 'triangle', vol: 0.09 });
+    noise(ac, { dur: 0.04, hz: 900, q: 2, vol: 0.06 });
+  },
+  /** 미믹이 덥석. */
+  chomp: (ac: AudioContext) => {
+    tone(ac, { hz: 140, to: 70, dur: 0.12, type: 'square', vol: 0.05 });
+    noise(ac, { dur: 0.05, hz: 1600, q: 2, vol: 0.1, at: 0.02 });
+  },
+  /** 앵무새 깍깍. */
+  squawk: (ac: AudioContext) => {
+    tone(ac, { hz: 1500, to: 2300, dur: 0.09, type: 'sawtooth', vol: 0.025 });
+    tone(ac, { hz: 1700, to: 2600, dur: 0.1, type: 'sawtooth', vol: 0.025, at: 0.13 });
+  },
+  /** 꽃게 집게 찰칵. */
+  snip: (ac: AudioContext) => {
+    noise(ac, { dur: 0.025, hz: 4200, q: 4, vol: 0.09 });
+    noise(ac, { dur: 0.025, hz: 3600, q: 4, vol: 0.08, at: 0.07 });
+  },
+  /** 동전 한 닢 — 띵. */
+  coin: (ac: AudioContext) => {
+    tone(ac, { hz: 1980, dur: 0.08, type: 'square', vol: 0.025 });
+    tone(ac, { hz: 2640, dur: 0.22, type: 'square', vol: 0.025, at: 0.07 });
+  },
+  /** 보물 — 금빛 화음과 동전 소나기. */
+  fanfare: (ac: AudioContext) => {
+    [523, 659, 784, 1047].forEach((hz, i) => tone(ac, { hz, dur: 0.32, type: 'triangle', vol: 0.05, at: i * 0.07 }));
+    for (let i = 0; i < 6; i += 1) tone(ac, { hz: rand(2200, 3200), dur: 0.06, type: 'square', vol: 0.015, at: 0.3 + i * 0.05 });
+  },
+} satisfies Record<string, (ac: AudioContext) => void>;
+
+export type TreasureSfxName = keyof typeof TREASURE_SOUNDS;
+
+/** 보물찾기 소리(또는 공용 소리)를 나중에 울린다. 취소는 sfxLater 와 같다. 소리를 끈 사람에겐 아무 일도 없다. */
+export function treasureSfxLater(plan: [ms: number, name: TreasureSfxName | SfxName][]): () => void {
+  if (!enabled()) return () => {};
+  const timers = plan.map(([ms, name]) =>
+    window.setTimeout(() => {
+      if (!(name in TREASURE_SOUNDS)) {
+        sfx(name as SfxName);
+        return;
+      }
+      const ac = audio();
+      if (!ac) return;
+      try {
+        TREASURE_SOUNDS[name as TreasureSfxName](ac);
+      } catch {
+        // 오디오 노드를 못 만드는 환경 — 소리 없이 넘어간다.
+      }
+    }, ms),
+  );
+  return () => timers.forEach((t) => window.clearTimeout(t));
+}
