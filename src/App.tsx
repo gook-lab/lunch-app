@@ -56,13 +56,16 @@ import {
   MODE_ICON,
   motionForced,
   prefersReducedMotion,
+  quickResult,
   setForceMotion,
+  setQuickResult,
   systemReducesMotion,
   type GameMode,
 } from './components/games/types';
 import { Roadmap } from './components/Roadmap';
 import { useTodayKST } from './hooks/useTodayKST';
 import { useLunchData } from './hooks/useLunchData';
+import { addShown, readShown, readSkipShown, withoutShown, writeSkipShown } from './lib/shownToday';
 import { MIN_GAME_CANDIDATES, recentlyVisitedIds, selectCandidates, type Filters, type Place } from './lib/candidates';
 import { categoryHue } from './lib/category';
 import { josa, withJosa } from './lib/josa';
@@ -142,6 +145,7 @@ function focusIfLost(node: HTMLElement | null) {
  * 휴대폰 가로 줄 밖으로 밀려났다. 페이지는 움직이지 않고 줄 안쪽만 민다(데스크톱은 세로 레일).
  */
 /** 처음 온 사람의 게임. 컷신·이벤트가 있는 활쏘기로 시작한다(10/15 사용자). games/index.ts 가 바로 싣는다. */
+const NO_IDS: string[] = [];
 const DEFAULT_MODE: GameMode = 'archery';
 
 function revealPickedMode(node: HTMLElement | null) {
@@ -266,9 +270,17 @@ export default function App() {
   const [motionOn, setMotionOn] = useState(motionForced);
   // CSS 연출도 이 값을 따른다. @media (prefers-reduced-motion) 로 끄면 "움직임 켜기" 를 눌러도
   // 바늘 착지·카드 들썩임·토너먼트 튀어나옴 같은 CSS 애니메이션은 꺼진 채였다(10/9 접근성 리뷰).
+  // 결과 바로 보기. 켜면 게임이 동작 줄이기처럼 마지막 장면만 그린다(games/types.ts).
+  const [quickOn, setQuickOn] = useState(quickResult);
   useEffect(() => {
-    document.documentElement.dataset.motion = reducedBySystem && !motionOn ? 'reduced' : 'full';
-  }, [reducedBySystem, motionOn]);
+    document.documentElement.dataset.motion = quickOn || (reducedBySystem && !motionOn) ? 'reduced' : 'full';
+  }, [reducedBySystem, motionOn, quickOn]);
+  const toggleQuick = useCallback(() => {
+    setQuickOn((on) => {
+      setQuickResult(!on);
+      return !on;
+    });
+  }, []);
 
   const toggleMotion = useCallback(() => {
     const next = !motionOn;
@@ -312,6 +324,24 @@ export default function App() {
 
   const result = useMemo(() => selectCandidates(places, visits, filters, today), [places, visits, filters, today]);
   const recentIds = useMemo(() => recentlyVisitedIds(visits, today), [visits, today]);
+  // 오늘 나온 곳 빼기(lib/shownToday.ts). 이 브라우저에서 오늘 게임이 뽑은 가게를 다음 판에서 뺀다.
+  const [skipShown, setSkipShown] = useState(readSkipShown);
+  // 날이 바뀌면(자정 넘겨 켜 둔 탭) 빈 목록 — 저장값도 그날 것만 읽힌다.
+  const [shownStore, setShownStore] = useState(() => ({ day: today, ids: readShown(today) }));
+  const shown = shownStore.day === today ? shownStore.ids : NO_IDS;
+  const toggleSkipShown = useCallback(() => {
+    setSkipShown((on) => {
+      writeSkipShown(!on);
+      return !on;
+    });
+  }, []);
+  const playable = useMemo(
+    () =>
+      skipShown
+        ? withoutShown(result.candidates, shown, MIN_GAME_CANDIDATES)
+        : { list: result.candidates, skipped: 0, restarted: false },
+    [skipShown, result.candidates, shown],
+  );
   // 팟 게임 후보 — 지금 조건(도보·최근 1주)에서 메뉴만 팟 메뉴로 바꾼다.
   const partyCandidatesFor = useCallback(
     (category: string) =>
@@ -332,12 +362,12 @@ export default function App() {
   const confirmed = winner !== null && decision?.placeId === winner.id;
 
   const spin = useCallback(() => {
-    if (result.candidates.length < MIN_GAME_CANDIDATES || spinning) return;
+    if (playable.list.length < MIN_GAME_CANDIDATES || spinning) return;
     const active = document.activeElement;
     focusResult.current =
       active === document.body || (active !== null && !!boardRef.current?.closest('.stage')?.contains(active));
     if (focusResult.current) boardRef.current?.focus({ preventScroll: true });
-    const frozen = result.candidates;
+    const frozen = playable.list;
     // 핀볼은 공 개수에 비례해 뽑는다. 전부 1개면 아래 균등 추첨과 똑같다.
     const balls =
       mode === 'pinball'
@@ -367,7 +397,7 @@ export default function App() {
         block: 'center',
       });
     });
-  }, [result.candidates, spinning, closeResult, mode, ballCounts]);
+  }, [playable.list, spinning, closeResult, mode, ballCounts]);
 
   useEffect(() => {
     if (!winner || !focusResult.current) return;
@@ -388,6 +418,8 @@ export default function App() {
   const onSpinEnd = useCallback(() => {
     setSpinning(false);
     setWinner((prev) => (winnerIndex === null ? prev : (board?.[winnerIndex] ?? prev)));
+    const won = winnerIndex === null ? undefined : board?.[winnerIndex];
+    if (won) setShownStore((prev) => ({ day: today, ids: addShown(today, prev.day === today ? prev.ids : [], won.id) }));
     // 결과는 모달로. 게임 아래 카드는 스크롤해야 보였고, 끝난 순간이 밋밋했다(10/9 사용자).
     // 바로 띄우면 게임의 마지막 장면(바늘이 걸리는 순간, 응원한 공의 등수)을 모달이
     // 덮는다. 잠깐 보여 주고 연다.
@@ -406,7 +438,7 @@ export default function App() {
         prefersReducedMotion() ? 0 : RESULT_DELAY_MS,
       );
     }
-  }, [winnerIndex, board]);
+  }, [winnerIndex, board, today]);
 
   // 탭을 옮겨도 게임은 계속된다. 오늘 탭 패널은 숨기기만 하고 내리지 않는다
   // (hidden). 게임 도중 목록·지도를 보고 오고 싶다는 요청이 있었다(10/12).
@@ -1220,8 +1252,41 @@ export default function App() {
                   >
                     {spinning
                       ? '게임 중'
-                      : `${decidedPlace ? '다시 ' : ''}${actionLabel(mode)} (${result.candidates.length}곳 중에서)`}
+                      : `${decidedPlace ? '다시 ' : ''}${actionLabel(mode)} (${playable.list.length}곳 중에서)`}
                   </Button>
+                )}
+
+                {/* 판 옵션 두 개. 이 브라우저에만 남는다. */}
+                {!gate && (
+                  <div className="stage__opts" role="group" aria-label="게임 옵션">
+                    <button
+                      type="button"
+                      className="stage__opt"
+                      aria-pressed={skipShown}
+                      onClick={toggleSkipShown}
+                      disabled={spinning}
+                    >
+                      <span className="stage__optBox" aria-hidden="true">{skipShown ? '✓' : ''}</span>
+                      오늘 나온 곳 빼기
+                    </button>
+                    <button
+                      type="button"
+                      className="stage__opt"
+                      aria-pressed={quickOn}
+                      onClick={toggleQuick}
+                      disabled={spinning}
+                    >
+                      <span className="stage__optBox" aria-hidden="true">{quickOn ? '✓' : ''}</span>
+                      결과 바로 보기
+                    </button>
+                    {skipShown && (playable.skipped > 0 || playable.restarted) && (
+                      <p className="muted small stage__optNote" aria-live="polite">
+                        {playable.restarted
+                          ? '오늘 나온 곳을 다 봐서 처음부터 다시 해요'
+                          : `오늘 나온 ${playable.skipped}곳은 빼고 해요`}
+                      </p>
+                    )}
+                  </div>
                 )}
 
                 {/* 데스크톱에선 예측·안내 한 줄을 오른쪽 칸으로 옮긴다. 판이 그만큼 높아진다(10/14 리빌딩). */}

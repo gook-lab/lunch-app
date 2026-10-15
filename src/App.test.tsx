@@ -14,7 +14,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import App from './App';
 import { preloadGames } from './components/games';
 import { decideToday } from './services/lunch';
-import { RESULT_DELAY_MS, SPIN_MS, setForceMotion } from './components/games/types';
+import { RESULT_DELAY_MS, SPIN_MS, setForceMotion, setQuickResult } from './components/games/types';
 import { CARDS_MAX_MS } from './lib/cards';
 
 const fx = vi.hoisted(() => {
@@ -558,6 +558,41 @@ describe('기기의 "동작 줄이기"', () => {
   it('기기 설정이 꺼져 있으면 안내를 띄우지 않는다', () => {
     render(<App />);
     expect(screen.queryByRole('note')).toBeNull();
+  });
+});
+
+describe('판 옵션', () => {
+  afterEach(() => {
+    localStorage.clear();
+    setQuickResult(false);
+  });
+
+  it('결과 바로 보기를 켜면 연출 없이 바로 결과를 낸다', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '결과 바로 보기' }));
+    expect(document.documentElement.dataset.motion).toBe('reduced');
+    fireEvent.click(screen.getByRole('button', { name: '돌림판' }));
+    fireEvent.click(runButton());
+    act(() => { vi.advanceTimersByTime(50); });
+    expect(card()).toBe('가집');
+  });
+
+  it('오늘 나온 곳 빼기를 켜면 방금 뽑힌 가게는 다음 판 후보에서 빠진다', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '오늘 나온 곳 빼기' }));
+    fireEvent.click(screen.getByRole('button', { name: '돌림판' }));
+    const before = Number(/\((\d+)곳 중에서\)/.exec(runButton().textContent ?? '')?.[1]);
+    fireEvent.click(runButton());
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
+    expect(card()).toBe('가집');
+    expect(screen.getByText('오늘 나온 1곳은 빼고 해요')).toBeTruthy();
+
+    // 난수는 늘 0(첫 후보)이다. 가집이 빠졌으니 이번엔 다른 가게가 나와야 한다.
+    fireEvent.click(within(screen.getByRole('dialog', { name: '오늘의 점심 결과' })).getByRole('button', { name: '다시 하기' }));
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
+    expect(card()).not.toBe('가집');
+    expect(before).toBeGreaterThan(2);
+    expect(screen.getByText('오늘 나온 2곳은 빼고 해요')).toBeTruthy();
   });
 });
 

@@ -1777,6 +1777,40 @@ html:has(dialog[open]:modal) { overflow: hidden; }
 .stage__expand:hover { background: var(--color-neutral-200); color: var(--color-text); }
 .stage__expand:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
+/* 판 옵션(오늘 나온 곳 빼기 · 결과 바로 보기). 실행 단추 아래 작은 체크 두 개. */
+.stage__opts { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); }
+.stage__opt {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: 0 var(--space-1);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-neutral-800);
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.stage__opt:hover:not(:disabled) { color: var(--color-text); }
+.stage__opt:disabled { cursor: not-allowed; opacity: 0.6; }
+.stage__opt:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.stage__optBox {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--color-neutral-500);
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+.stage__opt[aria-pressed='true'] { color: var(--color-text); font-weight: 600; }
+.stage__opt[aria-pressed='true'] .stage__optBox { border-color: var(--color-text); background: var(--color-text); color: var(--color-bg); }
+.stage__optNote { flex-basis: 100%; margin: 0; }
+
 /* 펼친 무대: 화면 전체를 덮고, 안에서 스크롤한다. 하단 탭바보다 위. */
 .stage--full {
   position: fixed;

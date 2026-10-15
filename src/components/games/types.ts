@@ -155,7 +155,37 @@ export function setForceMotion(on: boolean): void {
   }
 }
 
-/** 연출을 건너뛸까. 기기가 동작을 줄이라 했고, 사용자가 앱에서 다시 켜지 않았으면. */
+/*
+ * "결과 바로 보기". 게임이 길어져(대부분 5~7초) 바쁠 땐 결과만 보고 싶다는 데 대비한 스위치.
+ * 동작 줄이기와 같은 길(마지막 장면만 그리기)을 탄다 — 게임마다 따로 짧은 판을 만들지 않는다.
+ * 당첨은 spin() 이 먼저 정하니 확률은 그대로다.
+ */
+const QUICK_KEY = 'lunch-app:quick';
+let quick = readQuick();
+
+function readQuick(): boolean {
+  try {
+    return typeof localStorage !== 'undefined' && localStorage.getItem(QUICK_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function quickResult(): boolean {
+  return quick;
+}
+
+export function setQuickResult(on: boolean): void {
+  quick = on;
+  try {
+    if (on) localStorage.setItem(QUICK_KEY, '1');
+    else localStorage.removeItem(QUICK_KEY);
+  } catch {
+    // 시크릿 창에서는 저장이 막힌다. 이번 방문 동안만 켜진다.
+  }
+}
+
+/** 연출을 건너뛸까. 결과 바로 보기를 켰거나, 기기가 동작을 줄이라 했고 앱에서 다시 켜지 않았으면. */
 export function prefersReducedMotion(): boolean {
-  return systemReducesMotion() && !forceMotion;
+  return quick || (systemReducesMotion() && !forceMotion);
 }
