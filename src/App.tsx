@@ -297,6 +297,13 @@ export default function App() {
     }
   });
 
+  /*
+   * 데스크톱 작게 보기에서 게임이 판 칸(약 770×540)에 360px 남짓으로 작게 떠 여백이 컸다(10/16 사용자).
+   * 크게 보기와 같은 "남은 높이에 맞는 폭" 규칙을 판 칸에도 쓴다. 슬롯은 데스크톱 전용 배치가 따로 있고,
+   * 핀볼은 카메라가 코스를 따라가 판 높이가 정해져 있어, 토너먼트는 긴 이름이 판 폭을 넘어(6px) 뺀다.
+   */
+  const fitBoard = wide && !expanded && !['slot', 'pinball', 'tournament'].includes(mode);
+
   // 방식을 바꾸면 지난 판을 지운다. 돌림판 결과 카드를 띄운 채 사다리로
   // 넘어가면 사다리는 이미 당첨이 정해진 그림으로 나와 "안 돌렸는데 결과가
   // 있다" 로 읽힌다. 모드 칩은 연출 중에 잠겨 있으니 여기서 연출을 끊을
@@ -1024,7 +1031,7 @@ export default function App() {
         ) : (
           <div className="today">
             <section
-              className={['stage', spinning ? 'stage--busy' : '', expanded ? 'stage--full' : '']
+              className={['stage', spinning ? 'stage--busy' : '', expanded ? 'stage--full' : '', fitBoard ? 'stage--fit' : '']
                 .filter(Boolean)
                 .join(' ')}
               aria-label="게임"
@@ -1145,7 +1152,8 @@ export default function App() {
                           spinning,
                           run,
                           onSpinEnd,
-                          expanded,
+                          // 데스크톱 작게 보기도 판 칸을 채우는 큰 그림으로 그린다(stage--fit, desktop.css).
+                          expanded: expanded || fitBoard,
                         };
                         // 사다리는 사용자가 판을 고친다. 후보 구성이 바뀌면 새 판이어야 하므로
                         // 후보 id 를 key 로 준다. 돌린 순간 얼리는 board 는 같은 id 라 판이 유지된다.

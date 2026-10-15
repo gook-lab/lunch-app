@@ -74,7 +74,8 @@
   }
   .stage:not(.stage--full) > .stage__main > .stage__board { flex: 1 1 auto; min-height: 0; overflow: auto; }
   .stage:not(.stage--full) > .stage__main > :not(.stage__board) { flex: none; }
-  .today__filters { position: relative; height: 100%; }
+  /* App.css 의 sticky top(24px)이 relative 에서도 먹어 오른쪽 칸만 24px 내려가 아래로 넘쳤다(10/16 사용자). */
+  .today__filters { position: relative; top: auto; height: 100%; }
 
   /* ── 가게 목록: 목록 | 기록 ────────────────────────── */
   .lt {
@@ -167,29 +168,29 @@
  * 핀볼(코스를 카메라가 따라감)과 카드(칸이 줄바꿈)는 비례로 줄지 않아 판 안에서 스크롤한다.
  * 판이 320px 보다 낮아지면(아주 작은 창) 그때만 무대가 스크롤한다.
  */
-.stage--full .stage__board {
+:is(.stage--full, .stage--fit) .stage__board {
   flex: 1 1 auto;
   min-height: 320px;
   container-type: size;
   overflow: auto;
 }
-.stage--full .wheel { width: min(86vw, 640px, 100cqh - 72px); } /* 판 아래 진행자 줄(약 56px)까지 */
-.stage--full .dice--big { width: min(520px, 94vw, 100cqh - 64px); } /* 판 아래 나온 눈·상태 한 줄(약 46px)까지 */
-.stage--full .ladder { width: min(92vw, 760px, (100cqh - 236px) / 0.79); } /* 바닥 칸 아래 상태 한 줄(약 30px)까지 */
-.stage--full .gacha--big { width: min(380px, 92vw, (100cqh - 142px) / 0.84); }
-@media (min-width: 960px) { .stage--full .cards--big { width: min(820px, 94vw, (100cqh - 64px - var(--rows) * 14px) * var(--fit)); } } /* 카드 판 높이 = 폭 ÷ --fit + 상태 줄·줄 간격(Cards.tsx) */
-.stage--full .plinko--big { width: min(560px, 94vw, (100cqh - 56px) * var(--fit, 0.8)); } /* 그림 높이(판 + 이름표 띠) = 폭 ÷ --fit(후보 수마다 다르다, lib/plinko.ts). 56px 는 상태 줄 */
-.stage--full .bomb--big { width: min(640px, 94vw, 100cqh - 56px); } /* 판 아래 상태 한 줄(약 40px)까지 */
-.stage--full .balloon--big { width: min(640px, 94vw, (100cqh - 56px) * var(--fit)); } /* 판 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
-.stage--full .fishing--big { width: min(640px, 94vw, (100cqh - 56px) * var(--fit)); } /* 연못 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
-.stage--full .archery--big { width: min(640px, 94vw, (100cqh - 56px) * var(--fit)); } /* 사로 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
-.stage--full .plane--big { width: min(880px, 96vw, (100cqh - 56px) * var(--fit)); } /* 장면 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
-.stage--full .curling--big { width: min(640px, 94vw, (100cqh - 56px) * var(--fit)); } /* 시트 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
-.stage--full .treasure--big { width: min(640px, 94vw, (100cqh - 56px) * var(--fit)); } /* 지도 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
-.stage--full .claw--big { width: min(640px, 94vw, (100cqh - 56px) * var(--fit)); } /* 함 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
-.stage--full .penalty--big { width: min(640px, 94vw, (100cqh - 56px) * var(--fit)); } /* 경기장 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
-.stage--full .bowling--big { width: min(640px, 94vw, (100cqh - 56px) * var(--fit)); } /* 레인 화면 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
-.stage--full .prace--big { width: min(880px, 96vw, (100cqh - 188px) / 0.57); }
+:is(.stage--full, .stage--fit) .wheel { width: min(86vw, 100cqw - 16px, 640px, 100cqh - 72px); } /* 판 아래 진행자 줄(약 56px)까지 */
+:is(.stage--full, .stage--fit) .dice--big { width: min(520px, 94vw, 100cqw - 16px, 100cqh - 64px); } /* 판 아래 나온 눈·상태 한 줄(약 46px)까지 */
+:is(.stage--full, .stage--fit) .ladder { width: min(92vw, 100cqw - 16px, 760px, (100cqh - 236px) / 0.79); } /* 바닥 칸 아래 상태 한 줄(약 30px)까지 */
+:is(.stage--full, .stage--fit) .gacha--big { width: min(380px, 92vw, 100cqw - 16px, (100cqh - 142px) / 0.84); }
+@media (min-width: 960px) { :is(.stage--full, .stage--fit) .cards--big { width: min(820px, 94vw, 100cqw - 16px, (100cqh - 64px - var(--rows) * 14px) * var(--fit)); } } /* 카드 판 높이 = 폭 ÷ --fit + 상태 줄·줄 간격(Cards.tsx) */
+:is(.stage--full, .stage--fit) .plinko--big { width: min(560px, 94vw, 100cqw - 16px, (100cqh - 56px) * var(--fit, 0.8)); } /* 그림 높이(판 + 이름표 띠) = 폭 ÷ --fit(후보 수마다 다르다, lib/plinko.ts). 56px 는 상태 줄 */
+:is(.stage--full, .stage--fit) .bomb--big { width: min(640px, 94vw, 100cqw - 16px, 100cqh - 56px); } /* 판 아래 상태 한 줄(약 40px)까지 */
+:is(.stage--full, .stage--fit) .balloon--big { width: min(880px, 94vw, 100cqw - 16px, (100cqh - 56px) * var(--fit)); } /* 판 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
+:is(.stage--full, .stage--fit) .fishing--big { width: min(880px, 94vw, 100cqw - 16px, (100cqh - 56px) * var(--fit)); } /* 연못 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
+:is(.stage--full, .stage--fit) .archery--big { width: min(880px, 94vw, 100cqw - 16px, (100cqh - 56px) * var(--fit)); } /* 사로 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
+:is(.stage--full, .stage--fit) .plane--big { width: min(880px, 96vw, 100cqw - 16px, (100cqh - 56px) * var(--fit)); } /* 장면 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
+:is(.stage--full, .stage--fit) .curling--big { width: min(640px, 94vw, 100cqw - 16px, (100cqh - 56px) * var(--fit)); } /* 시트 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
+:is(.stage--full, .stage--fit) .treasure--big { width: min(880px, 94vw, 100cqw - 16px, (100cqh - 56px) * var(--fit)); } /* 지도 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
+:is(.stage--full, .stage--fit) .claw--big { width: min(640px, 94vw, 100cqw - 16px, (100cqh - 56px) * var(--fit)); } /* 함 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
+:is(.stage--full, .stage--fit) .penalty--big { width: min(880px, 94vw, 100cqw - 16px, (100cqh - 56px) * var(--fit)); } /* 경기장 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
+:is(.stage--full, .stage--fit) .bowling--big { width: min(640px, 94vw, 100cqw - 16px, (100cqh - 56px) * var(--fit)); } /* 레인 화면 높이 = 폭 ÷ --fit, 아래 상태 한 줄까지 */
+:is(.stage--full, .stage--fit) .prace--big { width: min(880px, 96vw, 100cqw - 16px, (100cqh - 188px) / 0.57); }
 
 /*
  * 패널 안 상자 겹침 정리 · 목록 한 줄 (10/14 디자인 리뷰 후속).

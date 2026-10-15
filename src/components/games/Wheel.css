@@ -136,7 +136,7 @@
 /* 진행자 줄 — 얼굴 + 말풍선(상태 한 줄). */
 /* 데스크톱 게임판(약 770×650)에서 340px 원판은 작았다. 아래 진행자 줄까지 들어가게 키운다. */
 @media (min-width: 960px) {
-  .stage:not(.stage--full) .wheel { width: min(440px, 80vw); }
+  .stage:not(.stage--full, .stage--fit) .wheel { width: min(440px, 80vw); }
 }
 
 .wheelgame__host {
