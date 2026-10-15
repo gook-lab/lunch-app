@@ -121,7 +121,7 @@ describe('보물찾기', () => {
       r.unmount();
     }
     for (const e of ['parrot', 'gust', 'crab', 'deep', 'empty', 'boot', 'coin', 'mimic']) expect(seen, e).toContain(e);
-  });
+  }, 30_000); // 시드 여러 개 × 2~20곳을 끝까지 돌린다. 다른 테스트와 같이 돌면 기본 5초를 넘긴다(10/15).
 
   it('후보 2~20곳, 판 번호 여럿 — 끝 장면의 보물은 언제나 App 이 정한 당첨', () => {
     for (let n = 2; n <= 20; n += 1)

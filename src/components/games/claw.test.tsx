@@ -98,7 +98,7 @@ describe('인형뽑기', () => {
       r.unmount();
     }
     for (const e of ['slip', 'edge', 'weak', 'double', 'nudge', 'teeter']) expect(seen, e).toContain(e);
-  });
+  }, 30_000); // 시드 여러 개 × 2~20곳을 끝까지 돌린다. 다른 테스트와 같이 돌면 기본 5초를 넘긴다(10/15).
 
   it('움직임 줄이기면 바로 뽑힌 모습 — onSpinEnd 한 번', () => {
     reduced = true;

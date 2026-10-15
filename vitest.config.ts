@@ -6,5 +6,13 @@ import viteConfig from './vite.config';
 // vite.config.ts 를 건드리면 돌고 있는 개발 서버가 다시 뜨므로 따로 둔다.
 export default mergeConfig(
   viteConfig,
-  defineConfig({ test: { exclude: [...configDefaults.exclude, '.claude/**'], setupFiles: ['src/test/setup.ts'] } }),
+  defineConfig({
+    test: {
+      exclude: [...configDefaults.exclude, '.claude/**'],
+      setupFiles: ['src/test/setup.ts'],
+      // 게임 21종 테스트가 각본을 시드 여러 개 × 2~20곳으로 끝까지 돌린다. 기계가 바쁘면 기본 5초를 넘겨
+      // 매번 다른 테스트가 시간 초과로 떨어졌다(10/15). 실패는 단언으로 잡고 시간은 넉넉히 둔다.
+      testTimeout: 20_000,
+    },
+  }),
 );

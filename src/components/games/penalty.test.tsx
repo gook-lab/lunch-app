@@ -84,7 +84,7 @@ describe('승부차기', () => {
       expect(r.container.querySelector('.penalty__ball--fly')).toBeNull();
       r.unmount();
     }
-  });
+  }, 30_000); // 시드 여러 개 × 2~20곳을 끝까지 돌린다. 다른 테스트와 같이 돌면 기본 5초를 넘긴다(10/15).
 
   it('사건이 판마다 달리 나오고, 무엇이 나와도 당첨은 그대로다', () => {
     const seen = new Set<string>();
@@ -112,7 +112,7 @@ describe('승부차기', () => {
       r.unmount();
     }
     for (const e of ['save', 'post', 'over', 'catch', 'bar', 'goal', 'late']) expect(seen, e).toContain(e);
-  });
+  }, 30_000); // 시드 여러 개 × 2~20곳을 끝까지 돌린다. 다른 테스트와 같이 돌면 기본 5초를 넘긴다(10/15).
 
   it('골대 — 깡! 불꽃이 튀고 노린 구역이 잠깐 빛난다(당첨 아님)', () => {
     const n = 9;
