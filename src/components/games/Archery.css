@@ -1,0 +1,647 @@
+/*
+ * 활쏘기 — 사로(.archery__range) 안에 카메라가 움직이는 세계(.archery__world)와 화면에 붙은 효과(.archery__fx),
+ * 한 발마다 덮이는 컷신(.archery__cut)이 겹쳐 있다. 자리(left/top %)·카메라·궤적은 JS(lib/archery.ts)가 주고
+ * 움직임은 CSS 가 한다. 크기는 사로 폭(cqw)에 맞춰 커지고 줄어든다 — 15곳(4열)도 휴대폰에서 이름표가 겹치지 않는다.
+ * 과녁 색(금·빨강·파랑·검정·흰색)은 실제 과녁 색이라 라이트·다크 모두 같다.
+ */
+.archery { width: min(360px, 94vw); display: grid; gap: var(--space-2); justify-items: center; }
+.archery--big { width: min(640px, 94vw); }
+.archery--empty { height: 320px; }
+
+.archery__range {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--fit);
+  container-type: inline-size;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: var(--radius-md);
+  background: oklch(0.8 0.1 140);
+  --sky-c: oklch(0.93 0.04 225);
+  --sky-c2: oklch(0.86 0.07 225);
+  --grass: oklch(0.8 0.11 138);
+  --grass2: oklch(0.76 0.115 138);
+  --ground: oklch(0.86 0.06 95);
+  --ink: oklch(0.28 0.02 260);
+}
+[data-theme='dark'] .archery__range {
+  --sky-c: oklch(0.3 0.04 260);
+  --sky-c2: oklch(0.36 0.05 255);
+  --grass: oklch(0.38 0.07 150);
+  --grass2: oklch(0.35 0.07 150);
+  --ground: oklch(0.42 0.04 80);
+}
+
+/* ── 세계(카메라가 따라다닌다) ── */
+.archery__world {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+  transition: transform 320ms var(--ease-inout);
+  background:
+    radial-gradient(ellipse 14cqw 4cqw at 18% calc(var(--sky) * 0.45), oklch(1 0 0 / 0.75) 60%, transparent 62%),
+    radial-gradient(ellipse 10cqw 3cqw at 78% calc(var(--sky) * 0.35), oklch(1 0 0 / 0.6) 60%, transparent 62%),
+    linear-gradient(to bottom, var(--sky-c) 0, var(--sky-c2) var(--sky), transparent var(--sky)),
+    linear-gradient(to bottom, transparent var(--line), var(--ground) var(--line)),
+    repeating-linear-gradient(90deg, var(--grass) 0 var(--cell-w), var(--grass2) var(--cell-w) calc(var(--cell-w) * 2));
+}
+[data-theme='dark'] .archery__world {
+  background:
+    radial-gradient(circle 1.6cqw at 84% calc(var(--sky) * 0.4), oklch(0.95 0.04 95) 70%, transparent 74%),
+    radial-gradient(circle 0.4cqw at 20% calc(var(--sky) * 0.3), oklch(0.95 0 0) 60%, transparent 70%),
+    radial-gradient(circle 0.3cqw at 46% calc(var(--sky) * 0.6), oklch(0.95 0 0) 60%, transparent 70%),
+    linear-gradient(to bottom, var(--sky-c) 0, var(--sky-c2) var(--sky), transparent var(--sky)),
+    linear-gradient(to bottom, transparent var(--line), var(--ground) var(--line)),
+    repeating-linear-gradient(90deg, var(--grass) 0 var(--cell-w), var(--grass2) var(--cell-w) calc(var(--cell-w) * 2));
+}
+.archery__world--fly { transition: none; animation: archery-cam var(--fly) linear forwards; }
+.archery__world--settle { transform: none; transition: transform 420ms var(--ease-out); }
+.archery--settled .archery__world { transition: none; }
+@keyframes archery-cam {
+  0% { transform: var(--c0); }
+  25% { transform: var(--c1); }
+  50% { transform: var(--c2); }
+  75% { transform: var(--c3); }
+  100% { transform: var(--c4); }
+}
+/* 사대 — 궁수가 서는 흰 선 */
+.archery__line { position: absolute; left: 0; right: 0; height: 2px; background: oklch(1 0 0 / 0.8); }
+
+/* ── 과녁 ── */
+.archery__target {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: calc(var(--cell-w) * 0.82);
+  transform: translate(-50%, calc(var(--size) * -0.5));
+  animation: archery-slide var(--period) var(--ease-inout) var(--delay) infinite alternate;
+}
+/* 받침 다리 — 과녁 뒤 A 자 */
+.archery__target::before {
+  content: '';
+  position: absolute;
+  top: calc(var(--size) * 0.55);
+  left: 50%;
+  z-index: -1;
+  width: calc(var(--size) * 0.8);
+  height: calc(var(--size) * 0.62);
+  translate: -50% 0;
+  background: oklch(0.5 0.08 60);
+  clip-path: polygon(30% 0, 40% 0, 18% 100%, 8% 100%, 60% 0, 70% 0, 92% 100%, 82% 100%);
+}
+.archery__face {
+  position: relative;
+  display: block;
+  width: var(--size);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle closest-side,
+    oklch(0.87 0.17 92) 0 19%,
+    oklch(0.3 0.02 92 / 0.5) 19% 20%,
+    oklch(0.63 0.21 28) 20% 39%,
+    oklch(0.3 0.02 28 / 0.5) 39% 40%,
+    oklch(0.64 0.13 235) 40% 59%,
+    oklch(0.3 0.02 235 / 0.5) 59% 60%,
+    oklch(0.3 0.01 260) 60% 79%,
+    oklch(0.7 0 0) 79% 80%,
+    oklch(0.98 0 0) 80% 100%
+  );
+  box-shadow: 0 0 0 1px oklch(0.25 0.02 260 / 0.45), 0 2px 0 oklch(0.25 0.02 260 / 0.25);
+}
+.archery__tag {
+  max-width: 100%;
+  padding: 0 4px;
+  border: 1px solid var(--color-neutral-300);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.archery--big .archery__tag { font-size: var(--fs-sm); }
+.archery__target--wobble .archery__face { animation: archery-wobble 420ms var(--ease-out); }
+.archery__target--win { z-index: 4; animation: none; }
+.archery__target--win .archery__face {
+  scale: 1.12;
+  box-shadow: 0 0 0 3px var(--color-accent), 0 0 18px 4px var(--color-accent-100);
+  transition: scale 300ms var(--ease-out);
+}
+.archery__target--win .archery__tag {
+  max-width: none;
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-bg);
+  position: relative;
+  z-index: 1;
+}
+@keyframes archery-slide { from { translate: calc(var(--slide) * -1) 0; } to { translate: var(--slide) 0; } }
+@keyframes archery-wobble {
+  0% { rotate: 0deg; scale: 1; }
+  20% { rotate: -9deg; scale: 0.94; }
+  45% { rotate: 6deg; }
+  70% { rotate: -3deg; }
+  100% { rotate: 0deg; scale: 1; }
+}
+
+/* 꽂힌 화살 — 꼬리(깃)가 궁수 쪽을 본다(--tail). 자리는 과녁 안 %. */
+.archery__stuck {
+  position: absolute;
+  z-index: 1;
+  width: 0;
+  height: 0;
+  rotate: var(--tail);
+  /* 과녁 무늬 위에서도 화살이 보이게 얇은 테두리 */
+  filter: drop-shadow(0 0 0.6px oklch(0.15 0 0)) drop-shadow(0 1px 1px oklch(0.15 0 0 / 0.4));
+}
+.archery__shaft {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: max(5px, calc(var(--size) * 0.2));
+  height: calc(var(--size) * 0.6);
+  translate: -50% 0;
+  background: linear-gradient(to bottom, oklch(0.42 0.06 60) 0 70%, oklch(0.66 0.2 28) 70%);
+  clip-path: polygon(38% 0, 62% 0, 62% 70%, 100% 80%, 100% 100%, 50% 92%, 0 100%, 0 80%, 38% 70%);
+}
+.archery__stuck::before {
+  /* 꽂힌 자국 */
+  content: '';
+  position: absolute;
+  left: -2px;
+  top: -2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: oklch(0.2 0 0 / 0.6);
+}
+.archery__stuck--final .archery__shaft {
+  background: linear-gradient(to bottom, oklch(0.42 0.06 60) 0 70%, oklch(0.87 0.17 92) 70%);
+  filter: drop-shadow(0 0 2px oklch(1 0 0 / 0.9));
+}
+.archery__stuck--final { animation: archery-thud 260ms var(--ease-out); }
+@keyframes archery-thud { from { rotate: calc(var(--tail) + 8deg); } 50% { rotate: calc(var(--tail) - 5deg); } }
+/* 로빈후드 — 앞 화살이 두 쪽으로 갈라져 튄다 */
+.archery__stuck--split .archery__shaft { animation: archery-vanish 120ms linear 60ms forwards; }
+.archery__shard {
+  position: absolute;
+  top: 0;
+  width: max(2px, calc(var(--size) * 0.08));
+  height: calc(var(--size) * 0.5);
+  background: linear-gradient(to bottom, oklch(0.42 0.06 60) 0 70%, oklch(0.66 0.2 28) 70%);
+  opacity: 0;
+}
+.archery__shard--l { right: 0; transform-origin: 100% 0; animation: archery-shard-l 520ms var(--ease-out) 60ms forwards; }
+.archery__shard--r { left: 0; transform-origin: 0 0; animation: archery-shard-r 520ms var(--ease-out) 60ms forwards; }
+@keyframes archery-vanish { to { opacity: 0; } }
+@keyframes archery-shard-l {
+  0% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translate(-6cqw, 3cqw) rotate(-70deg); }
+}
+@keyframes archery-shard-r {
+  0% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translate(6cqw, 3cqw) rotate(70deg); }
+}
+
+/* ── 날아가는 화살 — 촉이 위, 자리(left/top)는 촉 끝. 꼬리 뒤로 잔상(::after). ── */
+.archery__arrow {
+  position: absolute;
+  z-index: 5;
+  width: max(6px, calc(var(--size) * 0.2));
+  height: calc(var(--size) * 0.95);
+  translate: -50% 0;
+  transform-origin: 50% 0;
+  background: linear-gradient(to bottom, oklch(0.82 0.01 260) 0 14%, oklch(0.45 0.07 60) 14% 74%, oklch(0.66 0.2 28) 74%);
+  clip-path: polygon(50% 0, 100% 15%, 62% 15%, 62% 74%, 100% 84%, 100% 100%, 50% 92%, 0 100%, 0 84%, 38% 74%, 38% 15%, 0 15%);
+  animation: archery-fly var(--fly) linear forwards;
+}
+/* 잔상은 clip-path 밖이라 따로 — 화살 뒤에 그린다. */
+.archery__arrow::after { content: none; }
+.archery__arrow { filter: drop-shadow(0 calc(var(--size) * 0.3) 2px oklch(1 1 0 / 0)); }
+.archery__arrow--slow { filter: drop-shadow(0 0 3px oklch(1 0 0 / 0.95)); }
+@keyframes archery-fly {
+  0% { left: var(--x0); top: var(--y0); rotate: var(--a0); scale: var(--s0); }
+  25% { left: var(--x1); top: var(--y1); rotate: var(--a1); scale: var(--s1); }
+  50% { left: var(--x2); top: var(--y2); rotate: var(--a2); scale: var(--s2); }
+  75% { left: var(--x3); top: var(--y3); rotate: var(--a3); scale: var(--s3); }
+  100% { left: var(--x4); top: var(--y4); rotate: var(--a4); scale: var(--s4); }
+}
+/* 튕겨 나간 화살 — 테에서 옆으로 빙글 튀어 떨어진다. */
+.archery__bounce {
+  position: absolute;
+  z-index: 5;
+  width: max(5px, calc(var(--size) * 0.16));
+  height: calc(var(--size) * 0.6);
+  translate: -50% 0;
+  transform-origin: 50% 50%;
+  background: linear-gradient(to bottom, oklch(0.82 0.01 260) 0 14%, oklch(0.45 0.07 60) 14% 74%, oklch(0.66 0.2 28) 74%);
+  clip-path: polygon(50% 0, 100% 15%, 62% 15%, 62% 74%, 100% 84%, 100% 100%, 50% 92%, 0 100%, 0 84%, 38% 74%, 38% 15%, 0 15%);
+  animation: archery-bounce 600ms var(--ease-out) forwards;
+}
+.archery__bounce--left { animation-name: archery-bounce-left; }
+@keyframes archery-bounce {
+  0% { transform: translate(0, 0) rotate(-10deg); opacity: 1; }
+  40% { transform: translate(9cqw, -6cqw) rotate(160deg); opacity: 1; }
+  100% { transform: translate(15cqw, 8cqw) rotate(400deg); opacity: 0; }
+}
+@keyframes archery-bounce-left {
+  0% { transform: translate(0, 0) rotate(10deg); opacity: 1; }
+  40% { transform: translate(-9cqw, -6cqw) rotate(-160deg); opacity: 1; }
+  100% { transform: translate(-15cqw, 8cqw) rotate(-400deg); opacity: 0; }
+}
+
+.archery__twinkle {
+  position: absolute;
+  z-index: 6;
+  width: 7cqw;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  background: oklch(0.95 0.12 95);
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  animation: archery-twinkle 420ms var(--ease-out) both;
+}
+@keyframes archery-twinkle {
+  0% { scale: 0; rotate: 0deg; }
+  50% { scale: 1.3; rotate: 45deg; opacity: 1; }
+  100% { scale: 0.6; rotate: 90deg; opacity: 0; }
+}
+
+/* ── 새 — 화살 길을 가로질러 날아간다(연출만). ── */
+.archery__bird {
+  position: absolute;
+  left: 0;
+  z-index: 6;
+  width: 7cqw;
+  aspect-ratio: 1.5;
+  border-radius: 50% 60% 45% 50%;
+  background: oklch(0.42 0.06 250);
+  animation: archery-bird var(--bird-dur) linear var(--bird-delay) both;
+}
+.archery__bird::before {
+  /* 머리·부리 */
+  content: '';
+  position: absolute;
+  right: -18%;
+  top: -12%;
+  width: 46%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 62% 40%, oklch(0.98 0 0) 0 12%, oklch(0.15 0 0) 13% 20%, transparent 21%), oklch(0.42 0.06 250);
+}
+.archery__bird::after {
+  content: '';
+  position: absolute;
+  right: -34%;
+  top: 14%;
+  width: 20%;
+  height: 22%;
+  background: oklch(0.8 0.16 75);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+.archery__wing {
+  position: absolute;
+  left: 18%;
+  bottom: 40%;
+  width: 56%;
+  height: 90%;
+  background: oklch(0.55 0.07 250);
+  clip-path: polygon(0 100%, 30% 0, 100% 100%);
+  transform-origin: 50% 100%;
+  animation: archery-flap 160ms linear infinite alternate;
+}
+.archery__bird--rtl { scale: -1 1; animation-name: archery-bird-rtl; }
+@keyframes archery-bird { from { translate: -12cqw 0; } to { translate: 112cqw 0; } }
+@keyframes archery-bird-rtl { from { translate: 112cqw 0; } to { translate: -12cqw 0; } }
+@keyframes archery-flap { from { scale: 1 1; } to { scale: 1 -0.8; } }
+
+/* ── 사로 아래 궁수(뒷모습). 활 든 손이 화살 출발점(left/top)에 온다. ── */
+.archery__me {
+  position: absolute;
+  z-index: 3;
+  width: clamp(28px, 11cqw, 72px);
+  translate: -82% -39%;
+}
+.archery__mini { display: block; width: 100%; overflow: visible; }
+.archery__mini-shadow { fill: oklch(0.2 0 0 / 0.18); }
+.archery__mini-body { fill: oklch(0.55 0.13 150); }
+.archery__mini-head { fill: oklch(0.55 0.08 55); }
+.archery__mini-hat { fill: oklch(0.42 0.12 150); }
+.archery__mini-feather { fill: none; stroke: oklch(0.63 0.21 28); stroke-width: 2.4; stroke-linecap: round; }
+.archery__mini-bow { fill: none; stroke: oklch(0.45 0.08 55); stroke-width: 2.6; stroke-linecap: round; }
+.archery__mini-string { stroke: oklch(0.95 0 0); stroke-width: 0.8; }
+.archery__me--shot { animation: archery-recoil 260ms var(--ease-out); }
+@keyframes archery-recoil { 30% { translate: -82% -30%; } }
+
+/* ── 화면에 붙은 효과 ── */
+.archery__fx { position: absolute; inset: 0; z-index: 7; pointer-events: none; }
+.archery__quiver {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  gap: 3px;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: oklch(0.2 0.02 260 / 0.55);
+}
+.archery__q {
+  width: 6px;
+  height: 18px;
+  background: linear-gradient(to bottom, oklch(0.9 0.01 260) 0 15%, oklch(0.8 0.08 70) 15% 74%, oklch(0.7 0.19 28) 74%);
+  clip-path: polygon(50% 0, 100% 15%, 64% 15%, 64% 74%, 100% 84%, 100% 100%, 50% 92%, 0 100%, 0 84%, 36% 74%, 36% 15%, 0 15%);
+}
+.archery__q--used { opacity: 0.25; }
+.archery__bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9%;
+  background: oklch(0.12 0 0);
+  animation: archery-bar 220ms var(--ease-out) both;
+}
+.archery__bar--top { top: 0; --from: -100%; }
+.archery__bar--bottom { bottom: 0; --from: 100%; }
+@keyframes archery-bar { from { translate: 0 var(--from); } }
+.archery__wind {
+  position: absolute;
+  inset: 10% 0;
+  background: repeating-linear-gradient(90deg, oklch(1 0 0 / 0.85) 0 9cqw, transparent 9cqw 26cqw);
+  -webkit-mask-image: repeating-linear-gradient(to bottom, transparent 0 7cqw, #000 7cqw 7.6cqw, transparent 7.6cqw 12cqw);
+  mask-image: repeating-linear-gradient(to bottom, transparent 0 7cqw, #000 7cqw 7.6cqw, transparent 7.6cqw 12cqw);
+  animation: archery-wind 500ms linear infinite;
+  opacity: 0.8;
+}
+.archery__wind--left { animation-direction: reverse; }
+@keyframes archery-wind { from { background-position: 0 0; } to { background-position: 26cqw 0; } }
+.archery__flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, oklch(1 0.05 95 / 0.95) 0 8%, oklch(1 0.05 95 / 0.4) 30%, transparent 60%);
+  animation: archery-flash 380ms var(--ease-out) forwards;
+}
+@keyframes archery-flash { from { opacity: 1; scale: 0.6; } to { opacity: 0; scale: 1.6; } }
+.archery__callout {
+  position: absolute;
+  top: 14%;
+  left: 50%;
+  translate: -50% 0;
+  font-size: clamp(22px, 10cqw, 52px);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  color: oklch(0.99 0 0);
+  -webkit-text-stroke: 0.14em oklch(0.22 0.02 260);
+  paint-order: stroke fill;
+  letter-spacing: -0.02em;
+  animation: archery-pop 360ms var(--ease-out) both;
+}
+.archery__callout--hit { color: oklch(0.88 0.17 92); font-size: clamp(28px, 14cqw, 72px); }
+.archery__callout--close { color: oklch(0.8 0.16 60); }
+.archery__callout--ting { color: oklch(0.88 0.08 220); }
+.archery__callout--wind,
+.archery__callout--bird { top: auto; bottom: 14%; font-size: clamp(18px, 7cqw, 36px); }
+@keyframes archery-pop {
+  0% { scale: 0.3; rotate: -10deg; opacity: 0; }
+  60% { scale: 1.15; rotate: 3deg; opacity: 1; }
+  100% { scale: 1; rotate: -4deg; }
+}
+.archery__range--shake { animation: archery-shake 220ms linear; }
+.archery__range--hit { animation: archery-shake 260ms linear; }
+@keyframes archery-shake {
+  0%, 100% { translate: 0 0; }
+  20% { translate: -4px 2px; }
+  40% { translate: 4px -2px; }
+  60% { translate: -3px -1px; }
+  80% { translate: 2px 1px; }
+}
+
+/* 꽃가루 — 당첨 과녁 가운데에서 터진다. */
+.archery__confetti { position: absolute; left: 50%; top: 50%; z-index: 3; }
+.archery__confetti span {
+  position: absolute;
+  left: -2.5px;
+  top: -4px;
+  width: 5px;
+  height: 8px;
+  border-radius: 1px;
+  background: oklch(0.76 0.17 var(--h));
+  opacity: 0;
+  animation: archery-confetti 1000ms var(--ease-out) 40ms forwards;
+}
+@keyframes archery-confetti {
+  0% { opacity: 1; transform: rotate(var(--a)) translateY(calc(var(--size) * -0.35)) rotate(0deg); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--size) * -2 * var(--d))) rotate(320deg); }
+}
+
+/* ── 컷신 — 궁수 옆모습 클로즈업 ── */
+.archery__cut { position: absolute; inset: 0; z-index: 8; overflow: hidden; }
+.archery__cut-bg {
+  position: absolute;
+  inset: -6%;
+  background:
+    radial-gradient(ellipse 30% 9% at 22% 22%, oklch(1 0 0 / 0.8) 60%, transparent 62%),
+    radial-gradient(ellipse 60% 22% at 80% 76%, oklch(0.74 0.1 145) 60%, transparent 62%),
+    linear-gradient(to bottom, oklch(0.9 0.05 225) 0 70%, oklch(0.76 0.12 140) 70%);
+  animation: archery-cut-in 200ms var(--ease-out) both;
+}
+[data-theme='dark'] .archery__cut-bg {
+  background:
+    radial-gradient(circle 4% at 84% 18%, oklch(0.95 0.04 95) 70%, transparent 74%),
+    radial-gradient(ellipse 60% 22% at 80% 76%, oklch(0.4 0.07 150) 60%, transparent 62%),
+    linear-gradient(to bottom, oklch(0.32 0.05 260) 0 70%, oklch(0.36 0.07 150) 70%);
+}
+@keyframes archery-cut-in { from { opacity: 0; scale: 1.15; } }
+.archery__hero {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: 96%;
+  max-height: 84%;
+  translate: -50% -50%;
+  overflow: visible;
+  transform-origin: 62% 55%;
+  animation: archery-push var(--draw) var(--ease-out) forwards;
+}
+.archery__cut--final .archery__hero { animation-name: archery-push-final; }
+@keyframes archery-push { from { scale: 1; } to { scale: 1.16; } }
+@keyframes archery-push-final { from { scale: 1; } to { scale: 1.32; } }
+.archery__h-shadow { fill: oklch(0.2 0 0 / 0.2); }
+.archery__h-quiver rect { fill: oklch(0.48 0.09 55); }
+.archery__h-fletch { fill: oklch(0.63 0.21 28); }
+.archery__h-leg { fill: oklch(0.38 0.05 60); }
+.archery__h-body { fill: oklch(0.58 0.14 150); stroke: oklch(0.35 0.08 150); stroke-width: 2; }
+.archery__h-belt { fill: oklch(0.42 0.07 60); }
+.archery__h-arm { stroke: oklch(0.58 0.14 150); stroke-width: 11; stroke-linecap: round; }
+.archery__h-head { fill: oklch(0.88 0.06 60); stroke: oklch(0.45 0.06 50); stroke-width: 2; }
+.archery__h-hat { fill: oklch(0.45 0.13 150); stroke: oklch(0.3 0.08 150); stroke-width: 2; stroke-linejoin: round; }
+.archery__h-feather { fill: oklch(0.63 0.21 28); }
+.archery__h-eye-open { fill: oklch(0.18 0.01 260); }
+.archery__h-glint { fill: oklch(1 0 0); }
+.archery__h-eye-focus { fill: none; stroke: oklch(0.18 0.01 260); stroke-width: 3; stroke-linecap: round; opacity: 0; }
+.archery__h-brow { stroke: oklch(0.3 0.04 50); stroke-width: 3; stroke-linecap: round; }
+.archery__h-blush { fill: oklch(0.75 0.13 15 / 0.6); }
+.archery__h-mouth { fill: none; stroke: oklch(0.35 0.06 30); stroke-width: 2.4; stroke-linecap: round; }
+.archery__h-bow { fill: none; stroke: oklch(0.45 0.09 55); stroke-width: 7; stroke-linecap: round; }
+.archery__h-string { stroke: oklch(0.97 0.01 90); stroke-width: 1.8; transform-box: view-box; }
+.archery__h-string--top { transform-origin: 158px 52px; animation: archery-pull-top var(--draw) var(--ease-out) forwards; }
+.archery__h-string--bottom { transform-origin: 158px 148px; animation: archery-pull-bottom var(--draw) var(--ease-out) forwards; }
+.archery__h-hand { fill: oklch(0.88 0.06 60); stroke: oklch(0.45 0.06 50); stroke-width: 2; }
+.archery__h-shaft { stroke: oklch(0.45 0.07 60); stroke-width: 4; }
+.archery__h-tip { fill: oklch(0.75 0.01 260); stroke: oklch(0.4 0.01 260); stroke-width: 1; }
+.archery__h-fletching { fill: oklch(0.63 0.21 28); }
+.archery__h-arrow,
+.archery__h-pull { animation: archery-pull-arrow var(--draw) var(--ease-out) forwards; }
+/* 시위를 다 당기면 눈을 가늘게 뜨고 겨눈다. */
+.archery__h-eye-open { animation: archery-eye-open var(--draw) step-end forwards; }
+.archery__h-eye-focus { animation: archery-eye-focus var(--draw) step-end forwards; }
+@keyframes archery-eye-open { 45% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes archery-eye-focus { 45% { opacity: 1; } 100% { opacity: 1; } }
+/* 끝(위·아래)을 축으로 θ=32° 돌리고 1/cos θ 만큼 늘리면 오늬가 48·tan θ ≈ 30 만큼 뒤로 간다. */
+@keyframes archery-pull-top { to { transform: rotate(32deg) scale(1, 1.179); } }
+@keyframes archery-pull-bottom { to { transform: rotate(-32deg) scale(1, 1.179); } }
+@keyframes archery-pull-arrow {
+  0% { transform: translateX(0); }
+  86% { transform: translateX(-29px); }
+  /* 다 당긴 채 힘이 들어가 파르르 */
+  90% { transform: translate(-30px, -0.6px); }
+  94% { transform: translate(-29.4px, 0.6px); }
+  100% { transform: translateX(-30px); }
+}
+
+/* 놓음 — 시위가 튕겨 돌아오며 떨고, 화살은 오른쪽으로 튀어 나간다. */
+.archery__cut--release .archery__h-string--top { animation: archery-snap-top 220ms linear forwards; }
+.archery__cut--release .archery__h-string--bottom { animation: archery-snap-bottom 220ms linear forwards; }
+.archery__cut--release .archery__h-arrow { animation: archery-shoot 150ms cubic-bezier(0.5, 0, 1, 0.6) forwards; }
+.archery__cut--release .archery__h-pull { animation: archery-follow 200ms var(--ease-out) forwards; }
+.archery__cut--release .archery__h-eye-open { animation: none; opacity: 0; }
+.archery__cut--release .archery__h-eye-focus { animation: none; opacity: 1; }
+.archery__cut--release .archery__hero { animation: archery-kick 220ms var(--ease-out) forwards; }
+@keyframes archery-snap-top {
+  0% { transform: rotate(32deg) scale(1, 1.179); }
+  30% { transform: rotate(-9deg) scale(1, 1.012); }
+  60% { transform: rotate(4deg) scale(1, 1.003); }
+  100% { transform: rotate(0deg) scale(1, 1); }
+}
+@keyframes archery-snap-bottom {
+  0% { transform: rotate(-32deg) scale(1, 1.179); }
+  30% { transform: rotate(9deg) scale(1, 1.012); }
+  60% { transform: rotate(-4deg) scale(1, 1.003); }
+  100% { transform: rotate(0deg) scale(1, 1); }
+}
+@keyframes archery-shoot {
+  from { transform: translateX(-30px); opacity: 1; }
+  to { transform: translateX(260px); opacity: 0.6; }
+}
+@keyframes archery-follow { from { transform: translateX(-30px); } to { transform: translate(-42px, -4px); } }
+@keyframes archery-kick {
+  0% { scale: 1.16; translate: -50% -50%; }
+  30% { scale: 1.1; translate: calc(-50% - 6px) -50%; }
+  100% { scale: 1.12; translate: -50% -50%; }
+}
+.archery__cut--final.archery__cut--release .archery__hero { animation-name: archery-kick-final; }
+@keyframes archery-kick-final {
+  0% { scale: 1.32; translate: -50% -50%; }
+  30% { scale: 1.22; translate: calc(-50% - 8px) -50%; }
+  100% { scale: 1.26; translate: -50% -50%; }
+}
+
+/* 집중 — 가장자리가 어두워지며 조여 든다. 마지막 화살은 집중선까지. */
+.archery__vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 62% 52%, transparent 38%, oklch(0.1 0 0 / 0.7) 100%);
+  opacity: 0;
+  animation: archery-fade-in var(--draw) var(--ease-out) forwards;
+}
+.archery__cut--final .archery__vignette { background: radial-gradient(ellipse at 62% 52%, transparent 30%, oklch(0.1 0.04 20 / 0.85) 100%); }
+@keyframes archery-fade-in { to { opacity: 1; } }
+.archery__focus {
+  position: absolute;
+  inset: -20%;
+  background: repeating-conic-gradient(from 0deg at 50% 50%, transparent 0 4deg, oklch(1 0 0 / 0.6) 4deg 5deg, transparent 5deg 9deg);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 26%, #000 60%);
+  mask-image: radial-gradient(circle at 50% 50%, transparent 26%, #000 60%);
+  animation: archery-focus 260ms steps(2) infinite;
+}
+[data-theme='dark'] .archery__focus { background: repeating-conic-gradient(from 0deg at 50% 50%, transparent 0 4deg, oklch(1 0 0 / 0.35) 4deg 5deg, transparent 5deg 9deg); }
+@keyframes archery-focus { from { rotate: 0deg; } to { rotate: 4deg; } }
+/* 속도선 — 놓는 순간 화면을 가로지른다. */
+.archery__speed {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: repeating-linear-gradient(90deg, oklch(1 0 0 / 0.9) 0 16cqw, transparent 16cqw 30cqw);
+  -webkit-mask-image: repeating-linear-gradient(to bottom, transparent 0 4cqw, #000 4cqw 4.5cqw, transparent 4.5cqw 7.3cqw);
+  mask-image: repeating-linear-gradient(to bottom, transparent 0 4cqw, #000 4cqw 4.5cqw, transparent 4.5cqw 7.3cqw);
+}
+.archery__cut--release .archery__speed { opacity: 1; animation: archery-speed 220ms linear infinite; }
+@keyframes archery-speed { from { background-position: 0 0; } to { background-position: 60cqw 0; } }
+.archery__cut .archery__bar { animation-duration: 260ms; height: 10%; z-index: 1; }
+.archery__caption {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: 1.5%;
+  translate: -50% 0;
+  color: oklch(0.97 0 0);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+.archery__cut--final .archery__caption { color: oklch(0.88 0.17 92); font-size: var(--fs-sm); }
+.archery__sfx {
+  position: absolute;
+  z-index: 2;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  color: oklch(0.99 0 0);
+  -webkit-text-stroke: 0.14em oklch(0.22 0.02 260);
+  paint-order: stroke fill;
+}
+.archery__sfx--draw {
+  left: 6%;
+  top: 15%;
+  font-size: clamp(16px, 7cqw, 34px);
+  opacity: 0;
+  rotate: -8deg;
+  animation: archery-creak var(--draw) linear forwards;
+}
+@keyframes archery-creak {
+  0%, 20% { opacity: 0; translate: 0 0; }
+  30% { opacity: 1; translate: -1px 0; }
+  45% { translate: 1px -1px; }
+  60% { translate: -1px 1px; }
+  75% { translate: 1px 0; }
+  100% { opacity: 1; translate: 0 0; scale: 1.15; }
+}
+.archery__sfx--shoot {
+  right: 5%;
+  top: 22%;
+  font-size: clamp(30px, 15cqw, 76px);
+  color: oklch(0.88 0.17 92);
+  opacity: 0;
+}
+.archery__cut--release .archery__sfx--draw { animation: none; opacity: 0; }
+.archery__cut--release .archery__sfx--shoot { animation: archery-pop 220ms var(--ease-out) forwards; }
+/* 날기 시작하면 컷신이 번지며 사로로 넘어간다. */
+.archery__cut--out { animation: archery-cut-out 200ms var(--ease-out) forwards; pointer-events: none; }
+@keyframes archery-cut-out { to { opacity: 0; scale: 1.15; } }
+
+.archery__status { margin: 0; font-size: var(--fs-sm); font-weight: 700; color: var(--color-text); text-align: center; }
+
+/* 동작 줄이기 — 앱이 "움직임 켜기" 를 반영해 둔 data-motion 을 본다(기기 설정만 보면 켜 둔 사람도 멈춘다). */
+:root[data-motion='reduced'] {
+  .archery *,
+  .archery__range { animation: none !important; transition: none !important; }
+  .archery__confetti, .archery__cut, .archery__fx { display: none; }
+}

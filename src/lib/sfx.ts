@@ -258,3 +258,65 @@ export function readTranslateY(el: HTMLElement): number {
   if (!t || t === 'none') return 0;
   return new DOMMatrixReadOnly(t).m42;
 }
+
+/* ───────── 활쏘기 ─────────
+ * 활쏘기 소리는 위 SOUNDS 표 밖에 둔다 — 다른 게임 작업과 같은 줄을 고치지 않게(10/15 동시 작업).
+ * 켜기·최소 간격·오디오 없음 처리는 sfx() 와 같다.
+ */
+const ARCHERY_SOUNDS = {
+  /** 활시위를 당길 때 — 끼이익. 낮은 톱니파가 조금씩 올라간다. */
+  creak: (ac: AudioContext) => {
+    tone(ac, { hz: 140, to: 210, dur: 0.5, type: 'sawtooth', vol: 0.018 });
+    for (let i = 0; i < 4; i += 1) noise(ac, { dur: 0.04, hz: rand(600, 900), q: 6, vol: 0.03, at: i * 0.11 });
+  },
+  /** 시위를 놓을 때 — 퉁 + 바람 가르는 푸슝. */
+  twang: (ac: AudioContext) => {
+    tone(ac, { hz: 220, to: 110, dur: 0.18, type: 'triangle', vol: 0.08 });
+    noise(ac, { dur: 0.3, hz: 600, to: 4000, q: 1.4, vol: 0.09, at: 0.02 });
+  },
+  /** 과녁에 꽂힐 때 — 퍽. */
+  thwack: (ac: AudioContext) => {
+    noise(ac, { dur: 0.08, hz: 900, to: 300, q: 0.8, vol: 0.14, filter: 'lowpass' });
+    tone(ac, { hz: 260, to: 120, dur: 0.1, type: 'sine', vol: 0.08 });
+  },
+  /** 테에 맞고 튕길 때 — 팅. */
+  ting: (ac: AudioContext) => {
+    tone(ac, { hz: 2400, to: 2200, dur: 0.3, type: 'sine', vol: 0.05 });
+    tone(ac, { hz: 3600, dur: 0.12, type: 'sine', vol: 0.025 });
+  },
+  /** 새가 지나갈 때 — 짹짹. */
+  tweet: (ac: AudioContext) => {
+    tone(ac, { hz: 2600, to: 3400, dur: 0.07, type: 'sine', vol: 0.035 });
+    tone(ac, { hz: 2800, to: 3600, dur: 0.07, type: 'sine', vol: 0.035, at: 0.11 });
+  },
+} satisfies Record<string, (ac: AudioContext) => void>;
+
+export type ArcherySfx = keyof typeof ARCHERY_SOUNDS;
+const archeryLast = new Map<ArcherySfx, number>();
+
+/** 활쏘기 소리 한 번. 이름이 위 SOUNDS 표에 있으면 sfx() 로 넘긴다. */
+export function archerySfx(name: ArcherySfx | SfxName): void {
+  if (!(name in ARCHERY_SOUNDS)) {
+    sfx(name as SfxName);
+    return;
+  }
+  if (!enabled()) return;
+  const key = name as ArcherySfx;
+  const now = performance.now();
+  if (now - (archeryLast.get(key) ?? -Infinity) < 60) return;
+  archeryLast.set(key, now);
+  const ac = audio();
+  if (!ac) return;
+  try {
+    ARCHERY_SOUNDS[key](ac);
+  } catch {
+    // 오디오 노드를 못 만드는 환경 — 소리 없이 넘어간다.
+  }
+}
+
+/** 활쏘기 소리 일정. sfxLater 와 같이 취소 함수를 돌려준다. */
+export function archerySfxLater(plan: [ms: number, name: ArcherySfx | SfxName][]): () => void {
+  if (!enabled()) return () => {};
+  const timers = plan.map(([ms, name]) => window.setTimeout(() => archerySfx(name), ms));
+  return () => timers.forEach((t) => window.clearTimeout(t));
+}
