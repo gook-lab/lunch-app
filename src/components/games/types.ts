@@ -36,7 +36,7 @@ export interface GameProps {
   onActivity?: () => void;
 }
 
-export type GameMode = 'wheel' | 'ladder' | 'slot' | 'pinball' | 'cards' | 'memory' | 'tournament' | 'gacha' | 'plinko' | 'dice' | 'horse' | 'racing' | 'bomb' | 'balloon' | 'fishing';
+export type GameMode = 'wheel' | 'ladder' | 'slot' | 'pinball' | 'cards' | 'memory' | 'tournament' | 'gacha' | 'plinko' | 'dice' | 'horse' | 'racing' | 'bomb' | 'balloon' | 'fishing' | 'archery' | 'curling' | 'plane';
 
 /** label 은 칩에, action 은 실행 버튼에 쓴다. "돌리기" 는 슬롯·핀볼에 안 맞는다. */
 export const GAME_MODES: { id: GameMode; label: string; action: string }[] = [
@@ -55,6 +55,9 @@ export const GAME_MODES: { id: GameMode; label: string; action: string }[] = [
   { id: 'bomb', label: '폭탄', action: '폭탄 넘기기' },
   { id: 'balloon', label: '풍선', action: '풍선 터뜨리기' },
   { id: 'fishing', label: '낚시', action: '낚싯줄 던지기' },
+  { id: 'archery', label: '활쏘기', action: '활 쏘기' },
+  { id: 'curling', label: '컬링', action: '스톤 밀기' },
+  { id: 'plane', label: '종이비행기', action: '비행기 날리기' },
 ];
 
 /** 방식 단추 그림. 글자 이름은 그대로 두고 그림은 보조로만 쓴다. */
@@ -74,6 +77,9 @@ export const MODE_ICON: Record<GameMode, string> = {
   bomb: '💣',
   balloon: '🎈',
   fishing: '🎣',
+  archery: '🏹',
+  curling: '🥌',
+  plane: '✈️',
 };
 
 export function actionLabel(mode: GameMode): string {
@@ -83,10 +89,10 @@ export function actionLabel(mode: GameMode): string {
 /**
  * 모드마다 연출 길이가 다르다. 결과는 같다.
  *
- * 핀볼·플링코·주사위·경마·레이싱·폭탄·풍선·낚시는 여기 없다 — 재생 길이가 경기마다 달라 컴포넌트가 정한다.
+ * 핀볼·플링코·주사위·경마·레이싱·폭탄·풍선·낚시·활쏘기·컬링·종이비행기는 여기 없다 — 재생 길이가 경기마다 달라 컴포넌트가 정한다.
  * 여기 적어두면 두 곳이 어긋날 수 있다. 짝 맞추기도 없다 — 사람이 두는 만큼 걸린다.
  */
-export const SPIN_MS: Record<Exclude<GameMode, 'pinball' | 'memory' | 'plinko' | 'dice' | 'horse' | 'racing' | 'bomb' | 'balloon' | 'fishing'>, number> = {
+export const SPIN_MS: Record<Exclude<GameMode, 'pinball' | 'memory' | 'plinko' | 'dice' | 'horse' | 'racing' | 'bomb' | 'balloon' | 'fishing' | 'archery' | 'curling' | 'plane'>, number> = {
   wheel: 2600,
   // 사다리·슬롯은 핀볼에 비해 너무 빨리 끝나 긴장이 쌓일 틈이 없었다(10/9 손맛 리뷰 5·4점).
   ladder: 2800,

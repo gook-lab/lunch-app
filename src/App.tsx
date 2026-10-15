@@ -26,6 +26,9 @@ import {
   CarRace,
   Cards,
   Fishing,
+  Archery,
+  Curling,
+  PaperPlane,
   Dice,
   Gacha,
   HorseRace,
@@ -1116,6 +1119,9 @@ export default function App() {
                         }
                         if (mode === 'balloon') return <Balloon {...game} />;
                         if (mode === 'fishing') return <Fishing {...game} />;
+                        if (mode === 'archery') return <Archery {...game} />;
+                        if (mode === 'curling') return <Curling {...game} />;
+                        if (mode === 'plane') return <PaperPlane {...game} />;
                         return <Wheel {...game} />;
                       })()}
                     </GameBoundary>

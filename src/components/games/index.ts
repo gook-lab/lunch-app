@@ -1,5 +1,5 @@
 /**
- * 게임 열다섯 가지 — 고른 것만 받는다(lazy.tsx). 돌림판은 첫 화면 기본값이라 바로 싣는다.
+ * 게임 열여덟 가지 — 고른 것만 받는다(lazy.tsx). 돌림판은 첫 화면 기본값이라 바로 싣는다.
  */
 import { lazyGame } from './lazy';
 import { preloadDeferred } from '../deferred';
@@ -19,11 +19,14 @@ export const CarRace = lazyGame(() => import('./PixelRace').then((m) => m.CarRac
 export const Bomb = lazyGame(() => import('./Bomb').then((m) => m.Bomb));
 export const Balloon = lazyGame(() => import('./Balloon').then((m) => m.Balloon));
 export const Fishing = lazyGame(() => import('./Fishing').then((m) => m.Fishing));
+export const Archery = lazyGame(() => import('./Archery').then((m) => m.Archery));
+export const Curling = lazyGame(() => import('./Curling').then((m) => m.Curling));
+export const PaperPlane = lazyGame(() => import('./PaperPlane').then((m) => m.PaperPlane));
 
 /** 나머지 게임을 미리 받는다. 첫 화면을 그린 뒤 쉬는 시간에, 테스트는 시작 전에 부른다. */
 export function preloadGames(): Promise<void> {
   return Promise.all(
-    [Ladder, Slot, Pinball, Cards, Memory, Tournament, Gacha, Plinko, Dice, HorseRace, CarRace, Bomb, Balloon, Fishing]
+    [Ladder, Slot, Pinball, Cards, Memory, Tournament, Gacha, Plinko, Dice, HorseRace, CarRace, Bomb, Balloon, Fishing, Archery, Curling, PaperPlane]
       .map((g) => g.preload())
       // 설정·목록도 같은 쉬는 시간에 받는다(components/deferred.tsx).
       .concat(preloadDeferred()),
