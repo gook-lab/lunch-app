@@ -449,6 +449,17 @@ describe('한 줄 결과에서 바로 결정', () => {
   });
 });
 
+describe('결과 지우기', () => {
+  it('결과 줄의 ✕ 로 판을 내려놓고 같은 게임의 실행 단추로 돌아온다', () => {
+    startWheel();
+    act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
+    fireEvent.click(screen.getByRole('button', { name: '닫고 게임 보기' }));
+    fireEvent.click(screen.getByRole('button', { name: '결과 지우기' }));
+    expect(card()).toBeNull();
+    expect(runButton().textContent).toMatch(/^돌리기/);
+  });
+});
+
 describe('사다리 — 사용자가 고르는 출발점', () => {
   it('번호를 누르면 바로 내려가고, 닿는 순간 가린 칸이 열리며 당첨 칸이 카드와 같다', () => {
     render(<App />);

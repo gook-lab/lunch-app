@@ -2975,6 +2975,20 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .result-bar__meta { flex: none; color: var(--color-neutral-700); font-size: var(--fs-sm); }
 .result-bar__actions { display: flex; flex: none; gap: var(--space-1); }
 .result-bar__actions > * { height: 40px; min-height: 0; padding-inline: var(--space-3); }
+.result-bar__actions > .result-bar__clear {
+  flex: none;
+  width: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-neutral-800);
+  font: inherit;
+  font-size: var(--fs-md);
+  cursor: pointer;
+}
+.result-bar__clear:hover { background: var(--color-neutral-200); color: var(--color-text); }
+.result-bar__clear:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 @media (max-width: 959px) {
   .result-bar {
     position: sticky;
@@ -2990,6 +3004,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   .result-bar__text { flex-basis: 100%; padding-left: var(--space-1); }
   .result-bar__actions { flex: 1 1 100%; }
   .result-bar__actions > * { flex: 1; padding-inline: var(--space-2); }
+  .result-bar__actions > .result-bar__clear { flex: none; }
 }
 
 /* 화면 진입 — 탭을 열 때 살짝 올라오며 나타난다(MODUL reveal 프리셋: slow · decel).

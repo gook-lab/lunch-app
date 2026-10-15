@@ -304,6 +304,16 @@ export default function App() {
    */
   const fitBoard = wide && !expanded && !['slot', 'pinball', 'tournament'].includes(mode);
 
+  // 지난 판을 내려놓고 처음 화면으로. 결과 줄의 ✕ 와 방식 바꾸기가 같이 쓴다. 예전엔 결과를 지우려면
+  // 다른 게임으로 갔다 와야 했다(10/16 사용자).
+  const clearBoard = useCallback(() => {
+    setSpinning(false);
+    closeResult();
+    setBoard(null);
+    setWinner(null);
+    setWinnerIndex(null);
+  }, [closeResult]);
+
   // 방식을 바꾸면 지난 판을 지운다. 돌림판 결과 카드를 띄운 채 사다리로
   // 넘어가면 사다리는 이미 당첨이 정해진 그림으로 나와 "안 돌렸는데 결과가
   // 있다" 로 읽힌다. 모드 칩은 연출 중에 잠겨 있으니 여기서 연출을 끊을
@@ -314,11 +324,7 @@ export default function App() {
       // 잠기기 전에 도착한다. 판만 비우고 진행 상태를 두면 새 게임판이
       // winnerIndex 없이 "진행 중" 에 갇혀 워치독(SPIN_TIMEOUT_MS, 30초)까지 기다린다(10/8 실측).
       // 탭 이동(goTab)처럼 연출을 끊는다.
-      setSpinning(false);
-      closeResult();
-      setBoard(null);
-      setWinner(null);
-      setWinnerIndex(null);
+      clearBoard();
       setMode(next);
       try {
         localStorage.setItem('lunch-app:mode', next);
@@ -326,7 +332,7 @@ export default function App() {
         // 시크릿 창에서는 저장이 막힌다. 동작에는 영향 없다.
       }
     },
-    [closeResult],
+    [clearBoard],
   );
 
   const result = useMemo(() => selectCandidates(places, visits, filters, today), [places, visits, filters, today]);
@@ -1306,6 +1312,9 @@ export default function App() {
                       <Button variant="secondary" onClick={spin} disabled={spinning}>
                         {confirmed ? '그래도 다시 하기' : '다시 하기'}
                       </Button>
+                      <button type="button" className="result-bar__clear" aria-label="결과 지우기" title="결과 지우기" onClick={clearBoard}>
+                        ✕
+                      </button>
                     </div>
                   </div>
                 ) : gate ? null : (
