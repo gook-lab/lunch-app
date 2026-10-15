@@ -766,6 +766,39 @@ export default function App() {
     mode === 'pinball' && boardBalls && winnerIndex !== null && boardBalls.some((n) => n !== boardBalls[0])
       ? { mine: boardBalls[winnerIndex] ?? 1, total: boardBalls.reduce((a, n) => a + n, 0) }
       : null;
+  // 판 옵션 두 개(오늘 나온 곳 빼기 · 결과 바로 보기). 이 브라우저에만 남는다.
+  const stageOpts = gate ? null : (
+    <div className="stage__opts" role="group" aria-label="게임 옵션">
+      <button
+        type="button"
+        className="stage__opt"
+        aria-pressed={skipShown}
+        onClick={toggleSkipShown}
+        disabled={spinning}
+      >
+        <span className="stage__optBox" aria-hidden="true">{skipShown ? '✓' : ''}</span>
+        오늘 나온 곳 빼기
+      </button>
+      <button
+        type="button"
+        className="stage__opt"
+        aria-pressed={quickOn}
+        onClick={toggleQuick}
+        disabled={spinning}
+      >
+        <span className="stage__optBox" aria-hidden="true">{quickOn ? '✓' : ''}</span>
+        결과 바로 보기
+      </button>
+      {skipShown && (playable.skipped > 0 || playable.restarted) && (
+        <p className="muted small stage__optNote" aria-live="polite">
+          {playable.restarted
+            ? '오늘 나온 곳을 다 봐서 처음부터 다시 해요'
+            : `오늘 나온 ${playable.skipped}곳은 빼고 해요`}
+        </p>
+      )}
+    </div>
+  );
+
   const ticket = winner ? (
     <div className="card card--result ticket">
       {/* 어떤 게임으로 뽑았는지 남긴다. 결과 모달이 게임판을 가리므로 여기서 이어 준다. */}
@@ -1086,6 +1119,8 @@ export default function App() {
                   {/* 안내 한 줄과 크게 보기를 한 줄에 둔다. 크게 보기 혼자 한 줄을 먹어 게임판이 밀렸다(10/9 UI 점검). */}
                   <GameTitle mode={mode} />
                   {!expanded && weighted && <p className="muted small stage__hint">핀볼은 공이 많을수록 뽑힐 확률이 높아요</p>}
+                  {/* 데스크톱은 제목 줄 오른쪽에 둔다. 실행 단추 아래 한 줄을 따로 먹어 판이 그만큼 낮았다(10/16 사용자). */}
+                  {wide && !expanded && stageOpts}
                   <button
                     type="button"
                     className="stage__expand"
@@ -1290,38 +1325,8 @@ export default function App() {
                   </Button>
                 )}
 
-                {/* 판 옵션 두 개. 이 브라우저에만 남는다. */}
-                {!gate && (
-                  <div className="stage__opts" role="group" aria-label="게임 옵션">
-                    <button
-                      type="button"
-                      className="stage__opt"
-                      aria-pressed={skipShown}
-                      onClick={toggleSkipShown}
-                      disabled={spinning}
-                    >
-                      <span className="stage__optBox" aria-hidden="true">{skipShown ? '✓' : ''}</span>
-                      오늘 나온 곳 빼기
-                    </button>
-                    <button
-                      type="button"
-                      className="stage__opt"
-                      aria-pressed={quickOn}
-                      onClick={toggleQuick}
-                      disabled={spinning}
-                    >
-                      <span className="stage__optBox" aria-hidden="true">{quickOn ? '✓' : ''}</span>
-                      결과 바로 보기
-                    </button>
-                    {skipShown && (playable.skipped > 0 || playable.restarted) && (
-                      <p className="muted small stage__optNote" aria-live="polite">
-                        {playable.restarted
-                          ? '오늘 나온 곳을 다 봐서 처음부터 다시 해요'
-                          : `오늘 나온 ${playable.skipped}곳은 빼고 해요`}
-                      </p>
-                    )}
-                  </div>
-                )}
+                {/* 휴대폰은 실행 단추 아래. 데스크톱은 게임 제목 줄 오른쪽(stageOpts). */}
+                {!wide && stageOpts}
 
                 {/* 데스크톱에선 예측·안내 한 줄을 오른쪽 칸으로 옮긴다. 판이 그만큼 높아진다(10/14 리빌딩). */}
                 {!wide && predictions}

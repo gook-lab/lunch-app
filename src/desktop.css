@@ -97,27 +97,26 @@
     align-items: stretch;
     gap: var(--space-3) var(--space-6);
   }
-  /* 지도 칸은 오른쪽 칸과 같은 두 줄(subgrid)을 쓴다 — 칩·안내는 회사 카드 줄, 지도는 그 아래 줄.
-     그래서 지도와 오른쪽 칸의 위·아래 끝이 늘 맞는다. */
+  /* 지도 칸은 칩·안내 바로 아래부터 끝까지 지도. 예전엔 오른쪽 칸과 같은 두 줄(subgrid)을 써 지도 윗선을
+     맞췄는데, 오른쪽 위(회사 카드 + 찾기)가 칩·안내보다 70px 남짓 높아 칩 위가 그만큼 비었다(10/16 사용자).
+     두 칸의 위·아래 끝만 맞춘다. */
   .map > .map__main {
     grid-column: 1;
     grid-row: 1 / 3;
     position: static;
     min-height: 0;
-    display: grid;
-    grid-template-rows: subgrid;
-    row-gap: var(--space-3);
-  }
-  .map__main > .map__mainHead {
-    grid-row: 1;
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
+    gap: var(--space-3);
+  }
+  .map__main > .map__mainHead {
+    display: flex;
+    flex-direction: column;
     gap: var(--space-2);
     min-width: 0;
   }
   .map__main > .map__mainHead > p { margin: 0; }
-  .map__main > .map__frame { grid-row: 2; min-height: 0; }
+  .map__main > .map__frame { flex: 1 1 auto; min-height: 0; }
   /* 오른쪽 칸의 마지막 상자(가게 카드·근처 목록)는 지도 아래 끝까지 채운다. */
   .map > .map__side--body > :last-child { flex-grow: 1; }
   .map__main .map__canvas { height: 100%; }
@@ -155,7 +154,9 @@
   .stage:not(.stage--full) { position: relative; }
   .stage:not(.stage--full) .stage__expand { position: absolute; top: var(--space-4); right: var(--space-4); }
   .stage:not(.stage--full) > .catbar-wrap { padding-right: 112px; }
-  .stage:not(.stage--full) > .stage__main > .stage__top:not(:has(> p)) { display: contents; }
+  /* 제목 줄: 게임 제목 · (핀볼 안내) · 판 옵션을 한 줄에. 크게 보기 단추는 위에서 absolute 로 뺐다. */
+  .stage:not(.stage--full) > .stage__main > .stage__top { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+  .stage:not(.stage--full) > .stage__main > .stage__top > .stage__opts { margin-left: auto; }
 }
 
 /*
@@ -268,10 +269,23 @@
 }
 
 /*
- * 낮은 데스크톱 화면(높이 1000px 미만)에서 게임 레일을 줄인다. 게임이 스물두 가지라 64px 칸 11줄이
- * 1440×900 에서 마지막 줄이 잘렸다(10/15). 칸 높이·여백만 줄이고 2열 배치는 그대로다.
+ * 게임 레일은 무대 높이를 다 쓴다. 칸 높이를 숫자로 두니(64px, 낮은 화면 50px) 큰 화면에선 레일 아래가
+ * 200px 가까이 비고, 낮은 화면에선 아이콘이 칸 위에 붙었다(10/16 사용자). 11줄이 남는 높이를 나눠 갖고,
+ * 칸 안에서 아이콘·이름을 가운데에 둔다. 아주 낮은 창에선 44px 아래로는 줄이지 않고 레일이 스크롤한다.
  */
-@media (min-width: 960px) and (max-height: 999px) {
-  .stage:not(.stage--full) > .modebar .modebar__item { min-height: 50px; padding: var(--space-1); gap: 0; }
-  .stage:not(.stage--full) > .modebar .modebar__icon { font-size: var(--fs-md, 1rem); }
+@media (min-width: 960px) {
+  .stage:not(.stage--full) > .modebar {
+    align-self: stretch;
+    height: 100%;
+    grid-auto-rows: minmax(44px, 1fr);
+    align-content: stretch;
+  }
+  .stage:not(.stage--full) > .modebar .modebar__item {
+    min-height: 0;
+    justify-content: center;
+    gap: 4px;
+    padding: var(--space-1);
+    line-height: 1.2;
+  }
+  .stage:not(.stage--full) > .modebar .modebar__icon { font-size: 20px; line-height: 1; }
 }
