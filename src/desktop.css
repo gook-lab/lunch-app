@@ -174,8 +174,8 @@
   overflow: auto;
 }
 .stage--full .wheel { width: min(86vw, 640px, 100cqh - 72px); } /* 판 아래 진행자 줄(약 56px)까지 */
-.stage--full .dice--big { width: min(520px, 94vw, 100cqh - 16px); }
-.stage--full .ladder { width: min(92vw, 760px, (100cqh - 204px) / 0.79); }
+.stage--full .dice--big { width: min(520px, 94vw, 100cqh - 64px); } /* 판 아래 나온 눈·상태 한 줄(약 46px)까지 */
+.stage--full .ladder { width: min(92vw, 760px, (100cqh - 236px) / 0.79); } /* 바닥 칸 아래 상태 한 줄(약 30px)까지 */
 .stage--full .gacha--big { width: min(380px, 92vw, (100cqh - 142px) / 0.84); }
 .stage--full .plinko--big { width: min(560px, 94vw, (100cqh - 136px) * var(--fit, 0.966)); } /* 판 높이 = 폭 ÷ --fit(후보 수마다 다르다, Plinko.tsx) */
 .stage--full .bomb--big { width: min(640px, 94vw, 100cqh - 56px); } /* 판 아래 상태 한 줄(약 40px)까지 */

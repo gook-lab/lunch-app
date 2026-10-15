@@ -133,12 +133,13 @@ describe('주사위', () => {
     expect(r.container.querySelector('.dice__cell--win')?.getAttribute('title')).toBe('가게8');
   });
 
-  it('후보 1·5·20곳 모두 끝나고, 상태 줄이 굴림을 센다', () => {
+  it('후보 1·5·20곳 모두 끝나고, 상태 줄이 컵 흔들기부터 보여 준다', () => {
     for (const n of [1, 5, 20, 40]) {
       const onSpinEnd = vi.fn();
       const r = render(<Dice candidates={places(n)} winnerIndex={n - 1} spinning run={n} onSpinEnd={onSpinEnd} />);
       run(100);
-      expect(r.container.querySelector('.dice__status')?.textContent).toMatch(/^1번째 (굴림|주사위)/);
+      // 한 곳뿐이면 굴릴 것 없이 바로 도착한다.
+      if (n > 1) expect(r.container.querySelector('.dice__status')?.textContent).toBe('달그락달그락…');
       run(15_000);
       expect(onSpinEnd).toHaveBeenCalledTimes(1);
       expect(r.container.querySelector('.dice__status')?.textContent).toBe(`가게${n} 칸에 도착했어요`);

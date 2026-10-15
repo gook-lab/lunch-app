@@ -1,0 +1,149 @@
+/*
+ * 사다리 — Ladder.tsx 전용 추가 스타일(주자 · 카메라 · 가짜 가로줄 · 커튼 · 상태 줄).
+ * 판·출발 번호·바닥 칸의 기본 모양은 App.css "사다리" 절에 있다.
+ * 주자 눈(흰자·눈동자)과 커튼(벨벳 빨강)은 물건 색이라 라이트·다크가 같다. 나머지는 앱 토큰을 쓴다.
+ */
+
+/* ── 카메라: 상자 안에서 판 전체(번호·사다리·바닥 칸)가 함께 움직인다 ── */
+.ladder__stage {
+  position: relative;
+  overflow: hidden;
+  /* 당첨 칸이 톡 튈 때(scale 1.18) 아래가 잘리지 않게. */
+  padding-bottom: 6px;
+  border-radius: var(--radius-md);
+}
+.ladder__camera {
+  position: relative;
+  transform-origin: 0 0;
+}
+.ladder--running .ladder__camera { will-change: transform; }
+
+/* ── 꼬마 주자 ── */
+.ladder__runner-ball { fill: var(--color-neutral-500); stroke: var(--color-bg); stroke-width: 1.2; }
+.ladder__runner-leg { stroke: var(--color-neutral-700); stroke-width: 1.6; stroke-linecap: round; }
+.ladder__runner-eye { fill: #fff; }
+.ladder__runner-pupil { fill: #1d1d1f; }
+.ladder__runner--hot .ladder__runner-ball { fill: oklch(0.7 0.14 55); }
+.ladder__runner--me .ladder__runner-ball {
+  fill: var(--color-accent);
+  stroke-width: 1.6;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-accent) 55%, transparent));
+}
+.ladder__runner--me .ladder__runner-leg { stroke: var(--color-accent-700); stroke-width: 2; }
+
+/* 출발 전 — 제자리에서 통통. 번갈아 뛰게 박자를 조금씩 어긋낸다. */
+.ladder__runner--idle .ladder__runner-body,
+.ladder__runner--ready .ladder__runner-body { animation: ladder-hop 700ms var(--ease-inout) infinite; }
+.ladder__runner--idle:nth-of-type(2n) .ladder__runner-body { animation-delay: -350ms; }
+.ladder__runner--ready .ladder__runner-body { animation-duration: 240ms; }
+/* 바닥에서 기다리는 주자는 숨 고르듯 천천히. */
+.ladder__runner--wait .ladder__runner-body { animation: ladder-hop 1100ms var(--ease-inout) infinite; }
+/* 당첨 — 폴짝폴짝. */
+.ladder__runner--win .ladder__runner-body { animation: ladder-jump 520ms var(--ease-out) 3; }
+
+@keyframes ladder-hop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+@keyframes ladder-jump {
+  0%, 100% { transform: translateY(0) scale(1); }
+  45% { transform: translateY(-9px) scale(1.12); }
+}
+
+/* 말풍선(? ! …) */
+.ladder__bubble {
+  font-size: 11px;
+  font-weight: 800;
+  text-anchor: middle;
+  fill: var(--color-text);
+  paint-order: stroke;
+  stroke: var(--color-bg);
+  stroke-width: 3px;
+  animation: ladder-bubble 220ms var(--ease-out) both;
+}
+@keyframes ladder-bubble {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ── "어? 이쪽이야?" — 없는 가로줄이 깜빡이다 사라진다 ── */
+.ladder__fake {
+  stroke: var(--color-accent);
+  stroke-width: 3;
+  stroke-dasharray: 3 3;
+  stroke-linecap: round;
+  animation: ladder-flicker 300ms steps(2, jump-none) infinite;
+}
+.ladder__fake--gone { stroke: var(--color-neutral-500); animation: ladder-gone 180ms var(--ease-out) forwards; }
+@keyframes ladder-flicker {
+  0% { opacity: 1; }
+  100% { opacity: 0.25; }
+}
+@keyframes ladder-gone {
+  to { opacity: 0; }
+}
+
+/* 당첨 칸 위 빛기둥 */
+.ladder__beam {
+  fill: color-mix(in srgb, var(--color-accent) 22%, transparent);
+  animation: ladder-beam 500ms var(--ease-out) both;
+}
+@keyframes ladder-beam {
+  from { opacity: 0; transform: scaleY(0.2); transform-origin: 50% 100%; transform-box: fill-box; }
+  to { opacity: 1; transform: none; transform-origin: 50% 100%; transform-box: fill-box; }
+}
+
+/* ── 커튼 — 내 주자가 닿으면 바닥 칸 위로 내려왔다가 걷힌다 ── */
+.ladder__curtain {
+  position: absolute;
+  inset: -8px 0 -4px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  background:
+    linear-gradient(180deg, oklch(0.3 0.09 25 / 0.55), transparent 35%),
+    repeating-linear-gradient(90deg, oklch(0.5 0.17 25) 0 7px, oklch(0.42 0.16 25) 7px 12px, oklch(0.5 0.17 25) 12px 16px);
+  box-shadow: 0 3px 8px oklch(0 0 0 / 0.25);
+  transform-origin: 50% 0;
+}
+.ladder__curtain--down { animation: ladder-curtain-down 340ms cubic-bezier(0.3, 1.4, 0.6, 1) both; }
+.ladder__curtain--up { animation: ladder-curtain-up 480ms cubic-bezier(0.5, 0, 0.75, 0) both; }
+.ladder__curtain-text {
+  color: #fff;
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 2px oklch(0 0 0 / 0.5);
+  animation: ladder-drum 120ms linear infinite;
+}
+.ladder__labels--tall .ladder__curtain-text { writing-mode: vertical-rl; font-size: var(--fs-sm); }
+@keyframes ladder-curtain-down {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes ladder-curtain-up {
+  from { transform: none; opacity: 1; }
+  to { transform: translateY(-115%); opacity: 0; }
+}
+@keyframes ladder-drum {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(1px, -1px); }
+}
+
+/* 세로쓰기 칸에서도 가린 "?" 는 똑바로 — App.css 의 세로쓰기 규칙이 뒤에 있어 눕혀 그렸다. */
+.ladder__labels--tall .ladder__label.ladder__label--hidden { writing-mode: horizontal-tb; }
+
+/* ── 상태 줄 ── */
+.ladder__status {
+  margin: var(--space-2) 0 0;
+  min-height: 1.5em;
+  text-align: center;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+:root[data-motion='reduced'] {
+  .ladder__runner-body, .ladder__bubble, .ladder__fake, .ladder__beam, .ladder__curtain, .ladder__curtain-text { animation: none; }
+}

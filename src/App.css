@@ -2655,23 +2655,8 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   background: var(--color-accent);
   box-shadow: var(--shadow-sm);
 }
-.dice__center { display: grid; place-content: center; justify-items: center; gap: var(--space-2); text-align: center; }
-.dice__die {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 3px;
-  width: 52px;
-  height: 52px;
-  padding: 7px;
-  border: 2px solid var(--color-text);
-  border-radius: var(--radius-md);
-  background: var(--color-bg);
-}
-.dice__die--rolling { animation: dice-roll 500ms var(--ease-inout); }
-.dice__pip { border-radius: 50%; }
-.dice__pip--on { background: var(--color-text); }
+/* 가운데 · 펠트 · 컵 · 굴러가는 주사위 · 스포트라이트는 Dice.css 에 있다. */
 .dice__status { margin: 0; font-size: var(--fs-sm); font-weight: 700; color: var(--color-text); }
-@keyframes dice-roll { 50% { rotate: 200deg; scale: 0.85; } to { rotate: 360deg; } }
 
 /* 폭탄 돌리기 — components/games/Bomb.css */
 

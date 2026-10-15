@@ -144,3 +144,200 @@ export function revealSlots(
 export function ladderPace(t: number): number {
   return t < 0.65 ? (t / 0.65) * 0.8 : 0.8 + ((t - 0.65) / 0.35) * 0.2;
 }
+
+/* ───────── 연출 일정(달리기 · 두리번 · 가짜 길 · 커튼) ─────────
+ *
+ * 줄마다 꼬마 주자가 한 명씩 서고 한꺼번에 내려간다. 사용자가 고른 줄의 주자(내 주자)를
+ * 카메라가 따라가고, 다른 주자들은 각자 제 길로 먼저 내려가 바닥에서 기다린다. 내 주자는
+ * 가로줄 갈림길에서 두리번거리며 멈칫하고(look), 가로줄이 없는 자리에서 "어? 이쪽이야?" 하고
+ * 옆으로 기웃했다 돌아온다(fake — 그 자리에 가짜 가로줄이 깜빡인다). 내 주자가 닿으면 바닥 칸에
+ * 커튼이 내려오고, 두구두구 뒤 커튼이 걷히며 칸이 열린다.
+ *
+ * 사건은 모두 연출이다. 내 주자의 길은 ladderPath 그대로이고(가짜 길에서 꼭 돌아온다), 도착 칸에
+ * 놓이는 후보는 revealSlots 가 App 의 당첨(winnerIndex)으로 정한다. 사건이 당첨을 바꾸지 않는다.
+ */
+
+/** 그림 좌표에서 열 간격 · 층 높이. 경로 길이를 화면과 같은 비로 재는 데 쓴다. */
+export interface LadderGeom {
+  colGap: number;
+  rowGap: number;
+}
+
+export interface LadderBeat {
+  /** look: 갈림길에서 두리번 · fake: 없는 가로줄 쪽으로 기웃했다 돌아온다. */
+  kind: 'look' | 'fake';
+  /** 내 경로 길이 중 어디서(0~1). */
+  at: number;
+  /** 시작 시각(ms, 판 시작 기준)과 길이. */
+  startMs: number;
+  ms: number;
+  /** fake: 기웃하는 쪽(-1 왼쪽 · 1 오른쪽). look: 다음에 꺾는 쪽. */
+  dir: -1 | 1;
+  /** fake: 가짜 가로줄 자리(층, 왼쪽 칸). look: 갈림길 층과 지금 칸. */
+  row: number;
+  col: number;
+}
+
+export interface LadderRival {
+  start: number;
+  /** 바닥에 닿는 시각(ms). */
+  finishMs: number;
+}
+
+export interface LadderPlan {
+  /** 준비 → 출발. */
+  goMs: number;
+  /** 내 주자가 바닥에 닿는 시각 · 커튼이 다 내려온 시각 · 커튼이 걷히는(칸이 열리는) 시각 · 끝. */
+  arriveMs: number;
+  curtainMs: number;
+  liftMs: number;
+  endMs: number;
+  /** 내 주자가 실제로 움직이는 시간(멈칫 뺀 것). */
+  moveMs: number;
+  beats: LadderBeat[];
+  rivals: LadderRival[];
+  /** 먼저 쏜살같이 내려가는 주자의 출발 칸(없으면 null). */
+  leader: number | null;
+  /** 내 주자와 거의 나란히 들어오는 주자의 출발 칸(없으면 null). */
+  neck: number | null;
+}
+
+/** ladderPace 의 역함수 — 진행도 p 에 닿는 시간 비율. */
+export function ladderPaceInverse(p: number): number {
+  return p < 0.8 ? (p / 0.8) * 0.65 : 0.65 + ((p - 0.8) / 0.2) * 0.35;
+}
+
+/** 경로를 그림 좌표 비로 잰 길이와 갈림길(가로로 꺾는 곳)·곧게 지나는 층 자리. */
+export function pathMetrics(ladder: Ladder, start: number, geom: LadderGeom) {
+  const path = ladderPath(ladder, start);
+  const pts = path.map((p) => ({ x: p.col * geom.colGap, y: p.row * geom.rowGap }));
+  const lens = pts.slice(1).map((p, i) => Math.hypot(p.x - pts[i].x, p.y - pts[i].y));
+  const total = lens.reduce((a, b) => a + b, 0) || 1;
+  const acc: number[] = [0];
+  lens.forEach((l, i) => acc.push(acc[i] + l));
+
+  /** 가로로 꺾기 시작하는 곳. dir 은 꺾는 쪽. */
+  const turns: { at: number; row: number; col: number; dir: -1 | 1 }[] = [];
+  /** 가로줄 없이 곧게 지나는 층 가운데(가짜 가로줄을 그릴 수 있는 자리). */
+  const straights: { at: number; row: number; col: number; dirs: (-1 | 1)[] }[] = [];
+  for (let i = 0; i < path.length - 1; i += 1) {
+    const a = path[i];
+    const b = path[i + 1];
+    if (a.row === b.row) {
+      turns.push({ at: acc[i] / total, row: Math.floor(a.row), col: a.col, dir: b.col > a.col ? 1 : -1 });
+      continue;
+    }
+    // 세로 구간 a.row → b.row 안쪽의 층 가운데(r + 0.5).
+    for (let r = 0; r < ladder.rows; r += 1) {
+      const y = r + 0.5;
+      if (y <= a.row + 1e-9 || y >= b.row - 1e-9) continue;
+      const dirs: (-1 | 1)[] = [];
+      for (const d of [-1, 1] as const) {
+        const other = a.col + d;
+        if (other < 0 || other >= ladder.columns) continue;
+        // 옆 칸에 진짜 가로줄이 붙어 있으면 갈림길처럼 보여 헷갈린다 — 빼 둔다.
+        if (ladder.rungs.some((g) => g.row === r && (g.col === other || g.col === other - 1))) continue;
+        dirs.push(d);
+      }
+      if (dirs.length === 0) continue;
+      const at = (acc[i] + (y - a.row) * geom.rowGap) / total;
+      straights.push({ at, row: r, col: a.col, dirs });
+    }
+  }
+  return { path, pts, lens, total, turns, straights };
+}
+
+const between = (random: () => number, lo: number, hi: number) => lo + random() * (hi - lo);
+
+/**
+ * 한 판의 일정. durationMs 는 SPIN_MS.ladder 와 같다(App 연출 잠금과 맞춘다).
+ * random 은 판 번호 시드 — 같은 판은 같은 연출이다.
+ */
+export function ladderPlan(
+  ladder: Ladder,
+  start: number,
+  geom: LadderGeom,
+  durationMs: number,
+  random: () => number,
+): LadderPlan {
+  const goMs = 450;
+  const endMs = durationMs;
+  const liftMs = endMs - 800;
+  const curtainMs = liftMs - 550;
+  const arriveMs = curtainMs - 350;
+  const span = arriveMs - goMs;
+  const beats: Omit<LadderBeat, 'startMs'>[] = [];
+
+  if (ladder.columns >= 2) {
+    const { turns, straights } = pathMetrics(ladder, start, geom);
+    // 가짜 길: 판 대부분에서 한 번 "어? 이쪽이야?" — 끝 무렵(아깝다)에 더 자주.
+    const fakeable = straights.filter((s) => s.at > 0.12 && s.at < 0.95);
+    if (fakeable.length > 0 && random() < 0.75) {
+      const late = fakeable.filter((s) => s.at >= 0.6);
+      const pool = late.length > 0 && random() < 0.6 ? late : fakeable;
+      const s = pool[Math.floor(random() * pool.length)];
+      const dir = s.dirs[Math.floor(random() * s.dirs.length)];
+      beats.push({ kind: 'fake', at: s.at, ms: Math.round(between(random, 700, 860)), dir, row: s.row, col: Math.min(s.col, s.col + dir) });
+    }
+    // 두리번: 갈림길 한두 곳에서 멈칫(네 판에 한 판은 안 한다).
+    const lookable = turns.filter((t) => t.at > 0.06 && t.at < 0.93 && beats.every((b) => Math.abs(b.at - t.at) > 0.08));
+    for (let i = lookable.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(random() * (i + 1));
+      [lookable[i], lookable[j]] = [lookable[j], lookable[i]];
+    }
+    const roll = random();
+    const looks = lookable.length === 0 || roll < 0.25 ? 0 : roll < 0.65 ? 1 : 2;
+    for (const t of lookable.slice(0, looks)) {
+      beats.push({ kind: 'look', at: t.at, ms: Math.round(between(random, 300, 440)), dir: t.dir, row: t.row, col: t.col });
+    }
+  }
+  beats.sort((a, b) => a.at - b.at);
+  const paused = beats.reduce((a, b) => a + b.ms, 0);
+  const moveMs = span - paused;
+
+  let acc = 0;
+  const timed: LadderBeat[] = beats.map((b) => {
+    const startMs = goMs + ladderPaceInverse(b.at) * moveMs + acc;
+    acc += b.ms;
+    return { ...b, startMs };
+  });
+
+  // 다른 주자들. 대부분은 내 주자보다 먼저 닿아 바닥에서 기다린다.
+  const others = Array.from({ length: ladder.columns }, (_, c) => c).filter((c) => c !== start);
+  const rivals: LadderRival[] = others.map((c) => ({ start: c, finishMs: Math.round(goMs + span * between(random, 0.6, 0.9)) }));
+  let leader: number | null = null;
+  let neck: number | null = null;
+  if (rivals.length >= 2 && random() < 0.5) {
+    const r = rivals[Math.floor(random() * rivals.length)];
+    r.finishMs = Math.round(goMs + span * between(random, 0.42, 0.5));
+    leader = r.start;
+  }
+  const rest = rivals.filter((r) => r.start !== leader);
+  if (rest.length > 0 && random() < 0.45) {
+    const r = rest[Math.floor(random() * rest.length)];
+    r.finishMs = Math.round(arriveMs - between(random, 90, 200));
+    neck = r.start;
+  }
+
+  return { goMs, arriveMs, curtainMs, liftMs, endMs, moveMs, beats: timed, rivals, leader, neck };
+}
+
+/** 내 주자의 진행도(경로 길이 비 0~1)와 지금 하고 있는 멈칫(없으면 null, u 는 멈칫 안 진행 0~1). */
+export function runnerAt(plan: LadderPlan, ms: number): { p: number; beat: LadderBeat | null; u: number } {
+  if (ms <= plan.goMs) return { p: 0, beat: null, u: 0 };
+  if (ms >= plan.arriveMs) return { p: 1, beat: null, u: 0 };
+  let paused = 0;
+  for (const b of plan.beats) {
+    if (ms < b.startMs) break;
+    if (ms < b.startMs + b.ms) return { p: b.at, beat: b, u: (ms - b.startMs) / b.ms };
+    paused += b.ms;
+  }
+  const t = Math.min(1, Math.max(0, (ms - plan.goMs - paused) / plan.moveMs));
+  return { p: ladderPace(t), beat: null, u: 0 };
+}
+
+/** 다른 주자의 진행도(0~1). 처음엔 빠르고 끝에서 살짝 느려진다. */
+export function rivalAt(plan: LadderPlan, rival: LadderRival, ms: number): number {
+  const x = Math.min(1, Math.max(0, (ms - plan.goMs) / (rival.finishMs - plan.goMs)));
+  return 1 - (1 - x) ** 1.35;
+}

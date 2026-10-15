@@ -824,3 +824,84 @@ export function wheelSlotSfxLater(plan: [ms: number, name: WheelSlotSfx | SfxNam
   const timers = plan.map(([ms, name]) => window.setTimeout(() => wheelSlotSfx(name), ms));
   return () => timers.forEach((t) => window.clearTimeout(t));
 }
+
+/* ───────── 사다리 · 주사위 ───────── */
+
+/** 사다리·주사위 소리. 위 SOUNDS 와 따로 둬서 다른 게임 소리 목록을 건드리지 않는다(10/15 동시 작업). */
+const LADDER_DICE_SOUNDS = {
+  /** 갈림길에서 두리번 — 작은 뿅 두 번. */
+  hmm: (ac: AudioContext) => {
+    tone(ac, { hz: 620, to: 560, dur: 0.07, type: 'sine', vol: 0.05 });
+    tone(ac, { hz: 560, to: 640, dur: 0.07, type: 'sine', vol: 0.05, at: 0.14 });
+  },
+  /** "어?" — 끝이 올라가는 물음. */
+  huh: (ac: AudioContext) => tone(ac, { hz: 420, to: 900, dur: 0.18, type: 'triangle', vol: 0.07 }),
+  /** "아니네" — 내려가는 두 음. */
+  nope: (ac: AudioContext) => {
+    tone(ac, { hz: 700, dur: 0.08, type: 'triangle', vol: 0.05 });
+    tone(ac, { hz: 520, dur: 0.12, type: 'triangle', vol: 0.05, at: 0.09 });
+  },
+  /** 커튼이 내려오는·걷히는 스윽. */
+  swish: (ac: AudioContext) => noise(ac, { dur: 0.32, hz: 500, to: 1800, q: 0.9, vol: 0.06 }),
+  /** 두구두구 — 낮은 북을 빠르게. */
+  drumroll: (ac: AudioContext) => {
+    for (let i = 0; i < 12; i += 1) {
+      noise(ac, { dur: 0.04, hz: 220, q: 1.2, vol: 0.05 + i * 0.004, at: i * 0.045, filter: 'lowpass' });
+    }
+  },
+  /** 컵 안 주사위 — 달그락달그락(짧은 딸깍을 촘촘히). */
+  clatter: (ac: AudioContext) => {
+    for (let i = 0; i < 9; i += 1)
+      noise(ac, { dur: 0.022, hz: rand(1400, 2800), q: 5, vol: 0.08, at: i * 0.05 + rand(0, 0.02) });
+  },
+  /** 컵을 엎을 때 — 쾅. */
+  slam: (ac: AudioContext) => {
+    tone(ac, { hz: 140, to: 55, dur: 0.2, type: 'sine', vol: 0.16 });
+    noise(ac, { dur: 0.12, hz: 600, to: 200, q: 0.8, vol: 0.12, filter: 'lowpass' });
+  },
+  /** 주사위가 벽에 부딪힐 때 — 딱. */
+  clack: (ac: AudioContext) => {
+    noise(ac, { dur: 0.025, hz: rand(2200, 3200), q: 3, vol: 0.09 });
+    tone(ac, { hz: rand(900, 1200), dur: 0.03, type: 'square', vol: 0.015 });
+  },
+  /** 모서리로 서서 흔들릴 때 — 낮게 끼익. */
+  teeter: (ac: AudioContext) => {
+    for (let i = 0; i < 3; i += 1) tone(ac, { hz: i % 2 ? 300 : 360, dur: 0.12, type: 'triangle', vol: 0.035, at: i * 0.14 });
+  },
+  /** 주사위끼리 부딪힐 때 — 툭. */
+  knock: (ac: AudioContext) => {
+    noise(ac, { dur: 0.04, hz: 1600, q: 2, vol: 0.12 });
+    tone(ac, { hz: 780, to: 420, dur: 0.06, type: 'triangle', vol: 0.05 });
+  },
+} satisfies Record<string, (ac: AudioContext) => void>;
+
+export type LadderDiceSfxName = keyof typeof LADDER_DICE_SOUNDS;
+
+const ladderDiceLast = new Map<LadderDiceSfxName, number>();
+
+/** 사다리·주사위 소리(또는 공용 소리) 한 번. 소리를 끈 사람에겐 아무 일도 없다. */
+export function ladderDiceSfx(name: LadderDiceSfxName | SfxName): void {
+  if (!(name in LADDER_DICE_SOUNDS)) {
+    sfx(name as SfxName);
+    return;
+  }
+  if (!enabled()) return;
+  const key = name as LadderDiceSfxName;
+  const now = performance.now();
+  if (now - (ladderDiceLast.get(key) ?? -Infinity) < 40) return;
+  ladderDiceLast.set(key, now);
+  const ac = audio();
+  if (!ac) return;
+  try {
+    LADDER_DICE_SOUNDS[key](ac);
+  } catch {
+    // 오디오 노드를 못 만드는 환경 — 소리 없이 넘어간다.
+  }
+}
+
+/** 사다리·주사위 소리 일정. 취소 함수를 돌려준다(연출이 끊기면 소리도 멈춘다). */
+export function ladderDiceSfxLater(plan: [ms: number, name: LadderDiceSfxName | SfxName][]): () => void {
+  if (!enabled()) return () => {};
+  const timers = plan.map(([ms, name]) => window.setTimeout(() => ladderDiceSfx(name), ms));
+  return () => timers.forEach((t) => window.clearTimeout(t));
+}
