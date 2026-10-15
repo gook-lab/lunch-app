@@ -476,3 +476,52 @@ export function treasureSfxLater(plan: [ms: number, name: TreasureSfxName | SfxN
   );
   return () => timers.forEach((t) => window.clearTimeout(t));
 }
+/* ───────── 인형뽑기 ─────────
+ * 인형뽑기 소리는 위 표들 밖에 따로 둔다 — 다른 게임 작업과 같은 줄을 고치지 않게(10/15 동시 작업).
+ * 켜기·최소 간격·오디오 없음 처리는 sfx() 와 같다. 표에 없는 이름은 sfx() 로 넘긴다.
+ */
+const CLAW_SOUNDS = {
+  /** 집게 모터 — 낮게 웅. */
+  whirr: (ac: AudioContext) => {
+    tone(ac, { hz: 110, to: 150, dur: 0.32, type: 'sawtooth', vol: 0.016 });
+    noise(ac, { dur: 0.3, hz: 300, q: 2, vol: 0.025, filter: 'bandpass' });
+  },
+  /** 집게가 오므라드는 철컥. */
+  clank: (ac: AudioContext) => {
+    noise(ac, { dur: 0.05, hz: 3200, q: 4, vol: 0.12 });
+    tone(ac, { hz: 1250, to: 900, dur: 0.07, type: 'square', vol: 0.025 });
+    noise(ac, { dur: 0.04, hz: 2400, q: 5, vol: 0.08, at: 0.06 });
+  },
+  /** 인형이 튀어나올 때 — 띠용. */
+  boing: (ac: AudioContext) => tone(ac, { hz: 260, to: 720, dur: 0.22, type: 'sine', vol: 0.07 }),
+} satisfies Record<string, (ac: AudioContext) => void>;
+
+export type ClawSfxName = keyof typeof CLAW_SOUNDS;
+const clawLast = new Map<ClawSfxName, number>();
+
+/** 인형뽑기 소리 한 번. 이름이 위 SOUNDS 표에 있으면 sfx() 로 넘긴다. */
+export function clawSfx(name: ClawSfxName | SfxName): void {
+  if (!(name in CLAW_SOUNDS)) {
+    sfx(name as SfxName);
+    return;
+  }
+  if (!enabled()) return;
+  const key = name as ClawSfxName;
+  const now = performance.now();
+  if (now - (clawLast.get(key) ?? -Infinity) < 60) return;
+  clawLast.set(key, now);
+  const ac = audio();
+  if (!ac) return;
+  try {
+    CLAW_SOUNDS[key](ac);
+  } catch {
+    // 오디오 노드를 못 만드는 환경 — 소리 없이 넘어간다.
+  }
+}
+
+/** 인형뽑기 소리 일정. sfxLater 와 같이 취소 함수를 돌려준다. 소리를 끈 사람에겐 아무 일도 없다. */
+export function clawSfxLater(plan: [ms: number, name: ClawSfxName | SfxName][]): () => void {
+  if (!enabled()) return () => {};
+  const timers = plan.map(([ms, name]) => window.setTimeout(() => clawSfx(name), ms));
+  return () => timers.forEach((t) => window.clearTimeout(t));
+}

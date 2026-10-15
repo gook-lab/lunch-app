@@ -1,0 +1,474 @@
+/*
+ * 인형뽑기 — 함(.claw__cab) 안에 네온 간판, 유리 상자(.claw__box), 조작판(.claw__panel)이 위에서 아래로 쌓인다.
+ * 상자 안 자리(left/top %)·자세는 JS(lib/claw.ts)가 단계마다 주고, 사이 움직임은 CSS transition 이 한다
+ * (--ms · --ease 는 단계가 정한 시간·곡선). 크기는 상자 폭(cqw)에 맞춰 커지고 줄어든다.
+ * 인형 색과 이름표(흰 종이 꼬리표)는 실제 물건 색이라 라이트·다크가 같고, 함·벽·조작판은 테마를 따른다.
+ */
+.claw {
+  width: min(360px, 94vw);
+  display: grid;
+  gap: var(--space-2);
+  justify-items: center;
+  container-type: inline-size;
+  --cab: oklch(0.72 0.15 352);
+  --cab-2: oklch(0.6 0.17 352);
+  --trim: oklch(0.9 0.11 92);
+  --wall: oklch(0.95 0.025 300);
+  --wall-dot: oklch(0.9 0.05 300);
+  --floor-c: oklch(0.85 0.06 300);
+  --panel: oklch(0.32 0.05 275);
+  --panel-2: oklch(0.25 0.04 275);
+  --ink: oklch(0.25 0.02 280);
+  --metal: oklch(0.82 0.01 260);
+  --metal-2: oklch(0.6 0.015 260);
+}
+[data-theme='dark'] .claw {
+  --cab: oklch(0.5 0.14 352);
+  --cab-2: oklch(0.4 0.13 352);
+  --trim: oklch(0.78 0.11 92);
+  --wall: oklch(0.29 0.035 295);
+  --wall-dot: oklch(0.34 0.045 295);
+  --floor-c: oklch(0.36 0.05 295);
+  --panel: oklch(0.24 0.03 275);
+  --panel-2: oklch(0.19 0.025 275);
+  --metal: oklch(0.78 0.01 260);
+  --metal-2: oklch(0.55 0.015 260);
+}
+.claw--big { width: min(640px, 94vw); }
+.claw--empty { height: 320px; }
+
+/* ── 함 ── */
+.claw__cab {
+  width: 100%;
+  box-sizing: border-box;
+  display: grid;
+  gap: 1.6cqw;
+  padding: 2.4cqw;
+  border-radius: 6cqw 6cqw 2cqw 2cqw;
+  background: linear-gradient(to bottom, var(--cab), var(--cab-2));
+  box-shadow: inset 0 0 0 0.8cqw oklch(1 0 0 / 0.14), 0 1.6cqw 3cqw oklch(0.2 0.05 340 / 0.22);
+}
+
+/* ── 네온 간판 ── */
+.claw__sign {
+  height: 11cqw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3cqw;
+  border-radius: 4cqw 4cqw 1.2cqw 1.2cqw;
+  background: oklch(0.2 0.04 300);
+  box-shadow: inset 0 0 0 0.6cqw var(--trim);
+}
+.claw__neon {
+  font-size: 6.4cqw;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: oklch(0.95 0.06 350);
+  text-shadow: 0 0 0.6cqw oklch(0.8 0.2 350), 0 0 1.8cqw oklch(0.7 0.25 350), 0 0 3.6cqw oklch(0.65 0.25 350);
+  animation: claw-neon 2.6s steps(1) infinite;
+}
+@keyframes claw-neon {
+  0%, 46%, 50%, 100% { opacity: 1; }
+  48% { opacity: 0.55; }
+}
+.claw__bulbs {
+  width: 14cqw;
+  height: 2cqw;
+  background: radial-gradient(circle 0.9cqw, oklch(0.93 0.16 92) 70%, transparent 76%) 0 50% / 3.5cqw 100% repeat-x;
+  filter: drop-shadow(0 0 0.8cqw oklch(0.9 0.16 92));
+  animation: claw-bulbs 0.9s steps(2) infinite;
+}
+.claw__bulbs--r { animation-delay: -0.45s; }
+@keyframes claw-bulbs { 50% { opacity: 0.45; } }
+
+/* ── 유리 상자 ── */
+.claw__box {
+  position: relative;
+  width: 100%;
+  container-type: inline-size;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 1.6cqw;
+  background: var(--wall);
+  box-shadow: inset 0 0 0 0.6cqw oklch(1 0 0 / 0.5);
+}
+.claw__wall {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle 1.2cqw, var(--wall-dot) 80%, transparent 86%) 0 0 / 8cqw 8cqw,
+    radial-gradient(circle 1.2cqw, var(--wall-dot) 80%, transparent 86%) 4cqw 4cqw / 8cqw 8cqw,
+    var(--wall);
+}
+.claw__floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--floor-c);
+  box-shadow: 0 -0.4cqw 0 oklch(1 0 0 / 0.25);
+}
+/* 출구 — 뒤쪽 어두운 구멍, 앞쪽 아크릴 판(인형이 그 뒤로 떨어진다). */
+.claw__hole {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 1;
+  background: linear-gradient(to bottom, oklch(0.22 0.03 280), oklch(0.12 0.02 280));
+}
+.claw__chute {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  border-top: 1.4cqw solid var(--trim);
+  border-right: 1cqw solid oklch(0.85 0.04 220 / 0.9);
+  background: linear-gradient(to bottom, oklch(0.88 0.04 220 / 0.55), oklch(0.75 0.06 220 / 0.75));
+  backdrop-filter: blur(1px);
+}
+.claw__chute-label {
+  font-size: clamp(9px, 3.4cqw, 15px);
+  font-weight: 800;
+  color: oklch(0.22 0.03 260);
+  writing-mode: horizontal-tb;
+  padding: 0.4cqw 1.4cqw;
+  border-radius: 99px;
+  background: oklch(1 0 0 / 0.75);
+}
+.claw__chute-label::after { content: ' ▼'; font-size: 0.8em; }
+
+/* ── 인형 ── */
+.claw__toy {
+  position: absolute;
+  width: calc(var(--size) * 1cqw);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  transition:
+    left var(--ms) var(--ease),
+    top var(--ms) var(--ease);
+}
+.claw__doll {
+  position: absolute;
+  inset: 0;
+  transform: rotate(var(--rot)) scale(var(--scale));
+  transition: transform var(--ms) var(--ease);
+}
+.claw__svgdoll { width: 100%; height: 100%; display: block; overflow: visible; filter: drop-shadow(0 0.5cqw 0.4cqw oklch(0.2 0.03 300 / 0.28)); }
+.claw__svgdoll .d-c { fill: var(--c); }
+.claw__svgdoll .d-c2 { fill: var(--c2); }
+.claw__svgdoll .d-shade { filter: brightness(0.78); }
+.claw__svgdoll .d-shade-only { fill: oklch(0.3 0.04 50 / 0.28); }
+.claw__svgdoll .d-pink { fill: oklch(0.85 0.08 0); }
+.claw__svgdoll .d-white { fill: oklch(0.99 0 0); }
+.claw__svgdoll .d-ink { fill: oklch(0.22 0.02 280); }
+.claw__svgdoll .d-blush { fill: oklch(0.75 0.13 15 / 0.5); }
+.claw__svgdoll .d-beak { fill: oklch(0.76 0.16 60); }
+.claw__svgdoll .d-line { fill: none; stroke: oklch(0.22 0.02 280); stroke-width: 2.4; stroke-linecap: round; }
+
+/* 이름표 — 배에 단 흰 종이 꼬리표. 칸 폭을 넘지 않는다. */
+.claw__tag {
+  position: absolute;
+  left: 50%;
+  top: 76%;
+  translate: -50% 0;
+  max-width: calc(var(--cell) * 0.94cqw);
+  box-sizing: border-box;
+  padding: 0.2em 0.45em;
+  border-radius: 0.4em;
+  background: oklch(0.99 0.005 90);
+  box-shadow: 0 0 0 1px oklch(0.25 0.02 280 / 0.35), 0 0.3cqw 0.6cqw oklch(0.2 0.02 280 / 0.2);
+  color: oklch(0.22 0.02 280);
+  font-size: clamp(10px, 3.2cqw, 13px);
+  font-weight: 800;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+.claw--big .claw__tag { font-size: clamp(11px, 2.6cqw, 14px); }
+
+.claw__toy--land .claw__doll { animation: claw-land 360ms var(--ease-out); }
+@keyframes claw-land {
+  0% { transform: rotate(var(--rot)) scale(1.18, 0.78); }
+  45% { transform: rotate(var(--rot)) translateY(-14%) scale(0.94, 1.06); }
+  100% { transform: rotate(var(--rot)) scale(1); }
+}
+.claw__toy--wiggle .claw__doll { animation: claw-wiggle 160ms ease-in-out 4 alternate; }
+@keyframes claw-wiggle {
+  from { transform: rotate(calc(var(--rot) - 8deg)); }
+  to { transform: rotate(calc(var(--rot) + 8deg)); }
+}
+/* 문턱에 걸려 휘청 — 발밑을 축으로 흔들린다. */
+.claw__toy--teeter .claw__doll { transform-origin: 50% 92%; animation: claw-teeter 190ms ease-in-out infinite alternate; }
+@keyframes claw-teeter {
+  from { transform: rotate(-30deg); }
+  to { transform: rotate(-6deg); }
+}
+.claw__toy--roll .claw__doll { animation: claw-roll var(--ms) var(--ease-out); }
+@keyframes claw-roll {
+  from { transform: rotate(160deg); }
+  to { transform: rotate(var(--rot)); }
+}
+.claw__box--swing .claw__toy--held .claw__doll { animation: claw-sway 220ms ease-in-out infinite alternate; transform-origin: 50% 0; }
+@keyframes claw-sway {
+  from { transform: rotate(-9deg); }
+  to { transform: rotate(9deg); }
+}
+
+/* 뽑힌 인형 — 가운데에서 크게. 이름표는 인형 아래로 내려가 전체 이름을 보인다. */
+.claw__toy--won .claw__doll { animation: claw-bob 1.1s ease-in-out var(--ms) infinite alternate; }
+@keyframes claw-bob {
+  from { transform: rotate(-4deg) scale(var(--scale)); }
+  to { transform: rotate(4deg) scale(calc(var(--scale) * 1.04)); }
+}
+.claw__toy--won .claw__tag {
+  top: calc(50% + var(--scale) * 50%);
+  max-width: 78cqw;
+  width: max-content;
+  white-space: normal;
+  text-align: center;
+  font-size: clamp(13px, 4.6cqw, 22px);
+  padding: 0.25em 0.7em;
+  background: oklch(0.97 0.06 92);
+  box-shadow: 0 0 0 2px oklch(0.72 0.15 75), 0 0.8cqw 2cqw oklch(0.2 0.05 60 / 0.3);
+  transition: top var(--ms) var(--ease);
+}
+.claw__box--won::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 400;
+  background: radial-gradient(circle at 50% 50%, oklch(0.98 0.08 92 / 0.85) 0, oklch(0.95 0.1 92 / 0.35) 26%, oklch(0.2 0.04 300 / 0.45) 62%);
+  animation: claw-spot 420ms var(--ease-out) both;
+}
+@keyframes claw-spot { from { opacity: 0; } }
+
+/* ── 집게 ── */
+.claw__rig { position: absolute; inset: 0; z-index: 280; pointer-events: none; }
+.claw__rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--rail);
+  height: 1.6cqw;
+  translate: 0 -50%;
+  background: linear-gradient(to bottom, var(--metal), var(--metal-2));
+  box-shadow: 0 0.3cqw 0.4cqw oklch(0.2 0.02 280 / 0.25);
+}
+.claw__cart {
+  position: absolute;
+  left: var(--x);
+  top: var(--rail);
+  width: calc(var(--size) * 0.7cqw);
+  height: 3.4cqw;
+  translate: -50% -50%;
+  border-radius: 1cqw;
+  background: linear-gradient(to bottom, oklch(0.55 0.02 260), oklch(0.4 0.02 260));
+  transition: left var(--ms) var(--ease);
+}
+.claw__cable {
+  position: absolute;
+  left: var(--x);
+  top: var(--rail);
+  width: 0.7cqw;
+  height: calc(var(--y) - var(--rail));
+  translate: -50% 0;
+  background: repeating-linear-gradient(to bottom, var(--metal-2) 0 0.8cqw, var(--metal) 0.8cqw 1.6cqw);
+  transition:
+    left var(--ms) var(--ease),
+    height var(--ms) var(--ease);
+}
+.claw__head {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: calc(var(--size) * 1.05cqw);
+  aspect-ratio: 100 / 95;
+  translate: -50% -34.7%;
+  transform-origin: 50% 0;
+  transition:
+    left var(--ms) var(--ease),
+    top var(--ms) var(--ease);
+}
+.claw__head--swing { animation: claw-sway 220ms ease-in-out infinite alternate; }
+.claw__svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.claw__hub { fill: oklch(0.86 0.13 92); stroke: oklch(0.45 0.08 70); stroke-width: 2.5; }
+.claw__hub-band { fill: oklch(0.68 0.14 70); }
+.claw__bolt { fill: oklch(0.45 0.08 70); }
+.claw__prong {
+  fill: none;
+  stroke: var(--metal-2);
+  stroke-width: 7;
+  stroke-linecap: round;
+  transform-box: view-box;
+  transition: transform var(--ms) var(--ease);
+}
+.claw__prong--back { stroke: oklch(0.5 0.015 260); stroke-width: 6; }
+.claw__prong--l { stroke: var(--metal); transform-origin: 32% 33.7%; transform: rotate(calc(var(--open) * 26deg)); }
+.claw__prong--r { stroke: var(--metal); transform-origin: 68% 33.7%; transform: rotate(calc(var(--open) * -26deg)); }
+.claw__prong--l, .claw__prong--r { filter: drop-shadow(0 0 0.6px oklch(0.3 0.02 260)); }
+
+/* 유리 반사 — 위에 비스듬한 빛줄기 두 개. */
+.claw__glass {
+  position: absolute;
+  inset: 0;
+  z-index: 450;
+  pointer-events: none;
+  background:
+    linear-gradient(115deg, transparent 0 8%, oklch(1 0 0 / 0.22) 8% 11%, transparent 11% 15%, oklch(1 0 0 / 0.14) 15% 16.5%, transparent 16.5%),
+    linear-gradient(to bottom, oklch(1 0 0 / 0.12), transparent 30%);
+  box-shadow: inset 0 0 0 0.5cqw oklch(1 0 0 / 0.35);
+  border-radius: inherit;
+}
+
+/* 반짝이 */
+.claw__sparks { position: absolute; left: 50%; top: 50%; z-index: 520; }
+.claw__sparks span {
+  position: absolute;
+  width: 3.2cqw;
+  height: 3.2cqw;
+  translate: -50% -50%;
+  background: oklch(0.88 0.16 calc(var(--h) * 1deg));
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  opacity: 0;
+  animation: claw-spark calc(var(--d) * 1s) var(--ease-out) var(--delay) forwards;
+}
+@keyframes claw-spark {
+  0% { opacity: 1; transform: rotate(var(--a)) translateY(0) scale(0.4); }
+  60% { opacity: 1; }
+  100% { opacity: 0.9; transform: rotate(var(--a)) translateY(-30cqw) scale(1.1) rotate(180deg); }
+}
+
+/* 큰 글씨(만화 효과음) */
+.claw__callout {
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  z-index: 600;
+  translate: -50% -50%;
+  font-size: clamp(22px, 11cqw, 60px);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  color: oklch(0.99 0 0);
+  -webkit-text-stroke: 0.13em oklch(0.22 0.02 280);
+  paint-order: stroke fill;
+  pointer-events: none;
+  animation: claw-pop 900ms var(--ease-out) forwards;
+}
+.claw__callout--count { top: 42%; font-size: clamp(40px, 26cqw, 140px); color: oklch(0.9 0.16 92); animation-duration: 300ms; }
+.claw__callout--bad { color: oklch(0.85 0.1 240); }
+.claw__callout--close { color: oklch(0.82 0.16 60); }
+.claw__callout--hit { color: oklch(0.99 0 0); }
+.claw__callout--win { top: 16%; color: oklch(0.9 0.17 92); animation: claw-win 700ms var(--ease-out) forwards; }
+@keyframes claw-pop {
+  0% { opacity: 0; scale: 0.4; }
+  18% { opacity: 1; scale: 1.15; }
+  30% { scale: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; scale: 1.05; }
+}
+@keyframes claw-win {
+  0% { opacity: 0; scale: 0.3; rotate: -8deg; }
+  50% { opacity: 1; scale: 1.2; rotate: 3deg; }
+  100% { opacity: 1; scale: 1; rotate: -3deg; }
+}
+
+/* ── 조작판 ── */
+.claw__panel {
+  height: 15cqw;
+  display: flex;
+  align-items: center;
+  gap: 3.4cqw;
+  padding: 0 4cqw;
+  box-sizing: border-box;
+  border-radius: 2cqw;
+  background: linear-gradient(to bottom, var(--panel), var(--panel-2));
+  box-shadow: inset 0 0.4cqw 0 oklch(1 0 0 / 0.12);
+}
+.claw__timer {
+  display: grid;
+  justify-items: center;
+  min-width: 13cqw;
+  padding: 0.6cqw 1.6cqw;
+  border-radius: 1.2cqw;
+  background: oklch(0.14 0.02 20);
+  color: oklch(0.72 0.22 28);
+  font: 800 6cqw/1 ui-monospace, 'SF Mono', Menlo, monospace;
+  text-shadow: 0 0 1.2cqw oklch(0.65 0.24 28);
+}
+.claw__timer small { font-size: 2.2cqw; letter-spacing: 0.12em; color: oklch(0.7 0.05 28); text-shadow: none; }
+.claw__timer--zero { animation: claw-blink 180ms steps(1) 3; }
+@keyframes claw-blink { 50% { opacity: 0.25; } }
+.claw__lives { display: flex; gap: 1.4cqw; flex: 1; }
+.claw__life {
+  width: 3.6cqw;
+  height: 3.6cqw;
+  border-radius: 50%;
+  background: oklch(0.85 0.16 140);
+  box-shadow: 0 0 1.2cqw oklch(0.8 0.18 140);
+}
+.claw__life--now { animation: claw-blink 500ms steps(1) infinite; }
+.claw__life--used { background: oklch(0.42 0.02 275); box-shadow: none; }
+.claw__stick {
+  position: relative;
+  width: 10cqw;
+  height: 10cqw;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 60%, oklch(0.2 0.02 275) 0 34%, oklch(0.42 0.03 275) 36% 100%);
+}
+.claw__stick-rod {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  width: 1.4cqw;
+  height: 7cqw;
+  translate: -50% 0;
+  transform-origin: 50% 100%;
+  rotate: var(--tilt);
+  background: var(--metal);
+  border-radius: 1cqw;
+  transition: rotate 140ms var(--ease-out);
+}
+.claw__stick-rod::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -2.2cqw;
+  width: 5cqw;
+  height: 5cqw;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, oklch(0.8 0.17 25), oklch(0.55 0.2 25));
+}
+.claw__button {
+  width: 10cqw;
+  height: 10cqw;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, oklch(0.9 0.14 92), oklch(0.72 0.16 75));
+  box-shadow: 0 1.2cqw 0 oklch(0.5 0.12 70), 0 1.4cqw 1.6cqw oklch(0.1 0.02 280 / 0.4);
+  transition: translate 80ms, box-shadow 80ms;
+}
+.claw__button--on {
+  translate: 0 1cqw;
+  box-shadow: 0 0.2cqw 0 oklch(0.5 0.12 70), 0 0 3cqw oklch(0.9 0.16 92);
+}
+
+.claw__status { margin: 0; font-size: var(--fs-sm); font-weight: 700; color: var(--color-text); text-align: center; }
+
+/* 판이 끝난 뒤 다시 그려질 때는 옮겨 가는 움직임 없이 바로 그 자리. */
+.claw--settled .claw__toy,
+.claw--settled .claw__doll,
+.claw--settled .claw__rig * { transition: none; }
+
+/* 동작 줄이기 — 앱이 "움직임 켜기" 를 반영해 둔 data-motion 을 본다(기기 설정만 보면 켜 둔 사람도 멈춘다). */
+:root[data-motion='reduced'] {
+  .claw *,
+  .claw__box::after { animation: none !important; transition: none !important; }
+  .claw__sparks, .claw__callout { display: none; }
+}
