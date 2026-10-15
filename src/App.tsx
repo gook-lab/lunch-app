@@ -72,6 +72,7 @@ import { DemoNote } from './components/DemoNote';
 import { loadDemoSample } from './services/demoStore';
 import { categoryLabel } from './lib/category';
 import { PlaceList, Settings } from './components/deferred';
+import { GameTitle } from './components/games/GameHelp';
 import { GameBoundary } from './components/games/GameBoundary';
 import { DevHostNote } from './components/DevHostNote';
 import { isDevHost } from './lib/devHost';
@@ -1011,11 +1012,8 @@ export default function App() {
               <div className="stage__main">
                 <div className="stage__top">
                   {/* 안내 한 줄과 크게 보기를 한 줄에 둔다. 크게 보기 혼자 한 줄을 먹어 게임판이 밀렸다(10/9 UI 점검). */}
-                  {expanded ? (
-                    <span className="stage__label">크게 보는 중</span>
-                  ) : (
-                    weighted && <p className="muted small stage__hint">핀볼은 공이 많을수록 뽑힐 확률이 높아요</p>
-                  )}
+                  <GameTitle mode={mode} />
+                  {!expanded && weighted && <p className="muted small stage__hint">핀볼은 공이 많을수록 뽑힐 확률이 높아요</p>}
                   <button
                     type="button"
                     className="stage__expand"
