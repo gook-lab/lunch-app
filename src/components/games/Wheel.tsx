@@ -26,7 +26,14 @@ import { seededRandom } from '../../lib/random';
 import { CLICK_MS, sliceAt, sliceFrac, wheelAngleAt, wheelPlan, type WheelBeat, type WheelPlan } from '../../lib/wheel';
 import { sfx, wheelSlotSfxLater, type SfxName, type WheelSlotSfx } from '../../lib/sfx';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
+import { useAmbience } from '../../hooks/useAmbience';
+import { SceneWeather } from './scene/SceneWeather';
+import { ambienceClasses } from './scene/outfit';
 import './Wheel.css';
+import './Wheel.ambience.css';
+
+/** 테두리 장식 개수(계절 화환). */
+const GARLAND = 18;
 
 /** 이 수를 넘는 후보 수부터 라벨을 바퀴살 방향(세로)으로 쓴다. */
 export const RADIAL_FROM = 8;
@@ -50,6 +57,7 @@ interface WheelState {
 const mod = (a: number, n: number) => ((a % n) + n) % n;
 
 export function Wheel({ candidates, winnerIndex, spinning, run, onSpinEnd }: GameProps) {
+  const ambience = useAmbience();
   const count = candidates.length;
   const slice = count > 0 ? 360 / count : 360;
   const [state, setState] = useState<WheelState>({ run: -1, beat: null, angle: 0, plan: null });
@@ -229,7 +237,9 @@ export function Wheel({ candidates, winnerIndex, spinning, run, onSpinEnd }: Gam
             : 'idle';
 
   return (
-    <div className="wheelgame">
+    <div className={['wheelgame', 'scene-outfit', ambienceClasses(ambience)].join(' ')}>
+      {/* 날씨는 원판 뒤 바탕에만 — 칸 글자 위로 비·안개가 덮이지 않게(Wheel.ambience.css 층). */}
+      <SceneWeather weather={ambience.weather} className="wheelgame__wx" />
       <div
         className={[
           'wheel',
@@ -242,6 +252,12 @@ export function Wheel({ candidates, winnerIndex, spinning, run, onSpinEnd }: Gam
           .join(' ')}
         style={{ '--spot': `${Math.min(slice, 60)}deg` } as React.CSSProperties}
       >
+        {/* 계절 화환 — 테두리 밖에 둘러 붙는다. 원판과 같이 돌지 않는다. */}
+        <span className="wheel__garland" aria-hidden="true">
+          {Array.from({ length: GARLAND }, (_, k) => (
+            <i key={k} style={{ '--a': `${(k * 360) / GARLAND}deg` } as React.CSSProperties} />
+          ))}
+        </span>
         {/* 멈추는 순간 바늘이 칸 끝에 걸렸다 풀리듯 흔들린다. key 로 판마다 다시 튼다. */}
         <div
           ref={needleRef}
@@ -352,7 +368,19 @@ function Host({ mood }: { mood: string }) {
   return (
     <svg className={`wheelgame__mc wheelgame__mc--${mood}`} viewBox="0 0 48 48" aria-hidden="true">
       <circle cx="24" cy="22" r="17" className="wheelgame__mc-face" />
-      <path d="M9 17 Q24 -2 39 17 Q24 10 9 17 Z" className="wheelgame__mc-hair" />
+      <path d="M9 17 Q24 -2 39 17 Q24 10 9 17 Z" className="wheelgame__mc-hair acc-base" />
+      {/* 계절·날씨 덧옷 */}
+      <path d="M7 19 Q7 2 24 2 Q41 2 41 19 Q24 12 7 19 Z" className="acc acc-beanie" />
+      <circle cx="24" cy="2.5" r="3.5" className="acc acc-pom" />
+      <path d="M5 31 Q3 1 24 1 Q45 1 43 31 Q39 12 24 12 Q9 12 5 31 Z" className="acc acc-hood" />
+      <ellipse cx="24" cy="11" rx="22" ry="4" className="acc acc-brim" />
+      <path d="M13 11 Q14 -1 24 -1 Q34 -1 35 11 Z" className="acc acc-crown" />
+      <g className="acc acc-flower">
+        <circle cx="11" cy="9" r="3" />
+        <circle cx="15" cy="7" r="3" />
+        <circle cx="13" cy="12" r="3" />
+        <circle cx="13" cy="9.4" r="1.8" className="acc-flower__eye" />
+      </g>
       <g className="wheelgame__mc-eyes">
         <ellipse cx="18" cy="21" rx="2.2" ry="2.8" />
         <ellipse cx="30" cy="21" rx="2.2" ry="2.8" />
@@ -364,6 +392,7 @@ function Host({ mood }: { mood: string }) {
       <ellipse cx="24" cy="30.5" rx="3" ry="3.6" className="wheelgame__mc-o" />
       <path d="M19 30 L29 30" className="wheelgame__mc-grit" />
       <path d="M17 42 L24 39 L31 42 L31 46 L24 43 L17 46 Z" className="wheelgame__mc-bow" />
+      <path d="M11 37 Q24 44 37 37 L37 41.5 Q24 48.5 11 41.5 Z" className="acc acc-scarf" />
     </svg>
   );
 }
