@@ -271,8 +271,9 @@ export function Parties({ day, parties, myUid, places, candidatesFor, preferredM
                             {p.status === 'open' ? '마감하기' : '다시 모으기'}
                           </Button>
                         )}
+                        {/* "취소" 만으로는 무엇을 취소하는지 몰랐다(10/16 사용자: "팟 해제도 있어야"). */}
                         <Button size="sm" variant="ghost" onClick={() => setCancelAsk(p.id)}>
-                          취소
+                          팟 없애기
                         </Button>
                       </>
                     )

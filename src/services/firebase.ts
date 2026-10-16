@@ -57,9 +57,12 @@ if (import.meta.env.VITE_FIREBASE_EMULATOR === '1') {
   // 열면 127.0.0.1 은 그 폰 자신이라 데이터가 비었다. localhost 는 IPv6(::1)로 풀려
   // 에뮬레이터(IPv4)에 안 닿을 수 있어 127.0.0.1 로 둔다.
   const host = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
-  connectFirestoreEmulator(db, host, 8080);
-  connectAuthEmulator(auth, `http://${host}:9099`, { disableWarnings: true });
-  console.info('[lunch-app] Firebase 에뮬레이터에 붙었습니다 (firestore 8080 / auth 9099)');
+  // 포트는 기본 8080/9099. 띄워 둔 에뮬레이터와 따로 하나 더 띄워 테스트할 때만 바꾼다.
+  const fsPort = Number(import.meta.env.VITE_EMULATOR_FS_PORT ?? 8080);
+  const authPort = Number(import.meta.env.VITE_EMULATOR_AUTH_PORT ?? 9099);
+  connectFirestoreEmulator(db, host, fsPort);
+  connectAuthEmulator(auth, `http://${host}:${authPort}`, { disableWarnings: true });
+  console.info(`[lunch-app] Firebase 에뮬레이터에 붙었습니다 (firestore ${fsPort} / auth ${authPort})`);
 }
 
 /**

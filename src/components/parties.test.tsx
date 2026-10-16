@@ -210,7 +210,7 @@ describe('점심 팟', () => {
       fireEvent.click(screen.getByRole('button', { name: '마감하기' }));
     });
     expect(actions.setStatus).toHaveBeenCalledWith(ME, 'closed');
-    fireEvent.click(screen.getByRole('button', { name: '취소' }));
+    fireEvent.click(screen.getByRole('button', { name: '팟 없애기' }));
     expect(actions.cancel).not.toHaveBeenCalled();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: '없앨게요' }));
