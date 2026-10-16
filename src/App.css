@@ -218,6 +218,21 @@ body {
 
 .chip { position: relative; cursor: pointer; transition: background var(--motion-fast) var(--ease-out); }
 
+.modebar__more {
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--color-neutral-500);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.modebar__more:hover:not(:disabled) { border-color: var(--color-accent); color: var(--color-accent); }
+.modebar__more:disabled { cursor: not-allowed; opacity: 0.5; }
+
 /*
  * 터치 영역. 칩·도보 알약·카테고리 라벨은 보이는 크기가 작다(390px 실측:
  * 칩 21px, 알약 18px, 카테고리 21px 높이). 보이는 모양은 그대로 두고 투명한

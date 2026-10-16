@@ -84,6 +84,7 @@ beforeAll(() => preloadGames());
 
 beforeEach(() => {
   vi.useFakeTimers();
+  window.history.replaceState({}, '', '/');
   // jsdom 에 없는 것들. 게임은 rAF 로 진행도를 그리고 setTimeout 으로 끝낸다.
   vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => setTimeout(() => cb(performance.now()), 16));
   vi.stubGlobal('cancelAnimationFrame', (id: number) => clearTimeout(id));
@@ -206,13 +207,33 @@ describe('연출 한 판', () => {
 
     // 난수 0 → 첫 후보. 끝나면 하단 실행 버튼은 결과 카드의 버튼들로 바뀐다.
     expect(card()).toBe('가집');
-    // 모달 안엔 결정·다시 하기, 뒤엔 한 줄 결과(모달이 떠 있는 동안 뒤는 inert 라 둘이 겹쳐 읽히지 않는다).
+    // 모달 안에만 결과 행동을 둔다. 뒤의 결과 줄까지 보이면 같은 상태가 두 번 보인다.
     const dialog = screen.getByRole('dialog', { name: '오늘의 점심 결과' });
     expect(within(dialog).getByRole('button', { name: '여기로 결정' })).toBeTruthy();
-    expect(within(dialog).getByRole('button', { name: '다시 하기' })).toBeTruthy();
-    expect(document.querySelector('.stage .result-bar strong')?.textContent).toBe('가집');
+    expect(within(dialog).getByRole('button', { name: '다시 뽑기' })).toBeTruthy();
+    expect(document.querySelector('.stage .result-bar')).toBeNull();
     expect(document.querySelector('.stage__run')).toBeNull();
     expect(lockedButtons()).toEqual([]);
+  });
+});
+
+describe('화면 URL', () => {
+  it('탭을 URL에 남기고 브라우저 뒤로 가기로 이전 화면에 돌아간다', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('tab', { name: '가게 목록' }));
+    expect(window.location.search).toBe('?view=list');
+    fireEvent.click(screen.getByRole('tab', { name: '가게 지도' }));
+    expect(window.location.search).toBe('?view=map');
+
+    window.history.replaceState({}, '', '/?view=list');
+    fireEvent.popState(window);
+    expect(screen.getByRole('tab', { name: '가게 목록' }).getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('공유한 지도 URL에서 지도 탭으로 시작한다', () => {
+    window.history.replaceState({}, '', '/?view=map');
+    render(<App />);
+    expect(screen.getByRole('tab', { name: '가게 지도' }).getAttribute('aria-selected')).toBe('true');
   });
 });
 
@@ -604,9 +625,9 @@ describe('판 옵션', () => {
     expect(card()).toBe('가집');
   });
 
-  it('오늘 나온 곳 빼기를 켜면 방금 뽑힌 가게는 다음 판 후보에서 빠진다', () => {
+  it('오늘 뽑힌 곳 다시 안 나오기를 켜면 방금 뽑힌 가게는 다음 판 후보에서 빠진다', () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: '오늘 나온 곳 빼기' }));
+    fireEvent.click(screen.getByRole('button', { name: '오늘 뽑힌 곳 다시 안 나오기' }));
     fireEvent.click(screen.getByRole('button', { name: '돌림판' }));
     const before = Number(/\((\d+)곳 중에서\)/.exec(runButton().textContent ?? '')?.[1]);
     fireEvent.click(runButton());
@@ -615,7 +636,7 @@ describe('판 옵션', () => {
     expect(screen.getByText('오늘 나온 1곳은 빼고 해요')).toBeTruthy();
 
     // 난수는 늘 0(첫 후보)이다. 가집이 빠졌으니 이번엔 다른 가게가 나와야 한다.
-    fireEvent.click(within(screen.getByRole('dialog', { name: '오늘의 점심 결과' })).getByRole('button', { name: '다시 하기' }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: '오늘의 점심 결과' })).getByRole('button', { name: '다시 뽑기' }));
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50 + RESULT_DELAY_MS); });
     expect(card()).not.toBe('가집');
     expect(before).toBeGreaterThan(2);

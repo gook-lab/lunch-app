@@ -100,6 +100,18 @@ import { PlacePhotoStrip, PlaceThumb } from './components/PlaceThumb';
 const MapTab = lazy(() => import('./components/MapTab'));
 
 type Tab = 'roadmap' | 'list' | 'map';
+
+function tabFromUrl(): Tab {
+  const view = new URL(window.location.href).searchParams.get('view');
+  return view === 'list' || view === 'map' ? view : 'roadmap';
+}
+
+function pushTabUrl(tab: Tab) {
+  const url = new URL(window.location.href);
+  if (tab === 'roadmap') url.searchParams.delete('view');
+  else url.searchParams.set('view', tab);
+  window.history.pushState({ ...window.history.state, lunchTab: tab }, '', url);
+}
 const TABS: Tab[] = ['roadmap', 'list', 'map'];
 // '오늘·목록' 은 무엇을 하는 탭인지 안 읽혔다(10/14 사용자). 하는 일로 부른다.
 const TAB_LABEL: Record<Tab, string> = { roadmap: '점심 고르기', list: '가게 목록', map: '가게 지도' };
@@ -150,6 +162,18 @@ function focusIfLost(node: HTMLElement | null) {
 /** 처음 온 사람의 게임. 컷신·이벤트가 있는 활쏘기로 시작한다(10/15 사용자). games/index.ts 가 바로 싣는다. */
 const NO_IDS: string[] = [];
 const DEFAULT_MODE: GameMode = 'archery';
+const FEATURED_MODE_IDS = new Set<GameMode>([
+  'archery',
+  'wheel',
+  'penalty',
+  'bowling',
+  'claw',
+  'fishing',
+  'pinball',
+  'tournament',
+  'ladder',
+  'cards',
+]);
 
 function revealPickedMode(node: HTMLElement | null) {
   const on = node?.querySelector<HTMLElement>('.modebar__item--on');
@@ -269,7 +293,16 @@ export default function App() {
   }, []);
   useEffect(() => () => window.clearTimeout(resultTimer.current), []);
   const [saving, setSaving] = useState(false);
-  const [tab, setTab] = useState<Tab>('roadmap');
+  const [tab, setTab] = useState<Tab>(tabFromUrl);
+  useEffect(() => {
+    const onPopState = () => {
+      setFiltersOpen(false);
+      setMapFocus(null);
+      setTab(tabFromUrl());
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
   const boardRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLHeadingElement>(null);
   const resultBarRef = useRef<HTMLButtonElement>(null);
@@ -308,6 +341,7 @@ export default function App() {
       return DEFAULT_MODE;
     }
   });
+  const [showAllGames, setShowAllGames] = useState(false);
 
   /*
    * 데스크톱 작게 보기에서 게임이 판 칸(약 770×540)에 360px 남짓으로 작게 떠 여백이 컸다(10/16 사용자).
@@ -477,12 +511,14 @@ export default function App() {
   const goTab = useCallback((next: Tab) => {
     setFiltersOpen(false);
     setMapFocus(null);
+    if (next !== tab) pushTabUrl(next);
     setTab(next);
-  }, []);
+  }, [tab]);
   const showOnMap = useCallback((placeId: string) => {
     setMapFocus(placeId);
+    if (tab !== 'map') pushTabUrl('map');
     setTab('map');
-  }, []);
+  }, [tab]);
 
   // WAI-ARIA 탭 패턴: 탭 사이는 화살표·Home·End 로 옮기고, Tab 키는 탭 묶음을
   // 한 번에 지나간다(선택된 탭만 tabIndex 0). 옮기면 바로 그 탭을 연다.
@@ -812,7 +848,7 @@ export default function App() {
         <span className="stage__optBox" aria-hidden="true">
           {skipShown ? '✓' : ''}
         </span>
-        오늘 나온 곳 빼기
+        오늘 뽑힌 곳 다시 안 나오기
       </button>
       <button type="button" className="stage__opt" aria-pressed={quickOn} onClick={toggleQuick} disabled={spinning}>
         <span className="stage__optBox" aria-hidden="true">
@@ -871,7 +907,7 @@ export default function App() {
           <ShareButton place={winner} primary />
           <DirectionsLink place={winner} />
           <Button block variant="secondary" onClick={spin} disabled={spinning}>
-            그래도 다시 하기
+            그래도 다시 뽑기
           </Button>
           <p className="muted small">다시 해서 다른 곳을 고르면 오늘 기록이 바뀌어요.</p>
         </>
@@ -884,7 +920,7 @@ export default function App() {
             {/* "여기로 결정" 의 설명이라 바로 밑에 둔다. 다시 하기 밑에 있으면 그 버튼 얘기로 읽혔다(10/14). */}
             <p className="muted small">누르면 방문 기록에 남고, 1주 동안 고를 가게에서 빠져요.</p>
             <Button block variant="secondary" onClick={spin} disabled={spinning}>
-              다시 하기
+              다시 뽑기
             </Button>
           </div>
           {/* 정하기 전에도 얼마나 걸리는지 길을 먼저 볼 수 있게(10/13 점검). 기록은 남지 않는다. */}
@@ -912,7 +948,7 @@ export default function App() {
    */
   const modebar = (
     <div className="modebar" role="group" aria-label="방식" ref={revealPickedMode}>
-      {GAME_MODES.map((m) => (
+      {GAME_MODES.filter((m) => wide || showAllGames || FEATURED_MODE_IDS.has(m.id) || m.id === mode).map((m) => (
         <button
           key={m.id}
           type="button"
@@ -927,6 +963,11 @@ export default function App() {
           {m.label}
         </button>
       ))}
+      {!wide && (
+        <button type="button" className="modebar__more" onClick={() => setShowAllGames((open) => !open)} disabled={spinning}>
+          {showAllGames ? '게임 접기' : `게임 더 보기 (${GAME_MODES.length - FEATURED_MODE_IDS.size})`}
+        </button>
+      )}
     </div>
   );
 
@@ -1299,9 +1340,8 @@ export default function App() {
 
                   {/* 모달을 닫으면 게임 아래엔 한 줄만 남긴다. 티켓 전체가 남으면 모달과 같은 카드가
             화면 아래를 계속 차지했다(10/13 사용자). 결정·공유는 "결과 보기" 로 다시 연다. */}
-                  {/* 모달이 떠 있을 때도 뒤엔 한 줄 결과를 둔다. 예전엔 모달이 열린 동안 이 자리에 "돌리기" 가
-            다시 나타나, 결과가 나왔는데 뒤에선 또 돌리라고 했다(10/13 플로우 점검). */}
-                  {winner ? (
+                  {/* 결과 모달이 닫힌 뒤에만 한 줄 결과를 남긴다. 같은 결과가 앞뒤에 겹치지 않게 한다. */}
+                  {winner ? (resultOpen ? null : (
                     <div className="result-bar">
                       <p className="result-bar__text">
                         <span aria-hidden="true">{MODE_ICON[mode]} </span>
@@ -1335,9 +1375,9 @@ export default function App() {
                         >
                           결과 보기
                         </Button>
-                        {/* 정한 뒤엔 모달과 같은 말로. 여기서만 "다시 하기" 라 오늘 기록이 바뀌는 줄 몰랐다(10/15). */}
+                        {/* 정한 뒤엔 모달과 같은 말로. 오늘 기록이 바뀌는 재추첨임을 분명히 한다. */}
                         <Button variant="secondary" onClick={spin} disabled={spinning}>
-                          {confirmed ? '그래도 다시 하기' : '다시 하기'}
+                          {confirmed ? '그래도 다시 뽑기' : '다시 뽑기'}
                         </Button>
                         <button
                           type="button"
@@ -1350,7 +1390,7 @@ export default function App() {
                         </button>
                       </div>
                     </div>
-                  ) : gate ? null : (
+                  )) : gate ? null : (
                     // 오늘 이미 정했으면 다시 하기는 보조 동작이다. 위 배너가 "정했어요" 라고 하는데
                     // 가장 큰 빨간 버튼이 또 돌리라고 하면 화면이 두 말을 한다(10/9 UI 점검).
                     <Button
