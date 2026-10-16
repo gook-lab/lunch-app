@@ -57,6 +57,8 @@ export function saveSeason(mode: SeasonMode): void {
     // 사생활 보호 모드 — 이번 방문 동안만 적용된다.
   }
   applySeason(mode);
+  // 게임 분위기(useAmbience)가 계절을 다시 읽는다.
+  window.dispatchEvent(new Event('lunch-app:season'));
 }
 
 /** 첫 그리기 전에 한 번. 자동이면 날짜가 바뀔 때 따라간다. */

@@ -64,6 +64,7 @@ import {
 } from './components/games/types';
 import { Roadmap } from './components/Roadmap';
 import { WeatherChip } from './components/WeatherChip';
+import { AmbienceProvider } from './hooks/useAmbience';
 import { useTodayKST } from './hooks/useTodayKST';
 import { useLunchData } from './hooks/useLunchData';
 import { addShown, readShown, readSkipShown, withoutShown, writeSkipShown } from './lib/shownToday';
@@ -443,7 +444,8 @@ export default function App() {
     setSpinning(false);
     setWinner((prev) => (winnerIndex === null ? prev : (board?.[winnerIndex] ?? prev)));
     const won = winnerIndex === null ? undefined : board?.[winnerIndex];
-    if (won) setShownStore((prev) => ({ day: today, ids: addShown(today, prev.day === today ? prev.ids : [], won.id) }));
+    if (won)
+      setShownStore((prev) => ({ day: today, ids: addShown(today, prev.day === today ? prev.ids : [], won.id) }));
     // 결과는 모달로. 게임 아래 카드는 스크롤해야 보였고, 끝난 순간이 밋밋했다(10/9 사용자).
     // 바로 띄우면 게임의 마지막 장면(바늘이 걸리는 순간, 응원한 공의 등수)을 모달이
     // 덮는다. 잠깐 보여 주고 연다.
@@ -535,14 +537,17 @@ export default function App() {
   // 필터를 바꾸는 손잡이는 전부 이 함수를 같이 부른다(아래 updateFilters).
   // 판을 내려놓을 땐 결과 모달 예약(resultTimer)도 같이 끊는다. 연출이 끝난 뒤 0.25초 안에
   // 조건·공 개수를 바꾸면 판은 사라졌는데 차임이 울리고 탭 바에 "결과" 가 붙었다.
-  const updateFilters = useCallback((patch: (f: Filters) => Filters) => {
-    closeResult();
-    setBoard(null);
-    setWinner(null);
-    setWinnerIndex(null);
-    setSpinning(false);
-    setFilters(patch);
-  }, [closeResult]);
+  const updateFilters = useCallback(
+    (patch: (f: Filters) => Filters) => {
+      closeResult();
+      setBoard(null);
+      setWinner(null);
+      setWinnerIndex(null);
+      setSpinning(false);
+      setFilters(patch);
+    },
+    [closeResult],
+  );
 
   // 자정을 넘기면 어제 판을 내려놓는다. 탭을 켜 둔 채 날이 바뀌면 어제 당첨이 결과 카드에
   // 남아 있고, "여기로 결정" 을 누르면 오늘 기록으로 저장됐다. 첫 렌더는 건너뛴다.
@@ -571,14 +576,17 @@ export default function App() {
 
   // 공 개수를 바꾸면 지난 판을 내려놓는다(조건 바꾸기와 같다). 얼려 둔 판이 남아 있으면
   // 바꾼 개수가 화면에 안 보이고, 지난 경기와 구슬 수도 안 맞는다.
-  const changeBalls = useCallback((update: (prev: Record<string, number>) => Record<string, number>) => {
-    closeResult();
-    setBoard(null);
-    setBoardBalls(null);
-    setWinner(null);
-    setWinnerIndex(null);
-    setBallCounts(update);
-  }, [closeResult]);
+  const changeBalls = useCallback(
+    (update: (prev: Record<string, number>) => Record<string, number>) => {
+      closeResult();
+      setBoard(null);
+      setBoardBalls(null);
+      setWinner(null);
+      setWinnerIndex(null);
+      setBallCounts(update);
+    },
+    [closeResult],
+  );
 
   // 단추는 saving 으로 잠기지만, 잠기기 전에 같은 순간 들어온 두 번째 클릭은
   // 막지 못한다. 상태가 아니라 ref 로 즉시 막는다.
@@ -801,17 +809,15 @@ export default function App() {
         onClick={toggleSkipShown}
         disabled={spinning}
       >
-        <span className="stage__optBox" aria-hidden="true">{skipShown ? '✓' : ''}</span>
+        <span className="stage__optBox" aria-hidden="true">
+          {skipShown ? '✓' : ''}
+        </span>
         오늘 나온 곳 빼기
       </button>
-      <button
-        type="button"
-        className="stage__opt"
-        aria-pressed={quickOn}
-        onClick={toggleQuick}
-        disabled={spinning}
-      >
-        <span className="stage__optBox" aria-hidden="true">{quickOn ? '✓' : ''}</span>
+      <button type="button" className="stage__opt" aria-pressed={quickOn} onClick={toggleQuick} disabled={spinning}>
+        <span className="stage__optBox" aria-hidden="true">
+          {quickOn ? '✓' : ''}
+        </span>
         결과 바로 보기
       </button>
       {skipShown && (playable.skipped > 0 || playable.restarted) && (
@@ -965,483 +971,490 @@ export default function App() {
   );
 
   return (
-    <main className="app">
-      <div className="topbar">
-        <header className="app__header">
-          {/* 식권 번호(NO. 0287)·"사내 점심 식권" 은 무슨 뜻인지 안 읽혔다(10/14 사용자). 날짜와 한마디만. */}
-          <p className="app__date">{formatDay(today)} · 점심 뭐 먹지?</p>
-          <div className="app__titleRow">
-            <h1>{TAB_TITLE[tab]}</h1>
-            <span className="app__count">
-              {refreshing ? '새로고침 중' : `가게 ${places.filter((p) => p.active).length}곳`}
-            </span>
-            {/* 그림 없이 글자만. 그림이 밑줄 위에 얹혀 깨져 보였다(10/14). */}
-            <span className="app__tools">
-              <button type="button" className="linkish app__tool" onClick={openTour} disabled={spinning}>
-                사용법
-              </button>
-              <Settings />
-            </span>
-          </div>
-          {import.meta.env.VITE_DEMO === '1' && <DemoNote />}
-          {import.meta.env.VITE_DEMO !== '1' && isDevHost(window.location.hostname) && <DevHostNote />}
-        </header>
-
-        <nav className="tabs" role="tablist" aria-label="화면" onKeyDown={onTabKey}>
-          {TABS.map((t) => (
-            <button
-              key={t}
-              id={`tab-${t}`}
-              role="tab"
-              aria-selected={tab === t}
-              aria-controls={`panel-${t}`}
-              tabIndex={tab === t ? 0 : -1}
-              className={tab === t ? 'on' : ''}
-              onClick={() => goTab(t)}
-            >
-              <span className="tabs__icon" aria-hidden="true">
-                {TAB_ICON[t]}
+    <AmbienceProvider office={office}>
+      <main className="app">
+        <div className="topbar">
+          <header className="app__header">
+            {/* 식권 번호(NO. 0287)·"사내 점심 식권" 은 무슨 뜻인지 안 읽혔다(10/14 사용자). 날짜와 한마디만. */}
+            <p className="app__date">{formatDay(today)} · 점심 뭐 먹지?</p>
+            <div className="app__titleRow">
+              <h1>{TAB_TITLE[tab]}</h1>
+              <span className="app__count">
+                {refreshing ? '새로고침 중' : `가게 ${places.filter((p) => p.active).length}곳`}
               </span>
-              {TAB_LABEL[t]}
-              {t === 'roadmap' && tab !== 'roadmap' && (spinning || resultOpen || party.alerts.length > 0) && (
-                <span className={resultOpen ? 'tabs__badge tabs__badge--done' : 'tabs__badge'}>
-                  <span className="sr-only">, </span>
-                  {resultOpen ? '결과' : party.alerts.length > 0 ? '알림' : '게임 중'}
-                </span>
-              )}
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      {tab === 'list' && (
-        <div role="tabpanel" id="panel-list" aria-labelledby="tab-list" className="panel">
-          {places.length === 0 ? (
-            emptyScreen
-          ) : (
-            <PlaceList
-              places={places}
-              visits={visits}
-              today={today}
-              onChanged={reload}
-              recent={result}
-              onShowOnMap={showOnMap}
-              onAdd={() => goTab('map')}
-              ratings={ratings}
-            />
-          )}
-        </div>
-      )}
-
-      {tab === 'map' && (
-        <div role="tabpanel" id="panel-map" aria-labelledby="tab-map" className="panel">
-          <Suspense
-            fallback={
-              <div className="panel-loading">
-                <Spinner size={28} style={{ borderRadius: '50%' }} aria-label="지도를 준비하고 있어요" />
-                <p className="muted small">지도를 준비하고 있어요</p>
-              </div>
-            }
-          >
-            <MapTab
-              key={officeKey}
-              places={places}
-              onChanged={reload}
-              onOfficeChanged={reload}
-              todayId={decidedPlace?.id ?? null}
-              recentIds={recentIds}
-              focusId={mapFocus}
-              ratings={ratings}
-            />
-          </Suspense>
-        </div>
-      )}
-
-      <div
-        role="tabpanel"
-        id="panel-roadmap"
-        aria-labelledby="tab-roadmap"
-        className="panel"
-        hidden={tab !== 'roadmap'}
-      >
-        {/* 게임 중·결과가 나와도 배너를 그대로 둔다. 결과가 나오는 순간 사라지면 아래 화면 전체가
-            위로 올라붙었다(10/14 사용자). 새로 "여기로 결정" 을 누르면 배너 내용만 바뀐다. */}
-        {places.length > 0 && (
-          <RatePrompt
-            key={today}
-            today={today}
-            target={rateTarget}
-            ratings={ratings}
-          />
-        )}
-        {decidedPlace && (
-          <section className="decided" aria-label="오늘 정한 곳">
-            <span className="decided__check" aria-hidden="true">
-              ✓
-            </span>
-            <div className="decided__body">
-              <p className="decided__title">
-                오늘은 <strong>{decidedPlace.name}</strong>
-                {josa(decidedPlace.name, '으로/로')} 정했어요
-              </p>
-              <p className="muted small">
-                {categoryLabel(decidedPlace)} · 도보 {decidedPlace.walkMin}분 · 다시 하면 바꿀 수 있어요
-              </p>
-              <DirectionsLink place={decidedPlace} />
-              <ShareButton place={decidedPlace} />
-            </div>
-          </section>
-        )}
-
-        {places.length === 0 ? (
-          emptyScreen
-        ) : (
-          <div className="today">
-            <section
-              className={['stage', spinning ? 'stage--busy' : '', expanded ? 'stage--full' : '', fitBoard ? 'stage--fit' : '']
-                .filter(Boolean)
-                .join(' ')}
-              aria-label="게임"
-            >
-              {/*
-               * 휴대폰: 조건은 요약 한 줄로 줄이고 누르면 시트로 연다. 로드맵(356px)을 게임 아래에
-               * 쌓으면 조건이 탭 바 밑으로 한참 내려가 안 보였다(10/12 와이어프레임 개선).
-               */}
-              {!wide && !expanded && (
-                <button
-                  type="button"
-                  className="today__summary"
-                  aria-haspopup="dialog"
-                  onClick={() => setFiltersOpen(true)}
-                >
-                  <span className="today__summaryMain">고를 가게 {result.candidates.length}곳</span>
-                  {/* 카테고리는 바로 아래 칩이 보여 준다. 여기까지 쓰면 휴대폰에서 잘렸다(10/14). */}
-                  <span className="today__summaryRest">
-                    도보 {filters.maxWalkMin}분{filters.excludeRecent ? ' · 최근 1주 제외' : ''}
-                  </span>
-                  <span className="today__summaryGo">
-                    바꾸기<span aria-hidden="true"> ▾</span>
-                  </span>
+              {/* 그림 없이 글자만. 그림이 밑줄 위에 얹혀 깨져 보였다(10/14). */}
+              <span className="app__tools">
+                <button type="button" className="linkish app__tool" onClick={openTour} disabled={spinning}>
+                  사용법
                 </button>
-              )}
-              {wide && modebar}
-              {!expanded && (
-                <CategoryChips
-                  places={places}
-                  selected={filters.categories}
-                  subs={filters.subs ?? []}
-                  onToggle={toggleCategory}
-                  onToggleSub={toggleSub}
-                  onClear={() => updateFilters((f) => ({ ...f, categories: [], subs: [] }))}
-                  onClearSubs={() => updateFilters((f) => ({ ...f, subs: [] }))}
-                  disabled={spinning}
-                />
-              )}
-              {!wide && modebar}
-              {/* 데스크톱에선 판·실행·예측을 한 세로 칸으로 묶어 판이 남는 높이를 다 쓴다. 휴대폰·크게 보기에선 display: contents 라 없는 것과 같다. */}
-              <div className="stage__main">
-                <div className="stage__top">
-                  {/* 안내 한 줄과 크게 보기를 한 줄에 둔다. 크게 보기 혼자 한 줄을 먹어 게임판이 밀렸다(10/9 UI 점검). */}
-                  <GameTitle mode={mode} />
-                  {!expanded && weighted && <p className="muted small stage__hint">핀볼은 공이 많을수록 뽑힐 확률이 높아요</p>}
-                  {/* 데스크톱은 제목 줄 오른쪽에 둔다. 실행 단추 아래 한 줄을 따로 먹어 판이 그만큼 낮았다(10/16 사용자). */}
-                  {wide && !expanded && stageOpts}
-                  <button
-                    type="button"
-                    className="stage__expand"
-                    aria-pressed={expanded}
-                    onClick={toggleExpanded}
-                  >
-                    <span aria-hidden="true">{expanded ? '✕ ' : '⤢ '}</span>
-                    {expanded ? '작게 보기' : '크게 보기'}
-                  </button>
-                </div>
+                <Settings />
+              </span>
+            </div>
+            {import.meta.env.VITE_DEMO === '1' && <DemoNote />}
+            {import.meta.env.VITE_DEMO !== '1' && isDevHost(window.location.hostname) && <DevHostNote />}
+          </header>
 
-                {/*
-                 * 기기의 "동작 줄이기" 가 켜져 있으면 게임이 연출 없이 결과만 띄운다.
-                 * 말없이 그러면 "게임이 안 돌아간다" 로 읽힌다. 이유를 알리고, 이 앱에서만
-                 * 연출을 다시 켤 수 있게 한다.
-                 */}
-                {reducedBySystem && (
-                  <div className="motion-note" role="note">
-                    <p>
-                      {motionOn
-                        ? '게임 움직임을 켰어요. 기기의 \u2018동작 줄이기\u2019 설정과 상관없이 움직여요.'
-                        : '기기에서 \u2018동작 줄이기\u2019를 쓰고 있어서 결과를 바로 보여 드려요.'}
-                    </p>
-                    <button type="button" className="motion-note__toggle" onClick={toggleMotion} disabled={spinning}>
-                      {motionOn ? '움직임 끄기' : '움직임 켜기'}
-                    </button>
-                  </div>
+          <nav className="tabs" role="tablist" aria-label="화면" onKeyDown={onTabKey}>
+            {TABS.map((t) => (
+              <button
+                key={t}
+                id={`tab-${t}`}
+                role="tab"
+                aria-selected={tab === t}
+                aria-controls={`panel-${t}`}
+                tabIndex={tab === t ? 0 : -1}
+                className={tab === t ? 'on' : ''}
+                onClick={() => goTab(t)}
+              >
+                <span className="tabs__icon" aria-hidden="true">
+                  {TAB_ICON[t]}
+                </span>
+                {TAB_LABEL[t]}
+                {t === 'roadmap' && tab !== 'roadmap' && (spinning || resultOpen || party.alerts.length > 0) && (
+                  <span className={resultOpen ? 'tabs__badge tabs__badge--done' : 'tabs__badge'}>
+                    <span className="sr-only">, </span>
+                    {resultOpen ? '결과' : party.alerts.length > 0 ? '알림' : '게임 중'}
+                  </span>
                 )}
+              </button>
+            ))}
+          </nav>
+        </div>
 
-                {/*
-                 * 게임판은 쉴 때도 그린다.
-                 *
-                 * 한동안 실행 전에는 감춰 뒀다. 로드맵(356px)과 게임(300px)을 같이
-                 * 쌓으면 390x844 에서 실행 버튼이 1097px 로 밀려나기 때문이었다.
-                 * 그런데 그러면 모드 칩 5개가 죽은 것처럼 보인다 — 눌러도 화면이
-                 * 그대로라 "배선이 안 된 것 같다" 는 말을 들었다. 실제로 그렇게 읽힌다.
-                 *
-                 * 스크롤 한 번보다 그게 더 나쁘다. 칩을 누르면 판이 바로 바뀐다.
-                 */}
-                <div ref={boardRef} className="stage__board" tabIndex={-1}>
-                  {gate ? (
-                    <StatusScreen
-                      inline
-                      art={<span className="stage__gateArt">{MODE_ICON[mode]}</span>}
-                      title={gate.title}
-                      lines={gate.lines}
-                      action={
-                        gateWalk !== null ? (
-                          <Button onClick={() => updateFilters((f) => ({ ...f, maxWalkMin: gateWalk }))}>
-                            도보 {gateWalk}분까지 보기
-                          </Button>
-                        ) : gate.fix.kind === 'category' ? (
-                          <Button onClick={() => updateFilters((f) => ({ ...f, categories: [], subs: [] }))}>
-                            메뉴 전체 보기
-                          </Button>
-                        ) : gate.fix.kind === 'list' ? (
-                          <Button onClick={() => goTab('list')}>목록에서 가게 되돌리기</Button>
-                        ) : (
-                          <Button onClick={() => goTab('map')}>
-                            <span aria-hidden="true">🗺️ </span>지도에서 가게 넣기
-                          </Button>
-                        )
-                      }
-                    />
-                  ) : (
-                    <GameBoundary
-                      resetKey={`${mode}|${run}|${(board ?? result.candidates).map((p) => p.id).join(',')}`}
-                    >
-                      {(() => {
-                        const game = {
-                          candidates: board ?? result.candidates,
-                          winnerIndex,
-                          spinning,
-                          run,
-                          onSpinEnd,
-                          // 데스크톱 작게 보기도 판 칸을 채우는 큰 그림으로 그린다(stage--fit, desktop.css).
-                          expanded: expanded || fitBoard,
-                        };
-                        // 사다리는 사용자가 판을 고친다. 후보 구성이 바뀌면 새 판이어야 하므로
-                        // 후보 id 를 key 로 준다. 돌린 순간 얼리는 board 는 같은 id 라 판이 유지된다.
-                        if (mode === 'ladder') {
-                          const key = game.candidates.map((p) => p.id).join(',');
-                          return <Ladder key={key} {...game} onRequestSpin={spin} />;
-                        }
-                        if (mode === 'cards') {
-                          const key = game.candidates.map((p) => p.id).join(',');
-                          return <Cards key={key} {...game} onRequestSpin={spin} />;
-                        }
-                        if (mode === 'memory') {
-                          const key = game.candidates.map((p) => p.id).join(',');
-                          return <Memory key={key} {...game} onRequestSpin={spin} onActivity={onActivity} />;
-                        }
-                        if (mode === 'tournament') {
-                          // 응원 고른 것은 같은 후보 구성 안에서만 유지한다.
-                          const key = game.candidates.map((p) => p.id).join(',');
-                          return <Tournament key={key} {...game} />;
-                        }
-                        if (mode === 'slot') return <Slot {...game} />;
-                        if (mode === 'pinball') {
-                          const balls =
-                            board && boardBalls
-                              ? boardBalls
-                              : ballCountsFor(
-                                  game.candidates.map((p) => p.id),
-                                  ballCounts,
-                                );
-                          return <Pinball {...game} balls={balls} onBallCounts={changeBalls} />;
-                        }
-                        if (mode === 'gacha') return <Gacha {...game} />;
-                        if (mode === 'plinko') return <Plinko {...game} />;
-                        if (mode === 'horse') return <HorseRace {...game} />;
-                        if (mode === 'racing') return <CarRace {...game} />;
-                        if (mode === 'dice') {
-                          const key = game.candidates.map((p) => p.id).join(',');
-                          return <Dice key={key} {...game} />;
-                        }
-                        if (mode === 'bomb') {
-                          // 폭탄도 주사위처럼 "지난 판 자리" 에서 출발한다. 후보 구성이 바뀌면 그 자리는
-                          // 다른 가게(또는 없는 자리)라 새로 시작한다.
-                          const key = game.candidates.map((p) => p.id).join(',');
-                          return <Bomb key={key} {...game} />;
-                        }
-                        if (mode === 'balloon') return <Balloon {...game} />;
-                        if (mode === 'fishing') return <Fishing {...game} />;
-                        if (mode === 'archery') return <Archery {...game} />;
-                        if (mode === 'curling') return <Curling {...game} />;
-                        if (mode === 'plane') return <PaperPlane {...game} />;
-                        if (mode === 'treasure') return <Treasure {...game} />;
-                        if (mode === 'claw') return <Claw {...game} />;
-                        if (mode === 'penalty') return <Penalty {...game} />;
-                        if (mode === 'bowling') return <Bowling {...game} />;
-                        return <Wheel {...game} />;
-                      })()}
-                    </GameBoundary>
-                  )}
-                </div>
-
-                {/*
-                 * 결과 알림. 결과 카드는 연출이 끝난 뒤 새로 생기는 요소라 화면낭독기가
-                 * 알아채지 못한다. 늘 있는 빈 영역에 글을 채워야 읽힌다.
-                 */}
-                <p className="sr-only" aria-live="polite">
-                  {winner && !spinning
-                    ? `${withJosa(winner.name, '이/가')} 뽑혔어요. 도보 ${winner.walkMin}분이에요`
-                    : ''}
-                </p>
-
-                {/* 모달을 닫으면 게임 아래엔 한 줄만 남긴다. 티켓 전체가 남으면 모달과 같은 카드가
-            화면 아래를 계속 차지했다(10/13 사용자). 결정·공유는 "결과 보기" 로 다시 연다. */}
-                {/* 모달이 떠 있을 때도 뒤엔 한 줄 결과를 둔다. 예전엔 모달이 열린 동안 이 자리에 "돌리기" 가
-            다시 나타나, 결과가 나왔는데 뒤에선 또 돌리라고 했다(10/13 플로우 점검). */}
-                {winner ? (
-                  <div className="result-bar">
-                    <p className="result-bar__text">
-                      <span aria-hidden="true">{MODE_ICON[mode]} </span>
-                      <strong>{winner.name}</strong>
-                      <span className="sr-only"> · </span>
-                      <span className="result-bar__meta">
-                        도보 {winner.walkMin}분{confirmed ? ' · 오늘 점심은 여기예요' : ''}
-                      </span>
-                    </p>
-                    <div className="result-bar__actions">
-                      {/* 결과 창을 닫으면 결정하려고 창을 다시 열어야 했다. 결정 기록이 거의 안 쌓여(3건, 10/16)
-                          여기서도 바로 정하게 한다. 정한 뒤엔 결과 보기만 남는다. */}
-                      {!confirmed && (
-                        <Button
-                          onClick={() => {
-                            onDecide(winner);
-                            // 결과 창을 열어 "정했어요" 와 큰 알리기 단추를 보여 준다. 다른 곳으로 이미 정해 바꿀지
-                            // 묻는 시트가 뜨는 경우엔 열지 않는다 — 시트 위에 창이 덮인다.
-                            if (!decision || decision.placeId === winner.id) setResultOpen(true);
-                          }}
-                          loading={saving}
-                          disabled={spinning}
-                        >
-                          여기로 결정
-                        </Button>
-                      )}
-                      <Button ref={resultBarRef} variant={confirmed ? 'primary' : 'secondary'} onClick={() => setResultOpen(true)}>
-                        결과 보기
-                      </Button>
-                      {/* 정한 뒤엔 모달과 같은 말로. 여기서만 "다시 하기" 라 오늘 기록이 바뀌는 줄 몰랐다(10/15). */}
-                      <Button variant="secondary" onClick={spin} disabled={spinning}>
-                        {confirmed ? '그래도 다시 하기' : '다시 하기'}
-                      </Button>
-                      <button type="button" className="result-bar__clear" aria-label="결과 지우기" title="결과 지우기" onClick={clearBoard}>
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-                ) : gate ? null : (
-                  // 오늘 이미 정했으면 다시 하기는 보조 동작이다. 위 배너가 "정했어요" 라고 하는데
-                  // 가장 큰 빨간 버튼이 또 돌리라고 하면 화면이 두 말을 한다(10/9 UI 점검).
-                  <Button
-                    block
-                    className="stage__run"
-                    size={decidedPlace ? 'md' : 'lg'}
-                    variant={decidedPlace ? 'secondary' : 'primary'}
-                    onClick={spin}
-                    disabled={spinning}
-                  >
-                    {spinning
-                      ? '게임 중'
-                      : `${decidedPlace ? '다시 ' : ''}${actionLabel(mode)} (${playable.list.length}곳 중에서)`}
-                  </Button>
-                )}
-
-                {/* 휴대폰은 실행 단추 아래. 데스크톱은 게임 제목 줄 오른쪽(stageOpts). */}
-                {!wide && stageOpts}
-
-                {/* 데스크톱에선 예측·안내 한 줄을 오른쪽 칸으로 옮긴다. 판이 그만큼 높아진다(10/14 리빌딩). */}
-                {!wide && predictions}
-                {!wide && notice && <p className="notice">{notice}</p>}
-              </div>
-            </section>
-
-            {/* 휴대폰은 게임 아래에 날씨·팟을 둔다. 데스크톱은 오른쪽 칸(filtersPanel). 조건 시트 안에 두면 안 열어 보면 못 본다. */}
-            {!wide && weather}
-            {!wide && parties}
-
-            {/* 조건은 게임 옆(데스크톱)·아래(휴대폰)에 둔다. 첫 화면은 게임이 차지한다. */}
-            {wide && (
-              <aside className="today__filters" aria-labelledby="filters-title">
-                <h2 id="filters-title" className="today__title">
-                  고를 가게 <span className="today__count">{result.candidates.length}곳</span>
-                </h2>
-                {filtersPanel}
-              </aside>
+        {tab === 'list' && (
+          <div role="tabpanel" id="panel-list" aria-labelledby="tab-list" className="panel">
+            {places.length === 0 ? (
+              emptyScreen
+            ) : (
+              <PlaceList
+                places={places}
+                visits={visits}
+                today={today}
+                onChanged={reload}
+                recent={result}
+                onShowOnMap={showOnMap}
+                onAdd={() => goTab('map')}
+                ratings={ratings}
+              />
             )}
           </div>
         )}
-      </div>
 
-      <Sheet
-        open={filtersOpen && !wide && tab === 'roadmap'}
-        onClose={() => setFiltersOpen(false)}
-        title={`고를 가게 ${result.candidates.length}곳`}
-        className="filters-sheet"
-      >
-        {/* 데스크톱은 오른쪽 칸에 이미 그린다. 닫힌 시트에 한 벌 더 그리지 않는다. */}
-        {!wide && filtersPanel}
-        <Button block variant="secondary" onClick={() => setFiltersOpen(false)}>
-          이대로 할게요
-        </Button>
-      </Sheet>
-
-      {tourOpen && <Tour onClose={() => setTourOpen(false)} />}
-
-      <Modal
-        open={resultOpen && winner !== null && tab === 'roadmap'}
-        onClose={closeResult}
-        className="result-modal"
-        aria-label="오늘의 점심 결과"
-      >
-        {/* 닫힌 dialog 도 자식을 그린다. 그러면 카드가 두 벌이 되어 초점·ref 가 닫힌 쪽으로 간다. */}
-        {resultOpen && burst > 0 && <Confetti key={burst} seed={burst} />}
-        {resultOpen && ticket}
-        <button type="button" className="linkish result-modal__close" onClick={closeResult}>
-          닫고 게임 보기
-        </button>
-      </Modal>
-
-      <Sheet
-        open={confirming !== null}
-        onClose={() => {
-          setConfirming(null);
-          setSaveProblem(false);
-        }}
-        title="오늘은 이미 정했어요"
-        description={
-          decidedPlace && confirming
-            ? `${decidedPlace.name}에서 ${withJosa(confirming.name, '으로/로')} 바꿀까요?`
-            : undefined
-        }
-      >
-        <div className="row">
-          <Button block onClick={() => confirming && void commit(confirming)} loading={saving}>
-            바꾸기
-          </Button>
-          <Button
-            block
-            variant="ghost"
-            onClick={() => {
-              setConfirming(null);
-              setSaveProblem(false);
-            }}
-          >
-            그대로 두기
-          </Button>
-        </div>
-        {saveProblem && (
-          <p className="notice notice--empty" role="alert">
-            바꾸지 못했어요. 잠시 뒤 다시 눌러 주세요.
-          </p>
+        {tab === 'map' && (
+          <div role="tabpanel" id="panel-map" aria-labelledby="tab-map" className="panel">
+            <Suspense
+              fallback={
+                <div className="panel-loading">
+                  <Spinner size={28} style={{ borderRadius: '50%' }} aria-label="지도를 준비하고 있어요" />
+                  <p className="muted small">지도를 준비하고 있어요</p>
+                </div>
+              }
+            >
+              <MapTab
+                key={officeKey}
+                places={places}
+                onChanged={reload}
+                onOfficeChanged={reload}
+                todayId={decidedPlace?.id ?? null}
+                recentIds={recentIds}
+                focusId={mapFocus}
+                ratings={ratings}
+              />
+            </Suspense>
+          </div>
         )}
-      </Sheet>
-    </main>
+
+        <div
+          role="tabpanel"
+          id="panel-roadmap"
+          aria-labelledby="tab-roadmap"
+          className="panel"
+          hidden={tab !== 'roadmap'}
+        >
+          {/* 게임 중·결과가 나와도 배너를 그대로 둔다. 결과가 나오는 순간 사라지면 아래 화면 전체가
+            위로 올라붙었다(10/14 사용자). 새로 "여기로 결정" 을 누르면 배너 내용만 바뀐다. */}
+          {places.length > 0 && <RatePrompt key={today} today={today} target={rateTarget} ratings={ratings} />}
+          {decidedPlace && (
+            <section className="decided" aria-label="오늘 정한 곳">
+              <span className="decided__check" aria-hidden="true">
+                ✓
+              </span>
+              <div className="decided__body">
+                <p className="decided__title">
+                  오늘은 <strong>{decidedPlace.name}</strong>
+                  {josa(decidedPlace.name, '으로/로')} 정했어요
+                </p>
+                <p className="muted small">
+                  {categoryLabel(decidedPlace)} · 도보 {decidedPlace.walkMin}분 · 다시 하면 바꿀 수 있어요
+                </p>
+                <DirectionsLink place={decidedPlace} />
+                <ShareButton place={decidedPlace} />
+              </div>
+            </section>
+          )}
+
+          {places.length === 0 ? (
+            emptyScreen
+          ) : (
+            <div className="today">
+              <section
+                className={[
+                  'stage',
+                  spinning ? 'stage--busy' : '',
+                  expanded ? 'stage--full' : '',
+                  fitBoard ? 'stage--fit' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                aria-label="게임"
+              >
+                {/*
+                 * 휴대폰: 조건은 요약 한 줄로 줄이고 누르면 시트로 연다. 로드맵(356px)을 게임 아래에
+                 * 쌓으면 조건이 탭 바 밑으로 한참 내려가 안 보였다(10/12 와이어프레임 개선).
+                 */}
+                {!wide && !expanded && (
+                  <button
+                    type="button"
+                    className="today__summary"
+                    aria-haspopup="dialog"
+                    onClick={() => setFiltersOpen(true)}
+                  >
+                    <span className="today__summaryMain">고를 가게 {result.candidates.length}곳</span>
+                    {/* 카테고리는 바로 아래 칩이 보여 준다. 여기까지 쓰면 휴대폰에서 잘렸다(10/14). */}
+                    <span className="today__summaryRest">
+                      도보 {filters.maxWalkMin}분{filters.excludeRecent ? ' · 최근 1주 제외' : ''}
+                    </span>
+                    <span className="today__summaryGo">
+                      바꾸기<span aria-hidden="true"> ▾</span>
+                    </span>
+                  </button>
+                )}
+                {wide && modebar}
+                {!expanded && (
+                  <CategoryChips
+                    places={places}
+                    selected={filters.categories}
+                    subs={filters.subs ?? []}
+                    onToggle={toggleCategory}
+                    onToggleSub={toggleSub}
+                    onClear={() => updateFilters((f) => ({ ...f, categories: [], subs: [] }))}
+                    onClearSubs={() => updateFilters((f) => ({ ...f, subs: [] }))}
+                    disabled={spinning}
+                  />
+                )}
+                {!wide && modebar}
+                {/* 데스크톱에선 판·실행·예측을 한 세로 칸으로 묶어 판이 남는 높이를 다 쓴다. 휴대폰·크게 보기에선 display: contents 라 없는 것과 같다. */}
+                <div className="stage__main">
+                  <div className="stage__top">
+                    {/* 안내 한 줄과 크게 보기를 한 줄에 둔다. 크게 보기 혼자 한 줄을 먹어 게임판이 밀렸다(10/9 UI 점검). */}
+                    <GameTitle mode={mode} />
+                    {!expanded && weighted && (
+                      <p className="muted small stage__hint">핀볼은 공이 많을수록 뽑힐 확률이 높아요</p>
+                    )}
+                    {/* 데스크톱은 제목 줄 오른쪽에 둔다. 실행 단추 아래 한 줄을 따로 먹어 판이 그만큼 낮았다(10/16 사용자). */}
+                    {wide && !expanded && stageOpts}
+                    <button type="button" className="stage__expand" aria-pressed={expanded} onClick={toggleExpanded}>
+                      <span aria-hidden="true">{expanded ? '✕ ' : '⤢ '}</span>
+                      {expanded ? '작게 보기' : '크게 보기'}
+                    </button>
+                  </div>
+
+                  {/*
+                   * 기기의 "동작 줄이기" 가 켜져 있으면 게임이 연출 없이 결과만 띄운다.
+                   * 말없이 그러면 "게임이 안 돌아간다" 로 읽힌다. 이유를 알리고, 이 앱에서만
+                   * 연출을 다시 켤 수 있게 한다.
+                   */}
+                  {reducedBySystem && (
+                    <div className="motion-note" role="note">
+                      <p>
+                        {motionOn
+                          ? '게임 움직임을 켰어요. 기기의 \u2018동작 줄이기\u2019 설정과 상관없이 움직여요.'
+                          : '기기에서 \u2018동작 줄이기\u2019를 쓰고 있어서 결과를 바로 보여 드려요.'}
+                      </p>
+                      <button type="button" className="motion-note__toggle" onClick={toggleMotion} disabled={spinning}>
+                        {motionOn ? '움직임 끄기' : '움직임 켜기'}
+                      </button>
+                    </div>
+                  )}
+
+                  {/*
+                   * 게임판은 쉴 때도 그린다.
+                   *
+                   * 한동안 실행 전에는 감춰 뒀다. 로드맵(356px)과 게임(300px)을 같이
+                   * 쌓으면 390x844 에서 실행 버튼이 1097px 로 밀려나기 때문이었다.
+                   * 그런데 그러면 모드 칩 5개가 죽은 것처럼 보인다 — 눌러도 화면이
+                   * 그대로라 "배선이 안 된 것 같다" 는 말을 들었다. 실제로 그렇게 읽힌다.
+                   *
+                   * 스크롤 한 번보다 그게 더 나쁘다. 칩을 누르면 판이 바로 바뀐다.
+                   */}
+                  <div ref={boardRef} className="stage__board" tabIndex={-1}>
+                    {gate ? (
+                      <StatusScreen
+                        inline
+                        art={<span className="stage__gateArt">{MODE_ICON[mode]}</span>}
+                        title={gate.title}
+                        lines={gate.lines}
+                        action={
+                          gateWalk !== null ? (
+                            <Button onClick={() => updateFilters((f) => ({ ...f, maxWalkMin: gateWalk }))}>
+                              도보 {gateWalk}분까지 보기
+                            </Button>
+                          ) : gate.fix.kind === 'category' ? (
+                            <Button onClick={() => updateFilters((f) => ({ ...f, categories: [], subs: [] }))}>
+                              메뉴 전체 보기
+                            </Button>
+                          ) : gate.fix.kind === 'list' ? (
+                            <Button onClick={() => goTab('list')}>목록에서 가게 되돌리기</Button>
+                          ) : (
+                            <Button onClick={() => goTab('map')}>
+                              <span aria-hidden="true">🗺️ </span>지도에서 가게 넣기
+                            </Button>
+                          )
+                        }
+                      />
+                    ) : (
+                      <GameBoundary
+                        resetKey={`${mode}|${run}|${(board ?? result.candidates).map((p) => p.id).join(',')}`}
+                      >
+                        {(() => {
+                          const game = {
+                            candidates: board ?? result.candidates,
+                            winnerIndex,
+                            spinning,
+                            run,
+                            onSpinEnd,
+                            // 데스크톱 작게 보기도 판 칸을 채우는 큰 그림으로 그린다(stage--fit, desktop.css).
+                            expanded: expanded || fitBoard,
+                          };
+                          // 사다리는 사용자가 판을 고친다. 후보 구성이 바뀌면 새 판이어야 하므로
+                          // 후보 id 를 key 로 준다. 돌린 순간 얼리는 board 는 같은 id 라 판이 유지된다.
+                          if (mode === 'ladder') {
+                            const key = game.candidates.map((p) => p.id).join(',');
+                            return <Ladder key={key} {...game} onRequestSpin={spin} />;
+                          }
+                          if (mode === 'cards') {
+                            const key = game.candidates.map((p) => p.id).join(',');
+                            return <Cards key={key} {...game} onRequestSpin={spin} />;
+                          }
+                          if (mode === 'memory') {
+                            const key = game.candidates.map((p) => p.id).join(',');
+                            return <Memory key={key} {...game} onRequestSpin={spin} onActivity={onActivity} />;
+                          }
+                          if (mode === 'tournament') {
+                            // 응원 고른 것은 같은 후보 구성 안에서만 유지한다.
+                            const key = game.candidates.map((p) => p.id).join(',');
+                            return <Tournament key={key} {...game} />;
+                          }
+                          if (mode === 'slot') return <Slot {...game} />;
+                          if (mode === 'pinball') {
+                            const balls =
+                              board && boardBalls
+                                ? boardBalls
+                                : ballCountsFor(
+                                    game.candidates.map((p) => p.id),
+                                    ballCounts,
+                                  );
+                            return <Pinball {...game} balls={balls} onBallCounts={changeBalls} />;
+                          }
+                          if (mode === 'gacha') return <Gacha {...game} />;
+                          if (mode === 'plinko') return <Plinko {...game} />;
+                          if (mode === 'horse') return <HorseRace {...game} />;
+                          if (mode === 'racing') return <CarRace {...game} />;
+                          if (mode === 'dice') {
+                            const key = game.candidates.map((p) => p.id).join(',');
+                            return <Dice key={key} {...game} />;
+                          }
+                          if (mode === 'bomb') {
+                            // 폭탄도 주사위처럼 "지난 판 자리" 에서 출발한다. 후보 구성이 바뀌면 그 자리는
+                            // 다른 가게(또는 없는 자리)라 새로 시작한다.
+                            const key = game.candidates.map((p) => p.id).join(',');
+                            return <Bomb key={key} {...game} />;
+                          }
+                          if (mode === 'balloon') return <Balloon {...game} />;
+                          if (mode === 'fishing') return <Fishing {...game} />;
+                          if (mode === 'archery') return <Archery {...game} />;
+                          if (mode === 'curling') return <Curling {...game} />;
+                          if (mode === 'plane') return <PaperPlane {...game} />;
+                          if (mode === 'treasure') return <Treasure {...game} />;
+                          if (mode === 'claw') return <Claw {...game} />;
+                          if (mode === 'penalty') return <Penalty {...game} />;
+                          if (mode === 'bowling') return <Bowling {...game} />;
+                          return <Wheel {...game} />;
+                        })()}
+                      </GameBoundary>
+                    )}
+                  </div>
+
+                  {/*
+                   * 결과 알림. 결과 카드는 연출이 끝난 뒤 새로 생기는 요소라 화면낭독기가
+                   * 알아채지 못한다. 늘 있는 빈 영역에 글을 채워야 읽힌다.
+                   */}
+                  <p className="sr-only" aria-live="polite">
+                    {winner && !spinning
+                      ? `${withJosa(winner.name, '이/가')} 뽑혔어요. 도보 ${winner.walkMin}분이에요`
+                      : ''}
+                  </p>
+
+                  {/* 모달을 닫으면 게임 아래엔 한 줄만 남긴다. 티켓 전체가 남으면 모달과 같은 카드가
+            화면 아래를 계속 차지했다(10/13 사용자). 결정·공유는 "결과 보기" 로 다시 연다. */}
+                  {/* 모달이 떠 있을 때도 뒤엔 한 줄 결과를 둔다. 예전엔 모달이 열린 동안 이 자리에 "돌리기" 가
+            다시 나타나, 결과가 나왔는데 뒤에선 또 돌리라고 했다(10/13 플로우 점검). */}
+                  {winner ? (
+                    <div className="result-bar">
+                      <p className="result-bar__text">
+                        <span aria-hidden="true">{MODE_ICON[mode]} </span>
+                        <strong>{winner.name}</strong>
+                        <span className="sr-only"> · </span>
+                        <span className="result-bar__meta">
+                          도보 {winner.walkMin}분{confirmed ? ' · 오늘 점심은 여기예요' : ''}
+                        </span>
+                      </p>
+                      <div className="result-bar__actions">
+                        {/* 결과 창을 닫으면 결정하려고 창을 다시 열어야 했다. 결정 기록이 거의 안 쌓여(3건, 10/16)
+                          여기서도 바로 정하게 한다. 정한 뒤엔 결과 보기만 남는다. */}
+                        {!confirmed && (
+                          <Button
+                            onClick={() => {
+                              onDecide(winner);
+                              // 결과 창을 열어 "정했어요" 와 큰 알리기 단추를 보여 준다. 다른 곳으로 이미 정해 바꿀지
+                              // 묻는 시트가 뜨는 경우엔 열지 않는다 — 시트 위에 창이 덮인다.
+                              if (!decision || decision.placeId === winner.id) setResultOpen(true);
+                            }}
+                            loading={saving}
+                            disabled={spinning}
+                          >
+                            여기로 결정
+                          </Button>
+                        )}
+                        <Button
+                          ref={resultBarRef}
+                          variant={confirmed ? 'primary' : 'secondary'}
+                          onClick={() => setResultOpen(true)}
+                        >
+                          결과 보기
+                        </Button>
+                        {/* 정한 뒤엔 모달과 같은 말로. 여기서만 "다시 하기" 라 오늘 기록이 바뀌는 줄 몰랐다(10/15). */}
+                        <Button variant="secondary" onClick={spin} disabled={spinning}>
+                          {confirmed ? '그래도 다시 하기' : '다시 하기'}
+                        </Button>
+                        <button
+                          type="button"
+                          className="result-bar__clear"
+                          aria-label="결과 지우기"
+                          title="결과 지우기"
+                          onClick={clearBoard}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ) : gate ? null : (
+                    // 오늘 이미 정했으면 다시 하기는 보조 동작이다. 위 배너가 "정했어요" 라고 하는데
+                    // 가장 큰 빨간 버튼이 또 돌리라고 하면 화면이 두 말을 한다(10/9 UI 점검).
+                    <Button
+                      block
+                      className="stage__run"
+                      size={decidedPlace ? 'md' : 'lg'}
+                      variant={decidedPlace ? 'secondary' : 'primary'}
+                      onClick={spin}
+                      disabled={spinning}
+                    >
+                      {spinning
+                        ? '게임 중'
+                        : `${decidedPlace ? '다시 ' : ''}${actionLabel(mode)} (${playable.list.length}곳 중에서)`}
+                    </Button>
+                  )}
+
+                  {/* 휴대폰은 실행 단추 아래. 데스크톱은 게임 제목 줄 오른쪽(stageOpts). */}
+                  {!wide && stageOpts}
+
+                  {/* 데스크톱에선 예측·안내 한 줄을 오른쪽 칸으로 옮긴다. 판이 그만큼 높아진다(10/14 리빌딩). */}
+                  {!wide && predictions}
+                  {!wide && notice && <p className="notice">{notice}</p>}
+                </div>
+              </section>
+
+              {/* 휴대폰은 게임 아래에 날씨·팟을 둔다. 데스크톱은 오른쪽 칸(filtersPanel). 조건 시트 안에 두면 안 열어 보면 못 본다. */}
+              {!wide && weather}
+              {!wide && parties}
+
+              {/* 조건은 게임 옆(데스크톱)·아래(휴대폰)에 둔다. 첫 화면은 게임이 차지한다. */}
+              {wide && (
+                <aside className="today__filters" aria-labelledby="filters-title">
+                  <h2 id="filters-title" className="today__title">
+                    고를 가게 <span className="today__count">{result.candidates.length}곳</span>
+                  </h2>
+                  {filtersPanel}
+                </aside>
+              )}
+            </div>
+          )}
+        </div>
+
+        <Sheet
+          open={filtersOpen && !wide && tab === 'roadmap'}
+          onClose={() => setFiltersOpen(false)}
+          title={`고를 가게 ${result.candidates.length}곳`}
+          className="filters-sheet"
+        >
+          {/* 데스크톱은 오른쪽 칸에 이미 그린다. 닫힌 시트에 한 벌 더 그리지 않는다. */}
+          {!wide && filtersPanel}
+          <Button block variant="secondary" onClick={() => setFiltersOpen(false)}>
+            이대로 할게요
+          </Button>
+        </Sheet>
+
+        {tourOpen && <Tour onClose={() => setTourOpen(false)} />}
+
+        <Modal
+          open={resultOpen && winner !== null && tab === 'roadmap'}
+          onClose={closeResult}
+          className="result-modal"
+          aria-label="오늘의 점심 결과"
+        >
+          {/* 닫힌 dialog 도 자식을 그린다. 그러면 카드가 두 벌이 되어 초점·ref 가 닫힌 쪽으로 간다. */}
+          {resultOpen && burst > 0 && <Confetti key={burst} seed={burst} />}
+          {resultOpen && ticket}
+          <button type="button" className="linkish result-modal__close" onClick={closeResult}>
+            닫고 게임 보기
+          </button>
+        </Modal>
+
+        <Sheet
+          open={confirming !== null}
+          onClose={() => {
+            setConfirming(null);
+            setSaveProblem(false);
+          }}
+          title="오늘은 이미 정했어요"
+          description={
+            decidedPlace && confirming
+              ? `${decidedPlace.name}에서 ${withJosa(confirming.name, '으로/로')} 바꿀까요?`
+              : undefined
+          }
+        >
+          <div className="row">
+            <Button block onClick={() => confirming && void commit(confirming)} loading={saving}>
+              바꾸기
+            </Button>
+            <Button
+              block
+              variant="ghost"
+              onClick={() => {
+                setConfirming(null);
+                setSaveProblem(false);
+              }}
+            >
+              그대로 두기
+            </Button>
+          </div>
+          {saveProblem && (
+            <p className="notice notice--empty" role="alert">
+              바꾸지 못했어요. 잠시 뒤 다시 눌러 주세요.
+            </p>
+          )}
+        </Sheet>
+      </main>
+    </AmbienceProvider>
   );
 }
