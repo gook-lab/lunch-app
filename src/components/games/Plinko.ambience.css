@@ -1,0 +1,40 @@
+/*
+ * 플링코 분위기 — 판 색과 핀·범퍼 색이 계절을 타고(봄 벚꽃·여름 바다·가을 단풍·겨울 얼음),
+ * 판 위로 날씨가 내리며(안개는 위쪽만), 맨 위 레일에 계절 삼각기(금요일은 두 줄). 당첨·공 경로와는 상관없다.
+ */
+.plinko { --g1: oklch(0.86 0.09 355); --g2: oklch(0.88 0.07 145); --bump: oklch(0.62 0.15 220); --bump-ring: oklch(0.7 0.15 200); }
+.plinko.amb--spring { --pk-back: oklch(0.975 0.012 350); --pk-back-2: oklch(0.94 0.03 350); --pk-pin: oklch(0.72 0.1 355); --bump: oklch(0.66 0.15 355); --bump-ring: oklch(0.75 0.12 350); }
+.plinko.amb--summer { --pk-back: oklch(0.97 0.02 210); --pk-back-2: oklch(0.92 0.045 215); --pk-pin: oklch(0.66 0.1 210); --bump: oklch(0.72 0.15 85); --bump-ring: oklch(0.8 0.14 90); --g1: oklch(0.8 0.15 85); --g2: oklch(0.72 0.13 200); }
+.plinko.amb--autumn { --pk-back: oklch(0.975 0.015 80); --pk-back-2: oklch(0.93 0.04 70); --pk-pin: oklch(0.66 0.11 55); --bump: oklch(0.62 0.16 40); --bump-ring: oklch(0.72 0.15 55); --g1: oklch(0.68 0.17 45); --g2: oklch(0.8 0.15 85); }
+.plinko.amb--winter { --pk-back: oklch(0.98 0.008 240); --pk-back-2: oklch(0.93 0.02 240); --pk-pin: oklch(0.68 0.05 235); --bump: oklch(0.6 0.18 25); --bump-ring: oklch(0.7 0.1 150); --g1: oklch(0.6 0.18 25); --g2: oklch(0.55 0.12 150); }
+[data-theme='dark'] .plinko.amb--spring { --pk-back: oklch(0.26 0.03 350); --pk-back-2: oklch(0.22 0.025 350); --pk-pin: oklch(0.66 0.09 355); }
+[data-theme='dark'] .plinko.amb--summer { --pk-back: oklch(0.26 0.035 225); --pk-back-2: oklch(0.22 0.03 225); --pk-pin: oklch(0.64 0.08 210); }
+[data-theme='dark'] .plinko.amb--autumn { --pk-back: oklch(0.26 0.03 60); --pk-back-2: oklch(0.22 0.025 60); --pk-pin: oklch(0.64 0.1 55); }
+[data-theme='dark'] .plinko.amb--winter { --pk-back: oklch(0.27 0.02 245); --pk-back-2: oklch(0.23 0.02 245); --pk-pin: oklch(0.68 0.04 235); }
+.plinko[class*='amb--'] .plinko__bumper-core { fill: var(--bump); }
+.plinko[class*='amb--'] .plinko__bumper-ring { stroke: var(--bump-ring); }
+
+/* ── 날씨 — 판 위 한 겹(핀 위로 내려도 비치게 옅게). ── */
+.plinko__wx { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0.8; }
+.plinko__wx .scene-wx--rain { background: none; }
+
+/* ── 맨 위 삼각기 ── */
+.plinko__garland {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 4cqw;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    conic-gradient(from 340deg at 50% 100%, var(--g1) 0 40deg, transparent 0) 2cqw 0 / 14cqw 100% repeat-x,
+    conic-gradient(from 340deg at 50% 100%, var(--g2) 0 40deg, transparent 0) 9cqw 0 / 14cqw 100% repeat-x;
+  opacity: 0.85;
+}
+.plinko.amb--fri .plinko__garland {
+  height: 6cqw;
+  background:
+    conic-gradient(from 340deg at 50% 100%, var(--g1) 0 40deg, transparent 0) 1cqw 0 / 6cqw 100% repeat-x,
+    conic-gradient(from 340deg at 50% 100%, oklch(0.82 0.15 85) 0 40deg, transparent 0) 4cqw 0 / 6cqw 100% repeat-x;
+}

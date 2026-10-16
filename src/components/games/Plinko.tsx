@@ -33,7 +33,11 @@ import {
 import { seededRandom } from '../../lib/random';
 import { plinkoSfxLater, type PlinkoSfxName, type SfxName } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
+import { useAmbience } from '../../hooks/useAmbience';
+import { SceneWeather } from './scene/SceneWeather';
+import { ambienceClasses } from './scene/outfit';
 import './Plinko.css';
+import './Plinko.ambience.css';
 
 /** 큰 글씨가 떠 있는 시간. */
 const CALLOUT_MS = 900;
@@ -60,6 +64,7 @@ export function plinkoDuration(count: number, winnerIndex: number, run: number):
 }
 
 export function Plinko({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
+  const ambience = useAmbience();
   const count = candidates.length;
   const b = useMemo(() => plinkoBoard(count), [count]);
   const plan: PlinkoPlan | null = useMemo(
@@ -205,7 +210,7 @@ export function Plinko({ candidates, winnerIndex, spinning, run, onSpinEnd, expa
 
   return (
     <div
-      className={['plinko', expanded ? 'plinko--big' : '', count <= 4 ? 'plinko--wide' : '', settled ? 'plinko--settled' : '']
+      className={['plinko', ambienceClasses(ambience), expanded ? 'plinko--big' : '', count <= 4 ? 'plinko--wide' : '', settled ? 'plinko--settled' : '']
         .filter(Boolean)
         .join(' ')}
       // 그림 폭 ÷ 높이. 크게 보기 폭 식(desktop.css)이 후보 수와 상관없이 높이에 맞춘다.
@@ -308,6 +313,10 @@ export function Plinko({ candidates, winnerIndex, spinning, run, onSpinEnd, expa
             <circle className="plinko__ball" cx={ball.x} cy={ball.y} r={BALL_R} />
             <circle className="plinko__shine" cx={ball.x - BALL_R * 0.35} cy={ball.y - BALL_R * 0.35} r={BALL_R * 0.28} />
           </svg>
+          <span className="plinko__wx" aria-hidden="true">
+            <SceneWeather weather={ambience.weather} band={[0, 35]} />
+          </span>
+          <span className="plinko__garland" aria-hidden="true" />
           <ol className="plinko__slots" style={{ height: `${labelPct.toFixed(3)}%`, gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` }}>
             {candidates.map((p, i) => (
               <li
