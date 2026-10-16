@@ -94,7 +94,8 @@
   min-width: 0;
   padding: 0.6cqw 0;
   color: var(--pk-label);
-  font-size: clamp(10px, 2.9cqw, 16px);
+  /* 가게 이름은 게임 장식이 아니라 결과를 읽는 핵심 정보라 12px 아래로 내리지 않는다. */
+  font-size: clamp(12px, 3.2cqw, 16px);
   line-height: 1.1;
   writing-mode: vertical-rl;
   white-space: nowrap;
