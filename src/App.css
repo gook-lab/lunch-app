@@ -184,25 +184,6 @@ body {
 
 .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
-/* 손가락으로 쓰는 좁은 화면에서는 보이는 밀도보다 실제 누르는 면적을 우선한다. */
-@media (pointer: coarse), (max-width: 640px) {
-  .chip,
-  .catbar__chip,
-  .stage__opt,
-  .list__add,
-  .list__sort button,
-  .map__troubleActions .btn,
-  .onboard__foot button,
-  .ticket .share button,
-  .decided .share button,
-  .dir-link,
-  .party__alertClose,
-  .weather__near,
-  .party__head button {
-    min-height: 44px;
-  }
-}
-
 /* 하나만 고르는 묶음은 붙여서 세그먼트로 보이게 한다 */
 .segmented {
   display: inline-flex;
@@ -4254,4 +4235,24 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 .weekly-report__name { flex: 1; }
 
 [data-theme='dark'] .weekly-report { background: var(--color-neutral-950); }
+
+/* 마지막에 둬 기능별 기본 높이보다 우선한다. 좁은 화면은 실제 누르는 면적을 44px 이상으로 맞춘다. */
+@media (pointer: coarse), (max-width: 640px) {
+  .chip,
+  .catbar__chip,
+  .today__summary,
+  .stage__opt,
+  .list__add,
+  .list__sort button,
+  .map__troubleActions .btn,
+  .onboard__foot button,
+  .ticket .share button,
+  .decided .share button,
+  .dir-link,
+  .party__alertClose,
+  .weather__near,
+  .party__head button {
+    min-height: 44px;
+  }
+}
 
