@@ -349,6 +349,9 @@ function FishDexSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (op
           </section>
         ))}
       </div>
+      <Button variant="secondary" onClick={() => onOpenChange(false)}>
+        닫기
+      </Button>
     </Sheet>
   );
 }
