@@ -2,7 +2,7 @@ import type { GameMode } from './types';
 
 /**
  * 게임 제목 옆 (?) 를 누르면 나오는 설명. 한 줄 소개 + 볼거리 몇 개.
- * 그림은 public/help/<id>.webp — 게임 한 장면을 찍어 둔 것이다(scripts 없이 손으로 갱신).
+ * 그림은 public/help/<id>.webp — 한 판을 결과 직전까지 녹화한 반복 움짤과 정지 컷(<id>.still.webp)이다(손으로 갱신).
  * 볼거리는 연출일 뿐이고 당첨은 게임 시작 전에 정해진다는 걸 맨 아래 한 줄로 늘 밝힌다.
  */
 export interface GameHelp {

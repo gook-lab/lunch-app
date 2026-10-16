@@ -5,7 +5,8 @@ import { GAME_MODES, MODE_ICON, type GameMode } from './types';
 
 /**
  * 게임 제목과 (?) 설명. 누르면 한 장면 그림 + 한 줄 소개 + 볼거리가 뜬다(10/15 사용자).
- * 그림(public/help/<id>.webp)은 열 때만 받는다. 없거나 깨지면 그림 자리 없이 글만 보인다.
+ * 그림(public/help/<id>.webp)은 한 판을 처음부터 결과 직전까지 찍은 반복 움짤이고, 열 때만 받는다.
+ * 움직임 줄이기 설정이면 결과 장면 한 컷(<id>.still.webp)을 보인다. 없거나 깨지면 그림 자리 없이 글만 보인다.
  */
 export function GameTitle({ mode }: { mode: GameMode }) {
   const label = GAME_MODES.find((m) => m.id === mode)?.label ?? '게임';
@@ -30,15 +31,18 @@ export function GameTitle({ mode }: { mode: GameMode }) {
           {MODE_ICON[mode]} {label}
         </Popover.Title>
         {noImage !== mode && (
-          <img
-            className="gamehelp__img"
-            src={`${import.meta.env.BASE_URL}help/${mode}.webp`}
-            alt=""
-            width={320}
-            height={200}
-            loading="lazy"
-            onError={() => setNoImage(mode)}
-          />
+          <picture>
+            <source srcSet={`${import.meta.env.BASE_URL}help/${mode}.still.webp`} media="(prefers-reduced-motion: reduce)" />
+            <img
+              className="gamehelp__img"
+              src={`${import.meta.env.BASE_URL}help/${mode}.webp`}
+              alt=""
+              width={320}
+              height={200}
+              loading="lazy"
+              onError={() => setNoImage(mode)}
+            />
+          </picture>
         )}
         <p className="gamehelp__summary">{help.summary}</p>
         <ul className="gamehelp__moments">
