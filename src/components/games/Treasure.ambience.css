@@ -1,0 +1,179 @@
+/**
+ * 보물찾기 — 계절·날씨 변화.
+ * 섬 풍경(여름 해변 모래사장 ↔ 겨울 눈), 날씨 오버레이(비·눈), 캐릭터 옷차림(우비·겨울옷).
+ */
+
+/* 계절별 배경색 및 섬 모습 */
+
+/* 봄 — 초록 풀, 밝은 하늘 */
+.treasure--spring .treasure__range {
+  --island-color: #7cb342;
+  --sand-color: #daa520;
+  --sky-color: #87ceeb;
+}
+
+/* 여름 — 밝은 모래사장, 파란 바다 */
+.treasure--summer .treasure__range {
+  --island-color: #c1a86b;
+  --sand-color: #f4a460;
+  --sky-color: #87ceeb;
+  --water-color: #1e90ff;
+}
+
+/* 가을 — 주황 섬, 갈색 모래 */
+.treasure--autumn .treasure__range {
+  --island-color: #cd853f;
+  --sand-color: #d2691e;
+  --sky-color: #ffa500;
+}
+
+/* 겨울 — 하얀 눈 섬, 얼음 */
+.treasure--winter .treasure__range {
+  --island-color: #e0e0e0;
+  --sand-color: #f5f5f5;
+  --sky-color: #e0f6ff;
+  --water-color: #87ceeb;
+}
+
+/* 날씨 오버레이 */
+
+/* 비 */
+.treasure--rain .treasure__range::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 1px,
+    rgba(100, 150, 200, 0.1) 1px,
+    rgba(100, 150, 200, 0.1) 3px
+  );
+  pointer-events: none;
+  animation: rain-fall 0.8s linear infinite;
+}
+
+@keyframes rain-fall {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+/* 눈 */
+.treasure--snow .treasure__range::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(1.5px 1.5px at 20px 30px, #ffffff 0%, transparent 0%),
+              radial-gradient(1.5px 1.5px at 60px 70px, #ffffff 0%, transparent 0%),
+              radial-gradient(1px 1px at 50px 50px, #ffffff 0%, transparent 0%),
+              radial-gradient(1px 1px at 130px 80px, #ffffff 0%, transparent 0%),
+              radial-gradient(1.5px 1.5px at 90px 10px, #ffffff 0%, transparent 0%);
+  background-repeat: repeat;
+  background-size: 150px 150px;
+  pointer-events: none;
+  animation: snow-fall 2.5s linear infinite;
+}
+
+@keyframes snow-fall {
+  0% {
+    transform: translateY(-150px);
+  }
+  100% {
+    transform: translateY(150px);
+  }
+}
+
+/* 안개 */
+.treasure--fog .treasure__range {
+  filter: brightness(0.85);
+}
+
+.treasure--fog .treasure__range::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(200, 200, 200, 0.25);
+  pointer-events: none;
+}
+
+/* 흐림 */
+.treasure--cloudy .treasure__range {
+  filter: brightness(0.9);
+}
+
+/* 캐릭터 옷차림 — 해적 */
+
+/* 여름: 가벼운 옷 */
+.treasure--summer::before {
+  content: '';
+  position: absolute;
+  width: 3%;
+  height: 3%;
+  background: #ff6b6b;
+  top: 15%;
+  left: 5%;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+/* 겨울: 방한용품 */
+.treasure--winter .treasure__range {
+  filter: hue-rotate(-10deg);
+}
+
+/* 비: 우비 */
+.treasure--rain .treasure__range {
+  filter: hue-rotate(20deg) saturate(1.05);
+}
+
+/* 눈: 스노우 모드 */
+.treasure--snow .treasure__range {
+  filter: saturate(0.8) brightness(1.05);
+}
+
+/* prefers-reduced-motion 존중 */
+@media (prefers-reduced-motion: reduce) {
+  .treasure--rain .treasure__range::before,
+  .treasure--snow .treasure__range::after {
+    animation: none;
+    opacity: 0.5;
+  }
+}
+
+/* 다크 모드 */
+html[data-theme='dark'] {
+  .treasure--spring .treasure__range {
+    --island-color: #558b2f;
+    --sand-color: #8b6914;
+  }
+
+  .treasure--summer .treasure__range {
+    --island-color: #8b6914;
+    --sand-color: #a0522d;
+    --water-color: #1a5f9e;
+  }
+
+  .treasure--autumn .treasure__range {
+    --island-color: #8b5a2b;
+    --sand-color: #654321;
+  }
+
+  .treasure--winter .treasure__range {
+    --island-color: #a9a9a9;
+    --sand-color: #d3d3d3;
+  }
+}

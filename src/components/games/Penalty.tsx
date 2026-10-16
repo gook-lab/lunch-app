@@ -26,7 +26,9 @@ import {
 import { seededRandom } from '../../lib/random';
 import { penaltySfxLater, type PenaltySfxName, type SfxName } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
+import { useAmbience } from '../../hooks/useAmbience';
 import './Penalty.css';
+import './Penalty.ambience.css';
 
 /**
  * stare: 컷신 — 눈싸움 · run: 도움닫기 · kick: 뻥 · fly: 카메라가 공을 따라간다
@@ -66,6 +68,7 @@ function afterVars(layout: PitchLayout, shot: Shot): React.CSSProperties {
 
 export function Penalty({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
   const count = candidates.length;
+  const { season, weather } = useAmbience();
   const [state, setState] = useState<PenaltyState>({ run: -1, shot: 0, phase: 'stare' });
   const layout = useMemo(() => pitchLayout(count), [count]);
   const plan = useMemo(
@@ -241,7 +244,7 @@ export function Penalty({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
 
   return (
     <div
-      className={['penalty', expanded ? 'penalty--big' : '', settled ? 'penalty--settled' : ''].filter(Boolean).join(' ')}
+      className={['penalty', expanded ? 'penalty--big' : '', settled ? 'penalty--settled' : '', `penalty--${season}`, `penalty--${weather}`].filter(Boolean).join(' ')}
       style={{ '--fit': layout.aspect.toFixed(4) } as React.CSSProperties}
     >
       <div

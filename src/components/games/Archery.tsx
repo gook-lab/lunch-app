@@ -26,7 +26,9 @@ import { seededRandom } from '../../lib/random';
 import { archerySfxLater, type ArcherySfx } from '../../lib/sfx';
 import type { SfxName } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
+import { useAmbience } from '../../hooks/useAmbience';
 import './Archery.css';
+import './Archery.ambience.css';
 
 /**
  * draw: 컷신 — 시위를 당긴다 · release: 푸슝 · fly: 카메라가 화살을 따라간다
@@ -68,6 +70,7 @@ function tailAngle(layout: RangeLayout, x: number, y: number): number {
 
 export function Archery({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
   const count = candidates.length;
+  const { season, weather } = useAmbience();
   const [state, setState] = useState<ArcheryState>({ run: -1, shot: 0, phase: 'draw' });
   const layout = useMemo(() => rangeLayout(count, seededRandom(LAYOUT_SEED + count)), [count]);
   // 일정은 판 번호 시드라 몇 번 계산해도 같다. 궤적·사건을 그리려고 렌더에서도 쓴다.
@@ -254,6 +257,8 @@ export function Archery({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
         'archery',
         expanded ? 'archery--big' : '',
         settled ? 'archery--settled' : '',
+        `archery--${season}`,
+        `archery--${weather}`,
       ]
         .filter(Boolean)
         .join(' ')}

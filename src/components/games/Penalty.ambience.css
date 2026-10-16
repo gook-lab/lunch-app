@@ -1,0 +1,194 @@
+/**
+ * 승부차기 — 계절·날씨 변화.
+ * 스타디움 배경(명도, 데코), 날씨 오버레이(비·눈), 캐릭터 옷차림(우비·겨울옷).
+ */
+
+/* 계절별 스타디움 색조 및 데코 */
+
+/* 봄 — 밝은 하늘, 화단 장식 */
+.penalty--spring .penalty__pitch {
+  --sky-color: #87ceeb;
+  --stands-color: #a9a9a9;
+}
+
+/* 여름 — 햇빛, 밝은 들판 */
+.penalty--summer .penalty__pitch {
+  --sky-color: #87ceeb;
+  --stands-color: #d3d3d3;
+  --grass-color: #7cb342;
+}
+
+/* 가을 — 주황 하늘, 낙엽 장식 패치 */
+.penalty--autumn .penalty__pitch {
+  --sky-color: #ffa500;
+  --stands-color: #a0826d;
+  --grass-color: #8b6914;
+}
+
+/* 겨울 — 어두운 하늘, 눈, 불금 배너 */
+.penalty--winter .penalty__pitch {
+  --sky-color: #e0f6ff;
+  --stands-color: #7a7a7a;
+  --grass-color: #ffffff;
+}
+
+/* 금요일(weekday=5): 불금 배너 */
+.penalty--winter::before {
+  content: '불금';
+  position: absolute;
+  top: 5%;
+  right: 5%;
+  background: #ff6b6b;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: bold;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* 날씨 오버레이 */
+
+/* 비 */
+.penalty--rain .penalty__pitch::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 1px,
+    rgba(100, 150, 200, 0.1) 1px,
+    rgba(100, 150, 200, 0.1) 3px
+  );
+  pointer-events: none;
+  animation: rain-fall 0.8s linear infinite;
+}
+
+@keyframes rain-fall {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+/* 눈 */
+.penalty--snow .penalty__pitch::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(1.5px 1.5px at 20px 30px, #ffffff 0%, transparent 0%),
+              radial-gradient(1.5px 1.5px at 60px 70px, #ffffff 0%, transparent 0%),
+              radial-gradient(1px 1px at 50px 50px, #ffffff 0%, transparent 0%),
+              radial-gradient(1px 1px at 130px 80px, #ffffff 0%, transparent 0%),
+              radial-gradient(1.5px 1.5px at 90px 10px, #ffffff 0%, transparent 0%);
+  background-repeat: repeat;
+  background-size: 150px 150px;
+  pointer-events: none;
+  animation: snow-fall 2.5s linear infinite;
+}
+
+@keyframes snow-fall {
+  0% {
+    transform: translateY(-150px);
+  }
+  100% {
+    transform: translateY(150px);
+  }
+}
+
+/* 안개 */
+.penalty--fog .penalty__pitch {
+  filter: brightness(0.85);
+}
+
+.penalty--fog .penalty__pitch::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(200, 200, 200, 0.25);
+  pointer-events: none;
+}
+
+/* 흐림 */
+.penalty--cloudy .penalty__pitch {
+  filter: brightness(0.9);
+}
+
+/* 캐릭터 옷차림 — 키커, 골키퍼 */
+
+/* 여름: 가벼운 반팔 */
+.penalty--summer::before {
+  content: '';
+  position: absolute;
+  width: 4%;
+  height: 4%;
+  background: #ffdb58;
+  top: 20%;
+  left: 8%;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+/* 겨울: 방한용품 */
+.penalty--winter .penalty__pitch {
+  filter: hue-rotate(-10deg);
+}
+
+/* 비: 우비 */
+.penalty--rain .penalty__pitch {
+  filter: hue-rotate(20deg) saturate(1.05);
+}
+
+/* 눈: 스노우 모드 */
+.penalty--snow .penalty__pitch {
+  filter: saturate(0.8) brightness(1.05);
+}
+
+/* prefers-reduced-motion 존중 */
+@media (prefers-reduced-motion: reduce) {
+  .penalty--rain .penalty__pitch::before,
+  .penalty--snow .penalty__pitch::after {
+    animation: none;
+    opacity: 0.5;
+  }
+}
+
+/* 다크 모드 */
+html[data-theme='dark'] {
+  .penalty--spring .penalty__pitch {
+    --sky-color: #2c5aa0;
+    --stands-color: #4a4a4a;
+  }
+
+  .penalty--summer .penalty__pitch {
+    --sky-color: #2d5e9f;
+    --stands-color: #5a5a5a;
+    --grass-color: #558b2f;
+  }
+
+  .penalty--autumn .penalty__pitch {
+    --sky-color: #8b5a2b;
+    --stands-color: #6b5344;
+    --grass-color: #5a4a1a;
+  }
+
+  .penalty--winter .penalty__pitch {
+    --sky-color: #4a4a4a;
+    --stands-color: #383838;
+    --grass-color: #b0b0b0;
+  }
+}

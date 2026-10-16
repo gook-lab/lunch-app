@@ -2,6 +2,7 @@
 /**
  * 보물찾기 — App 이 정한 당첨 X 에서만 진짜 보물 상자가 열리고, 끝나면 onSpinEnd 를 한 번 부른다.
  * 앞 구덩이의 사건(꽝·장화·동전 한 닢·미믹·앵무새·돌풍·꽃게)은 당첨을 바꾸지 않는다. 움직임 줄이기·한 곳뿐이면 바로 결과.
+ * 분위기(계절·날씨)는 시각적 변화만 줄 뿐 당첨을 바꾸지 않는다.
  */
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -259,5 +260,39 @@ describe('보물찾기', () => {
     expect(tag.endsWith('…')).toBe(true);
     expect(tag.length).toBeLessThanOrEqual(6);
     expect(r.container.querySelector('.treasure__spot')?.getAttribute('title')).toBe('아주아주 긴 가게 이름 1');
+  });
+
+  it('분위기(계절·날씨)가 변해도 당첨 X 가 바뀌지 않는다', () => {
+    const ambiences = [
+      { season: 'spring', weather: 'clear', weekday: 0 },
+      { season: 'summer', weather: 'rain', weekday: 5 },
+      { season: 'autumn', weather: 'fog', weekday: 3 },
+      { season: 'winter', weather: 'snow', weekday: 1 },
+    ] as const;
+
+    for (const ambience of ambiences) {
+      vi.doMock('../../hooks/useAmbience', () => ({
+        useAmbience: () => ambience,
+        AmbienceProvider: ({ children }: any) => children,
+      }));
+
+      const n = 6;
+      const winner = 3;
+      const onSpinEnd = vi.fn();
+      const run = n * 31 + winner;
+      const r = render(<Treasure candidates={places(n)} winnerIndex={winner} spinning run={run} onSpinEnd={onSpinEnd} />);
+
+      const plan = planFor(n, winner, run);
+      for (let t = 0; t < plan.endMs + 500; t += 50) {
+        tick(50);
+      }
+
+      // 모든 분위기에서 동일한 당첨자.
+      expect(openTreasures(r.container)).toEqual([`가게${winner + 1}`]);
+      expect(onSpinEnd).toHaveBeenCalledTimes(1);
+      r.unmount();
+
+      vi.doUnmock('../../hooks/useAmbience');
+    }
   });
 });

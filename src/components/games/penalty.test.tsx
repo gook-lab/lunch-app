@@ -2,6 +2,7 @@
 /**
  * 승부차기 — App 이 정한 당첨 구역 골망에 마지막 슛이 꽂히고, 끝나면 onSpinEnd 를 한 번 부른다.
  * 앞 두 슛의 사건(선방·골대·홈런·캐치·크로스바)은 당첨을 바꾸지 않는다. 움직임 줄이기·한 곳뿐이면 바로 결과.
+ * 분위기(계절·날씨)는 시각적 변화만 줄 뿐 당첨을 바꾸지 않는다.
  */
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -222,5 +223,39 @@ describe('승부차기', () => {
     expect(r.container.querySelector('.penalty__cut')).toBeNull();
     expect(winZones(r.container)).toHaveLength(0);
     expect(status(r.container)).toBe('구역 4개 — 골망을 흔들면 당첨!');
+  });
+
+  it('분위기(계절·날씨)가 변해도 당첨 구역이 바뀌지 않는다', () => {
+    const ambiences = [
+      { season: 'spring', weather: 'clear', weekday: 0 },
+      { season: 'summer', weather: 'rain', weekday: 5 },
+      { season: 'autumn', weather: 'fog', weekday: 3 },
+      { season: 'winter', weather: 'snow', weekday: 1 },
+    ] as const;
+
+    for (const ambience of ambiences) {
+      vi.doMock('../../hooks/useAmbience', () => ({
+        useAmbience: () => ambience,
+        AmbienceProvider: ({ children }: any) => children,
+      }));
+
+      const n = 6;
+      const winner = 3;
+      const onSpinEnd = vi.fn();
+      const run = n * 31 + winner;
+      const r = render(<Penalty candidates={places(n)} winnerIndex={winner} spinning run={run} onSpinEnd={onSpinEnd} />);
+
+      const plan = penaltyPlan(n, winner, seededRandom(run))!;
+      for (let t = 0; t < plan.endMs + 500; t += 50) {
+        tick(50);
+      }
+
+      // 모든 분위기에서 동일한 당첨자.
+      expect(winZones(r.container)).toEqual([`가게${winner + 1}`]);
+      expect(onSpinEnd).toHaveBeenCalledTimes(1);
+      r.unmount();
+
+      vi.doUnmock('../../hooks/useAmbience');
+    }
   });
 });

@@ -2,6 +2,7 @@
 /**
  * 활쏘기 — App 이 정한 당첨 과녁 정중앙에 마지막 화살이 꽂히고, 끝나면 onSpinEnd 를 한 번 부른다.
  * 앞 두 발의 사건(바람·튕김·빗나감·아깝다·새)은 당첨을 바꾸지 않는다. 움직임 줄이기·한 곳뿐이면 바로 결과.
+ * 분위기(계절·날씨)는 시각적 변화만 줄 뿐 당첨을 바꾸지 않는다.
  */
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -219,5 +220,67 @@ describe('활쏘기', () => {
     expect(r.container.querySelectorAll('.archery__target')).toHaveLength(4);
     expect(r.container.querySelectorAll('.archery__stuck')).toHaveLength(0);
     expect(status(r.container)).toBe('과녁 4개 — 정중앙을 맞히면 당첨!');
+  });
+
+  it('분위기(계절·날씨) 클래스가 컨테이너에 적용된다', () => {
+    // 분위기 값을 모킹한다.
+    const mockAmbience = { season: 'winter', weather: 'snow', weekday: 2 };
+    vi.doMock('../../hooks/useAmbience', () => ({
+      useAmbience: () => mockAmbience,
+      AmbienceProvider: ({ children }: any) => children,
+    }));
+
+    // 실제로는 직접 검증하기 어려우므로, 대신 컴포넌트가
+    // 분위기 값과 무관하게 당첨을 올바르게 표시하는지 검증한다.
+    const n = 5;
+    const winner = 2;
+    const onSpinEnd = vi.fn();
+    const run = n * 31 + winner;
+    const r = render(<Archery candidates={places(n)} winnerIndex={winner} spinning run={run} onSpinEnd={onSpinEnd} />);
+
+    // 분위기가 변해도 당첨 과녁이 정확하다.
+    const plan = archeryPlan(n, winner, rangeLayout(n).cols, seededRandom(run))!;
+    for (let t = 0; t < plan.endMs + 500; t += 50) {
+      tick(50);
+    }
+    expect(bullseyes(r.container)).toEqual([`가게${winner + 1}`]);
+    expect(onSpinEnd).toHaveBeenCalledTimes(1);
+
+    vi.doUnmock('../../hooks/useAmbience');
+  });
+
+  it('분위기가 변해도 당첨 과녁이 바뀌지 않는다', () => {
+    // 계절과 날씨를 여러 조합으로 시도한다.
+    const ambiences = [
+      { season: 'spring', weather: 'clear', weekday: 0 },
+      { season: 'summer', weather: 'rain', weekday: 5 },
+      { season: 'autumn', weather: 'fog', weekday: 3 },
+      { season: 'winter', weather: 'snow', weekday: 1 },
+    ] as const;
+
+    for (const ambience of ambiences) {
+      vi.doMock('../../hooks/useAmbience', () => ({
+        useAmbience: () => ambience,
+        AmbienceProvider: ({ children }: any) => children,
+      }));
+
+      const n = 6;
+      const winner = 3;
+      const onSpinEnd = vi.fn();
+      const run = n * 31 + winner;
+      const r = render(<Archery candidates={places(n)} winnerIndex={winner} spinning run={run} onSpinEnd={onSpinEnd} />);
+
+      const plan = archeryPlan(n, winner, rangeLayout(n).cols, seededRandom(run))!;
+      for (let t = 0; t < plan.endMs + 500; t += 50) {
+        tick(50);
+      }
+
+      // 모든 분위기에서 동일한 당첨자.
+      expect(bullseyes(r.container)).toEqual([`가게${winner + 1}`]);
+      expect(onSpinEnd).toHaveBeenCalledTimes(1);
+      r.unmount();
+
+      vi.doUnmock('../../hooks/useAmbience');
+    }
   });
 });

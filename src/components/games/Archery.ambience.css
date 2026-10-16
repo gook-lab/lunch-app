@@ -1,0 +1,170 @@
+/**
+ * 활쏘기 — 계절·날씨 변화.
+ * 배경색(하늘·땅), 날씨 오버레이(비·눈), 캐릭터 옷차림(우비·겨울옷 등).
+ */
+
+/* 계절별 배경색 */
+
+/* 봄 — 밝은 파랑 하늘, 초록 풀 */
+.archery--spring .archery__range {
+  --sky-color: #87ceeb;
+  --ground-color: #90ee90;
+}
+
+/* 여름 — 밝은 파란 하늘, 밝은 초록 풀 */
+.archery--summer .archery__range {
+  --sky-color: #87ceeb;
+  --ground-color: #98fb98;
+}
+
+/* 가을 — 주황 하늘, 갈색 땅 + 낙엽 */
+.archery--autumn .archery__range {
+  --sky-color: #ffa500;
+  --ground-color: #d2691e;
+}
+
+/* 겨울 — 하얀 구름 하늘, 하얀 눈 땅 */
+.archery--winter .archery__range {
+  --sky-color: #e0f6ff;
+  --ground-color: #ffffff;
+}
+
+/* 날씨 오버레이 */
+
+/* 비 */
+.archery--rain .archery__range::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 2px,
+    rgba(100, 150, 200, 0.15) 2px,
+    rgba(100, 150, 200, 0.15) 4px
+  );
+  pointer-events: none;
+  animation: rain-fall 0.6s linear infinite;
+}
+
+@keyframes rain-fall {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+/* 눈 */
+.archery--snow .archery__range::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(2px 2px at 20px 30px, #ffffff 0%, transparent 0%),
+              radial-gradient(2px 2px at 60px 70px, #ffffff 0%, transparent 0%),
+              radial-gradient(1px 1px at 50px 50px, #ffffff 0%, transparent 0%),
+              radial-gradient(1px 1px at 130px 80px, #ffffff 0%, transparent 0%),
+              radial-gradient(2px 2px at 90px 10px, #ffffff 0%, transparent 0%);
+  background-repeat: repeat;
+  background-size: 150px 150px;
+  pointer-events: none;
+  animation: snow-fall 2s linear infinite;
+}
+
+@keyframes snow-fall {
+  0% {
+    transform: translateY(-150px);
+  }
+  100% {
+    transform: translateY(150px);
+  }
+}
+
+/* 안개 */
+.archery--fog .archery__range {
+  filter: brightness(0.85);
+}
+
+.archery--fog .archery__range::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(200, 200, 200, 0.25);
+  pointer-events: none;
+}
+
+/* 흐림 */
+.archery--cloudy .archery__range {
+  filter: brightness(0.9);
+}
+
+/* 캐릭터 옷차림 오버레이 — 궁수 */
+/* 여름: 선글라스·밝은 옷 */
+.archery--summer::before {
+  content: '';
+  position: absolute;
+  width: 5%;
+  height: 5%;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.3), transparent);
+  top: 10%;
+  left: 3%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* 겨울: 방한용품 표시 */
+.archery--winter .archery__range {
+  filter: hue-rotate(-10deg);
+}
+
+/* 비: 우비 */
+.archery--rain .archery__range {
+  filter: hue-rotate(30deg) saturate(1.1);
+}
+
+/* 눈: 스노우 모드 */
+.archery--snow .archery__range {
+  filter: saturate(0.8) brightness(1.05);
+}
+
+/* prefers-reduced-motion 존중 */
+@media (prefers-reduced-motion: reduce) {
+  .archery--rain .archery__range::before,
+  .archery--snow .archery__range::after {
+    animation: none;
+    opacity: 0.5;
+  }
+}
+
+/* 다크 모드 */
+html[data-theme='dark'] {
+  .archery--spring .archery__range {
+    --sky-color: #2c5aa0;
+    --ground-color: #3d5a3d;
+  }
+
+  .archery--summer .archery__range {
+    --sky-color: #2d5e9f;
+    --ground-color: #4a7c4e;
+  }
+
+  .archery--autumn .archery__range {
+    --sky-color: #8b5a2b;
+    --ground-color: #654321;
+  }
+
+  .archery--winter .archery__range {
+    --sky-color: #4a4a4a;
+    --ground-color: #c0c0c0;
+  }
+}
