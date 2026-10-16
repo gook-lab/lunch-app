@@ -1,260 +1,60 @@
-/**
- * 낚시 게임 — 계절·날씨 연출.
- * 배경·물감·옷차림은 계절로 바뀌고, 비/눈 등으로 시각 효과가 더해진다.
+/*
+ * 낚시 — 계절·날씨. 연못 색, 물 위 장식(봄 꽃잎·여름 연잎·가을 낙엽·겨울 얼음), 하늘 끝 나무 줄,
+ * 날씨 층. 물고기 빛깔은 Fishing.tsx 가 --hue 로 바꾼다. 연출 전용.
  */
-
-/* ───────── 계절별 배경 ───────── */
-
-/* 봄 — 밝고 따뜻한 연록색 수면. */
-.fishing--season-spring .fishing__pond {
-  background: linear-gradient(
-    to bottom,
-    oklch(0.96 0.04 120) 0 var(--sky),
-    oklch(0.74 0.12 115) var(--sky),
-    oklch(0.82 0.1 110) calc(var(--sky) + 1.2%),
-    oklch(0.64 0.12 125) 100%
-  );
+.fishing__pond { --water-top: oklch(0.84 0.07 215); --water-bot: oklch(0.62 0.1 235); --surf: oklch(0.72 0.1 225); --sky-a: oklch(0.95 0.03 230); --sky-b: oklch(0.9 0.04 230);
+  background: linear-gradient(to bottom, var(--sky-a) 0, var(--sky-b) var(--sky), var(--surf) var(--sky), var(--water-top) calc(var(--sky) + 1.2%), var(--water-bot) 100%);
 }
+.amb--spring .fishing__pond { --sky-a: oklch(0.96 0.03 345); --sky-b: oklch(0.92 0.04 300); --water-top: oklch(0.86 0.06 200); --water-bot: oklch(0.66 0.09 225); }
+.amb--summer .fishing__pond { --sky-a: oklch(0.9 0.08 230); --sky-b: oklch(0.86 0.09 230); --surf: oklch(0.7 0.12 200); --water-top: oklch(0.82 0.11 195); --water-bot: oklch(0.56 0.13 225); }
+.amb--autumn .fishing__pond { --sky-a: oklch(0.95 0.04 75); --sky-b: oklch(0.9 0.05 60); --surf: oklch(0.6 0.08 225); --water-top: oklch(0.72 0.07 220); --water-bot: oklch(0.5 0.08 240); }
+.amb--winter .fishing__pond { --sky-a: oklch(0.93 0.01 250); --sky-b: oklch(0.88 0.02 250); --surf: oklch(0.97 0.01 230); --water-top: oklch(0.6 0.06 240); --water-bot: oklch(0.38 0.06 255); }
+:is(.amb--w-rain, .amb--w-cloudy) .fishing__pond { --sky-a: oklch(0.78 0.015 250); --sky-b: oklch(0.72 0.02 250); }
+[data-theme='dark'] .fishing__pond { --sky-a: oklch(0.3 0.03 250); --sky-b: oklch(0.32 0.03 250); --surf: oklch(0.42 0.08 230); --water-top: oklch(0.36 0.07 235); --water-bot: oklch(0.24 0.06 245); }
+[data-theme='dark'] .amb--winter .fishing__pond { --surf: oklch(0.75 0.02 240); --water-top: oklch(0.32 0.05 245); --water-bot: oklch(0.2 0.05 255); }
+[data-theme='dark'] .amb--summer .fishing__pond { --water-top: oklch(0.4 0.09 210); }
 
-[data-theme='dark'] .fishing--season-spring .fishing__pond {
-  background: linear-gradient(
-    to bottom,
-    oklch(0.35 0.04 115) 0 var(--sky),
-    oklch(0.45 0.1 110) var(--sky),
-    oklch(0.38 0.09 115) calc(var(--sky) + 1.2%),
-    oklch(0.26 0.08 125) 100%
-  );
-}
+/* 하늘 끝 나무 줄 — 수면 바로 위 */
+.fishing__horizon { position: absolute; left: 0; right: 0; top: calc(var(--sky) - 6.5cqw); height: 6.5cqw; z-index: 0; pointer-events: none; }
 
-/* 여름 — 밝고 선명한 푸른 수면. */
-.fishing--season-summer .fishing__pond {
-  background: linear-gradient(
-    to bottom,
-    oklch(0.97 0.04 230) 0 var(--sky),
-    oklch(0.76 0.14 220) var(--sky),
-    oklch(0.84 0.09 215) calc(var(--sky) + 1.2%),
-    oklch(0.62 0.13 235) 100%
-  );
-}
-
-[data-theme='dark'] .fishing--season-summer .fishing__pond {
-  background: linear-gradient(
-    to bottom,
-    oklch(0.36 0.04 225) 0 var(--sky),
-    oklch(0.46 0.1 220) var(--sky),
-    oklch(0.38 0.08 225) calc(var(--sky) + 1.2%),
-    oklch(0.25 0.08 235) 100%
-  );
-}
-
-/* 가을 — 주황빛 따뜻한 수면. */
-.fishing--season-autumn .fishing__pond {
-  background: linear-gradient(
-    to bottom,
-    oklch(0.94 0.06 60) 0 var(--sky),
-    oklch(0.72 0.13 55) var(--sky),
-    oklch(0.80 0.1 50) calc(var(--sky) + 1.2%),
-    oklch(0.60 0.12 60) 100%
-  );
-}
-
-[data-theme='dark'] .fishing--season-autumn .fishing__pond {
-  background: linear-gradient(
-    to bottom,
-    oklch(0.34 0.05 55) 0 var(--sky),
-    oklch(0.43 0.1 50) var(--sky),
-    oklch(0.36 0.09 55) calc(var(--sky) + 1.2%),
-    oklch(0.24 0.08 60) 100%
-  );
-}
-
-/* 겨울 — 차갑고 어두운 파란 수면. 얼음 효과를 넣을 수 있다. */
-.fishing--season-winter .fishing__pond {
-  background: linear-gradient(
-    to bottom,
-    oklch(0.92 0.04 250) 0 var(--sky),
-    oklch(0.68 0.1 240) var(--sky),
-    oklch(0.78 0.08 245) calc(var(--sky) + 1.2%),
-    oklch(0.58 0.1 250) 100%
-  );
-}
-
-[data-theme='dark'] .fishing--season-winter .fishing__pond {
-  background: linear-gradient(
-    to bottom,
-    oklch(0.30 0.03 250) 0 var(--sky),
-    oklch(0.38 0.08 240) var(--sky),
-    oklch(0.32 0.07 245) calc(var(--sky) + 1.2%),
-    oklch(0.22 0.08 250) 100%
-  );
-}
-
-/* ───────── 날씨 효과 ───────── */
-
-/* 비 — 빗줄무늬 오버레이와 물방울 파장. */
-.fishing--weather-rain .fishing__pond::before {
+/* 물 위 장식 — 수면 줄을 따라 떠 있다 */
+.fishing__surface { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.fishing__surface i { position: absolute; top: calc(var(--sky) + 0.2%); display: none; }
+.amb--spring .fishing__surface i { display: block; width: 1.4cqw; height: 0.9cqw; border-radius: 100% 0; background: oklch(0.9 0.07 355); rotate: 20deg; }
+.amb--spring .fishing__surface i:nth-child(odd) { rotate: -30deg; translate: 0 0.6cqw; }
+.amb--summer .fishing__surface i:nth-child(3n + 1) { display: block; width: 4cqw; height: 1.4cqw; translate: -50% -30%; border-radius: 50%; background: radial-gradient(circle at 50% 40%, oklch(0.85 0.1 350) 0 18%, transparent 20%), oklch(0.6 0.15 145); }
+.amb--autumn .fishing__surface i { display: block; width: 1.6cqw; height: 1.6cqw; border-radius: 0 100%; background: oklch(0.66 0.18 45); rotate: 35deg; }
+.amb--autumn .fishing__surface i:nth-child(3n) { background: oklch(0.8 0.15 85); }
+.amb--autumn .fishing__surface i:nth-child(3n + 1) { background: oklch(0.58 0.19 30); rotate: -20deg; }
+/* 겨울: 수면이 얼었다 — 얼음판 띠와 금 */
+.amb--winter .fishing__surface::before {
   content: '';
   position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    90deg,
-    transparent 0 2px,
-    oklch(0.4 0 0 / 0.08) 2px 4px
-  );
-  animation: fishing-rain-streak 200ms linear infinite;
-  pointer-events: none;
+  left: 0;
+  right: 0;
+  top: var(--sky);
+  height: 3.2%;
+  background: linear-gradient(100deg, transparent 0 18%, oklch(0.8 0.03 230) 18.2% 18.6%, transparent 18.8% 61%, oklch(0.8 0.03 230) 61.2% 61.5%, transparent 61.7%),
+    linear-gradient(to bottom, oklch(0.98 0.01 230), oklch(0.9 0.03 225));
+  box-shadow: 0 2px 0 oklch(0.7 0.04 230 / 0.6);
 }
+[data-theme='dark'] .amb--winter .fishing__surface::before { background: linear-gradient(to bottom, oklch(0.82 0.02 240), oklch(0.7 0.03 235)); }
+/* 얼음 구멍 — 낚싯줄이 내려가는 자리 */
+.fishing__hole { position: absolute; top: calc(var(--sky) + 0.4%); width: 5cqw; height: 1.6%; translate: -50% 0; border-radius: 50%; background: oklch(0.3 0.05 250); box-shadow: inset 0 2px 3px oklch(0.15 0.03 250); z-index: 1; transition: left 350ms var(--ease-inout); }
 
-@keyframes fishing-rain-streak {
-  from { transform: translateY(-4px); }
-  to { transform: translateY(0); }
-}
+/* 금요일 — 찌가 금빛 */
+.amb--fri .fishing__float { filter: drop-shadow(0 0 4px oklch(0.85 0.17 90)); }
 
-/* 눈 — 떨어지는 눈송이. */
-.fishing--weather-snow .fishing__pond::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle, oklch(1 0 0 / 0.6) 1px, transparent 1px);
-  background-size: 40px 40px;
-  animation: fishing-snow-fall 3s linear infinite;
-  pointer-events: none;
-}
-
-@keyframes fishing-snow-fall {
-  from { transform: translateY(-40px); }
-  to { transform: translateY(var(--cell-w)); }
-}
-
-/* 안개 — 반투명 하얀 레이어. */
-.fishing--weather-fog .fishing__pond::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: oklch(0.85 0.01 240 / 0.25);
-  pointer-events: none;
-}
-
-/* ───────── 금요일 장식 ───────── */
-
-/* 금요일에는 찌가 더 밝게 반짝인다. */
-.fishing--friday .fishing__float {
-  box-shadow: 0 0 0 1px oklch(0.3 0.02 250 / 0.4), 0 0 12px var(--color-accent) !important;
-}
-
-/* ───────── 도감 패널 ───────── */
-
-.fishing__controls {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  align-items: center;
-}
-
-.fishing-dex {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: var(--space-3);
-  gap: var(--space-2);
-}
-
-.fishing-dex__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--color-neutral-300);
-  padding-bottom: var(--space-2);
-}
-
-.fishing-dex__title {
-  margin: 0;
-  font-size: var(--fs-md);
-  font-weight: 700;
-}
-
-.fishing-dex__count {
-  margin: 0;
-  font-size: var(--fs-sm);
-  color: var(--color-text-secondary);
-}
-
-.fishing-dex__content {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: var(--space-2);
-  overflow-y: auto;
-  flex: 1;
-}
-
-.fishing-dex__item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-2);
-  border: 1px solid var(--color-neutral-300);
-  border-radius: var(--radius-md);
-  text-align: center;
-  cursor: pointer;
-  transition: all 200ms var(--ease-inout);
-}
-
-.fishing-dex__item--caught {
-  background: var(--color-bg-secondary);
-  border-color: var(--color-accent-200);
-}
-
-.fishing-dex__item--unseen {
-  opacity: 0.5;
-  background: var(--color-bg);
-}
-
-.fishing-dex__icon {
-  font-size: 32px;
-  font-weight: 700;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.fishing-dex__silhouette {
-  font-size: var(--fs-xs);
-  color: var(--color-text);
-  font-weight: 700;
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 80px;
-}
-
-.fishing-dex__meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  width: 100%;
-}
-
-.fishing-dex__name {
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  color: var(--color-text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.fishing-dex__season {
-  font-size: var(--fs-xs);
-  color: var(--color-text-secondary);
-}
-
-/* ───────── 반응형 ───────── */
-
-@media (max-width: 390px) {
-  .fishing-dex__content {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  }
-}
+/* ── 도감 ── */
+.fishing__controls { display: flex; align-items: center; justify-content: center; gap: var(--space-2); flex-wrap: wrap; }
+.fishing-dex { display: grid; gap: var(--space-4); max-height: 70vh; overflow-y: auto; }
+.fishing-dex__count { margin: 0; font-size: var(--fs-sm); color: var(--color-neutral-800); }
+.fishing-dex__season { display: grid; gap: var(--space-2); }
+.fishing-dex__seasonTitle { margin: 0; font-size: var(--fs-sm); font-weight: 700; }
+.fishing-dex__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.fishing-dex__item { display: grid; justify-items: center; gap: var(--space-1); padding: var(--space-2) var(--space-1); border: 1px dashed var(--color-neutral-400); text-align: center; }
+.fishing-dex__item--caught { border-style: solid; border-color: var(--color-neutral-700); background: var(--color-surface); }
+.fishing-dex__icon { font-size: 26px; line-height: 1; color: var(--color-neutral-700); }
+.fishing-dex__item--caught .fishing-dex__icon { filter: hue-rotate(var(--h)); }
+.fishing-dex__name { font-size: var(--fs-xs); line-height: 1.3; color: var(--color-neutral-700); }
+.fishing-dex__item--caught .fishing-dex__name { color: var(--color-text); font-weight: 600; }

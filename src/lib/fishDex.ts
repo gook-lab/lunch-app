@@ -17,6 +17,27 @@ export const FISH_SPECIES_NAMES: Record<'carp' | 'puffer' | 'mackerel' | 'angel'
   squid: '오징어',
 };
 
+type Season = 'spring' | 'summer' | 'autumn' | 'winter';
+type Kind = keyof typeof FISH_SPECIES_NAMES;
+
+/** 계절마다 같은 몸 모양이 다른 이름·빛깔로 나온다(도감 28칸). */
+export const SEASON_FISH: Record<Season, Record<Kind, string>> = {
+  spring: { carp: '벚꽃 붕어', puffer: '꽃복어', mackerel: '봄 삼치', angel: '나비 엔젤', sardine: '봄 멸치', whale: '아기 고래', squid: '꼴뚜기' },
+  summer: { carp: '연못 잉어', puffer: '가시복', mackerel: '전갱이', angel: '열대 엔젤', sardine: '꽁치', whale: '혹등고래', squid: '한치' },
+  autumn: { carp: '황금 붕어', puffer: '황복', mackerel: '가을 고등어', angel: '단풍 엔젤', sardine: '전어', whale: '향유고래', squid: '오징어' },
+  winter: { carp: '얼음 붕어', puffer: '참복', mackerel: '방어', angel: '눈꽃 엔젤', sardine: '빙어', whale: '흰돌고래', squid: '대왕오징어' },
+};
+
+/** 계절 빛깔 — 물고기 hue 에 더한다(연출 전용). */
+export const SEASON_HUE: Record<Season, number> = { spring: -45, summer: 0, autumn: 25, winter: 160 };
+
+export const FISH_EMOJI: Record<Kind, string> = { carp: '🐟', puffer: '🐡', mackerel: '🐟', angel: '🐠', sardine: '🐟', whale: '🐋', squid: '🦑' };
+
+export function fishName(id: FishSpeciesId): string {
+  const [season, kind] = id.split('-') as [Season, Kind];
+  return SEASON_FISH[season]?.[kind] ?? FISH_SPECIES_NAMES[kind];
+}
+
 const DEX_KEY = 'lunch-app:fish-dex';
 const DEX_VERSION = 1;
 

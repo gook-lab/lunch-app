@@ -129,7 +129,7 @@ describe('낚시', () => {
         </Wrapper>,
       );
       const container = r.container.querySelector('.fishing');
-      expect(container?.className).toContain(`fishing--season-${season}`);
+      expect(container?.className).toContain(`amb--${season}`);
       cleanup();
     }
   });
@@ -146,12 +146,12 @@ describe('낚시', () => {
         </Wrapper>,
       );
       const container = r.container.querySelector('.fishing');
-      expect(container?.className).toContain(`fishing--weather-${weather}`);
+      expect(container?.className).toContain(`amb--w-${weather}`);
       cleanup();
     }
   });
 
-  it('금요일에 fishing--friday 클래스를 추가한다', () => {
+  it('금요일에 amb--fri 클래스를 추가한다', () => {
     localStorage.setItem(
       'lunch-app:ambience',
       JSON.stringify({ season: 'summer', weekday: 5, weather: 'clear' }),
@@ -162,10 +162,10 @@ describe('낚시', () => {
       </Wrapper>,
     );
     const container = r.container.querySelector('.fishing');
-    expect(container?.className).toContain('fishing--friday');
+    expect(container?.className).toContain("amb--fri");
   });
 
-  it('금요일이 아니면 fishing--friday 클래스를 추가하지 않는다', () => {
+  it('금요일이 아니면 amb--fri 클래스를 추가하지 않는다', () => {
     localStorage.setItem(
       'lunch-app:ambience',
       JSON.stringify({ season: 'summer', weekday: 3, weather: 'clear' }),
@@ -176,7 +176,7 @@ describe('낚시', () => {
       </Wrapper>,
     );
     const container = r.container.querySelector('.fishing');
-    expect(container?.className).not.toContain('fishing--friday');
+    expect(container?.className).not.toContain("amb--fri");
   });
 
   it('도감 버튼이 있다', () => {
@@ -187,5 +187,13 @@ describe('낚시', () => {
     );
     const btn = r.container.querySelector('button');
     expect(btn?.textContent).toContain('도감');
+  });
+});
+
+describe('낚시 도감 이름', () => {
+  it('같은 몸 모양도 계절마다 다른 이름이다 — 가을 멸치는 전어, 겨울은 빙어', async () => {
+    const { fishName } = await import('../../lib/fishDex');
+    expect(fishName('autumn-sardine')).toBe('전어');
+    expect(fishName('winter-sardine')).toBe('빙어');
   });
 });
