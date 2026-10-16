@@ -27,6 +27,10 @@ import { archerySfxLater, type ArcherySfx } from '../../lib/sfx';
 import type { SfxName } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
 import { useAmbience } from '../../hooks/useAmbience';
+import type { AmbienceWeather } from '../../lib/ambience';
+import { Horizon } from './scene/Horizon';
+import { SceneWeather } from './scene/SceneWeather';
+import { ambienceClasses } from './scene/outfit';
 import './Archery.css';
 import './Archery.ambience.css';
 
@@ -70,7 +74,8 @@ function tailAngle(layout: RangeLayout, x: number, y: number): number {
 
 export function Archery({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
   const count = candidates.length;
-  const { season, weather } = useAmbience();
+  const ambience = useAmbience();
+  const { season, weather } = ambience;
   const [state, setState] = useState<ArcheryState>({ run: -1, shot: 0, phase: 'draw' });
   const layout = useMemo(() => rangeLayout(count, seededRandom(LAYOUT_SEED + count)), [count]);
   // 일정은 판 번호 시드라 몇 번 계산해도 같다. 궤적·사건을 그리려고 렌더에서도 쓴다.
@@ -257,8 +262,7 @@ export function Archery({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
         'archery',
         expanded ? 'archery--big' : '',
         settled ? 'archery--settled' : '',
-        `archery--${season}`,
-        `archery--${weather}`,
+        ambienceClasses(ambience),
       ]
         .filter(Boolean)
         .join(' ')}
@@ -279,6 +283,10 @@ export function Archery({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
             .join(' ')}
           style={worldStyle}
         >
+          {/* 지평선 나무 — 계절마다 벚꽃·초록·단풍·눈. 과녁보다 뒤. */}
+          <span className="archery__horizon" aria-hidden="true">
+            <Horizon season={season} />
+          </span>
           <span className="archery__line" style={{ top: pct(layout.line) }} aria-hidden="true" />
           {candidates.map((p, i) => {
             const t = layout.targets[i];
@@ -391,6 +399,7 @@ export function Archery({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
           </span>
         </div>
 
+        <SceneWeather weather={weather} band={[0, layout.sky]} />
         {/* 화면에 붙은 효과(카메라 배율과 상관없음). */}
         <div className="archery__fx" aria-hidden="true">
           {phase && phase !== 'settle' && (
@@ -420,7 +429,7 @@ export function Archery({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
         </div>
 
         {cut && shot && (
-          <Cutscene key={`${run}-${shotIdx}`} phase={phase} final={final} shot={shotIdx} drawMs={shot.releaseMs - shot.drawMs} />
+          <Cutscene key={`${run}-${shotIdx}`} phase={phase} final={final} shot={shotIdx} drawMs={shot.releaseMs - shot.drawMs} weather={weather} />
         )}
       </div>
       <p className="archery__status" aria-live="polite">
@@ -437,8 +446,16 @@ function MiniArcher() {
       <ellipse cx="20" cy="43" rx="12" ry="2.6" className="archery__mini-shadow" />
       <rect x="11" y="22" width="18" height="19" rx="7" className="archery__mini-body" />
       <circle cx="20" cy="15" r="9" className="archery__mini-head" />
-      <path d="M10 14 Q20 1 30 14 Z" className="archery__mini-hat" />
-      <path d="M27 9 q6 -6 9 -3" className="archery__mini-feather" />
+      <path d="M10 14 Q20 1 30 14 Z" className="archery__mini-hat acc-base" />
+      <path d="M27 9 q6 -6 9 -3" className="archery__mini-feather acc-base" />
+      {/* 계절·날씨 덧옷 — 루트의 outfit--* 가 하나만 켠다(Archery.ambience.css). */}
+      <rect x="12" y="21" width="16" height="3.4" rx="1.5" className="acc acc-scarf" />
+      <path d="M11 14 Q11 5 20 5 Q29 5 29 14 Z" className="acc acc-beanie" />
+      <circle cx="20" cy="4.4" r="2.6" className="acc acc-pom" />
+      <path d="M10 17 Q9 4 20 4 Q31 4 30 17 Q27 9 20 9 Q13 9 10 17 Z" className="acc acc-hood" />
+      <ellipse cx="20" cy="11" rx="13" ry="2.6" className="acc acc-brim" />
+      <path d="M14 11 Q20 2 26 11 Z" className="acc acc-crown" />
+      <circle cx="25" cy="8" r="2.2" className="acc acc-flower" />
       <path d="M33 4 Q41 18 33 32" className="archery__mini-bow" />
       <line x1="33" y1="4" x2="33" y2="32" className="archery__mini-string" />
     </svg>
@@ -452,7 +469,7 @@ function MiniArcher() {
  * 시위는 활 끝(위·아래)에 매단 두 줄이다. 끝을 축으로 θ 돌리고 길이를 1/cos θ 로 늘리면
  * 두 줄이 만나는 점(오늬)이 정확히 L·tan θ 만큼 뒤로 간다 — 화살·당기는 손도 그만큼 뒤로 간다(CSS).
  */
-function Cutscene({ phase, final, shot, drawMs }: { phase: Phase | null; final: boolean; shot: number; drawMs: number }) {
+function Cutscene({ phase, final, shot, drawMs, weather }: { phase: Phase | null; final: boolean; shot: number; drawMs: number; weather: AmbienceWeather }) {
   return (
     <div
       className={[
@@ -467,6 +484,7 @@ function Cutscene({ phase, final, shot, drawMs }: { phase: Phase | null; final: 
       aria-hidden="true"
     >
       <span className="archery__cut-bg" />
+      <SceneWeather weather={weather} band={[0, 70]} />
       {final && <span className="archery__focus" />}
       <span className="archery__speed" />
       <svg className="archery__hero" viewBox="0 0 260 180">
@@ -485,8 +503,22 @@ function Cutscene({ phase, final, shot, drawMs }: { phase: Phase | null; final: 
         <line x1="104" y1="104" x2="176" y2="100" className="archery__h-arm" />
         {/* 머리 */}
         <circle cx="94" cy="70" r="26" className="archery__h-head" />
-        <path d="M64 66 Q90 22 126 60 Q100 52 64 66 Z" className="archery__h-hat" />
-        <path d="M70 58 Q52 34 40 40 Q54 44 64 62 Z" className="archery__h-feather" />
+        <path d="M64 66 Q90 22 126 60 Q100 52 64 66 Z" className="archery__h-hat acc-base" />
+        <path d="M70 58 Q52 34 40 40 Q54 44 64 62 Z" className="archery__h-feather acc-base" />
+        {/* 계절·날씨 덧옷 */}
+        <path d="M74 92 Q94 104 114 92 L116 101 Q94 113 72 101 Z" className="acc acc-scarf" />
+        <path d="M82 102 l-4 24 l9 1 l3 -23 Z" className="acc acc-scarf" />
+        <path d="M67 64 Q66 38 94 38 Q122 38 121 64 Q94 56 67 64 Z" className="acc acc-beanie" />
+        <circle cx="94" cy="36" r="8" className="acc acc-pom" />
+        <path d="M62 80 Q56 34 94 32 Q132 34 126 80 Q122 56 94 52 Q66 56 62 80 Z" className="acc acc-hood" />
+        <ellipse cx="94" cy="54" rx="46" ry="8" className="acc acc-brim" />
+        <path d="M70 54 Q72 30 94 30 Q116 30 118 54 Z" className="acc acc-crown" />
+        <g className="acc acc-flower">
+          <circle cx="80" cy="44" r="5" />
+          <circle cx="88" cy="40" r="5" />
+          <circle cx="84" cy="50" r="5" />
+          <circle cx="84" cy="44" r="3" className="acc-flower__eye" />
+        </g>
         <g className="archery__h-eye-open">
           <ellipse cx="108" cy="70" rx="3.6" ry="4.6" />
           <circle cx="109.4" cy="68.4" r="1.3" className="archery__h-glint" />

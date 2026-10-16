@@ -448,15 +448,15 @@
   inset: -6%;
   background:
     radial-gradient(ellipse 30% 9% at 22% 22%, oklch(1 0 0 / 0.8) 60%, transparent 62%),
-    radial-gradient(ellipse 60% 22% at 80% 76%, oklch(0.74 0.1 145) 60%, transparent 62%),
-    linear-gradient(to bottom, oklch(0.9 0.05 225) 0 70%, oklch(0.76 0.12 140) 70%);
+    radial-gradient(ellipse 60% 22% at 80% 76%, var(--cut-hill, oklch(0.74 0.1 145)) 60%, transparent 62%),
+    linear-gradient(to bottom, var(--cut-sky, oklch(0.9 0.05 225)) 0 70%, var(--cut-grass, oklch(0.76 0.12 140)) 70%);
   animation: archery-cut-in 200ms var(--ease-out) both;
 }
 [data-theme='dark'] .archery__cut-bg {
   background:
     radial-gradient(circle 4% at 84% 18%, oklch(0.95 0.04 95) 70%, transparent 74%),
-    radial-gradient(ellipse 60% 22% at 80% 76%, oklch(0.4 0.07 150) 60%, transparent 62%),
-    linear-gradient(to bottom, oklch(0.32 0.05 260) 0 70%, oklch(0.36 0.07 150) 70%);
+    radial-gradient(ellipse 60% 22% at 80% 76%, var(--cut-hill, oklch(0.4 0.07 150)) 60%, transparent 62%),
+    linear-gradient(to bottom, var(--cut-sky, oklch(0.32 0.05 260)) 0 70%, var(--cut-grass, oklch(0.36 0.07 150)) 70%);
 }
 @keyframes archery-cut-in { from { opacity: 0; scale: 1.15; } }
 .archery__hero {
