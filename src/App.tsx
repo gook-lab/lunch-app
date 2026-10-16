@@ -904,7 +904,7 @@ export default function App() {
             오늘 점심으로 정했어요
           </p>
           {/* 정한 다음 할 일은 같이 갈 사람에게 알리기. 가장 큰 단추로 둔다. */}
-          <ShareButton place={winner} primary />
+          <ShareButton place={winner} primary game={`${MODE_ICON[mode]} ${GAME_MODES.find((m) => m.id === mode)?.label ?? ''}`} />
           <DirectionsLink place={winner} />
           <Button block variant="secondary" onClick={spin} disabled={spinning}>
             그래도 다시 뽑기

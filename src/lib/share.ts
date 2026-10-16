@@ -35,12 +35,17 @@ export function shareMessage(place: SharedPlace, appUrl: string | null): ShareMe
 
 export type ShareResult = 'shared' | 'copied' | 'failed';
 
-/** 휴대폰은 공유 시트, 아니면 클립보드. 사용자가 시트를 닫아도 실패로 보지 않는다. */
-export async function sharePlace(message: ShareMessage): Promise<ShareResult> {
+/**
+ * 휴대폰은 공유 시트, 아니면 클립보드. 사용자가 시트를 닫아도 실패로 보지 않는다.
+ * card 가 있고 시트가 파일을 받으면 결과 카드 그림도 같이 보낸다(그림이 대화에서 눈에 띈다).
+ */
+export async function sharePlace(message: ShareMessage, card?: () => Promise<File | null>): Promise<ShareResult> {
   const { text, sheet } = message;
   try {
     if (typeof navigator.share === 'function' && matchMedia?.('(pointer: coarse)').matches) {
-      await navigator.share(sheet);
+      const file = card ? await card().catch(() => null) : null;
+      const withFile = file && navigator.canShare?.({ files: [file] }) ? { ...sheet, files: [file] } : sheet;
+      await navigator.share(withFile);
       return 'shared';
     }
   } catch (error) {
