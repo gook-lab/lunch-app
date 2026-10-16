@@ -16,7 +16,14 @@ import { seededRandom } from '../../lib/random';
 import { REELS, reelAt, reelOrders, slotPlan, symbolAt, type SlotPlan } from '../../lib/slot';
 import { sfx, wheelSlotSfxLater, type SfxName, type WheelSlotSfx } from '../../lib/sfx';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
+import { useAmbience } from '../../hooks/useAmbience';
+import { SEASON_NAME } from '../../lib/ambience';
+import { ambienceClasses } from './scene/outfit';
 import './Slot.css';
+import './Slot.ambience.css';
+
+const WEATHER_MARK = { clear: '', cloudy: '☁️', rain: '☔', snow: '⛄', fog: '🌫️' } as const;
+const SEASON_MARK = { spring: '🌸', summer: '🍉', autumn: '🍁', winter: '❄️' } as const;
 
 const ITEM_H = 56;
 /** 크게 보기에서 한 줄 높이. 창은 늘 세 줄이라 창 높이도 같이 바뀐다. */
@@ -60,6 +67,7 @@ interface SlotState {
 }
 
 export function Slot({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
+  const ambience = useAmbience();
   const wide = useSyncExternalStore(subscribeWide, isWide, () => false);
   const big = wide && !expanded;
   const itemH = expanded ? (wide ? ITEM_H_WIDE_BIG : ITEM_H_BIG) : big ? ITEM_H_WIDE : ITEM_H;
@@ -245,6 +253,7 @@ export function Slot({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
     <div
       className={[
         'slot',
+        ambienceClasses(ambience),
         big ? 'slot--wide' : '',
         expanded ? 'slot--big' : '',
         wide ? '' : 'slot--narrow',
@@ -255,6 +264,12 @@ export function Slot({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
       role="img"
       aria-label={`고를 가게 ${count}곳`}
     >
+      <div className="slot__topper" aria-hidden="true">
+        <span>{SEASON_MARK[ambience.season]}</span>
+        {ambience.weekday === 5 ? '불금 잭팟' : `${SEASON_NAME[ambience.season]} 잭팟`}
+        <span>{SEASON_MARK[ambience.season]}</span>
+        {WEATHER_MARK[ambience.weather] && <span className="slot__topper-wx">{WEATHER_MARK[ambience.weather]}</span>}
+      </div>
       <div
         className={[
           'slot__cabinet',
