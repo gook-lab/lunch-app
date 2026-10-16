@@ -20,7 +20,19 @@ import { bombPlan, type Beat, type BombPlan } from '../../lib/bomb';
 import { seededRandom } from '../../lib/random';
 import { bombSfxLater, type BombSfxName } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
+import { useAmbience } from '../../hooks/useAmbience';
+import { SceneWeather } from './scene/SceneWeather';
+import { ambienceClasses } from './scene/outfit';
 import './Bomb.css';
+import './Bomb.ambience.css';
+
+/** 식탁 한가운데 계절 간식. 금요일은 파티. */
+const SNACK = { spring: '🍓', summer: '🍉', autumn: '🍠', winter: '🍲' } as const;
+/** 땅에 흩뿌린 계절 무늬 — 식탁 둘레를 피해 네 귀퉁이 쪽에만(x·y %, 크기 %, 기울기). */
+const SCATTER: [number, number, number, number][] = [
+  [6, 7, 7, 10], [18, 4, 5, -20], [4, 22, 5, 35], [94, 6, 6, -15], [82, 4, 5, 25], [96, 21, 5, 50],
+  [5, 93, 6, 20], [17, 96, 5, -30], [4, 78, 5, 10], [94, 94, 7, -10], [81, 96, 5, 40], [96, 78, 5, -45],
+];
 
 interface BombState {
   run: number;
@@ -78,6 +90,7 @@ const CALLOUT: Partial<Record<Beat['cue'], [string, string]>> = {
 const pct = (n: number) => `${((n / BOARD) * 100).toFixed(2)}%`;
 
 export function Bomb({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
+  const ambience = useAmbience();
   const count = candidates.length;
   const startSeatRef = useRef(0);
   const [state, setState] = useState<BombState>({ run: -1, plan: null, beat: 0 });
@@ -228,7 +241,7 @@ export function Bomb({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
   const winAt = winnerIndex === null ? null : at(winnerIndex, SEAT_R);
 
   return (
-    <div className={expanded ? 'bomb bomb--big' : 'bomb'}>
+    <div className={['bomb', 'scene-outfit', ambienceClasses(ambience), expanded ? 'bomb--big' : ''].filter(Boolean).join(' ')}>
       <div
         className={[
           'bomb__stage',
@@ -241,6 +254,12 @@ export function Bomb({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
           .filter(Boolean)
           .join(' ')}
       >
+        <span className="bomb__yard" aria-hidden="true">
+          {SCATTER.map(([x, y, sz, r], i) => (
+            <i key={i} style={{ left: `${x}%`, top: `${y}%`, '--s': `${sz}%`, '--r': `${r}deg` } as React.CSSProperties} />
+          ))}
+          <SceneWeather weather={ambience.weather} />
+        </span>
         <svg
           className="bomb__board"
           viewBox={`0 0 ${BOARD} ${BOARD}`}
@@ -252,8 +271,16 @@ export function Bomb({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
               <stop offset="0" stopColor="oklch(0.75 0.22 40)" stopOpacity="0.9" />
               <stop offset="1" stopColor="oklch(0.6 0.24 28)" stopOpacity="0" />
             </radialGradient>
+            <pattern id="bomb-cloth" width="24" height="24" patternUnits="userSpaceOnUse">
+              <rect width="24" height="24" className="bomb__cloth-a" />
+              <rect width="12" height="24" className="bomb__cloth-b" />
+              <rect width="24" height="12" className="bomb__cloth-b" />
+            </pattern>
           </defs>
           <circle cx={C} cy={C} r={FUSE_R + 4} className="bomb__table" />
+          <text x={C} y={C} textAnchor="middle" dominantBaseline="central" className="bomb__snack" aria-hidden="true">
+            {ambience.weekday === 5 ? '🎉' : SNACK[ambience.season]}
+          </text>
           {/* 심지 — 다 탄 자리는 재(점선), 남은 자리는 노끈. 불꽃이 끝을 따라 돈다. */}
           <circle cx={C} cy={C} r={FUSE_R} className="bomb__ash" />
           <circle
@@ -347,6 +374,21 @@ export function Bomb({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
                 <ellipse cx="-4.5" cy="-5" rx="3.6" ry="2.4" className="bomb__shine" transform="rotate(-35 -4.5 -5)" />
                 <rect x="-4" y="-17" width="8" height="5" rx="1.5" className="bomb__cap" />
                 <path d="M0 -17 Q3 -24 9 -23" className="bomb__wick" />
+                {/* 계절 덧옷 — 심지를 막지 않게 공 위쪽 옆으로만. */}
+                <path d="M-12.6 -3 Q-12 -13.6 0 -13.6 Q12 -13.6 12.6 -3 Q0 -7.5 -12.6 -3 Z" className="acc acc-beanie" />
+                <path d="M-14 -1 Q-13 -15.5 0 -15.5 Q13 -15.5 14 -1 Q11 -10 0 -10 Q-11 -10 -14 -1 Z" className="acc acc-hood" />
+                <path d="M-11 6 Q0 12 11 6 L11.5 10 Q0 16.5 -11.5 10 Z" className="acc acc-scarf" />
+                <g className="acc acc-flower">
+                  <circle cx="-9" cy="-9" r="2.6" />
+                  <circle cx="-5.6" cy="-11" r="2.6" />
+                  <circle cx="-6.6" cy="-6.6" r="2.6" />
+                  <circle cx="-7" cy="-8.9" r="1.5" className="acc-flower__eye" />
+                </g>
+                <g className="bomb__shades">
+                  <rect x="-10" y="-3.5" width="8.5" height="5.5" rx="2.2" />
+                  <rect x="1.5" y="-3.5" width="8.5" height="5.5" rx="2.2" />
+                  <path d="M-1.5 -1.5 H1.5" />
+                </g>
                 {!done && (
                   <g transform="translate(9 -23)" className="bomb__wick-spark">
                     <circle r="4" className="bomb__spark-glow" />
