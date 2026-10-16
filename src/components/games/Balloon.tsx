@@ -12,7 +12,9 @@ import { balloonColumns, balloonFrame, balloonPlan, finalFrame, type BalloonFram
 import { seededRandom } from '../../lib/random';
 import { prefersReducedMotion, type GameProps } from './types';
 import { tournbalSfxLater, type SfxName, type TournbalSfx } from '../../lib/sfx';
+import { useAmbience } from '../../hooks/useAmbience';
 import './Balloon.css';
+import './Balloon.ambience.css';
 
 interface BalloonState {
   run: number;
@@ -34,6 +36,7 @@ const BODY_Y = 0.36;
 export function Balloon({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
   const count = candidates.length;
   const [state, setState] = useState<BalloonState>({ run: -1, k: -1, instant: false });
+  const ambience = useAmbience();
   const plan = useMemo(
     () => (winnerIndex === null ? null : balloonPlan(count, winnerIndex, seededRandom(run))),
     [count, winnerIndex, run],
@@ -168,6 +171,9 @@ export function Balloon({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
       className={['balloon', expanded ? 'balloon--big' : '', still ? 'balloon--settled' : ''].filter(Boolean).join(' ')}
       // 판의 폭 ÷ 높이. 칸 하나가 폭 1 · 높이 CELL_TALL 이다. 크게 보기는 이 비로 남는 높이에 맞춘다(desktop.css).
       style={{ '--fit': (cols / (rows * CELL_TALL)).toFixed(4) } as React.CSSProperties}
+      data-season={ambience.season}
+      data-weather={ambience.weather}
+      data-weekday={ambience.weekday}
     >
       <div
         className={[

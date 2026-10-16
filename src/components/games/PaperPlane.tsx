@@ -33,7 +33,9 @@ import {
 import { seededRandom } from '../../lib/random';
 import { prefersReducedMotion, type GameProps } from './types';
 import { planeSfxLater, type PlaneSfxName, type SfxName } from '../../lib/sfx';
+import { useAmbience } from '../../hooks/useAmbience';
 import './PaperPlane.css';
+import './PaperPlane.ambience.css';
 
 interface PlaneState {
   run: number;
@@ -105,6 +107,7 @@ function planeSounds(plan: PlanePlan, marks: Mark[]): [number, SfxName | PlaneSf
 export function PaperPlane({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
   const count = candidates.length;
   const [state, setState] = useState<PlaneState>({ run: -1, now: 0 });
+  const ambience = useAmbience();
   const layout = useMemo(() => planeLayout(count), [count]);
   // 일정은 판 번호 시드라 몇 번 계산해도 같다. 렌더에서도 지금 시각의 자세를 그리는 데 쓴다.
   const plan = useMemo(
@@ -198,6 +201,9 @@ export function PaperPlane({ candidates, winnerIndex, spinning, run, onSpinEnd, 
       className={['plane', expanded ? 'plane--big' : '', roomy ? 'plane--roomy' : '', settled ? 'plane--settled' : ''].filter(Boolean).join(' ')}
       // 장면 폭 ÷ 높이. 크게 보기는 이 비로 남는 높이에 맞춘다(desktop.css).
       style={{ '--fit': layout.aspect.toFixed(4) } as React.CSSProperties}
+      data-season={ambience.season}
+      data-weather={ambience.weather}
+      data-weekday={ambience.weekday}
     >
       <div
         className="plane__scene"
