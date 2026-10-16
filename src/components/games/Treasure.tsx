@@ -10,6 +10,12 @@
  * 마지막 구덩이는 (텅 빈 줄 알았는데 더 판다) → 상자가 솟고 → 금빛과 함께 열리며 동전이 쏟아진 뒤 onSpinEnd 를 한 번 부른다.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { useAmbience } from '../../hooks/useAmbience';
+import type { AmbienceSeason } from '../../lib/ambience';
+import { SceneWeather } from './scene/SceneWeather';
+import { SeasonProp } from './scene/SeasonProp';
+import { ambienceClasses } from './scene/outfit';
+import './Treasure.ambience.css';
 import { shortName } from '../../lib/name';
 import { seededRandom } from '../../lib/random';
 import { treasureSfxLater, type SfxName, type TreasureSfxName } from '../../lib/sfx';
@@ -59,7 +65,18 @@ function zoomFor(layout: MapLayout): number {
   return layout.cols <= 2 ? 1.3 : layout.cols === 3 ? 1.45 : 1.7;
 }
 
+function SeasonCorner({ start, season }: { start: { x: number; y: number }; season: AmbienceSeason }) {
+  // 여름은 원래 야자수, 다른 계절은 벚나무·단풍나무·눈사람이 그 자리를 지킨다.
+  if (season === 'summer') return <Palm start={start} />;
+  return (
+    <span className="treasure__palm treasure__prop" style={{ top: pct(start.y) }} aria-hidden="true">
+      <SeasonProp season={season} />
+    </span>
+  );
+}
+
 export function Treasure({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
+  const ambience = useAmbience();
   const count = candidates.length;
   const [state, setState] = useState<TreasureState>({ run: -1, dig: -1, phase: 'intro' });
   const layout = useMemo(() => treasureLayout(count, seededRandom(LAYOUT_SEED + count)), [count]);
@@ -290,7 +307,7 @@ export function Treasure({ candidates, winnerIndex, spinning, run, onSpinEnd, ex
 
   return (
     <div
-      className={['treasure', expanded ? 'treasure--big' : '', settled ? 'treasure--settled' : ''].filter(Boolean).join(' ')}
+      className={['treasure', 'scene-outfit', ambienceClasses(ambience), expanded ? 'treasure--big' : '', settled ? 'treasure--settled' : ''].filter(Boolean).join(' ')}
       // 지도 폭 ÷ 높이. 크게 보기는 이 비로 남는 높이에 맞춘다(desktop.css).
       style={{ '--fit': layout.aspect.toFixed(4) } as React.CSSProperties}
     >
@@ -332,7 +349,7 @@ export function Treasure({ candidates, winnerIndex, spinning, run, onSpinEnd, ex
           </span>
           <Compass top={layout.top} />
           <Boat start={layout.start} />
-          <Palm start={layout.start} />
+          <SeasonCorner start={layout.start} season={ambience.season} />
 
           <svg className="treasure__trail" viewBox={`0 0 100 ${H.toFixed(2)}`} preserveAspectRatio="none" aria-hidden="true">
             <defs>
@@ -424,6 +441,7 @@ export function Treasure({ candidates, winnerIndex, spinning, run, onSpinEnd, ex
           </span>
         </div>
 
+        <SceneWeather weather={ambience.weather} band={[0, layout.top]} />
         {/* 화면에 붙은 효과(카메라 배율과 상관없음). */}
         <div className="treasure__fx" aria-hidden="true">
           {phase === 'intro' && <span className="treasure__roll" />}
@@ -548,16 +566,32 @@ function Pirate() {
           <path d="M12 49 h8 v2.5 h-8 z M21 49 h8 v2.5 h-8 z" className="treasure__p-boot" />
         </g>
         <g className="treasure__p-torso">
-          <rect x="11" y="27" width="19" height="15" rx="5" className="treasure__p-shirt" />
-          <path d="M11 31.5 h19 M11 36 h19" className="treasure__p-stripe" />
+          <rect x="11" y="27" width="19" height="15" rx="5" className="treasure__p-shirt acc-coat" />
+          <path d="M11 31.5 h19 M11 36 h19" className="treasure__p-stripe acc-coat-detail" />
           <rect x="11" y="38" width="19" height="3" className="treasure__p-belt" />
           {/* 머리 */}
           <circle cx="20.5" cy="18" r="11" className="treasure__p-head" />
-          <path d="M9.6 16 Q10 6 20.5 6 Q31 6 31.4 16 Q20.5 11 9.6 16 Z" className="treasure__p-bandana" />
-          <circle cx="11" cy="14.5" r="2.4" className="treasure__p-bandana" />
-          <path d="M9.6 14 l-5 -3 l1 5 z M9.6 15 l-4 4 l4.5 0.5 z" className="treasure__p-bandana" />
-          <circle cx="27" cy="11" r="1.2" className="treasure__p-dot" />
-          <circle cx="19" cy="9.5" r="1.2" className="treasure__p-dot" />
+          <g className="acc-base">
+            <path d="M9.6 16 Q10 6 20.5 6 Q31 6 31.4 16 Q20.5 11 9.6 16 Z" className="treasure__p-bandana" />
+            <circle cx="11" cy="14.5" r="2.4" className="treasure__p-bandana" />
+            <path d="M9.6 14 l-5 -3 l1 5 z M9.6 15 l-4 4 l4.5 0.5 z" className="treasure__p-bandana" />
+            <circle cx="27" cy="11" r="1.2" className="treasure__p-dot" />
+            <circle cx="19" cy="9.5" r="1.2" className="treasure__p-dot" />
+          </g>
+          {/* 계절·날씨 덧옷(scene.css 가 하나만 켠다) */}
+          <path d="M11.5 27.5 Q20.5 31.5 29.5 27.5 L30 30.5 Q20.5 34.5 11 30.5 Z" className="acc acc-scarf" />
+          <path d="M14 30.5 l-2 8 l3 0.6 l1.6 -8.2 Z" className="acc acc-scarf" />
+          <path d="M9.4 17 Q9.4 5 20.5 5 Q31.6 5 31.6 17 Q20.5 12.6 9.4 17 Z" className="acc acc-beanie" />
+          <circle cx="20.5" cy="4.6" r="2.8" className="acc acc-pom" />
+          <path d="M8 23 Q6.4 4 20.5 4 Q34.6 4 33 23 Q30.5 11.5 20.5 11.5 Q10.5 11.5 8 23 Z" className="acc acc-hood" />
+          <ellipse cx="20.5" cy="11.5" rx="15" ry="3" className="acc acc-brim" />
+          <path d="M13 11.5 Q14 3 20.5 3 Q27 3 28 11.5 Z" className="acc acc-crown" />
+          <g className="acc acc-flower">
+            <circle cx="11" cy="9" r="2.2" />
+            <circle cx="14" cy="7.5" r="2.2" />
+            <circle cx="12.6" cy="11" r="2.2" />
+            <circle cx="12.5" cy="9.2" r="1.3" className="acc-flower__eye" />
+          </g>
           <path d="M11 13 L31 21" className="treasure__p-strap" />
           <ellipse cx="25" cy="18.3" rx="3" ry="2.7" className="treasure__p-patch" />
           <circle cx="17" cy="18" r="1.6" className="treasure__p-eye" />

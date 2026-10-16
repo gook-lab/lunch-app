@@ -77,3 +77,41 @@
 .scene-hz--winter .scene-hz__leaf--1 { fill: oklch(0.56 0.03 250); }
 .scene-hz--winter .scene-hz__leaf--2 { fill: oklch(0.66 0.03 250); }
 [data-theme='dark'] .scene-hz { filter: brightness(0.62) saturate(0.85); }
+
+/* ── 캐릭터 덧옷(공용) — 루트에 scene-outfit + outfit--* 를 붙이면 .acc-* 중 맞는 것만 켠다.
+   .acc-base 는 기본 모자(덧옷이 머리를 덮으면 숨김), .acc-coat 는 옷 몸통(우비·패딩 색). ── */
+.scene-outfit .acc { display: none; }
+.scene-outfit:is(.outfit--winter, .outfit--rain, .outfit--summer) .acc-base { display: none; }
+.scene-outfit.outfit--winter :is(.acc-scarf, .acc-beanie, .acc-pom),
+.scene-outfit.outfit--rain .acc-hood,
+.scene-outfit.outfit--summer :is(.acc-brim, .acc-crown),
+.scene-outfit.outfit--spring .acc-flower,
+.scene-outfit.outfit--autumn .acc-scarf { display: inline; }
+.scene-outfit .acc-scarf { fill: oklch(0.6 0.19 25); stroke: oklch(0.4 0.12 25); stroke-width: 0.6; }
+.scene-outfit.outfit--autumn .acc-scarf { fill: oklch(0.62 0.14 55); stroke: oklch(0.42 0.09 50); }
+.scene-outfit .acc-beanie { fill: oklch(0.55 0.15 255); stroke: oklch(0.35 0.1 255); stroke-width: 0.8; }
+.scene-outfit .acc-pom { fill: oklch(0.97 0.01 250); }
+.scene-outfit .acc-hood { fill: oklch(0.86 0.16 95); stroke: oklch(0.6 0.12 85); stroke-width: 0.8; }
+.scene-outfit :is(.acc-brim, .acc-crown) { fill: oklch(0.86 0.1 85); stroke: oklch(0.62 0.09 75); stroke-width: 0.6; }
+.scene-outfit .acc-flower circle { fill: oklch(0.86 0.1 355); }
+.scene-outfit .acc-flower .acc-flower__eye { fill: oklch(0.88 0.14 90); }
+.scene-outfit.outfit--rain .acc-coat { fill: oklch(0.86 0.16 95); }
+.scene-outfit.outfit--winter .acc-coat { fill: oklch(0.5 0.1 255); }
+.scene-outfit:is(.outfit--rain, .outfit--winter) .acc-coat-detail { display: none; }
+
+/* ── 계절 소품(공용) — SeasonProp ── */
+.scene-prop { display: block; width: 100%; height: 100%; overflow: visible; }
+.scene-prop__trunk { fill: oklch(0.45 0.06 55); }
+.scene-prop__blossom { fill: oklch(0.88 0.08 355); }
+.scene-prop__blossom2 { fill: oklch(0.94 0.04 0); }
+.scene-prop__palm { fill: oklch(0.58 0.15 145); }
+.scene-prop__maple { fill: oklch(0.64 0.19 40); }
+.scene-prop__maple2 { fill: oklch(0.78 0.16 75); }
+.scene-prop__snow { fill: oklch(0.98 0.005 240); stroke: oklch(0.8 0.02 240); stroke-width: 0.6; }
+.scene-prop__coal { fill: oklch(0.25 0 0); }
+.scene-prop__carrot { fill: oklch(0.7 0.17 50); }
+.scene-prop__scarf { fill: oklch(0.6 0.19 25); }
+.scene-prop__pine { fill: oklch(0.45 0.07 170); }
+.scene-prop__umbrella { fill: oklch(0.68 0.19 25); }
+.scene-prop__umbrella2 { fill: oklch(0.97 0.01 90); }
+[data-theme='dark'] .scene-prop { filter: brightness(0.75); }
