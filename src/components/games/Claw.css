@@ -182,7 +182,7 @@
   background: oklch(0.99 0.005 90);
   box-shadow: 0 0 0 1px oklch(0.25 0.02 280 / 0.35), 0 0.3cqw 0.6cqw oklch(0.2 0.02 280 / 0.2);
   color: oklch(0.22 0.02 280);
-  font-size: clamp(10px, 3.2cqw, 13px);
+  font-size: clamp(12px, 3.2cqw, 13px);
   font-weight: 800;
   line-height: 1.15;
   white-space: nowrap;
@@ -190,7 +190,7 @@
   text-overflow: ellipsis;
   pointer-events: none;
 }
-.claw--big .claw__tag { font-size: clamp(11px, 2.6cqw, 14px); }
+.claw--big .claw__tag { font-size: clamp(12px, 2.6cqw, 14px); }
 
 .claw__toy--land .claw__doll { animation: claw-land 360ms var(--ease-out); }
 @keyframes claw-land {
