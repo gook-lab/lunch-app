@@ -1,0 +1,36 @@
+/*
+ * 핀볼 — 계절·날씨·요일. 보드 색과 공 색만 갈아 끼운다. 연출 전용.
+ */
+
+/* ── 계절 팔레트 (밝게) ── */
+.amb--spring .pinball { --board-bg: oklch(0.92 0.06 135); }
+.amb--spring canvas { filter: hue-rotate(0deg); }
+.amb--summer .pinball { --board-bg: oklch(0.88 0.08 80); }
+.amb--summer canvas { filter: hue-rotate(30deg); }
+.amb--autumn .pinball { --board-bg: oklch(0.85 0.08 100); }
+.amb--autumn canvas { filter: hue-rotate(-30deg); }
+.amb--winter .pinball { --board-bg: oklch(0.92 0.03 250); }
+.amb--winter canvas { filter: hue-rotate(-90deg) brightness(1.1); }
+
+/* 비·흐림·안개는 화면을 낮춘다 */
+:is(.amb--w-rain, .amb--w-cloudy) .pinball { filter: brightness(0.92); }
+.amb--w-fog .pinball { filter: brightness(0.96); }
+
+/* ── 어둡게 — 같은 계절의 밤 ── */
+[data-theme='dark'] .amb--spring .pinball { --board-bg: oklch(0.32 0.04 135); }
+[data-theme='dark'] .amb--summer .pinball { --board-bg: oklch(0.28 0.05 80); }
+[data-theme='dark'] .amb--autumn .pinball { --board-bg: oklch(0.3 0.05 100); }
+[data-theme='dark'] .amb--winter .pinball { --board-bg: oklch(0.5 0.02 250); }
+
+/* 금요일 — 점수판 위에 깃발 줄 */
+.amb--fri .pinball__info::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background:
+    conic-gradient(from 135deg at 50% 100%, oklch(0.75 0.17 25) 0 90deg, transparent 90deg) 0 0 / 8px 8px repeat-x;
+  pointer-events: none;
+}

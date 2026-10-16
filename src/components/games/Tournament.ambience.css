@@ -1,0 +1,40 @@
+/*
+ * 토너먼트 — 계절·날씨·요일. 배경과 대진표 색만 갈아 끼운다. 연출 전용.
+ */
+
+/* ── 계절 팔레트 (밝게) ── */
+.amb--spring .tour { --bg: oklch(0.92 0.06 135); }
+.amb--spring .tour__step { --accent: oklch(0.85 0.12 30); }
+.amb--summer .tour { --bg: oklch(0.88 0.08 80); }
+.amb--summer .tour__step { --accent: oklch(0.82 0.14 230); }
+.amb--autumn .tour { --bg: oklch(0.85 0.08 100); }
+.amb--autumn .tour__step { --accent: oklch(0.78 0.12 50); }
+.amb--winter .tour { --bg: oklch(0.92 0.03 250); }
+.amb--winter .tour__step { --accent: oklch(0.85 0.08 240); }
+
+/* 비·흐림·안개는 배경을 낮춘다 */
+:is(.amb--w-rain, .amb--w-cloudy) .tour { filter: brightness(0.92); }
+.amb--w-fog .tour { filter: brightness(0.96); }
+
+/* ── 어둡게 — 같은 계절의 밤 ── */
+[data-theme='dark'] .amb--spring .tour { --bg: oklch(0.32 0.04 135); }
+[data-theme='dark'] .amb--spring .tour__step { --accent: oklch(0.5 0.08 30); }
+[data-theme='dark'] .amb--summer .tour { --bg: oklch(0.28 0.05 80); }
+[data-theme='dark'] .amb--summer .tour__step { --accent: oklch(0.48 0.1 230); }
+[data-theme='dark'] .amb--autumn .tour { --bg: oklch(0.3 0.05 100); }
+[data-theme='dark'] .amb--autumn .tour__step { --accent: oklch(0.46 0.08 50); }
+[data-theme='dark'] .amb--winter .tour { --bg: oklch(0.5 0.02 250); }
+[data-theme='dark'] .amb--winter .tour__step { --accent: oklch(0.52 0.05 240); }
+
+/* 금요일 — 위쪽에 배너 */
+.amb--fri .tour__steps::before {
+  content: '';
+  position: absolute;
+  top: -16px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background:
+    conic-gradient(from 135deg at 50% 100%, oklch(0.75 0.17 25) 0 90deg, transparent 90deg) 0 0 / 8px 8px repeat-x;
+  pointer-events: none;
+}

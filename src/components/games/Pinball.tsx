@@ -50,8 +50,8 @@ import { prefersReducedMotion, type GameProps } from './types';
 import { sfx } from '../../lib/sfx';
 import { FRAME_MS, SLOW_RATE, frameAtMs, timingFor, type Timing } from '../../lib/pinballTiming';
 import { useAmbience } from '../../hooks/useAmbience';
-import { getGameAmbienceClasses } from './GameDecor';
-import './GameAmbience.css';
+import { ambienceClasses } from './scene/outfit';
+import './Pinball.ambience.css';
 
 /** 캔버스 = 코스 창 + 오른쪽 패널(미니맵, 순위판). */
 const PANEL_W = 112;
@@ -228,7 +228,7 @@ export function Pinball({
   balls,
   onBallCounts,
 }: PinballProps) {
-  const { season, weather, weekday } = useAmbience();
+  const ambience = useAmbience();
   const viewH = expanded ? VIEW_H_BIG : VIEW_H;
   const count = candidates.length;
   const ballsKey = balls.slice(0, count).join(',');
@@ -842,7 +842,7 @@ export function Pinball({
     <div
       className={[
         'pinball',
-        getGameAmbienceClasses(season, weather, weekday),
+        ambienceClasses(ambience),
         expanded ? 'pinball--big' : '',
         spinning ? 'pinball--spinning' : '',
         // 판이 시작된 뒤(끝나도 결과를 보는 동안)는 확률표가 필요 없다. 판을 가운데로.

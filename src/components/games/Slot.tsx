@@ -17,9 +17,9 @@ import { REELS, reelAt, reelOrders, slotPlan, symbolAt, type SlotPlan } from '..
 import { sfx, wheelSlotSfxLater, type SfxName, type WheelSlotSfx } from '../../lib/sfx';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
 import { useAmbience } from '../../hooks/useAmbience';
-import { getGameAmbienceClasses } from './GameDecor';
+import { ambienceClasses } from './scene/outfit';
 import './Slot.css';
-import './GameAmbience.css';
+import './Slot.ambience.css';
 
 const ITEM_H = 56;
 /** 크게 보기에서 한 줄 높이. 창은 늘 세 줄이라 창 높이도 같이 바뀐다. */
@@ -63,7 +63,7 @@ interface SlotState {
 }
 
 export function Slot({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
-  const { season, weather, weekday } = useAmbience();
+  const ambience = useAmbience();
   const wide = useSyncExternalStore(subscribeWide, isWide, () => false);
   const big = wide && !expanded;
   const itemH = expanded ? (wide ? ITEM_H_WIDE_BIG : ITEM_H_BIG) : big ? ITEM_H_WIDE : ITEM_H;
@@ -249,7 +249,7 @@ export function Slot({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
     <div
       className={[
         'slot',
-        getGameAmbienceClasses(season, weather, weekday),
+        ambienceClasses(ambience),
         big ? 'slot--wide' : '',
         expanded ? 'slot--big' : '',
         wide ? '' : 'slot--narrow',

@@ -34,9 +34,9 @@ import { seededRandom } from '../../lib/random';
 import { plinkoSfxLater, type PlinkoSfxName, type SfxName } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
 import { useAmbience } from '../../hooks/useAmbience';
-import { getGameAmbienceClasses } from './GameDecor';
+import { ambienceClasses } from './scene/outfit';
 import './Plinko.css';
-import './GameAmbience.css';
+import './Plinko.ambience.css';
 
 /** 큰 글씨가 떠 있는 시간. */
 const CALLOUT_MS = 900;
@@ -63,7 +63,7 @@ export function plinkoDuration(count: number, winnerIndex: number, run: number):
 }
 
 export function Plinko({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
-  const { season, weather, weekday } = useAmbience();
+  const ambience = useAmbience();
   const count = candidates.length;
   const b = useMemo(() => plinkoBoard(count), [count]);
   const plan: PlinkoPlan | null = useMemo(
@@ -209,7 +209,7 @@ export function Plinko({ candidates, winnerIndex, spinning, run, onSpinEnd, expa
 
   return (
     <div
-      className={['plinko', getGameAmbienceClasses(season, weather, weekday), expanded ? 'plinko--big' : '', count <= 4 ? 'plinko--wide' : '', settled ? 'plinko--settled' : '']
+      className={['plinko', ambienceClasses(ambience), expanded ? 'plinko--big' : '', count <= 4 ? 'plinko--wide' : '', settled ? 'plinko--settled' : '']
         .filter(Boolean)
         .join(' ')}
       // 그림 폭 ÷ 높이. 크게 보기 폭 식(desktop.css)이 후보 수와 상관없이 높이에 맞춘다.

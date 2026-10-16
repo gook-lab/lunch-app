@@ -1,0 +1,37 @@
+/*
+ * 돌림판 — 계절·날씨·요일. 칸 색(--wheel-a·--wheel-b)과
+ * 진행자 옷차림만 갈아 끼운다. 연출 전용.
+ */
+
+/* ── 계절 팔레트 (밝게) ── */
+.amb--spring .wheel { --wheel-a: oklch(0.88 0.12 135); --wheel-b: oklch(0.95 0.06 355); }
+.amb--summer .wheel { --wheel-a: oklch(0.82 0.16 140); --wheel-b: oklch(0.92 0.1 230); }
+.amb--autumn .wheel { --wheel-a: oklch(0.85 0.1 85); --wheel-b: oklch(0.88 0.12 45); }
+.amb--winter .wheel { --wheel-a: oklch(0.95 0.008 250); --wheel-b: oklch(0.92 0.015 240); }
+
+/* 비·흐림·안개는 칸 색을 낮춘다 */
+:is(.amb--w-rain, .amb--w-cloudy) .wheel { filter: brightness(0.9); }
+.amb--w-fog .wheel { filter: brightness(0.95); }
+
+/* ── 어둡게 — 같은 계절의 밤 ── */
+[data-theme='dark'] .amb--spring .wheel { --wheel-a: oklch(0.42 0.08 140); --wheel-b: oklch(0.55 0.06 355); }
+[data-theme='dark'] .amb--summer .wheel { --wheel-a: oklch(0.4 0.1 145); --wheel-b: oklch(0.5 0.08 230); }
+[data-theme='dark'] .amb--autumn .wheel { --wheel-a: oklch(0.45 0.08 85); --wheel-b: oklch(0.48 0.1 45); }
+[data-theme='dark'] .amb--winter .wheel { --wheel-a: oklch(0.7 0.006 250); --wheel-b: oklch(0.66 0.012 240); }
+
+/* 진행자 외형 — 계절 소품 */
+.wheelgame__mc-hair { fill: oklch(0.32 0.04 40); }
+
+/* 금요일 — 진행자 머리 위 작은 깃발 줄 */
+.amb--fri .wheelgame__mc::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  width: 80px;
+  height: 12px;
+  translate: -50% 0;
+  background:
+    conic-gradient(from 135deg at 50% 100%, oklch(0.75 0.17 25) 0 90deg, transparent 90deg) 0 0 / 8px 12px repeat-x;
+  pointer-events: none;
+}

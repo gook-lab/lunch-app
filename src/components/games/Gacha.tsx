@@ -16,9 +16,9 @@ import { seededRandom } from '../../lib/random';
 import { gachaCardsSfxLater, type GachaCardsSfxName, type SfxName } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
 import { useAmbience } from '../../hooks/useAmbience';
-import { getGameAmbienceClasses } from './GameDecor';
+import { ambienceClasses } from './scene/outfit';
 import './Gacha.css';
-import './GameAmbience.css';
+import './Gacha.ambience.css';
 
 /** 돔에 그리는 캡슐 수 상한. 넘으면 "캡슐이 N개 더 있어요" 로 적는다. */
 export const MAX_CAPSULES = 20;
@@ -41,7 +41,7 @@ const CALLOUT: Partial<Record<GachaSay, string>> = {
 };
 
 export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
-  const { season, weather, weekday } = useAmbience();
+  const ambience = useAmbience();
   const count = candidates.length;
   const [shown, setShown] = useState<Shown>({ run: -1, step: 0 });
   const plan = useMemo(
@@ -181,7 +181,7 @@ export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expan
     <div
       className={[
         'gacha',
-        getGameAmbienceClasses(season, weather, weekday),
+        ambienceClasses(ambience),
         expanded ? 'gacha--big' : '',
         `gacha--${say}`,
         gold ? 'gacha--gold' : '',

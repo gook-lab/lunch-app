@@ -1,0 +1,40 @@
+/*
+ * 사다리타기 — 계절·날씨·요일. 배경과 사다리 색만 갈아 끼운다. 연출 전용.
+ */
+
+/* ── 계절 팔레트 (밝게) ── */
+.amb--spring .ladder__rail { stroke: oklch(0.5 0.12 30); }
+.amb--spring .ladder__sky { background: linear-gradient(180deg, oklch(0.92 0.06 335) 0%, oklch(0.88 0.08 70) 100%); }
+.amb--summer .ladder__rail { stroke: oklch(0.52 0.14 160); }
+.amb--summer .ladder__sky { background: linear-gradient(180deg, oklch(0.88 0.1 235) 0%, oklch(0.85 0.12 60) 100%); }
+.amb--autumn .ladder__rail { stroke: oklch(0.58 0.12 50); }
+.amb--autumn .ladder__sky { background: linear-gradient(180deg, oklch(0.9 0.06 70) 0%, oklch(0.8 0.1 40) 100%); }
+.amb--winter .ladder__rail { stroke: oklch(0.62 0.08 240); }
+.amb--winter .ladder__sky { background: linear-gradient(180deg, oklch(0.9 0.02 250) 0%, oklch(0.85 0.04 240) 100%); }
+
+/* 비·흐림·안개는 하늘을 낮춘다 */
+:is(.amb--w-rain, .amb--w-cloudy) .ladder__sky { filter: brightness(0.9); }
+.amb--w-fog .ladder__sky { filter: brightness(0.95); }
+
+/* ── 어둡게 — 같은 계절의 밤 ── */
+[data-theme='dark'] .amb--spring .ladder__rail { stroke: oklch(0.35 0.08 30); }
+[data-theme='dark'] .amb--spring .ladder__sky { background: linear-gradient(180deg, oklch(0.32 0.04 335) 0%, oklch(0.28 0.05 70) 100%); }
+[data-theme='dark'] .amb--summer .ladder__rail { stroke: oklch(0.36 0.1 160); }
+[data-theme='dark'] .amb--summer .ladder__sky { background: linear-gradient(180deg, oklch(0.28 0.06 235) 0%, oklch(0.26 0.08 60) 100%); }
+[data-theme='dark'] .amb--autumn .ladder__rail { stroke: oklch(0.4 0.08 50); }
+[data-theme='dark'] .amb--autumn .ladder__sky { background: linear-gradient(180deg, oklch(0.3 0.04 70) 0%, oklch(0.24 0.06 40) 100%); }
+[data-theme='dark'] .amb--winter .ladder__rail { stroke: oklch(0.44 0.06 240); }
+[data-theme='dark'] .amb--winter .ladder__sky { background: linear-gradient(180deg, oklch(0.3 0.01 250) 0%, oklch(0.28 0.02 240) 100%); }
+
+/* 금요일 — 배경 위에 깃발 줄 */
+.amb--fri .ladder__sky::before {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background:
+    conic-gradient(from 135deg at 50% 100%, oklch(0.75 0.17 25) 0 90deg, transparent 90deg) 0 0 / 8px 8px repeat-x;
+  pointer-events: none;
+}

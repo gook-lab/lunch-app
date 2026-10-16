@@ -1,0 +1,41 @@
+/*
+ * 짝 맞추기 — 계절·날씨·요일. 테이블 색과 카드 뒷면 색만 갈아 끼운다. 연출 전용.
+ */
+
+/* ── 계절 팔레트 (밝게) ── */
+.amb--spring .memory { --table: oklch(0.88 0.1 135); }
+.amb--spring .memory__card { --back: oklch(0.85 0.12 10); }
+.amb--summer .memory { --table: oklch(0.85 0.1 80); }
+.amb--summer .memory__card { --back: oklch(0.82 0.14 230); }
+.amb--autumn .memory { --table: oklch(0.8 0.08 100); }
+.amb--autumn .memory__card { --back: oklch(0.78 0.12 40); }
+.amb--winter .memory { --table: oklch(0.92 0.04 250); }
+.amb--winter .memory__card { --back: oklch(0.88 0.08 240); }
+
+/* 비·흐림·안개는 테이블을 낮춘다 */
+:is(.amb--w-rain, .amb--w-cloudy) .memory { filter: brightness(0.92); }
+.amb--w-fog .memory { filter: brightness(0.96); }
+
+/* ── 어둡게 — 같은 계절의 밤 ── */
+[data-theme='dark'] .amb--spring .memory { --table: oklch(0.4 0.07 135); }
+[data-theme='dark'] .amb--spring .memory__card { --back: oklch(0.5 0.08 10); }
+[data-theme='dark'] .amb--summer .memory { --table: oklch(0.38 0.07 80); }
+[data-theme='dark'] .amb--summer .memory__card { --back: oklch(0.48 0.1 230); }
+[data-theme='dark'] .amb--autumn .memory { --table: oklch(0.38 0.06 100); }
+[data-theme='dark'] .amb--autumn .memory__card { --back: oklch(0.46 0.08 40); }
+[data-theme='dark'] .amb--winter .memory { --table: oklch(0.55 0.03 250); }
+[data-theme='dark'] .amb--winter .memory__card { --back: oklch(0.52 0.05 240); }
+
+/* 금요일 — 위쪽에 깃발 줄 */
+.amb--fri .memory::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 5%;
+  right: 5%;
+  height: 8px;
+  background:
+    conic-gradient(from 135deg at 50% 100%, oklch(0.75 0.17 25) 0 90deg, transparent 90deg) 0 0 / 8px 8px repeat-x;
+  pointer-events: none;
+  z-index: 1;
+}

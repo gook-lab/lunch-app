@@ -1,0 +1,38 @@
+/*
+ * 슬롯 — 계절·날씨·요일. 기계 몸체(--cab)와 불빛 색만 갈아 끼운다. 연출 전용.
+ */
+
+/* ── 계절 팔레트 (밝게) ── */
+.amb--spring .slot { --cab: oklch(0.62 0.14 10); --cab-deep: oklch(0.45 0.1 355); --cab-edge: oklch(0.32 0.08 355); }
+.amb--summer .slot { --cab: oklch(0.58 0.16 230); --cab-deep: oklch(0.42 0.12 235); --cab-edge: oklch(0.28 0.08 235); }
+.amb--autumn .slot { --cab: oklch(0.6 0.14 55); --cab-deep: oklch(0.44 0.1 50); --cab-edge: oklch(0.32 0.08 45); }
+.amb--winter .slot { --cab: oklch(0.68 0.08 240); --cab-deep: oklch(0.52 0.06 245); --cab-edge: oklch(0.38 0.04 240); }
+
+/* 불빛은 계절별로 톤 조정 */
+.amb--spring .slot__bulb { background: oklch(0.7 0.12 50); }
+.amb--summer .slot__bulb { background: oklch(0.65 0.1 60); }
+.amb--autumn .slot__bulb { background: oklch(0.68 0.11 45); }
+.amb--winter .slot__bulb { background: oklch(0.75 0.08 240); }
+
+/* 비·흐림·안개는 색을 낮춘다 */
+:is(.amb--w-rain, .amb--w-cloudy) .slot { filter: brightness(0.92); }
+.amb--w-fog .slot { filter: brightness(0.96); }
+
+/* ── 어둡게 — 같은 계절의 밤 ── */
+[data-theme='dark'] .amb--spring .slot { --cab: oklch(0.38 0.1 10); --cab-deep: oklch(0.28 0.07 355); --cab-edge: oklch(0.18 0.05 355); }
+[data-theme='dark'] .amb--summer .slot { --cab: oklch(0.36 0.12 230); --cab-deep: oklch(0.26 0.08 235); --cab-edge: oklch(0.15 0.05 235); }
+[data-theme='dark'] .amb--autumn .slot { --cab: oklch(0.38 0.1 55); --cab-deep: oklch(0.28 0.07 50); --cab-edge: oklch(0.18 0.05 45); }
+[data-theme='dark'] .amb--winter .slot { --cab: oklch(0.45 0.06 240); --cab-deep: oklch(0.35 0.04 245); --cab-edge: oklch(0.25 0.03 240); }
+
+/* 금요일 — 기계 위에 깃발 줄 */
+.amb--fri .slot__cabinet::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background:
+    conic-gradient(from 135deg at 50% 100%, oklch(0.75 0.17 25) 0 90deg, transparent 90deg) 0 0 / 8px 8px repeat-x;
+  pointer-events: none;
+}
