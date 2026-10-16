@@ -22,7 +22,7 @@ import { seededRandom } from '../../lib/random';
 import { prefersReducedMotion, type GameProps } from './types';
 import { sfxLater, type SfxName } from '../../lib/sfx';
 import { useAmbience } from '../../hooks/useAmbience';
-import { getFishDex, recordCaughtFish, fishName, specialsFor, type FishSpeciesId, type FishSpecial, FISH_SPECIALS, FISH_SPECIES_NAMES, FISH_EMOJI, SEASON_HUE, SPECIAL_LABEL, SPECIAL_MARK } from '../../lib/fishDex';
+import { dexNews, FISH_TOTAL, groupComplete, getFishDex, recordCaughtFish, fishName, specialsFor, type FishSpeciesId, type FishSpecial, FISH_SPECIALS, FISH_SPECIES_NAMES, FISH_EMOJI, SEASON_HUE, SPECIAL_LABEL, SPECIAL_MARK } from '../../lib/fishDex';
 import { Horizon } from './scene/Horizon';
 import { SceneWeather } from './scene/SceneWeather';
 import { Climax } from './scene/Climax';
@@ -61,6 +61,8 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
   const [showDex, setShowDex] = useState(false);
   // 끝에서 두 번째 입질부터 긴박감을 켠다 — 마지막 입질에서 켜면 당첨 물고기를 미리 알려 주는 셈이다.
   const [tenseRun, setTenseRun] = useState(-1);
+  // 이번 판으로 도감에 생긴 일(새 물고기·한 줄 완성·다 채움). 판 번호로 묶어 다른 판엔 안 남는다.
+  const [news, setNews] = useState<{ run: number; text: string; big: boolean } | null>(null);
   const layout = useMemo(() => pondLayout(count, seededRandom(LAYOUT_SEED + count)), [count]);
   // 생김새도 자리처럼 후보 수마다 고정 — 판마다 바뀌면 '아까 그 복어'를 따라갈 수 없다.
   const looks = useMemo(() => fishLooks(count, layout.cols, seededRandom(LOOK_SEED + count)), [count, layout.cols]);
@@ -109,8 +111,14 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
       // 낚은 물고기를 도감에 기록한다.
       if (winner) {
         const kind = looks[winnerIndex].kind;
-        recordCaughtFish(`${season}-${kind}` as FishSpeciesId);
-        for (const sp of specialsKey ? (specialsKey.split(',') as FishSpecial[]) : []) recordCaughtFish(`${sp}-${kind}` as FishSpeciesId);
+        const before = getFishDex();
+        const added = [
+          `${season}-${kind}`,
+          ...(specialsKey ? specialsKey.split(',') : []).map((sp) => `${sp}-${kind}`),
+        ] as FishSpeciesId[];
+        added.forEach(recordCaughtFish);
+        const n = dexNews(before, added);
+        if (n) setNews({ run, ...n });
       }
       onSpinEnd();
     }, plan.endMs));
@@ -289,6 +297,9 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
         <p className="fishing__status" aria-live="polite">
           {status}
         </p>
+        <p className={news?.big ? 'fishing__news fishing__news--big' : 'fishing__news'} role="status">
+          {news && news.run === run && phase === 'land' ? news.text : ''}
+        </p>
         {phase === 'land' && winnerIndex !== null && (
           <span className="fishing__species">
             🐟 {fishName(`${season}-${looks[winnerIndex].kind}` as FishSpeciesId)}
@@ -326,11 +337,20 @@ function FishDexSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (op
     <Sheet open={open} onClose={() => onOpenChange(false)} title="낚시 도감">
       <div className="fishing-dex">
         <p className="fishing-dex__count">
-          {total}마리 중 <strong>{seen.size}마리</strong>를 낚았어요. 계절마다, 비·눈·안개 오는 날과 금요일엔 특별한 물고기가 나와요.
+          {seen.size >= FISH_TOTAL ? (
+            <>🏆 <strong>도감을 다 채웠어요!</strong> {total}마리 전부 낚은 낚시왕이에요.</>
+          ) : (
+            <>
+              {total}마리 중 <strong>{seen.size}마리</strong>를 낚았어요. 계절마다, 비·눈·안개 오는 날과 금요일엔 특별한 물고기가 나와요.
+            </>
+          )}
         </p>
         {groups.map((g) => (
           <section key={g.id} className="fishing-dex__season" aria-label={`${g.label} 물고기`}>
-            <h3 className="fishing-dex__seasonTitle">{g.label}</h3>
+            <h3 className="fishing-dex__seasonTitle">
+              {g.label}
+              {groupComplete(seen, g.id) && <span className="fishing-dex__done"> · 다 모았어요 ✓</span>}
+            </h3>
             <ul className="fishing-dex__grid">
               {kinds.map((k) => {
                 const id = `${g.id}-${k}` as FishSpeciesId;

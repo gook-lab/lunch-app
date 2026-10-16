@@ -60,3 +60,10 @@
 .fishing-dex__item--caught .fishing-dex__name { color: var(--color-text); font-weight: 600; }
 .fishing__species { padding: 2px var(--space-2); border: 1px solid var(--color-neutral-400); font-size: var(--fs-xs); color: var(--color-neutral-800); }
 .fishing__special { font-weight: 800; }
+
+/* 도감 소식 — 새 물고기는 조용히, 한 줄 완성·다 채움은 강조색으로 한 번 튄다. */
+.fishing__news { margin: 0; font-size: var(--fs-sm); font-weight: 600; color: var(--color-neutral-800); }
+.fishing__news--big { color: var(--color-accent-700); animation: fishing-news 900ms cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+@keyframes fishing-news { from { scale: 0.6; opacity: 0; } to { scale: 1; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .fishing__news--big { animation: none; } }
+.fishing-dex__done { font-weight: 600; font-size: var(--fs-sm); color: var(--color-accent-700); }

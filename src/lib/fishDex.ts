@@ -109,3 +109,36 @@ export function clearFishDex(): void {
     // 무시
   }
 }
+
+const GROUP_LABEL: Record<Season | FishSpecial, string> = {
+  spring: '봄',
+  summer: '여름',
+  autumn: '가을',
+  winter: '겨울',
+  ...SPECIAL_LABEL,
+};
+
+/** 도감 전체 칸 수 — 물고기 7종 × (계절 4 + 특별한 날 4). */
+export const FISH_TOTAL = Object.keys(FISH_SPECIES_NAMES).length * 8;
+
+/** 한 줄(계절·특별한 날)을 다 모았는가. */
+export function groupComplete(caught: Iterable<string>, group: Season | FishSpecial): boolean {
+  const set = new Set(caught);
+  return (Object.keys(FISH_SPECIES_NAMES) as Kind[]).every((k) => set.has(`${group}-${k}`));
+}
+
+/**
+ * 이번에 낚은 것으로 도감에 생긴 일 — 화면 한 줄. 새로 든 게 없으면 null.
+ * 다 채움 > 한 줄 완성 > 새 물고기 순으로 하나만 말한다.
+ */
+export function dexNews(before: FishSpeciesId[], added: FishSpeciesId[]): { text: string; big: boolean } | null {
+  const had = new Set(before);
+  const fresh = added.filter((id) => !had.has(id));
+  if (fresh.length === 0) return null;
+  const after = new Set([...before, ...fresh]);
+  if (after.size >= FISH_TOTAL) return { text: `🏆 도감 ${FISH_TOTAL}마리를 다 채웠어요!`, big: true };
+  const groups = [...new Set(fresh.map((id) => id.split('-')[0] as Season | FishSpecial))];
+  const done = groups.find((g) => groupComplete(after, g) && !groupComplete(had, g));
+  if (done) return { text: `🎉 ${GROUP_LABEL[done]} 물고기를 다 모았어요!`, big: true };
+  return { text: `✨ 새 물고기! 도감 ${after.size}/${FISH_TOTAL}`, big: false };
+}

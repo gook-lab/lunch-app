@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { clearFishDex, fishName, getFishDex, recordCaughtFish, specialsFor, type FishSpeciesId } from './fishDex';
+import { clearFishDex, dexNews, FISH_TOTAL, fishName, getFishDex, recordCaughtFish, specialsFor, type FishSpeciesId } from './fishDex';
 
 describe('fishDex', () => {
   beforeEach(() => {
@@ -90,5 +90,33 @@ describe('fishDex', () => {
     expect(fishName('autumn-sardine')).toBe('전어');
     recordCaughtFish('snow-sardine');
     expect(getFishDex()).toContain('snow-sardine');
+  });
+});
+
+describe('도감 소식', () => {
+  const KINDS = ['carp', 'puffer', 'mackerel', 'angel', 'sardine', 'whale', 'squid'] as const;
+  const row = (g: string) => KINDS.map((k) => `${g}-${k}` as FishSpeciesId);
+  const ALL = ['spring', 'summer', 'autumn', 'winter', 'rain', 'snow', 'fog', 'fri'].flatMap(row);
+
+  it('도감은 56칸', () => {
+    expect(FISH_TOTAL).toBe(56);
+    expect(ALL).toHaveLength(56);
+  });
+
+  it('이미 있는 물고기면 소식이 없다', () => {
+    expect(dexNews(['autumn-carp'], ['autumn-carp'])).toBeNull();
+  });
+
+  it('새 물고기면 몇 칸 찼는지', () => {
+    expect(dexNews(['autumn-carp'], ['autumn-whale'])).toEqual({ text: '✨ 새 물고기! 도감 2/56', big: false });
+  });
+
+  it('한 줄을 다 채우면 그 줄 이름으로 축하', () => {
+    const fri = row('fri');
+    expect(dexNews(fri.slice(0, 6), [fri[6]])).toEqual({ text: '🎉 불금 물고기를 다 모았어요!', big: true });
+  });
+
+  it('마지막 한 칸이면 다 채웠다고', () => {
+    expect(dexNews(ALL.slice(0, 55), [ALL[55]])).toEqual({ text: '🏆 도감 56마리를 다 채웠어요!', big: true });
   });
 });
