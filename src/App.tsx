@@ -88,6 +88,7 @@ import { RatingBadge } from './components/Rating';
 import { useRatings } from './hooks/useRatings';
 import { RatePrompt } from './components/RatePrompt';
 import { ratePromptTarget } from './lib/ratePrompt';
+import { compactGameIds, readRecentGames, rememberGame } from './lib/gameRecents';
 import { CategoryChips } from './components/CategoryChips';
 import './App.css';
 // 종이 식권 테마는 App.css 뒤에 — 같은 명시도로 덮는다.
@@ -162,18 +163,8 @@ function focusIfLost(node: HTMLElement | null) {
 /** 처음 온 사람의 게임. 컷신·이벤트가 있는 활쏘기로 시작한다(10/15 사용자). games/index.ts 가 바로 싣는다. */
 const NO_IDS: string[] = [];
 const DEFAULT_MODE: GameMode = 'archery';
-const FEATURED_MODE_IDS = new Set<GameMode>([
-  'archery',
-  'wheel',
-  'penalty',
-  'bowling',
-  'claw',
-  'fishing',
-  'pinball',
-  'tournament',
-  'ladder',
-  'cards',
-]);
+const RECOMMENDED_MODE_IDS: GameMode[] = ['archery', 'wheel', 'ladder', 'claw', 'fishing', 'cards'];
+const ALL_MODE_IDS = new Set(GAME_MODES.map((item) => item.id));
 
 function revealPickedMode(node: HTMLElement | null) {
   const on = node?.querySelector<HTMLElement>('.modebar__item--on');
@@ -341,6 +332,7 @@ export default function App() {
       return DEFAULT_MODE;
     }
   });
+  const [recentGames, setRecentGames] = useState<GameMode[]>(() => readRecentGames(ALL_MODE_IDS));
   const [showAllGames, setShowAllGames] = useState(false);
 
   /*
@@ -372,6 +364,7 @@ export default function App() {
       // 탭 이동(goTab)처럼 연출을 끊는다.
       clearBoard();
       setMode(next);
+      setRecentGames((recent) => rememberGame(next, recent));
       try {
         localStorage.setItem('lunch-app:mode', next);
       } catch {
@@ -946,9 +939,12 @@ export default function App() {
    * Tab 이 오른쪽 메뉴 칩을 다 지난 뒤에 왼쪽 레일로 되돌아갔다(10/15 리뷰). 휴대폰은 칩 아래에
    * 보이므로 DOM 도 칩 뒤다. 자리(grid)는 CSS 가 정하므로 화면은 그대로다.
    */
+  const compactModes = compactGameIds(mode, recentGames, RECOMMENDED_MODE_IDS);
+  const visibleModes = wide || showAllGames ? GAME_MODES : GAME_MODES.filter((item) => compactModes.includes(item.id));
+  const hiddenGameCount = GAME_MODES.length - visibleModes.length;
   const modebar = (
     <div className="modebar" role="group" aria-label="방식" ref={revealPickedMode}>
-      {GAME_MODES.filter((m) => wide || showAllGames || FEATURED_MODE_IDS.has(m.id) || m.id === mode).map((m) => (
+      {visibleModes.map((m) => (
         <button
           key={m.id}
           type="button"
@@ -965,7 +961,7 @@ export default function App() {
       ))}
       {!wide && (
         <button type="button" className="modebar__more" onClick={() => setShowAllGames((open) => !open)} disabled={spinning}>
-          {showAllGames ? '게임 접기' : `게임 더 보기 (${GAME_MODES.length - FEATURED_MODE_IDS.size})`}
+          {showAllGames ? '게임 접기' : `다른 게임 보기 (${hiddenGameCount})`}
         </button>
       )}
     </div>
