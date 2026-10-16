@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { clearFishDex, getFishDex, recordCaughtFish, type FishSpeciesId } from './fishDex';
+import { clearFishDex, fishName, getFishDex, recordCaughtFish, specialsFor, type FishSpeciesId } from './fishDex';
 
 describe('fishDex', () => {
   beforeEach(() => {
@@ -75,5 +75,20 @@ describe('fishDex', () => {
     } finally {
       localStorage.setItem = originalSetItem;
     }
+  });
+
+  it('특별한 날 — 비·눈·안개는 하나, 금요일은 더해진다', () => {
+    expect(specialsFor({ weather: 'clear', weekday: 2 })).toEqual([]);
+    expect(specialsFor({ weather: 'cloudy', weekday: 5 })).toEqual(['fri']);
+    expect(specialsFor({ weather: 'rain', weekday: 5 })).toEqual(['rain', 'fri']);
+    expect(specialsFor({ weather: 'snow', weekday: 1 })).toEqual(['snow']);
+  });
+
+  it('특별한 날 물고기 이름과 기록', () => {
+    expect(fishName('rain-squid')).toBe('먹물 문어');
+    expect(fishName('fri-carp')).toBe('황금 잉어');
+    expect(fishName('autumn-sardine')).toBe('전어');
+    recordCaughtFish('snow-sardine');
+    expect(getFishDex()).toContain('snow-sardine');
   });
 });

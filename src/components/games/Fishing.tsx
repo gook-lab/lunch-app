@@ -22,7 +22,7 @@ import { seededRandom } from '../../lib/random';
 import { prefersReducedMotion, type GameProps } from './types';
 import { sfxLater, type SfxName } from '../../lib/sfx';
 import { useAmbience } from '../../hooks/useAmbience';
-import { getFishDex, recordCaughtFish, fishName, type FishSpeciesId, FISH_SPECIES_NAMES, FISH_EMOJI, SEASON_HUE } from '../../lib/fishDex';
+import { getFishDex, recordCaughtFish, fishName, specialsFor, type FishSpeciesId, type FishSpecial, FISH_SPECIALS, FISH_SPECIES_NAMES, FISH_EMOJI, SEASON_HUE, SPECIAL_LABEL, SPECIAL_MARK } from '../../lib/fishDex';
 import { Horizon } from './scene/Horizon';
 import { SceneWeather } from './scene/SceneWeather';
 import { ambienceClasses } from './scene/outfit';
@@ -53,6 +53,9 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
   const count = candidates.length;
   const ambience = useAmbience();
   const { season, weather } = ambience;
+  // 오늘 조건의 특별한 날(비·눈·안개·금요일). 낚으면 계절 물고기와 함께 도감에 남는다.
+  const specials = specialsFor(ambience);
+  const specialsKey = specials.join(',');
   const [state, setState] = useState<FishingState>({ run: -1, phase: 'cast', fish: 0 });
   const [showDex, setShowDex] = useState(false);
   const layout = useMemo(() => pondLayout(count, seededRandom(LAYOUT_SEED + count)), [count]);
@@ -100,8 +103,9 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
     timers.push(window.setTimeout(() => {
       // 낚은 물고기를 도감에 기록한다.
       if (winner) {
-        const fishSpeciesId = `${season}-${looks[winnerIndex].kind}` as FishSpeciesId;
-        recordCaughtFish(fishSpeciesId);
+        const kind = looks[winnerIndex].kind;
+        recordCaughtFish(`${season}-${kind}` as FishSpeciesId);
+        for (const sp of specialsKey ? (specialsKey.split(',') as FishSpecial[]) : []) recordCaughtFish(`${sp}-${kind}` as FishSpeciesId);
       }
       onSpinEnd();
     }, plan.endMs));
@@ -111,7 +115,7 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
       timers.forEach((t) => window.clearTimeout(t));
       stopSfx();
     };
-  }, [spinning, winnerIndex, count, run, onSpinEnd, plan, season, looks]);
+  }, [spinning, winnerIndex, count, run, onSpinEnd, plan, season, looks, specialsKey]);
 
   if (count === 0) return <div className="fishing fishing--empty" />;
 
@@ -280,7 +284,15 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
           {status}
         </p>
         {phase === 'land' && winnerIndex !== null && (
-          <span className="fishing__species">🐟 {fishName(`${season}-${looks[winnerIndex].kind}` as FishSpeciesId)}</span>
+          <span className="fishing__species">
+            🐟 {fishName(`${season}-${looks[winnerIndex].kind}` as FishSpeciesId)}
+            {specials.map((sp) => (
+              <span key={sp} className="fishing__special">
+                {' '}
+                {SPECIAL_MARK[sp]} {fishName(`${sp}-${looks[winnerIndex].kind}` as FishSpeciesId)}
+              </span>
+            ))}
+          </span>
         )}
         <Button variant="secondary" size="sm" onClick={() => setShowDex(!showDex)}>
           도감
@@ -293,32 +305,37 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
 
 const SEASON_LABEL = { spring: '봄', summer: '여름', autumn: '가을', winter: '겨울' } as const;
 
-/** 도감 — 계절마다 일곱 마리, 모두 28마리. 낚은 것만 이름이 보인다. */
+/** 도감 — 계절마다 일곱 마리(28) + 특별한 날(비·눈·안개·불금) 일곱 마리씩(28), 모두 56마리. 낚은 것만 이름이 보인다. */
 function FishDexSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const seen = new Set(open ? getFishDex() : []);
   const kinds = Object.keys(FISH_SPECIES_NAMES) as (keyof typeof FISH_SPECIES_NAMES)[];
   const seasons = ['spring', 'summer', 'autumn', 'winter'] as const;
-  const total = kinds.length * seasons.length;
+  const groups: { id: (typeof seasons)[number] | FishSpecial; label: string; hint: string }[] = [
+    ...seasons.map((s) => ({ id: s, label: SEASON_LABEL[s], hint: '아직 못 낚았어요' })),
+    ...FISH_SPECIALS.map((sp) => ({ id: sp, label: `${SPECIAL_MARK[sp]} ${SPECIAL_LABEL[sp]}`, hint: sp === 'fri' ? '금요일에 나와요' : `${SPECIAL_LABEL[sp]}에 나와요` })),
+  ];
+  const total = kinds.length * groups.length;
 
   return (
     <Sheet open={open} onClose={() => onOpenChange(false)} title="낚시 도감">
       <div className="fishing-dex">
         <p className="fishing-dex__count">
-          {total}마리 중 <strong>{seen.size}마리</strong>를 낚았어요. 계절마다 다른 물고기가 나와요.
+          {total}마리 중 <strong>{seen.size}마리</strong>를 낚았어요. 계절마다, 비·눈·안개 오는 날과 금요일엔 특별한 물고기가 나와요.
         </p>
-        {seasons.map((s) => (
-          <section key={s} className="fishing-dex__season" aria-label={`${SEASON_LABEL[s]} 물고기`}>
-            <h3 className="fishing-dex__seasonTitle">{SEASON_LABEL[s]}</h3>
+        {groups.map((g) => (
+          <section key={g.id} className="fishing-dex__season" aria-label={`${g.label} 물고기`}>
+            <h3 className="fishing-dex__seasonTitle">{g.label}</h3>
             <ul className="fishing-dex__grid">
               {kinds.map((k) => {
-                const id = `${s}-${k}` as FishSpeciesId;
+                const id = `${g.id}-${k}` as FishSpeciesId;
                 const got = seen.has(id);
+                const hue = g.id in SEASON_HUE ? SEASON_HUE[g.id as keyof typeof SEASON_HUE] : 0;
                 return (
                   <li key={id} className={['fishing-dex__item', got ? 'fishing-dex__item--caught' : ''].filter(Boolean).join(' ')}>
-                    <span className="fishing-dex__icon" style={{ '--h': `${SEASON_HUE[s]}deg` } as React.CSSProperties} aria-hidden="true">
+                    <span className="fishing-dex__icon" style={{ '--h': `${hue}deg` } as React.CSSProperties} aria-hidden="true">
                       {got ? FISH_EMOJI[k] : '?'}
                     </span>
-                    <span className="fishing-dex__name">{got ? fishName(id) : '아직 못 낚았어요'}</span>
+                    <span className="fishing-dex__name">{got ? fishName(id) : g.hint}</span>
                   </li>
                 );
               })}

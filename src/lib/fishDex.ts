@@ -2,10 +2,13 @@
  * 낚시 도감 — 낚은 물고기 종류를 localStorage 에 기록한다.
  *
  * 종류는 '계절-물고기종류' 형식이다. 예: 'spring-carp', 'winter-mackerel'.
- * 종을 변경할 때 '낚은 도감'이 리셋되므로, 변경 전에 번들 버전을 올려야 한다.
+ * 특별한 날은 'rain-carp' 처럼 날씨·금요일이 앞에 온다(10/16 — 계절 28 + 특별 28 = 56칸).
+ * 이미 있는 이름을 바꾸거나 지울 때만 DEX_VERSION 을 올린다(더하기만 하면 기록은 그대로 둔다).
  */
 
-export type FishSpeciesId = `${'spring' | 'summer' | 'autumn' | 'winter'}-${'carp' | 'puffer' | 'mackerel' | 'angel' | 'sardine' | 'whale' | 'squid'}`;
+/** 특별한 날 — 날씨(비·눈·안개)나 금요일에 낚으면 계절 물고기와 함께 하나 더 기록된다. */
+export type FishSpecial = 'rain' | 'snow' | 'fog' | 'fri';
+export type FishSpeciesId = `${'spring' | 'summer' | 'autumn' | 'winter' | FishSpecial}-${'carp' | 'puffer' | 'mackerel' | 'angel' | 'sardine' | 'whale' | 'squid'}`;
 
 export const FISH_SPECIES_NAMES: Record<'carp' | 'puffer' | 'mackerel' | 'angel' | 'sardine' | 'whale' | 'squid', string> = {
   carp: '붕어',
@@ -28,14 +31,33 @@ export const SEASON_FISH: Record<Season, Record<Kind, string>> = {
   winter: { carp: '얼음 붕어', puffer: '참복', mackerel: '방어', angel: '눈꽃 엔젤', sardine: '빙어', whale: '흰돌고래', squid: '대왕오징어' },
 };
 
+/** 특별한 날 물고기(도감 28칸 더). 이름만 다르고 몸 모양은 같은 종류를 따른다. */
+export const SPECIAL_FISH: Record<FishSpecial, Record<Kind, string>> = {
+  rain: { carp: '빗물 미꾸라지', puffer: '물방울 복어', mackerel: '장마 갈치', angel: '무지개 엔젤', sardine: '빗방울 송사리', whale: '먹구름 고래', squid: '먹물 문어' },
+  snow: { carp: '눈송이 송어', puffer: '눈사람 복어', mackerel: '대구', angel: '오로라 엔젤', sardine: '도루묵', whale: '북극고래', squid: '얼음 해파리' },
+  fog: { carp: '안개 메기', puffer: '유령 복어', mackerel: '은갈치', angel: '달빛 엔젤', sardine: '그림자 은어', whale: '안개 고래', squid: '반딧불 오징어' },
+  fri: { carp: '황금 잉어', puffer: '불금 복어', mackerel: '불꽃 참치', angel: '파티 엔젤', sardine: '금멸치', whale: '축제 고래', squid: '네온 오징어' },
+};
+export const SPECIAL_LABEL: Record<FishSpecial, string> = { rain: '비 오는 날', snow: '눈 오는 날', fog: '안개 낀 날', fri: '불금' };
+export const SPECIAL_MARK: Record<FishSpecial, string> = { rain: '💧', snow: '❄️', fog: '🌫️', fri: '✨' };
+export const FISH_SPECIALS: FishSpecial[] = ['rain', 'snow', 'fog', 'fri'];
+
+/** 오늘 조건에서 나오는 특별한 날 — 날씨 하나(있으면)와 금요일. */
+export function specialsFor(a: { weather: string; weekday: number }): FishSpecial[] {
+  const out: FishSpecial[] = [];
+  if (a.weather === 'rain' || a.weather === 'snow' || a.weather === 'fog') out.push(a.weather);
+  if (a.weekday === 5) out.push('fri');
+  return out;
+}
+
 /** 계절 빛깔 — 물고기 hue 에 더한다(연출 전용). */
 export const SEASON_HUE: Record<Season, number> = { spring: -45, summer: 0, autumn: 25, winter: 160 };
 
 export const FISH_EMOJI: Record<Kind, string> = { carp: '🐟', puffer: '🐡', mackerel: '🐟', angel: '🐠', sardine: '🐟', whale: '🐋', squid: '🦑' };
 
 export function fishName(id: FishSpeciesId): string {
-  const [season, kind] = id.split('-') as [Season, Kind];
-  return SEASON_FISH[season]?.[kind] ?? FISH_SPECIES_NAMES[kind];
+  const [group, kind] = id.split('-') as [Season | FishSpecial, Kind];
+  return (SEASON_FISH as Record<string, Record<Kind, string>>)[group]?.[kind] ?? (SPECIAL_FISH as Record<string, Record<Kind, string>>)[group]?.[kind] ?? FISH_SPECIES_NAMES[kind];
 }
 
 const DEX_KEY = 'lunch-app:fish-dex';
