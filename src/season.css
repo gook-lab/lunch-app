@@ -1,0 +1,230 @@
+/*
+ * 계절별 테마 오버라이드. theme.css 뒤에 불러온다.
+ * 각 계절은 밝은/어두운 모드 둘 다에서 정의된다.
+ */
+
+/* ──────── 봄 (3~5월): 벚꽃 핑크·연두 ──────── */
+:root[data-season="spring"] {
+  /* 밝은 모드 */
+  --color-accent: #d32f7f; /* 벚꽃 핑크 */
+  --color-accent-50: #fce4ec;
+  --color-accent-100: #f8bbd0;
+  --color-accent-200: #f48fb1;
+  --color-accent-300: #f06292;
+  --color-accent-400: #ec407a;
+  --color-accent-500: #e91e63;
+  --color-accent-600: #c2185b;
+  --color-accent-700: #ad1457;
+  --color-accent-800: #880e4f;
+
+  /* 배경과 테두리를 연한 민트 톤으로 */
+  --color-neutral-100: #f0f9f7; /* 매우 연한 민트 */
+  --color-neutral-200: #e0f2ef;
+  --color-neutral-300: #b2dfdb;
+  --color-neutral-400: #80cbc4;
+  --color-neutral-500: #4db8a8;
+}
+
+:root[data-theme="dark"][data-season="spring"] {
+  /* 어두운 모드 봄 */
+  --color-accent: #f48fb1;
+  --color-accent-50: #370b1b;
+  --color-accent-100: #600a35;
+  --color-accent-200: #881e57;
+  --color-accent-300: #ad1457;
+  --color-accent-400: #c2185b;
+  --color-accent-500: #d32f7f;
+  --color-accent-600: #e91e63;
+  --color-accent-700: #ec407a;
+  --color-accent-800: #f48fb1;
+
+  /* 어두운 백그라운드도 봄스럽게 */
+  --color-neutral-100: #0d3d38;
+  --color-neutral-200: #1a5a52;
+  --color-neutral-300: #2d7a6f;
+  --color-neutral-400: #4a9d8f;
+  --color-neutral-500: #6eb3a6;
+}
+
+/* ──────── 여름 (6~8월): 청량한 하늘·초록 ──────── */
+:root[data-season="summer"] {
+  /* 밝은 모드 */
+  --color-accent: #0277bd; /* 맑은 하늘 파랑 */
+  --color-accent-50: #e1f5fe;
+  --color-accent-100: #b3e5fc;
+  --color-accent-200: #81d4fa;
+  --color-accent-300: #4fc3f7;
+  --color-accent-400: #29b6f6;
+  --color-accent-500: #03a9f4;
+  --color-accent-600: #039be5;
+  --color-accent-700: #0288d1;
+  --color-accent-800: #01579b;
+
+  /* 배경을 연한 청록으로 */
+  --color-neutral-100: #e0f7fa;
+  --color-neutral-200: #b2ebf2;
+  --color-neutral-300: #80deea;
+  --color-neutral-400: #4dd0e1;
+  --color-neutral-500: #26c6da;
+}
+
+:root[data-theme="dark"][data-season="summer"] {
+  /* 어두운 모드 여름 */
+  --color-accent: #4fc3f7;
+  --color-accent-50: #0d1b2a;
+  --color-accent-100: #1a3a4a;
+  --color-accent-200: #255a6e;
+  --color-accent-300: #0288d1;
+  --color-accent-400: #039be5;
+  --color-accent-500: #03a9f4;
+  --color-accent-600: #29b6f6;
+  --color-accent-700: #4fc3f7;
+  --color-accent-800: #81d4fa;
+
+  /* 어두운 배경도 여름스럽게 */
+  --color-neutral-100: #004d4d;
+  --color-neutral-200: #006b63;
+  --color-neutral-300: #00897b;
+  --color-neutral-400: #00a99d;
+  --color-neutral-500: #26c6da;
+}
+
+/* ──────── 가을 (9~11월): 단풍 주황·머스타드 ──────── */
+:root[data-season="autumn"] {
+  /* 밝은 모드 */
+  --color-accent: #e65100; /* 단풍 주황 */
+  --color-accent-50: #ffe0b2;
+  --color-accent-100: #ffcc80;
+  --color-accent-200: #ffb74d;
+  --color-accent-300: #ffa726;
+  --color-accent-400: #fb8c00;
+  --color-accent-500: #f57c00;
+  --color-accent-600: #e65100;
+  --color-accent-700: #d84315;
+  --color-accent-800: #bf360c;
+
+  /* 배경을 따뜻한 갈색 톤으로 */
+  --color-neutral-100: #ffe8d6;
+  --color-neutral-200: #ffd4b8;
+  --color-neutral-300: #ffb88c;
+  --color-neutral-400: #ff9800;
+  --color-neutral-500: #f57f17;
+}
+
+:root[data-theme="dark"][data-season="autumn"] {
+  /* 어두운 모드 가을 */
+  --color-accent: #ffb74d;
+  --color-accent-50: #3e2723;
+  --color-accent-100: #5d4037;
+  --color-accent-200: #6d4c41;
+  --color-accent-300: #d84315;
+  --color-accent-400: #e65100;
+  --color-accent-500: #f57c00;
+  --color-accent-600: #fb8c00;
+  --color-accent-700: #ffa726;
+  --color-accent-800: #ffb74d;
+
+  /* 어두운 배경도 가을스럽게 */
+  --color-neutral-100: #4a2a1f;
+  --color-neutral-200: #6f4a38;
+  --color-neutral-300: #8d6e63;
+  --color-neutral-400: #a1887f;
+  --color-neutral-500: #bcaaa4;
+}
+
+/* ──────── 겨울 (12~2월): 차가운 청회색·눈 흰색 ──────── */
+:root[data-season="winter"] {
+  /* 밝은 모드 */
+  --color-accent: #0277bd; /* 얼음 파랑 */
+  --color-accent-50: #e0f2f1;
+  --color-accent-100: #b2dfdb;
+  --color-accent-200: #80cbc4;
+  --color-accent-300: #4db8a8;
+  --color-accent-400: #26a69a;
+  --color-accent-500: #009688;
+  --color-accent-600: #00897b;
+  --color-accent-700: #00796b;
+  --color-accent-800: #004d4d;
+
+  /* 배경을 차가운 은회색으로 */
+  --color-neutral-100: #eceff1;
+  --color-neutral-200: #cfd8dc;
+  --color-neutral-300: #b0bec5;
+  --color-neutral-400: #90a4ae;
+  --color-neutral-500: #78909c;
+}
+
+:root[data-theme="dark"][data-season="winter"] {
+  /* 어두운 모드 겨울 */
+  --color-accent: #b2dfdb;
+  --color-accent-50: #0d1b1f;
+  --color-accent-100: #1a3236;
+  --color-accent-200: #27464d;
+  --color-accent-300: #00796b;
+  --color-accent-400: #00897b;
+  --color-accent-500: #009688;
+  --color-accent-600: #26a69a;
+  --color-accent-700: #4db8a8;
+  --color-accent-800: #80cbc4;
+
+  /* 어두운 배경도 겨울스럽게 */
+  --color-neutral-100: #1a2327;
+  --color-neutral-200: #263238;
+  --color-neutral-300: #37474f;
+  --color-neutral-400: #455a64;
+  --color-neutral-500: #546e7a;
+}
+
+/* ──────── 계절 배경 장식 ──────── */
+
+/* 봄: 벚꽃 잎 흩어지는 효과 (모서리) */
+:root[data-season="spring"]::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle at 30% 30%, rgba(240, 145, 177, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* 여름: 밝은 태양 느낌 (모서리) */
+:root[data-season="summer"]::before {
+  content: '';
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle at 70% 70%, rgba(129, 212, 250, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* 가을: 단풍 느낌 (모서리) */
+:root[data-season="autumn"]::before {
+  content: '';
+  position: fixed;
+  top: 50%;
+  right: -30px;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 152, 0, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* 겨울: 얼음 결정 느낌 (모서리) */
+:root[data-season="winter"]::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle at 50% 50%, rgba(176, 190, 197, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}

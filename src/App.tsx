@@ -90,6 +90,8 @@ import { CategoryChips } from './components/CategoryChips';
 import './App.css';
 // 종이 식권 테마는 App.css 뒤에 — 같은 명시도로 덮는다.
 import './theme.css';
+// 계절 테마는 theme.css 뒤에 — 같은 명시도로 덮는다.
+import './season.css';
 import './desktop.css';
 import { PlacePhotoStrip, PlaceThumb } from './components/PlaceThumb';
 
