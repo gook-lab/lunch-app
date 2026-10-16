@@ -12,9 +12,11 @@ export interface WeatherChipProps {
   /** 이미 5분 안으로 좁혀 두었으면 단추를 숨긴다. */
   nearOn?: boolean;
   onSetWalkFilter?: (minutes: number) => void;
+  /** inline 이면 머리말 날짜 줄에 이어 붙는 한 줄(카드 없이). 오른쪽 칸이 붐벼서 위로 올렸다(10/16 사용자). */
+  variant?: 'card' | 'inline';
 }
 
-export function WeatherChip({ office, nearOn = false, onSetWalkFilter }: WeatherChipProps) {
+export function WeatherChip({ office, nearOn = false, onSetWalkFilter, variant = 'card' }: WeatherChipProps) {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const lat = office?.lat;
   const lng = office?.lng;
@@ -39,6 +41,23 @@ export function WeatherChip({ office, nearOn = false, onSetWalkFilter }: Weather
   const { emoji, label } = getWeatherLabel(current.weather_code);
   const hint = getLunchHint(weather);
 
+  const near = hint?.action === 'setWalkFilter5' && onSetWalkFilter && !nearOn;
+  if (variant === 'inline') {
+    return (
+      <span className="weather-line" role="group" aria-label="회사 날씨">
+        <span className="weather-line__now" title={`체감 ${Math.round(current.apparent_temperature)}°`}>
+          <span aria-hidden="true">{emoji}</span> {Math.round(current.temperature_2m)}° {label}
+        </span>
+        {hint && <span className="weather-line__hint">{hint.message}</span>}
+        {near && (
+          <button type="button" className="linkish weather-line__near" onClick={() => onSetWalkFilter(5)}>
+            5분 안 가게만 보기
+          </button>
+        )}
+      </span>
+    );
+  }
+
   return (
     <section className="weather" aria-label="회사 날씨">
       <p className="weather__now">
@@ -46,7 +65,7 @@ export function WeatherChip({ office, nearOn = false, onSetWalkFilter }: Weather
         <span className="weather__feel">체감 {Math.round(current.apparent_temperature)}°</span>
       </p>
       {hint && <p className="weather__hint">{hint.message}</p>}
-      {hint?.action === 'setWalkFilter5' && onSetWalkFilter && !nearOn && (
+      {near && (
         <button type="button" className="weather__near" onClick={() => onSetWalkFilter(5)}>
           5분 안 가게만 보기
         </button>

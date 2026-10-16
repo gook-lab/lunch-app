@@ -22,3 +22,16 @@
   cursor: pointer;
 }
 .weather__near:hover { background: var(--color-neutral-200); }
+
+/* 머리말 날짜 줄에 잇는 한 줄. 날짜와 같은 작은 글씨, 조언은 한 단계 옅게. 좁으면 다음 줄로 넘어간다. */
+.weather-line { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); }
+.weather-line::before { content: '·'; color: var(--color-neutral-700); }
+.weather-line__now { color: var(--color-text); font-weight: 700; white-space: nowrap; }
+.weather-line__hint { font-weight: 500; color: var(--color-neutral-800); }
+.weather-line__near { font-size: inherit; font-weight: 700; white-space: nowrap; }
+.weather-line { letter-spacing: normal; font-family: var(--font-body, inherit); }
+/* 좁은 화면 — 날짜 아래 한 줄로 따로. 줄 첫머리에 가운뎃점이 남지 않게. */
+@media (max-width: 559px) {
+  .weather-line { display: flex; margin-top: 2px; }
+  .weather-line::before { content: none; }
+}

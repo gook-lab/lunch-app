@@ -785,6 +785,7 @@ export default function App() {
 
   const weather = (
     <WeatherChip
+      variant="inline"
       office={office}
       nearOn={filters.maxWalkMin <= 5}
       onSetWalkFilter={(minutes) => updateFilters((f) => ({ ...f, maxWalkMin: minutes }))}
@@ -793,7 +794,6 @@ export default function App() {
   const filtersPanel = (
     <>
       <CandidateChips result={result} winnerId={winner?.id ?? null} />
-      {wide && weather}
       {wide && notice && <p className="notice">{notice}</p>}
       {wide && predictions}
       {wide && parties}
@@ -1017,7 +1017,9 @@ export default function App() {
         <div className="topbar">
           <header className="app__header">
             {/* 식권 번호(NO. 0287)·"사내 점심 식권" 은 무슨 뜻인지 안 읽혔다(10/14 사용자). 날짜와 한마디만. */}
-            <p className="app__date">{formatDay(today)} · 점심 뭐 먹지?</p>
+            <p className="app__date">
+              {formatDay(today)} · 점심 뭐 먹지? {weather}
+            </p>
             <div className="app__titleRow">
               <h1>{TAB_TITLE[tab]}</h1>
               <span className="app__count">
@@ -1416,8 +1418,7 @@ export default function App() {
                 </div>
               </section>
 
-              {/* 휴대폰은 게임 아래에 날씨·팟을 둔다. 데스크톱은 오른쪽 칸(filtersPanel). 조건 시트 안에 두면 안 열어 보면 못 본다. */}
-              {!wide && weather}
+              {/* 휴대폰은 게임 아래에 팟을 둔다. 데스크톱은 오른쪽 칸(filtersPanel). 날씨는 머리말 날짜 줄에 있다. */}
               {!wide && parties}
 
               {/* 조건은 게임 옆(데스크톱)·아래(휴대폰)에 둔다. 첫 화면은 게임이 차지한다. */}
