@@ -8,6 +8,7 @@
  * 팟 문서에 남긴다. 저장이 끝나기 전에는 방장도 결과를 못 본다 — 보고 나서 다시 뽑을 길이 없다.
  * 모인 사람은 저장된 값으로 같은 연출을 다시 본다(PartyGame.tsx).
  */
+import { PartyHelp } from './PartyHelp';
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Input, Modal, Sheet } from '@gook-lab/ui';
 import type { Place } from '../lib/candidates';
@@ -135,6 +136,7 @@ export function Parties({ day, parties, myUid, places, candidatesFor, preferredM
         <h2 id="party-title" className="party__title">
           <span aria-hidden="true">🙋 </span>점심 팟
         </h2>
+        <PartyHelp />
         <Button
           size="sm"
           variant={hosting ? 'secondary' : 'primary'}
