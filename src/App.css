@@ -1604,6 +1604,16 @@ html:has(dialog[open]:modal) { overflow: hidden; }
 }
 .stage__board { min-height: 260px; }
 
+/* 태블릿은 휴대폰 폭 480px에 가두지 않는다. 전체 데스크톱 셸은 960px부터 유지한다. */
+@media (min-width: 640px) and (max-width: 959px) {
+  .app {
+    max-width: 720px;
+    padding-inline: var(--space-6);
+  }
+
+  .modebar { grid-auto-columns: minmax(76px, 1fr); }
+}
+
 @media (min-width: 960px) {
   .app {
     max-width: 1240px;
