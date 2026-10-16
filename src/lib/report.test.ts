@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { weeklyReport } from './report';
+import { predictionKings, weekDaysUpTo, weeklyReport } from './report';
 import type { Place, Visit } from './candidates';
 import type { DayId } from './date';
 
@@ -138,5 +138,45 @@ describe('이번 주 점심 리포트', () => {
     const p = [place('a', '밥', '가집')];
     const r = weeklyReport([{ id: '20260928', placeId: 'a' }, { id: '20261001', placeId: 'a' }], p, '20260930');
     expect(r.decisionCount).toBe(2);
+  });
+});
+
+describe('예측왕', () => {
+  const MON = '20261019' as DayId;
+  const TUE = '20261020' as DayId;
+  const WED = '20261021' as DayId;
+  const vote = (uid: string, placeId: string, name = uid) => ({ uid, placeId, name });
+
+  it('이번 주 날짜는 월요일부터 오늘까지, 주말이면 금요일까지', () => {
+    expect(weekDaysUpTo(WED)).toEqual([MON, TUE, WED]);
+    expect(weekDaysUpTo('20261025')).toEqual(['20261019', '20261020', '20261021', '20261022', '20261023']);
+    expect(weekDaysUpTo('20260930')).toEqual(['20260928', '20260929', '20260930']);
+  });
+
+  it('당첨 가게에 건 표만 맞힌 것으로 센다', () => {
+    const kings = predictionKings(
+      { [MON]: [vote('a', 'p1', '민지'), vote('b', 'p2', '준호')], [TUE]: [vote('a', 'p3', '민지'), vote('b', 'p3', '준호')] },
+      [{ id: MON, placeId: 'p1' }, { id: TUE, placeId: 'p3' }],
+      WED,
+    );
+    expect(kings).toEqual([{ name: '민지', hits: 2 }, { name: '준호', hits: 1 }]);
+  });
+
+  it('정하지 않은 날·지난주 표는 세지 않는다', () => {
+    const kings = predictionKings(
+      { [TUE]: [vote('a', 'p1')], '20261016': [vote('a', 'p1')] },
+      [{ id: '20261016', placeId: 'p1' }],
+      WED,
+    );
+    expect(kings).toEqual([]);
+  });
+
+  it('이름을 바꿨으면 최근 이름으로 한 사람', () => {
+    const kings = predictionKings(
+      { [MON]: [vote('a', 'p1', '민')], [TUE]: [vote('a', 'p2', '민지')] },
+      [{ id: MON, placeId: 'p1' }, { id: TUE, placeId: 'p2' }],
+      WED,
+    );
+    expect(kings).toEqual([{ name: '민지', hits: 2 }]);
   });
 });

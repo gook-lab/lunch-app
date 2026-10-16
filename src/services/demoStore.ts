@@ -74,6 +74,15 @@ function sample(): DemoState {
     [dayIdBefore(today, 13)]: 'demo-4',
   };
   const votes: Record<DayId, Vote[]> = {
+    // 지난 이틀 표 — 이번 주 리포트에 예측왕이 보이게(주초에는 지난주라 안 보인다).
+    [dayIdBefore(today, 2)]: [
+      { uid: 'demo-a', placeId: 'demo-2', name: '민지' },
+      { uid: 'demo-b', placeId: 'demo-5', name: '준호' },
+    ],
+    [dayIdBefore(today, 4)]: [
+      { uid: 'demo-a', placeId: 'demo-6', name: '민지' },
+      { uid: 'demo-b', placeId: 'demo-6', name: '준호' },
+    ],
     [today]: [
       { uid: 'demo-a', placeId: 'demo-3', name: '민지' },
       { uid: 'demo-b', placeId: 'demo-7', name: '준호' },

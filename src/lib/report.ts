@@ -5,7 +5,8 @@
  * 모드가 없는 예전 기록은 무시한다.
  */
 import type { Place, Visit } from './candidates';
-import { daysBetween, type DayId } from './date';
+import { dayIdBefore, daysBetween, type DayId } from './date';
+import type { Vote } from '../services/types';
 
 export interface WeeklyReport {
   /** 이번 주 결정 건 수 */
@@ -133,4 +134,34 @@ export function weeklyReport(visits: Visit[], places: Place[], today: DayId): We
     topMode,
     places: placesResult,
   };
+}
+
+/** 이번 주 월요일부터 오늘(금요일까지)의 날짜들. 주말이면 그 주 월~금. */
+export function weekDaysUpTo(today: DayId): DayId[] {
+  const monday = getWeekStart(today);
+  const last = Math.min(4, daysBetween(monday, today));
+  return Array.from({ length: last + 1 }, (_, k) => dayIdBefore(monday, -k));
+}
+
+/**
+ * 예측왕 — 이번 주 정해진 날마다 그날 표가 당첨 가게와 같으면 1번 맞힌 것으로 센다.
+ * 같은 기기(uid)를 한 사람으로 보고, 이름은 가장 최근 표의 것을 쓴다. 맞힌 적 없는 사람은 뺀다.
+ */
+export function predictionKings(
+  votesByDay: Partial<Record<DayId, Vote[]>>,
+  visits: Visit[],
+  today: DayId,
+): { name: string; hits: number }[] {
+  const by = new Map<string, { name: string; hits: number; last: DayId }>();
+  for (const visit of getWeeklyVisits(visits, today)) {
+    for (const v of votesByDay[visit.id] ?? []) {
+      if (v.placeId !== visit.placeId) continue;
+      const prev = by.get(v.uid);
+      const newer = !prev || visit.id >= prev.last;
+      by.set(v.uid, { name: newer ? v.name : prev.name, hits: (prev?.hits ?? 0) + 1, last: newer ? visit.id : prev.last });
+    }
+  }
+  return [...by.values()]
+    .map(({ name, hits }) => ({ name, hits }))
+    .sort((a, b) => b.hits - a.hits || a.name.localeCompare(b.name, 'ko'));
 }
