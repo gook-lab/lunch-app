@@ -1,0 +1,38 @@
+/*
+ * 카드 뒷면 계절 무늬 — 카드 뒤집기·짝 맞추기 공용. 루트(.cards·.memory)에 amb--* 가 붙으면
+ * 뒷면이 계절 색 바탕에 흰 계절 무늬(벚꽃·물방울·단풍·눈송이)가 된다. 금요일은 금빛 테.
+ * 명시도는 (0,2,0) — 기본 뒷면(0,1,0)은 이기고, 고른 카드·탈락 카드 규칙(0,3,0)에는 진다.
+ */
+:is(.cards, .memory):where(.amb--spring) { --cb: oklch(0.58 0.14 355); --cb-2: oklch(0.5 0.14 352); }
+:is(.cards, .memory):where(.amb--summer) { --cb: oklch(0.52 0.11 225); --cb-2: oklch(0.44 0.11 230); }
+:is(.cards, .memory):where(.amb--autumn) { --cb: oklch(0.55 0.14 45); --cb-2: oklch(0.46 0.13 38); }
+:is(.cards, .memory):where(.amb--winter) { --cb: oklch(0.47 0.14 25); --cb-2: oklch(0.4 0.12 22); }
+:where([data-theme='dark']) :is(.cards, .memory):where(.amb--spring) { --cb: oklch(0.48 0.11 355); --cb-2: oklch(0.42 0.11 352); }
+:where([data-theme='dark']) :is(.cards, .memory):where(.amb--summer) { --cb: oklch(0.44 0.09 225); --cb-2: oklch(0.38 0.09 230); }
+:where([data-theme='dark']) :is(.cards, .memory):where(.amb--autumn) { --cb: oklch(0.46 0.11 45); --cb-2: oklch(0.4 0.1 38); }
+:where([data-theme='dark']) :is(.cards, .memory):where(.amb--winter) { --cb: oklch(0.42 0.12 25); --cb-2: oklch(0.36 0.1 22); }
+
+.cards:where([class*='amb--']) .cards__face--back,
+.memory:where([class*='amb--']) .memory__face--back {
+  isolation: isolate;
+  background: radial-gradient(circle at 50% 40%, var(--cb), var(--cb-2));
+  color: oklch(0.99 0 0);
+  border-color: oklch(0.97 0.01 90);
+  outline-color: var(--cb-2);
+  text-shadow: 0 1px 2px oklch(0 0 0 / 0.35);
+}
+.cards:where([class*='amb--']) .cards__face--back::before,
+.memory:where([class*='amb--']) .memory__face--back::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  z-index: -1;
+  border-radius: 4px;
+  border: 1px solid oklch(1 0 0 / 0.45);
+  background: oklch(1 0 0 / 0.28);
+  -webkit-mask: var(--season-motif) 50% 50% / 34% 26% space;
+  mask: var(--season-motif) 50% 50% / 34% 26% space;
+  pointer-events: none;
+}
+.cards:where(.amb--fri) .cards__face--back,
+.memory:where(.amb--fri) .memory__face--back { border-color: oklch(0.85 0.15 85); }
