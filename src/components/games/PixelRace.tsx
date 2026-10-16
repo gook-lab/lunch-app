@@ -16,6 +16,7 @@ import { seededRandom } from '../../lib/random';
 import { TRACK_LABEL, TRACK_SHAPES, type TrackShape } from '../../lib/raceTrack';
 import { pickWeather, resolveSeason, SEASON_LABEL, SEASONS, WEATHERS, weatherDescription, weatherModifiers, type Season, type Weather } from '../../lib/raceWeather';
 import { RaceCircuit } from './RaceCircuit';
+import { shouldPaintRaceFrame } from './racePaint';
 import { prefersReducedMotion, type GameProps } from './types';
 import { sfxLater, type SfxName } from '../../lib/sfx';
 
@@ -242,11 +243,16 @@ export function PixelRace({
     timers.push(
       window.setTimeout(() => {
         const t0 = performance.now();
+        let lastPaint = Number.NEGATIVE_INFINITY;
         const tick = (now: number) => {
           // rAF 의 now 는 t0 보다 앞설 수 있다(프레임 시작 시각). 음수면 그림 칸이 -1 이 된다.
           const tt = Math.min(lastT, Math.max(0, (now - t0) / msPerT));
-          setView({ run, count: -1, t: tt });
-          if (tt < lastT) raf = requestAnimationFrame(tick);
+          const finalFrame = tt >= lastT;
+          if (shouldPaintRaceFrame(now, lastPaint, finalFrame)) {
+            lastPaint = now;
+            setView({ run, count: -1, t: tt });
+          }
+          if (!finalFrame) raf = requestAnimationFrame(tick);
         };
         raf = requestAnimationFrame(tick);
       }, startAt),
