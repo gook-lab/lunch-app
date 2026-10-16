@@ -12,7 +12,12 @@ import { balloonColumns, balloonFrame, balloonPlan, finalFrame, type BalloonFram
 import { seededRandom } from '../../lib/random';
 import { prefersReducedMotion, type GameProps } from './types';
 import { tournbalSfxLater, type SfxName, type TournbalSfx } from '../../lib/sfx';
+import { useAmbience } from '../../hooks/useAmbience';
+import { Horizon } from './scene/Horizon';
+import { SceneWeather } from './scene/SceneWeather';
+import { ambienceClasses } from './scene/outfit';
 import './Balloon.css';
+import './Balloon.ambience.css';
 
 interface BalloonState {
   run: number;
@@ -32,6 +37,7 @@ const CELL_TALL = 1.45;
 const BODY_Y = 0.36;
 
 export function Balloon({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
+  const ambience = useAmbience();
   const count = candidates.length;
   const [state, setState] = useState<BalloonState>({ run: -1, k: -1, instant: false });
   const plan = useMemo(
@@ -165,7 +171,7 @@ export function Balloon({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
 
   return (
     <div
-      className={['balloon', expanded ? 'balloon--big' : '', still ? 'balloon--settled' : ''].filter(Boolean).join(' ')}
+      className={['balloon', ambienceClasses(ambience), expanded ? 'balloon--big' : '', still ? 'balloon--settled' : ''].filter(Boolean).join(' ')}
       // 판의 폭 ÷ 높이. 칸 하나가 폭 1 · 높이 CELL_TALL 이다. 크게 보기는 이 비로 남는 높이에 맞춘다(desktop.css).
       style={{ '--fit': (cols / (rows * CELL_TALL)).toFixed(4) } as React.CSSProperties}
     >
@@ -182,6 +188,10 @@ export function Balloon({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
         aria-label={`풍선 터뜨리기 판, 가게 ${count}곳: ${candidates.map((p) => p.name).join(', ')}`}
         style={{ '--cols': cols, '--rows': rows } as React.CSSProperties}
       >
+        <span className="balloon__yard" aria-hidden="true">
+          <Horizon season={ambience.season} className="balloon__hz" />
+          <SceneWeather weather={ambience.weather} band={[0, 45]} />
+        </span>
         {candidates.map((p, i) => {
           const isPopped = popped.has(i);
           const isWin = !!frame?.float && i === winnerIndex;
