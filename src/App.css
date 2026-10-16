@@ -1141,7 +1141,7 @@ footer.muted { text-align: center; }
 .rm__dotLabel {
   position: absolute;
   translate: -50% 0;
-  font-size: 9.5px;
+  font-size: 12px;
   line-height: 1;
   white-space: nowrap;
   pointer-events: none;
