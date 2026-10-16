@@ -47,7 +47,7 @@
 
 /* ── 도감 ── */
 .fishing__controls { display: flex; align-items: center; justify-content: center; gap: var(--space-2); flex-wrap: wrap; }
-.fishing-dex { display: grid; gap: var(--space-4); max-height: 70vh; overflow-y: auto; }
+.fishing-dex { display: grid; gap: var(--space-4); }
 .fishing-dex__count { margin: 0; font-size: var(--fs-sm); color: var(--color-neutral-800); }
 .fishing-dex__season { display: grid; gap: var(--space-2); }
 .fishing-dex__seasonTitle { margin: 0; font-size: var(--fs-sm); font-weight: 700; }

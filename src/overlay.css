@@ -1,0 +1,39 @@
+/*
+ * 오버레이 자리 — 시트는 모바일 앱의 아래 서랍(drawer)처럼 화면 높이 안에 들어오고 스스로 스크롤한다.
+ * 제목은 위에 붙어 있고, 맨 아래는 홈 표시줄(safe-area)만큼 비운다. 내용이 길어도 아래가 잘려 보이지 않는다.
+ * 모달도 화면보다 길면 안에서 스크롤한다. MODUL 기본(@layer modul.components) 위에 얹는 앱 규칙이다.
+ */
+.sheet-panel {
+  max-height: min(88svh, calc(100svh - 24px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  align-content: start;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
+}
+.sheet-panel > .sheet-title {
+  position: sticky;
+  top: -12px;
+  z-index: 1;
+  margin-inline: -20px;
+  padding: 8px 20px;
+  background: var(--color-surface);
+}
+/* 아래로 더 있으면 아래 가장자리가 흐려진다. 끝까지 내리면 내용 뒤(아래 여백) 제자리로 가 가리지 않는다. */
+.sheet-panel::after {
+  content: '';
+  position: sticky;
+  bottom: calc(-20px - env(safe-area-inset-bottom));
+  height: 32px;
+  margin: -12px -20px -32px;
+  background: linear-gradient(to bottom, transparent, var(--color-surface) 85%);
+  pointer-events: none;
+}
+/* 넓은 화면 — 바닥에서 조금 띄운 서랍. 네 귀퉁이가 다 보여 끝이 어딘지 알 수 있다. */
+@media (min-width: 768px) {
+  .sheet-panel { margin-bottom: 16px; max-height: min(84svh, calc(100svh - 48px)); border-radius: var(--radius-lg); }
+}
+dialog.dialog[open] {
+  max-height: calc(100svh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
