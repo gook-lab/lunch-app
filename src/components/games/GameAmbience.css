@@ -1,0 +1,115 @@
+/**
+ * 게임 분위기 — 계절·요일·날씨 시각 장식.
+ * 각 게임은 game--season-<spring|summer|autumn|winter> 와
+ * game--weather-<clear|cloudy|rain|snow|fog> 클래스를 적용받는다.
+ */
+
+/* 계절별 색 팔레트 */
+
+.game--season-spring {
+  --game-primary: oklch(0.68 0.15 30);    /* 연한 녹색 */
+  --game-secondary: oklch(0.82 0.1 50);   /* 밝은 노랑 */
+  --game-accent: oklch(0.75 0.12 10);     /* 핑크 */
+  --game-decor: oklch(0.9 0.08 80);       /* 연한 초록 */
+}
+
+.game--season-summer {
+  --game-primary: oklch(0.65 0.18 80);    /* 파랑 */
+  --game-secondary: oklch(0.88 0.12 50);  /* 밝은 노랑 */
+  --game-accent: oklch(0.72 0.14 60);     /* 하늘색 */
+  --game-decor: oklch(0.92 0.1 180);      /* 청록 */
+}
+
+.game--season-autumn {
+  --game-primary: oklch(0.65 0.14 40);    /* 주황 */
+  --game-secondary: oklch(0.7 0.12 20);   /* 빨강 */
+  --game-accent: oklch(0.78 0.1 60);      /* 노랑 */
+  --game-decor: oklch(0.88 0.08 40);      /* 옅은 갈색 */
+}
+
+.game--season-winter {
+  --game-primary: oklch(0.75 0.08 240);   /* 파란 회색 */
+  --game-secondary: oklch(0.95 0.02 240); /* 거의 흰색 */
+  --game-accent: oklch(0.85 0.1 280);     /* 보라 */
+  --game-decor: oklch(0.98 0.01 240);     /* 흰색 */
+}
+
+/* 날씨별 덮개 — 모든 게임이 쓸 수 있는 선택적 오버레이 */
+
+.game--weather-rain::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(45deg, rgba(100, 120, 140, 0.03) 25%, transparent 25%, transparent 50%, rgba(100, 120, 140, 0.03) 50%, rgba(100, 120, 140, 0.03) 75%, transparent 75%, transparent);
+  background-size: 40px 40px;
+  animation: rain-drift 8s linear infinite;
+}
+
+@keyframes rain-drift {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(40px); }
+}
+
+.game--weather-snow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(2px circle, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1));
+  background-size: 20px 20px;
+  animation: snow-fall 12s linear infinite;
+}
+
+@keyframes snow-fall {
+  0% { transform: translateY(-100px) translateX(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(100px) translateX(20px); opacity: 0; }
+}
+
+.game--weather-fog {
+  background: linear-gradient(0deg, rgba(200, 200, 200, 0.1), rgba(200, 200, 200, 0.05));
+}
+
+.game--weather-fog::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 20% 50%, rgba(200, 200, 200, 0.08), transparent 50%),
+              radial-gradient(circle at 80% 80%, rgba(180, 180, 180, 0.1), transparent 60%);
+  animation: fog-shift 8s ease-in-out infinite alternate;
+}
+
+@keyframes fog-shift {
+  0% { opacity: 0.5; }
+  100% { opacity: 0.8; }
+}
+
+/* 금요일 장식 — 분위기 있는 가장자리 불 */
+
+.game--friday::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  pointer-events: none;
+  border: 2px solid transparent;
+  border-image: linear-gradient(90deg, #FF6B6B, #FFA500, #FFD700, #FFA500, #FF6B6B) 1;
+  animation: friday-glow 2s ease-in-out infinite;
+}
+
+@keyframes friday-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+/* 미동 감지 — prefers-reduced-motion 존중 */
+@media (prefers-reduced-motion: reduce) {
+  .game--weather-rain::before,
+  .game--weather-snow::before,
+  .game--weather-fog::before,
+  .game--friday::after {
+    animation: none !important;
+  }
+}

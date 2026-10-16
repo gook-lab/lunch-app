@@ -24,6 +24,9 @@ import { shortName } from '../../lib/name';
 import { seededRandom } from '../../lib/random';
 import { prefersReducedMotion, type GameProps } from './types';
 import { sfx } from '../../lib/sfx';
+import { useAmbience } from '../../hooks/useAmbience';
+import { getGameAmbienceClasses } from './GameDecor';
+import './GameAmbience.css';
 
 interface Board {
   run: number;
@@ -65,6 +68,7 @@ export function Memory({
   onActivity,
   expanded = false,
 }: GameProps) {
+  const { season, weather, weekday } = useAmbience();
   const count = candidates.length;
   const cardCount = Math.min(count, MEMORY_PAIRS) * 2;
   const [board, setBoard] = useState<Board | null>(null);
@@ -207,7 +211,7 @@ export function Memory({
           : '카드 두 장을 골라 주세요.';
 
   return (
-    <div className={expanded ? 'memory memory--big' : 'memory'}>
+    <div className={`${expanded ? 'memory memory--big' : 'memory'} ${getGameAmbienceClasses(season, weather, weekday)}`}>
       <p className="muted small memory__hint">{hint}</p>
       {live && (
         <ul className="memory__left" aria-label="남아 있는 가게">

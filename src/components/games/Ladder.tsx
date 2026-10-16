@@ -29,7 +29,10 @@ import { shortName } from '../../lib/name';
 import { seededRandom } from '../../lib/random';
 import { ladderDiceSfxLater, sfx, type LadderDiceSfxName, type SfxName } from '../../lib/sfx';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
+import { useAmbience } from '../../hooks/useAmbience';
+import { getGameAmbienceClasses } from './GameDecor';
 import './Ladder.css';
+import './GameAmbience.css';
 
 const ROWS = 9;
 const VIEW_W = 320;
@@ -113,6 +116,7 @@ function fakeLean(u: number): number {
 }
 
 export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRequestSpin }: GameProps) {
+  const { season, weather, weekday } = useAmbience();
   const count = candidates.length;
   const columns = Math.max(count, 1);
 
@@ -363,7 +367,7 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
   };
 
   return (
-    <div className={['ladder', playing && !done ? 'ladder--running' : '', done ? 'ladder--done' : ''].filter(Boolean).join(' ')}>
+    <div className={['ladder', getGameAmbienceClasses(season, weather, weekday), playing && !done ? 'ladder--running' : '', done ? 'ladder--done' : ''].filter(Boolean).join(' ')}>
       <div className="ladder__bar">
         <p className="muted small">번호를 누르면 출발해요. 판을 누르면 가로줄을 넣거나 뺄 수 있어요.</p>
         <button type="button" className="ladder__shuffle" onClick={reshuffle} disabled={spinning}>

@@ -28,7 +28,10 @@ import { shortName } from '../../lib/name';
 import { seededRandom } from '../../lib/random';
 import { ladderDiceSfxLater, type LadderDiceSfxName, type SfxName } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
+import { useAmbience } from '../../hooks/useAmbience';
+import { getGameAmbienceClasses } from './GameDecor';
 import './Dice.css';
+import './GameAmbience.css';
 
 /** 끝난 판을 그릴 때 쓰는 시각 — 일정의 어떤 시각보다 뒤. */
 const DONE_MS = Number.MAX_SAFE_INTEGER;
@@ -62,6 +65,7 @@ function Pips({ n, cls }: { n: number; cls: string }) {
 }
 
 export function Dice({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
+  const { season, weather, weekday } = useAmbience();
   const count = candidates.length;
   const side = boardSide(count);
   const track = trackLength(count);
@@ -209,7 +213,7 @@ export function Dice({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
       : null;
 
   return (
-    <div className={expanded ? 'dice dice--big' : 'dice'}>
+    <div className={`${expanded ? 'dice dice--big' : 'dice'} ${getGameAmbienceClasses(season, weather, weekday)}`}>
       <div className={['dice__table', phase === 'slam' ? 'dice__table--slam' : ''].filter(Boolean).join(' ')}>
         <div
           className="dice__board"
