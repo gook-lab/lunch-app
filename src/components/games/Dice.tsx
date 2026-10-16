@@ -28,7 +28,15 @@ import { shortName } from '../../lib/name';
 import { seededRandom } from '../../lib/random';
 import { ladderDiceSfxLater, type LadderDiceSfxName, type SfxName } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
+import { useAmbience } from '../../hooks/useAmbience';
+import { SEASON_NAME } from '../../lib/ambience';
+import { Horizon } from './scene/Horizon';
+import { SceneWeather } from './scene/SceneWeather';
+import { ambienceClasses } from './scene/outfit';
 import './Dice.css';
+import './Dice.ambience.css';
+
+const SEASON_MARK = { spring: '🌸', summer: '🏖️', autumn: '🍁', winter: '⛄' } as const;
 
 /** 끝난 판을 그릴 때 쓰는 시각 — 일정의 어떤 시각보다 뒤. */
 const DONE_MS = Number.MAX_SAFE_INTEGER;
@@ -62,6 +70,7 @@ function Pips({ n, cls }: { n: number; cls: string }) {
 }
 
 export function Dice({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
+  const ambience = useAmbience();
   const count = candidates.length;
   const side = boardSide(count);
   const track = trackLength(count);
@@ -209,7 +218,7 @@ export function Dice({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
       : null;
 
   return (
-    <div className={expanded ? 'dice dice--big' : 'dice'}>
+    <div className={['dice', ambienceClasses(ambience), expanded ? 'dice--big' : ''].filter(Boolean).join(' ')}>
       <div className={['dice__table', phase === 'slam' ? 'dice__table--slam' : ''].filter(Boolean).join(' ')}>
         <div
           className="dice__board"
@@ -257,7 +266,12 @@ export function Dice({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
           })}
           {side > 2 && (
             <div className="dice__center" style={{ gridRow: `2 / ${side}`, gridColumn: `2 / ${side}` }} aria-hidden="true">
-              <span className="dice__center-mark">🎲</span>
+              <Horizon season={ambience.season} className="dice__hz" />
+              <SceneWeather weather={ambience.weather} />
+              <span className="dice__title">
+                <span className="dice__title-mark">{SEASON_MARK[ambience.season]}</span>
+                {ambience.weekday === 5 ? '불금 주사위' : `${SEASON_NAME[ambience.season]} 주사위 여행`}
+              </span>
             </div>
           )}
         </div>
