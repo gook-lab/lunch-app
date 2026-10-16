@@ -15,7 +15,16 @@ import { shortName } from '../../lib/name';
 import { seededRandom } from '../../lib/random';
 import { gachaCardsSfxLater, type GachaCardsSfxName, type SfxName } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
+import { useAmbience } from '../../hooks/useAmbience';
+import { SEASON_NAME } from '../../lib/ambience';
+import { Horizon } from './scene/Horizon';
+import { SceneWeather } from './scene/SceneWeather';
+import { ambienceClasses } from './scene/outfit';
 import './Gacha.css';
+import './Gacha.ambience.css';
+
+/** 돔 꼭대기 계절 장식(왼쪽·가운데·오른쪽). */
+const TOPPER = { spring: ['🌷', '🌸', '🌷'], summer: ['🐚', '🌻', '🐚'], autumn: ['🍂', '🎃', '🍁'], winter: ['❄️', '🎄', '❄️'] } as const;
 
 /** 돔에 그리는 캡슐 수 상한. 넘으면 "캡슐이 N개 더 있어요" 로 적는다. */
 export const MAX_CAPSULES = 20;
@@ -38,6 +47,7 @@ const CALLOUT: Partial<Record<GachaSay, string>> = {
 };
 
 export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
+  const ambience = useAmbience();
   const count = candidates.length;
   const [shown, setShown] = useState<Shown>({ run: -1, step: 0 });
   const plan = useMemo(
@@ -177,6 +187,7 @@ export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expan
     <div
       className={[
         'gacha',
+        ambienceClasses(ambience),
         expanded ? 'gacha--big' : '',
         `gacha--${say}`,
         gold ? 'gacha--gold' : '',
@@ -190,7 +201,17 @@ export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expan
         role="img"
         aria-label={`뽑기 기계, 캡슐 ${count}개: ${candidates.map((p) => p.name).join(', ')}`}
       >
+        <span className="gacha__yard" aria-hidden="true">
+          <Horizon season={ambience.season} className="gacha__hz" />
+          <SceneWeather weather={ambience.weather} />
+        </span>
         <div className={['gacha__machine', camera ? `gacha__machine--${camera}` : ''].filter(Boolean).join(' ')} aria-hidden="true">
+          <span className="gacha__topper">
+            {TOPPER[ambience.season].map((e, i) => (
+              <span key={i}>{e}</span>
+            ))}
+          </span>
+          <span className="gacha__tag">{ambience.weekday === 5 ? '불금 2배' : `${SEASON_NAME[ambience.season]} 한정`}</span>
           <div className="gacha__dome">
             {/* 하나가 나오면 돔에서도 하나(맨 위)가 빠진다. */}
             {capsules.slice(0, dropped ? capsules.length - 1 : capsules.length).map((c, i) => (

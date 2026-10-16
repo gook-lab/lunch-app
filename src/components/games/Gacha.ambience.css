@@ -1,0 +1,66 @@
+/*
+ * 뽑기 분위기 — 기계 뒤 가게 창으로 계절 하늘·지평선 나무·날씨가 보이고, 돔 꼭대기에 계절 장식,
+ * 돔 앞에 "계절 한정" 꼬리표(금요일은 "불금 2배"). 당첨·캡슐 각본과는 상관없다.
+ */
+.gacha { --sky-1: oklch(0.9 0.04 235); --sky-2: oklch(0.97 0.02 220); --ground: oklch(0.86 0.06 140); }
+.gacha.amb--spring { --sky-1: oklch(0.91 0.04 250); --sky-2: oklch(0.97 0.025 350); --ground: oklch(0.88 0.07 140); }
+.gacha.amb--summer { --sky-1: oklch(0.84 0.08 235); --sky-2: oklch(0.96 0.035 205); --ground: oklch(0.8 0.11 145); }
+.gacha.amb--autumn { --sky-1: oklch(0.89 0.045 225); --sky-2: oklch(0.96 0.04 80); --ground: oklch(0.82 0.08 70); }
+.gacha.amb--winter { --sky-1: oklch(0.88 0.022 240); --sky-2: oklch(0.97 0.008 240); --ground: oklch(0.97 0.008 240); }
+.gacha:is(.amb--w-cloudy, .amb--w-rain, .amb--w-fog) { --sky-1: oklch(0.82 0.012 245); --sky-2: oklch(0.93 0.008 240); }
+[data-theme='dark'] .gacha { --sky-1: oklch(0.24 0.05 265); --sky-2: oklch(0.31 0.05 250); --ground: oklch(0.34 0.04 140); }
+[data-theme='dark'] .gacha.amb--autumn { --ground: oklch(0.34 0.05 60); }
+[data-theme='dark'] .gacha.amb--winter { --ground: oklch(0.5 0.02 240); }
+
+/* ── 가게 창 — 기계 뒤 한 겹. ── */
+.gacha__yard {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  border-radius: inherit;
+  background: linear-gradient(to bottom, var(--sky-1), var(--sky-2) 80%, var(--ground) 80%);
+  pointer-events: none;
+}
+.gacha__hz { position: absolute; left: 0; right: 0; bottom: 20%; height: 12%; opacity: 0.85; }
+.gacha__yard .scene-wx { z-index: 0; }
+
+/* ── 돔 꼭대기 장식 · 꼬리표 ── */
+.gacha[class*='amb--'] .gacha__machine { position: relative; }
+.gacha__topper {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  z-index: 3;
+  translate: -50% -8%;
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+  font-size: clamp(16px, 9cqw, 30px);
+  line-height: 1;
+  pointer-events: none;
+}
+.gacha__topper span:nth-child(2) { font-size: 1.3em; }
+.gacha__topper span:first-child { rotate: -16deg; }
+.gacha__topper span:last-child { rotate: 16deg; }
+.gacha__tag {
+  position: absolute;
+  right: 6%;
+  top: 34%;
+  z-index: 21;
+  padding: 2px 8px;
+  border-radius: 4px 12px 12px 4px;
+  font-size: max(10px, 4.2cqw);
+  font-weight: 800;
+  white-space: nowrap;
+  color: oklch(0.25 0.05 90);
+  background: oklch(0.9 0.15 95);
+  box-shadow: 0 2px 0 oklch(0.65 0.12 80);
+  rotate: 10deg;
+  transform-origin: 0 50%;
+  animation: gacha-tag 2.4s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes gacha-tag { to { rotate: 4deg; } }
+.gacha.amb--fri .gacha__tag { color: white; background: oklch(0.6 0.22 25); box-shadow: 0 2px 0 oklch(0.42 0.16 25); }
+:root[data-motion='reduced'] .gacha__tag { animation: none; }
