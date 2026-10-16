@@ -29,6 +29,7 @@ import { shortName } from '../../lib/name';
 import { seededRandom } from '../../lib/random';
 import { ladderDiceSfxLater, sfx, type LadderDiceSfxName, type SfxName } from '../../lib/sfx';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
+import { readLadderGeometry } from './ladderGeometry';
 import { useAmbience } from '../../hooks/useAmbience';
 import { SceneWeather } from './scene/SceneWeather';
 import { ambienceClasses } from './scene/outfit';
@@ -218,21 +219,28 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
     // 줄이 적으면 조금만 — 2곳에서 1.6배면 세로줄이 화면 밖으로 나가 판이 안 읽혔다.
     const zoomTo = count <= 3 ? 1 : count <= 8 ? 1.5 : 1.85;
     const beatZoom = count <= 3 ? 0.12 : 0.25;
+    let geometry = readLadderGeometry(cameraRef.current, boardRef.current);
+    const refreshGeometry = () => {
+      geometry = readLadderGeometry(cameraRef.current, boardRef.current);
+    };
+    const geometryObserver =
+      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(refreshGeometry);
+    if (cameraRef.current) geometryObserver?.observe(cameraRef.current);
+    if (boardRef.current) geometryObserver?.observe(boardRef.current);
+    window.addEventListener('resize', refreshGeometry);
     const tick = (now: number) => {
       // now 는 프레임 시작 시각이라 started 보다 이전일 수 있다(Pinball.tsx 에서 실제로 터졌다).
       const t = Math.min(plan.endMs, Math.max(0, now - started));
-      const cameraEl = cameraRef.current;
-      const boardEl = boardRef.current;
       let target = NO_CAM;
-      if (cameraEl && boardEl && cameraEl.offsetHeight > 0) {
+      if (geometry) {
         const pt = myPointRef.current(plan, effectiveStart, t);
         const beat = runnerAt(plan, t).beat;
         const zin = smooth(t / (plan.goMs + 500));
         const zout = smooth((t - (plan.arriveMs - 300)) / 600);
         const z = 1 + (zoomTo - 1 + (beat ? beatZoom : 0)) * zin * (1 - zout);
         target = {
-          fx: (pt.x / VIEW_W) * (boardEl.offsetWidth / cameraEl.offsetWidth),
-          fy: (boardEl.offsetTop + (pt.y / VIEW_H) * boardEl.offsetHeight) / cameraEl.offsetHeight,
+          fx: (pt.x / VIEW_W) * (geometry.boardWidth / geometry.cameraWidth),
+          fy: (geometry.boardTop + (pt.y / VIEW_H) * geometry.boardHeight) / geometry.cameraHeight,
           z,
         };
       }
@@ -250,6 +258,8 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
     return () => {
       window.clearTimeout(timer);
       cancelAnimationFrame(frame);
+      window.removeEventListener('resize', refreshGeometry);
+      geometryObserver?.disconnect();
       stopSfx();
     };
     // paths 는 plan 과 같은 판에서 나온다 — plan 이 바뀔 때만 다시 시작한다.
