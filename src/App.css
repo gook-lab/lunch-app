@@ -4180,3 +4180,6 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 .weekly-report__name { flex: 1; }
 
 [data-theme='dark'] .weekly-report { background: var(--color-neutral-950); }
+
+/* 날씨 정보 칩 */
+.weather-chip { margin-bottom: var(--space-4); }

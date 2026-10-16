@@ -63,6 +63,7 @@ import {
   type GameMode,
 } from './components/games/types';
 import { Roadmap } from './components/Roadmap';
+import { WeatherChip } from './components/WeatherChip';
 import { useTodayKST } from './hooks/useTodayKST';
 import { useLunchData } from './hooks/useLunchData';
 import { addShown, readShown, readSkipShown, withoutShown, writeSkipShown } from './lib/shownToday';
@@ -161,7 +162,7 @@ function revealPickedMode(node: HTMLElement | null) {
 
 export default function App() {
   const today = useTodayKST();
-  const { state, error, places, visits, today: decision, refreshing, reload, officeKey } = useLunchData(today);
+  const { state, error, places, visits, today: decision, refreshing, reload, officeKey, office } = useLunchData(today);
   const ratings = useRatings(places);
   // 다음 날 "어제 ○○ 어땠어요?". 별점만 묻고 후보·당첨에는 닿지 않는다.
   const rateTarget = useMemo(
@@ -733,6 +734,10 @@ export default function App() {
   const filtersPanel = (
     <>
       <CandidateChips result={result} winnerId={winner?.id ?? null} />
+      <WeatherChip
+        office={office}
+        onSetWalkFilter={(minutes) => updateFilters((f) => ({ ...f, maxWalkMin: minutes }))}
+      />
       {wide && notice && <p className="notice">{notice}</p>}
       {wide && predictions}
       {wide && parties}
