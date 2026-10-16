@@ -14,7 +14,7 @@ import { shortName } from '../../lib/name';
 import { buildRace, progress, SLICE, type RaceEventKind } from '../../lib/race';
 import { seededRandom } from '../../lib/random';
 import { TRACK_LABEL, TRACK_SHAPES, type TrackShape } from '../../lib/raceTrack';
-import { pickWeather, resolveSeason, SEASON_LABEL, SEASONS, WEATHERS, weatherDescription, weatherModifiers, type Season, type Weather } from '../../lib/weather';
+import { pickWeather, resolveSeason, SEASON_LABEL, SEASONS, WEATHERS, weatherDescription, weatherModifiers, type Season, type Weather } from '../../lib/raceWeather';
 import { RaceCircuit } from './RaceCircuit';
 import { prefersReducedMotion, type GameProps } from './types';
 import { sfxLater, type SfxName } from '../../lib/sfx';

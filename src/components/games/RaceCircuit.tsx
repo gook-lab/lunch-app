@@ -11,7 +11,7 @@ import { useMemo, useState } from 'react';
 import type { Place } from '../../lib/candidates';
 import type { RaceEventKind } from '../../lib/race';
 import { shortName } from '../../lib/name';
-import type { Season, Weather } from '../../lib/weather';
+import type { Season, Weather } from '../../lib/raceWeather';
 import {
   PLANE_H,
   gridBack,
@@ -299,29 +299,6 @@ export function RaceCircuit({
               y2={paths.start[1].y}
             />
           </svg>
-          {/* 날씨 오버레이 — 빗줄기·눈송이·안개 등 */}
-          {weather === 'rain' && (
-            <div className="rc__weather rc__weather--rain" aria-hidden="true">
-              {Array.from({ length: 20 }).map((_, i) => (
-                <span key={i} className="rc__raindrop" />
-              ))}
-            </div>
-          )}
-          {weather === 'snow' && (
-            <div className="rc__weather rc__weather--snow" aria-hidden="true">
-              {Array.from({ length: 30 }).map((_, i) => (
-                <span key={i} className="rc__snowflake" />
-              ))}
-            </div>
-          )}
-          {weather === 'fog' && <div className="rc__weather rc__weather--fog" aria-hidden="true" />}
-          {weather === 'wind' && (
-            <div className="rc__weather rc__weather--wind" aria-hidden="true">
-              {Array.from({ length: 15 }).map((_, i) => (
-                <span key={i} className="rc__windparticle" />
-              ))}
-            </div>
-          )}
           {hazards.map((h) => {
             const p = trackPoint(shape, h.d, laneOf(h.runner), laps);
             // 트랙 바깥(관중석) 쪽에서 날아온다 — 타원 중심에서 그 자리로 향하는 방향의 연장선.
@@ -395,14 +372,43 @@ export function RaceCircuit({
                 {ev === 'crash' && <span className="rc__smoke" />}
                 {bubbles?.[i] && <span className="rc__bubble">{bubbles[i]}</span>}
                 {theme === 'horse' && (ev === 'boost' || ev === 'crash') && <span className="rc__dust" />}
-                {/* 주자 번호 배지 — 주자마다 고유한 색 */}
-                <span className="rc__badge" style={{ background: runnerColor(i, n) }} aria-hidden="true">
-                  {i + 1}
-                </span>
+              </span>
+            );
+          })}
+          {/* 주자 번호표. 주자(차는 진행 방향으로 돈다) 밖에 따로 둬서 늘 똑바로 서 있다. 판 기울기만큼 되세운다. */}
+          {candidates.map((p, i) => {
+            const { x, y } = points[i];
+            const dim = (focus !== null && focus !== i) || (hoverRunnerIndex !== null && hoverRunnerIndex !== i);
+            const on = focus === i || hoverRunnerIndex === i;
+            return (
+              <span
+                key={`bib-${p.id}`}
+                className={['rc__bib', dim ? 'rc__bib--dim' : '', on ? 'rc__bib--on' : ''].filter(Boolean).join(' ')}
+                style={{ left: `${x}%`, top: `${y}%`, zIndex: Math.round(y * 10) + 1, background: runnerColor(i, n) } as React.CSSProperties}
+              >
+                {i + 1}
               </span>
             );
           })}
         </div>
+        {/* 계절·날씨 입자. 판 위(기울지 않은 무대)에 겹친다. 자리는 번호로 정해 판마다 같다. */}
+        {(weather !== 'clear' || season === 'autumn' || season === 'spring') && (
+          <div className={`rc__sky rc__sky--${weather === 'clear' ? season : weather}`} aria-hidden="true">
+            {weather !== 'fog' &&
+              Array.from({ length: weather === 'rain' ? 46 : 26 }, (_, k) => (
+                <span
+                  key={k}
+                  style={
+                    {
+                      left: `${(k * 37 + 11) % 100}%`,
+                      '--d': `${((k * 53) % 17) / 10}s`,
+                      '--s': `${0.75 + ((k * 29) % 7) / 10}`,
+                    } as React.CSSProperties
+                  }
+                />
+              ))}
+          </div>
+        )}
       </div>
       <ol className="rc__standing" aria-label="지금 순위 — 이름을 누르면 그 주자를 따라가요">
         {standing.map((i, r) => (
@@ -411,7 +417,7 @@ export function RaceCircuit({
               type="button"
               className={rankOf.get(i) === 1 ? 'rc__pos rc__pos--win' : 'rc__pos'}
               title={theme === 'horse' ? `${candidates[i].name} · ${breedOf(i, round).name}` : candidates[i].name}
-              aria-pressed={focus === i || hoverRunnerIndex === i}
+              aria-pressed={focus === i}
               onClick={() => onFocus(focus === i ? null : i)}
               onMouseEnter={() => setHoverRunnerIndex(i)}
               onMouseLeave={() => setHoverRunnerIndex(null)}

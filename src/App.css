@@ -3644,128 +3644,65 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 /* 겨울엔 도로가 얼음처럼 밝아진다. */
 .rc--winter .rc__road { fill: oklch(0.72 0.02 250); }
 
-/* 날씨 효과 오버레이 — 포인터는 통과, 애니메이션 존중 */
-.rc__weather {
+/* 계절 바깥 판 색 — 풀밭만 바꾸면 판 가장자리가 늘 초록이라 계절이 반만 바뀌었다. */
+.rc--spring .rc__plane { background: radial-gradient(ellipse at 50% 50%, oklch(0.74 0.11 140), oklch(0.62 0.1 140)); }
+.rc--autumn .rc__plane { background: radial-gradient(ellipse at 50% 50%, oklch(0.6 0.12 55), oklch(0.46 0.1 45)); }
+.rc--winter .rc__plane { background: radial-gradient(ellipse at 50% 50%, oklch(0.93 0.02 240), oklch(0.82 0.03 240)); }
+
+/* 하늘 입자(비·눈·바람·꽃잎·낙엽). 무대 위에 겹치고 누르는 건 통과시킨다. */
+.rc__sky { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
+.rc__sky > span { position: absolute; top: -12%; animation: rc-fall calc(2.4s * var(--s, 1)) linear var(--d, 0s) infinite; }
+@keyframes rc-fall { to { transform: translate(var(--dx, 0), 115cqh); } }
+.rc__stage { container-type: inline-size; }
+.rc__sky--rain { background: linear-gradient(oklch(0.4 0.03 250 / 0.18), oklch(0.4 0.03 250 / 0.06)); }
+.rc__sky--rain > span { width: 1.5px; height: 18px; background: oklch(0.85 0.04 240 / 0.75); rotate: 12deg; --dx: -14cqw; animation-duration: calc(0.7s * var(--s, 1)); }
+.rc__sky--snow > span { width: 7px; height: 7px; border-radius: 50%; background: oklch(0.99 0 0 / 0.9); box-shadow: 0 0 4px oklch(1 0 0 / 0.8); --dx: 6cqw; animation-duration: calc(5.5s * var(--s, 1)); }
+.rc__sky--wind > span { width: 26px; height: 2px; border-radius: 2px; background: oklch(0.98 0 0 / 0.55); top: calc(var(--s) * 40%); left: -10% !important; animation-name: rc-gust; animation-duration: calc(1.6s * var(--s, 1)); }
+@keyframes rc-gust { to { transform: translateX(120cqw); } }
+.rc__sky--fog { background: linear-gradient(oklch(0.95 0.005 250 / 0.75), oklch(0.95 0.005 250 / 0.25) 70%); backdrop-filter: blur(1.2px); }
+.rc__sky--autumn > span { width: 9px; height: 7px; border-radius: 0 70% 0 70%; background: oklch(0.66 0.17 45); --dx: 10cqw; animation-duration: calc(6s * var(--s, 1)); }
+.rc__sky--autumn > span:nth-child(3n) { background: oklch(0.72 0.16 80); }
+.rc__sky--spring > span { width: 7px; height: 6px; border-radius: 70% 0 70% 0; background: oklch(0.88 0.08 0); --dx: 12cqw; animation-duration: calc(6.5s * var(--s, 1)); }
+:root[data-motion='reduced'] .rc__sky > span { animation: none; display: none; }
+
+/* 주자 번호표 — 순위표 알약의 번호와 같은 숫자·색. 판 기울기만큼 되세워 똑바로 보인다. */
+.rc__bib {
   position: absolute;
-  inset: 0;
+  display: grid;
+  place-items: center;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: 8px;
+  border: 1.5px solid var(--color-bg);
+  color: oklch(0.99 0 0);
+  font: 800 10px/1 var(--app-mono, monospace);
+  text-shadow: 0 1px 1px oklch(0 0 0 / 0.5);
+  transform-origin: 50% 100%;
+  transform: translate(-50%, calc(-100% - var(--bib-lift, 14px))) rotateX(-48deg);
   pointer-events: none;
-  overflow: hidden;
+  transition: opacity var(--motion-fast) var(--ease-out), scale var(--motion-fast) var(--ease-out);
 }
-
-/* 비 — 검은 빗줄기들이 대각선으로 떨어진다. */
-.rc__weather--rain {
-  background: linear-gradient(110deg, transparent 24%, rgba(0, 0, 0, 0.05) 25%, rgba(0, 0, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(0, 0, 0, 0.05) 75%, rgba(0, 0, 0, 0.05) 76%, transparent 77%, transparent);
-  background-size: 50px 50px;
-  animation: rc-rain-move 0.5s linear infinite;
-}
-.rc__raindrop {
-  position: absolute;
-  width: 1px;
-  height: 10px;
-  background: rgba(100, 150, 200, 0.6);
-  will-change: transform;
-}
-@keyframes rc-rain-move {
-  to { background-position: 50px 0; }
-}
-
-/* 눈 — 천천히 떨어지는 흰 눈송이 */
-.rc__weather--snow { background: rgba(255, 255, 255, 0.1); }
-.rc__snowflake {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  background: white;
-  border-radius: 50%;
-  opacity: 0.8;
-  animation: rc-snowfall linear infinite;
-}
-@keyframes rc-snowfall {
-  to { transform: translateY(100vh) translateX(20px); opacity: 0; }
-}
-.rc__snowflake:nth-child(odd) { animation-duration: 8s; animation-delay: calc(var(--i, 0) * -0.5s); }
-.rc__snowflake:nth-child(even) { animation-duration: 12s; animation-delay: calc(var(--i, 0) * -0.8s); }
-
-/* 안개 — 반투명 회색 오버레이가 멀리 가면 더 짙어진다. */
-.rc__weather--fog {
-  background: radial-gradient(ellipse at 50% 0%, rgba(200, 200, 200, 0.3), rgba(220, 220, 220, 0.6));
-}
-
-/* 바람 — 입자들이 수평으로 떠다닌다. */
-.rc__weather--wind {}
-.rc__windparticle {
-  position: absolute;
-  width: 3px;
-  height: 3px;
-  background: rgba(100, 100, 100, 0.4);
-  border-radius: 50%;
-  animation: rc-wind-drift linear infinite;
-}
-@keyframes rc-wind-drift {
-  to { transform: translateX(100vw) translateY(10px); opacity: 0; }
-}
-
-/* 주자 번호 배지 — 주자 위에 작은 원형 배지 */
-.rc__badge {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translate(-50%, -80%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  font-size: 11px;
-  font-weight: 800;
-  color: white;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  z-index: 10;
-  pointer-events: none;
-}
-/* 주자가 많으면 배지를 숨긴다(가독성 위해) */
-.rc__runner { min-width: 0; }
-/* 포커스되지 않은 주자의 배지는 흐린다. */
-.rc__runner--dim .rc__badge { opacity: 0.4; }
+.rc--horse .rc__bib { --bib-lift: 26px; }
+.rc__bib--dim { opacity: 0.25; }
+.rc__bib--on { scale: 1.35; z-index: 999 !important; }
+.rc__plane--follow .rc__bib { --bib-lift: 10px; }
 
 /* 순위표 — 주자 번호와 등수를 분리해서 표시 */
 .rc__posNum {
   font-weight: 700;
-  color: var(--color-neutral-600);
+  color: var(--color-neutral-700);
   font-size: var(--fs-xs);
   margin-right: 2px;
 }
 .rc__pos[aria-pressed='true'] .rc__posNum { color: var(--color-accent); }
 
 /* prefers-reduced-motion 존중 */
-@media (prefers-color-scheme: dark) {
-  .rc--autumn .rc__rail { fill: oklch(0.45 0.06 40); }
-  .rc--winter .rc__grassA { fill: oklch(0.72 0.02 250); }
-  .rc--winter .rc__grassB { fill: oklch(0.70 0.02 250); }
-}
+/* 어두운 테마 — 가을 난간·겨울 풀밭을 한 단계 어둡게. */
+:root[data-theme='dark'] .rc--autumn .rc__rail { fill: oklch(0.45 0.06 40); }
+:root[data-theme='dark'] .rc--winter .rc__grassA { fill: oklch(0.72 0.02 250); }
+:root[data-theme='dark'] .rc--winter .rc__grassB { fill: oklch(0.70 0.02 250); }
 
-@supports (animation-duration: 0s) {
-  @media (prefers-reduced-motion: reduce) {
-    .rc__raindrop,
-    .rc__snowflake,
-    .rc__windparticle {
-      animation: none !important;
-      opacity: 0 !important;
-    }
-    .rc__weather--rain {
-      animation: none !important;
-      background: transparent !important;
-    }
-  }
-}
-
-/* 공개 데모 안내 */
-.demo-note {
-  margin: var(--space-1) 0 0;
-  font-size: var(--fs-xs);
-  color: var(--color-neutral-700);
-}
 
 /* 별점 — 평균 배지·한줄평·내 별점 */
 .rating { white-space: nowrap; font-weight: 700; font-variant-numeric: tabular-nums; }

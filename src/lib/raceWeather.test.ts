@@ -8,7 +8,7 @@ import {
   type Weather,
   SEASONS,
   WEATHERS,
-} from './weather';
+} from './raceWeather';
 
 describe('weather', () => {
   describe('seasonByMonth', () => {
