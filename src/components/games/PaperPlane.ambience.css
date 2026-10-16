@@ -1,220 +1,81 @@
 /*
- * 종이비행기 분위기 — 계절·날씨·요일에 따른 시각 변화.
- * 배경의 나무·건물·하늘이 바뀌고, 비/눈 날씨에 따라 비행기가 흔들거린다.
- * 금요일(weekday=5)에는 불금 장식을 넣는다.
+ * 종이비행기 분위기 — 책상과 점심 테이블 사이가 큰 창이다. 창밖 하늘색·지평선 나무(Horizon)·날씨(SceneWeather)가
+ * 계절과 날씨를 타고, 창 위에 계절 가랜드, 식탁보 무늬가 바뀐다. 금요일은 점심 표지판이 "불금 점심".
+ * 당첨·비행 각본과는 상관없다.
  */
-
-/* ── 봄: 벚꽃 나무 ── */
-.plane[data-season='spring'] .plane__scene {
-  background: linear-gradient(to bottom, #e3f2fd 0%, #fff9c4 100%);
-  position: relative;
+.plane {
+  --sky-1: oklch(0.88 0.05 230);
+  --sky-2: oklch(0.96 0.025 215);
+  --cloud: oklch(1 0 0 / 0.9);
+  --cloth-1: oklch(0.9 0.05 25);
+  --cloth-2: oklch(0.98 0.01 60);
+  --g1: oklch(0.86 0.09 355);
+  --g2: oklch(0.88 0.07 145);
 }
+.plane.amb--spring { --sky-1: oklch(0.88 0.05 250); --sky-2: oklch(0.96 0.03 350); --cloth-1: oklch(0.9 0.06 355); }
+.plane.amb--summer { --sky-1: oklch(0.8 0.1 235); --sky-2: oklch(0.94 0.05 210); --cloth-1: oklch(0.88 0.06 230); --g1: oklch(0.8 0.15 85); --g2: oklch(0.72 0.13 200); }
+.plane.amb--autumn { --sky-1: oklch(0.86 0.06 220); --sky-2: oklch(0.94 0.05 80); --cloth-1: oklch(0.86 0.08 55); --g1: oklch(0.68 0.17 45); --g2: oklch(0.8 0.15 85); }
+.plane.amb--winter { --sky-1: oklch(0.86 0.03 240); --sky-2: oklch(0.96 0.01 240); --cloth-1: oklch(0.82 0.09 25); --cloth-2: oklch(0.92 0.05 150); --g1: oklch(0.6 0.18 25); --g2: oklch(0.55 0.12 150); }
+.plane:is(.amb--w-cloudy, .amb--w-rain, .amb--w-fog) { --sky-1: oklch(0.78 0.015 245); --sky-2: oklch(0.9 0.01 240); --cloud: oklch(0.93 0.005 250 / 0.95); }
+.plane.amb--w-snow { --sky-1: oklch(0.82 0.015 245); --sky-2: oklch(0.94 0.008 240); }
 
-.plane[data-season='spring'] .plane__scene::before {
-  content: '';
-  position: absolute;
-  inset: 0;
+.plane[class*='amb--'] .plane__scene {
   background:
-    radial-gradient(ellipse 80px 60px at 15% 20%, rgba(244, 188, 211, 0.4) 0%, transparent 70%),
-    radial-gradient(ellipse 70px 50px at 75% 15%, rgba(244, 188, 211, 0.3) 0%, transparent 70%),
-    radial-gradient(ellipse 90px 70px at 40% 10%, rgba(244, 188, 211, 0.35) 0%, transparent 70%);
-  pointer-events: none;
+    linear-gradient(to right, var(--color-surface) 0 var(--desk), oklch(0.62 0.06 60) var(--desk) calc(var(--desk) + 3px), transparent 0),
+    radial-gradient(ellipse 9% 5% at 40% 12%, var(--cloud) 60%, transparent 62%),
+    radial-gradient(ellipse 7% 4% at 45% 10%, var(--cloud) 60%, transparent 62%),
+    radial-gradient(ellipse 10% 5% at 72% 48%, var(--cloud) 60%, transparent 62%),
+    radial-gradient(ellipse 6% 3.5% at 76% 46%, var(--cloud) 60%, transparent 62%),
+    linear-gradient(to bottom, var(--sky-1), var(--sky-2));
+}
+[data-theme='dark'] .plane[class*='amb--'] .plane__scene {
+  background:
+    linear-gradient(to right, var(--color-surface) 0 var(--desk), oklch(0.42 0.05 60) var(--desk) calc(var(--desk) + 3px), transparent 0),
+    radial-gradient(circle at 70% 9%, oklch(0.95 0.04 95) 0 1.6%, transparent 1.8%),
+    radial-gradient(ellipse 9% 5% at 40% 14%, oklch(0.45 0.03 250 / 0.7) 60%, transparent 62%),
+    radial-gradient(ellipse 10% 5% at 72% 48%, oklch(0.45 0.03 250 / 0.55) 60%, transparent 62%),
+    linear-gradient(to bottom, oklch(0.22 0.05 265), oklch(0.32 0.05 250));
+}
+[data-theme='dark'] .plane[class*='amb--']:is(.amb--w-cloudy, .amb--w-rain, .amb--w-fog, .amb--w-snow) .plane__scene {
+  background:
+    linear-gradient(to right, var(--color-surface) 0 var(--desk), oklch(0.42 0.05 60) var(--desk) calc(var(--desk) + 3px), transparent 0),
+    radial-gradient(ellipse 9% 5% at 40% 14%, oklch(0.42 0.01 250 / 0.8) 60%, transparent 62%),
+    radial-gradient(ellipse 10% 5% at 72% 48%, oklch(0.42 0.01 250 / 0.7) 60%, transparent 62%),
+    linear-gradient(to bottom, oklch(0.25 0.015 260), oklch(0.32 0.015 250));
 }
 
-/* ── 여름: 해변 ── */
-.plane[data-season='summer'] .plane__scene {
-  background: linear-gradient(to bottom,
-    #e1f5fe 0%,
-    #b3e5fc 40%,
-    #fff8e1 40%,
-    #fff176 100%);
-}
-
-.plane[data-season='summer'] .plane__scene::before {
-  content: '';
+/* ── 창밖 — 책상 끝에서 테이블 앞까지. 비행기·이름표보다 아래 층. ── */
+.plane__outside {
   position: absolute;
-  bottom: 0;
-  left: 0;
+  left: var(--desk);
   right: 0;
-  height: 8%;
-  background: #d2b48c;
-  z-index: 1;
+  top: var(--head);
+  bottom: var(--foot);
+  overflow: hidden;
+  pointer-events: none;
 }
+.plane__hz { position: absolute; left: 0; right: 0; bottom: 0; height: min(16%, 9cqw); opacity: 0.85; }
+.plane__outside .scene-wx { z-index: 1; }
 
-/* ── 가을: 단풍나무 ── */
-.plane[data-season='autumn'] .plane__scene {
-  background: linear-gradient(to bottom, #fff8e1 0%, #ffecb3 100%);
-  position: relative;
-}
-
-.plane[data-season='autumn'] .plane__scene::before {
-  content: '';
+/* 창 위 가랜드 — 하늘 띠 아래 가장자리에 매단 삼각기. */
+.plane__garland {
   position: absolute;
-  inset: 0;
+  left: var(--desk);
+  right: calc(100% - var(--table));
+  top: var(--head);
+  height: 3cqw;
+  z-index: 2;
+  pointer-events: none;
   background:
-    radial-gradient(ellipse 90px 70px at 20% 25%, rgba(255, 152, 0, 0.35) 0%, transparent 70%),
-    radial-gradient(ellipse 85px 65px at 70% 20%, rgba(255, 152, 0, 0.3) 0%, transparent 70%),
-    radial-gradient(ellipse 75px 55px at 45% 15%, rgba(255, 87, 34, 0.32) 0%, transparent 70%);
-  pointer-events: none;
+    linear-gradient(to bottom, oklch(0.5 0.03 60 / 0.6) 0 1px, transparent 1px),
+    conic-gradient(from 340deg at 50% 100%, var(--g1) 0 40deg, transparent 0) 1cqw 0 / 9cqw 100% repeat-x,
+    conic-gradient(from 340deg at 50% 100%, var(--g2) 0 40deg, transparent 0) 5.5cqw 0 / 9cqw 100% repeat-x;
 }
+.plane.amb--fri .plane__garland { height: 3.6cqw; }
+[data-theme='dark'] .plane__garland { opacity: 0.75; }
 
-/* ── 겨울: 눈 덮인 지붕 ── */
-.plane[data-season='winter'] .plane__scene {
-  background: linear-gradient(to bottom, #b3e5fc 0%, #e0f2f1 60%, #f0f4c3 100%);
-  position: relative;
-}
-
-.plane[data-season='winter'] .plane__scene::before {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 25%;
-  background:
-    linear-gradient(to bottom, transparent 0%, rgba(255, 255, 255, 0.6) 100%),
-    repeating-linear-gradient(90deg, #2c3e50 0%, #2c3e50 30%, #34495e 30%, #34495e 60%);
-  clip-path: polygon(0 40%, 5% 35%, 10% 38%, 15% 32%, 20% 36%, 25% 30%, 30% 34%, 35% 28%, 40% 32%, 45% 26%, 50% 30%, 55% 26%, 60% 32%, 65% 28%, 70% 34%, 75% 30%, 80% 36%, 85% 32%, 90% 38%, 95% 35%, 100% 40%, 100% 100%, 0 100%);
-  z-index: 1;
-}
-
-/* 어두운 모드 배경 */
-[data-theme='dark'] .plane[data-season='spring'] .plane__scene {
-  background: linear-gradient(to bottom, #1b5e20 0%, #33691e 100%);
-}
-
-[data-theme='dark'] .plane[data-season='summer'] .plane__scene {
-  background: linear-gradient(to bottom, #01579b 0%, #0277bd 40%, #663d00 40%, #1a237e 100%);
-}
-
-[data-theme='dark'] .plane[data-season='autumn'] .plane__scene {
-  background: linear-gradient(to bottom, #3e2723 0%, #5d4037 100%);
-}
-
-[data-theme='dark'] .plane[data-season='winter'] .plane__scene {
-  background: linear-gradient(to bottom, #0d47a1 0%, #1565c0 60%, #1a237e 100%);
-}
-
-/* ── 비 날씨: 비행기 흔들림 ── */
-.plane[data-weather='rain'] .plane__craft {
-  animation: plane-wobble-rain 0.6s ease-in-out infinite;
-}
-
-@keyframes plane-wobble-rain {
-  0%, 100% { transform: translateY(0); }
-  25% { transform: translateY(-1px); }
-  50% { transform: translateY(1px); }
-  75% { transform: translateY(-0.5px); }
-}
-
-/* 비 표시 */
-.plane[data-weather='rain'] .plane__scene::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    45deg,
-    transparent 0,
-    transparent 35px,
-    rgba(100, 150, 200, 0.08) 35px,
-    rgba(100, 150, 200, 0.08) 70px
-  );
-  pointer-events: none;
-  z-index: 10;
-  animation: plane-rain-drip 3s linear infinite;
-}
-
-@keyframes plane-rain-drip {
-  0% { background-position: 0 0; }
-  100% { background-position: 100px 100px; }
-}
-
-/* ── 눈 날씨: 눈 표현 ── */
-.plane[data-weather='snow'] .plane__craft {
-  animation: plane-wobble-snow 1s ease-in-out infinite;
-}
-
-@keyframes plane-wobble-snow {
-  0%, 100% { transform: translateY(0) translateX(0); }
-  33% { transform: translateY(-2px) translateX(1px); }
-  66% { transform: translateY(1px) translateX(-1px); }
-}
-
-.plane[data-weather='snow'] .plane__scene::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle 1.5px, rgba(255, 255, 255, 0.8) 0%, transparent 1.5px) 0 0 / 15px 15px,
-    radial-gradient(circle 1.5px, rgba(255, 255, 255, 0.6) 0%, transparent 1.5px) 7.5px 7.5px / 15px 15px;
-  animation: plane-snow-fall 4s linear infinite;
-  pointer-events: none;
-  z-index: 10;
-}
-
-@keyframes plane-snow-fall {
-  0% { background-position: 0 0, 0 0; }
-  100% { background-position: 0 100%, 0 100%; }
-}
-
-/* ── 안개 날씨 ── */
-.plane[data-weather='fog'] .plane__scene {
-  opacity: 0.85;
-}
-
-.plane[data-weather='fog'] .plane__scene::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom,
-    rgba(200, 200, 200, 0.15) 0%,
-    rgba(200, 200, 200, 0.08) 50%,
-    rgba(200, 200, 200, 0.12) 100%);
-  pointer-events: none;
-  z-index: 10;
-}
-
-/* ── 구름 층(안개 강화) ── */
-.plane[data-weather='fog'] .plane__craft {
-  filter: drop-shadow(0 0 4px rgba(200, 200, 200, 0.4));
-}
-
-/* ── 금요일: 불금 장식 ── */
-.plane[data-weekday='5']::before {
-  content: '🎉 불금 🎉';
-  position: absolute;
-  top: 10%;
-  left: 50%;
-  translate: -50% 0;
-  font-size: clamp(12px, 4cqw, 20px);
-  font-weight: 900;
-  color: #ff6b6b;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  animation: plane-friday-bounce 2s ease-in-out infinite;
-  pointer-events: none;
-  z-index: 20;
-}
-
-@keyframes plane-friday-bounce {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-8px) scale(1.1); }
-}
-
-/* 움직임 줄이기 */
-:root[data-motion='reduced'] {
-  .plane[data-weather='rain'] .plane__craft {
-    animation: none;
-  }
-  .plane[data-weather='rain'] .plane__scene::after {
-    animation: none;
-  }
-  .plane[data-weather='snow'] .plane__craft {
-    animation: none;
-  }
-  .plane[data-weather='snow'] .plane__scene::after {
-    animation: none;
-  }
-  .plane[data-weekday='5']::before {
-    animation: none;
-  }
+/* 식탁보 — 계절 체크. */
+.plane[class*='amb--'] .plane__table { background: repeating-conic-gradient(var(--cloth-1) 0 25%, var(--cloth-2) 0 50%) 0 0 / 14px 14px; }
+[data-theme='dark'] .plane[class*='amb--'] .plane__table {
+  background: repeating-conic-gradient(color-mix(in oklch, var(--cloth-1) 45%, black) 0 25%, oklch(0.32 0.02 60) 0 50%) 0 0 / 14px 14px;
 }

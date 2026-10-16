@@ -33,7 +33,12 @@ import {
 import { seededRandom } from '../../lib/random';
 import { prefersReducedMotion, type GameProps } from './types';
 import { planeSfxLater, type PlaneSfxName, type SfxName } from '../../lib/sfx';
+import { useAmbience } from '../../hooks/useAmbience';
+import { Horizon } from './scene/Horizon';
+import { SceneWeather } from './scene/SceneWeather';
+import { ambienceClasses } from './scene/outfit';
 import './PaperPlane.css';
+import './PaperPlane.ambience.css';
 
 interface PlaneState {
   run: number;
@@ -103,6 +108,7 @@ function planeSounds(plan: PlanePlan, marks: Mark[]): [number, SfxName | PlaneSf
 }
 
 export function PaperPlane({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
+  const ambience = useAmbience();
   const count = candidates.length;
   const [state, setState] = useState<PlaneState>({ run: -1, now: 0 });
   const layout = useMemo(() => planeLayout(count), [count]);
@@ -195,7 +201,7 @@ export function PaperPlane({ candidates, winnerIndex, spinning, run, onSpinEnd, 
 
   return (
     <div
-      className={['plane', expanded ? 'plane--big' : '', roomy ? 'plane--roomy' : '', settled ? 'plane--settled' : ''].filter(Boolean).join(' ')}
+      className={['plane', ambienceClasses(ambience), expanded ? 'plane--big' : '', roomy ? 'plane--roomy' : '', settled ? 'plane--settled' : ''].filter(Boolean).join(' ')}
       // 장면 폭 ÷ 높이. 크게 보기는 이 비로 남는 높이에 맞춘다(desktop.css).
       style={{ '--fit': layout.aspect.toFixed(4) } as React.CSSProperties}
     >
@@ -215,9 +221,14 @@ export function PaperPlane({ candidates, winnerIndex, spinning, run, onSpinEnd, 
       >
         <span className="plane__sign plane__sign--start" aria-hidden="true">책상</span>
         <span className={['plane__sign', 'plane__sign--table', landed ? 'plane__sign--lit' : ''].filter(Boolean).join(' ')} aria-hidden="true">
-          🍱 점심
+          {ambience.weekday === 5 ? '🎉 불금 점심' : '🍱 점심'}
         </span>
         <span className="plane__city" aria-hidden="true" />
+        <span className="plane__outside" aria-hidden="true">
+          <Horizon season={ambience.season} className="plane__hz" />
+          <SceneWeather weather={ambience.weather} />
+        </span>
+        <span className="plane__garland" aria-hidden="true" />
         <span className="plane__table" aria-hidden="true" />
         <span className="plane__floor" aria-hidden="true" />
 
