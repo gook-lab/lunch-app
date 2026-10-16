@@ -26,7 +26,14 @@ import {
 import { seededRandom } from '../../lib/random';
 import { penaltySfxLater, type PenaltySfxName, type SfxName } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
+import { useAmbience } from '../../hooks/useAmbience';
+import { SEASON_NAME, type AmbienceWeather } from '../../lib/ambience';
+import { SceneWeather } from './scene/SceneWeather';
+import { ambienceClasses } from './scene/outfit';
 import './Penalty.css';
+import './Penalty.ambience.css';
+
+const SEASON_BALL = { spring: '🌸', summer: '☀️', autumn: '🍁', winter: '❄️' } as const;
 
 /**
  * stare: 컷신 — 눈싸움 · run: 도움닫기 · kick: 뻥 · fly: 카메라가 공을 따라간다
@@ -65,6 +72,7 @@ function afterVars(layout: PitchLayout, shot: Shot): React.CSSProperties {
 }
 
 export function Penalty({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
+  const ambience = useAmbience();
   const count = candidates.length;
   const [state, setState] = useState<PenaltyState>({ run: -1, shot: 0, phase: 'stare' });
   const layout = useMemo(() => pitchLayout(count), [count]);
@@ -241,7 +249,7 @@ export function Penalty({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
 
   return (
     <div
-      className={['penalty', expanded ? 'penalty--big' : '', settled ? 'penalty--settled' : ''].filter(Boolean).join(' ')}
+      className={['penalty', 'scene-outfit', ambienceClasses(ambience), expanded ? 'penalty--big' : '', settled ? 'penalty--settled' : ''].filter(Boolean).join(' ')}
       style={{ '--fit': layout.aspect.toFixed(4) } as React.CSSProperties}
     >
       <div
@@ -277,7 +285,10 @@ export function Penalty({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
                 <span key={k} style={{ '--i': k, '--h': (k * 67) % 360 } as React.CSSProperties} />
               ))}
             </span>
-            <span className="penalty__board">⚽ 점심 리그 · 오늘의 메뉴 결정전 · ⚽ 점심 리그 · 오늘의 메뉴 결정전</span>
+            <span className="penalty__board">
+              {/* 전광판 — 계절 리그 이름, 금요일엔 불금 특집 */}
+              {Array.from({ length: 2 }, () => `${SEASON_BALL[ambience.season]} 점심 ${SEASON_NAME[ambience.season]} 리그 · ${ambience.weekday === 5 ? '불금 특집 · ' : ''}오늘의 메뉴 결정전`).join(' · ')}
+            </span>
           </div>
 
           {/* 골문 — 골망 위에 구역, 그 위에 골대 테. */}
@@ -400,6 +411,8 @@ export function Penalty({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
           )}
         </div>
 
+        {/* 날씨 — 안개는 관중석까지만(골문 이름표가 흐려지지 않게) */}
+        <SceneWeather weather={ambience.weather} band={[0, layout.stands]} />
         {/* 화면에 붙은 효과(카메라 배율과 상관없음). */}
         <div className="penalty__fx" aria-hidden="true">
           {phase && phase !== 'settle' && (
@@ -439,7 +452,7 @@ export function Penalty({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
         </div>
 
         {cut && shot && (
-          <Cutscene key={`${run}-${shotIdx}`} phase={phase} final={final} shot={shotIdx} stareMs={shot.runMs - shot.stareMs} runMs={shot.kickMs - shot.runMs} />
+          <Cutscene key={`${run}-${shotIdx}`} phase={phase} final={final} shot={shotIdx} stareMs={shot.runMs - shot.stareMs} runMs={shot.kickMs - shot.runMs} weather={ambience.weather} />
         )}
       </div>
       <p className="penalty__status" aria-live="polite">
@@ -464,7 +477,14 @@ function Keeper() {
         <circle cx="3" cy="14" r="6" className="penalty__k-glove" />
         <circle cx="57" cy="14" r="6" className="penalty__k-glove" />
         <circle cx="30" cy="16" r="11" className="penalty__k-head" />
-        <path d="M19 14 Q30 1 41 14 Q30 9 19 14 Z" className="penalty__k-hair" />
+        <path d="M19 14 Q30 1 41 14 Q30 9 19 14 Z" className="penalty__k-hair acc-base" />
+        <path d="M18.6 15 Q18.6 3.5 30 3.5 Q41.4 3.5 41.4 15 Q30 10.5 18.6 15 Z" className="acc acc-beanie" />
+        <circle cx="30" cy="3.5" r="2.8" className="acc acc-pom" />
+        <path d="M17 22 Q15.5 2.5 30 2.5 Q44.5 2.5 43 22 Q40.5 10 30 10 Q19.5 10 17 22 Z" className="acc acc-hood" />
+        <ellipse cx="30" cy="9.5" rx="15" ry="3" className="acc acc-brim" />
+        <path d="M22.5 9.5 Q23.5 1.5 30 1.5 Q36.5 1.5 37.5 9.5 Z" className="acc acc-crown" />
+        <g className="acc acc-flower"><circle cx="21" cy="8" r="2.2" /><circle cx="24" cy="6.5" r="2.2" /><circle cx="22.6" cy="10" r="2.2" /><circle cx="22.5" cy="8.2" r="1.3" className="acc-flower__eye" /></g>
+        <path d="M21 26.5 Q30 30.5 39 26.5 L39.5 29.5 Q30 33.5 20.5 29.5 Z" className="acc acc-scarf" />
         <circle cx="26" cy="17" r="1.6" className="penalty__k-eye" />
         <circle cx="34" cy="17" r="1.6" className="penalty__k-eye" />
         <path d="M27 22 Q30 24 33 22" className="penalty__k-mouth" />
@@ -484,6 +504,12 @@ function MiniKicker() {
       <rect x="10" y="17" width="20" height="19" rx="6" className="penalty__mini-body" />
       <text x="20" y="31" className="penalty__mini-num">10</text>
       <circle cx="20" cy="11" r="7.5" className="penalty__mini-head" />
+      <path d="M12.3 11.5 Q12.3 3 20 3 Q27.7 3 27.7 11.5 Q20 8.5 12.3 11.5 Z" className="acc acc-beanie" />
+      <circle cx="20" cy="3" r="2.2" className="acc acc-pom" />
+      <path d="M11 16 Q10 2.2 20 2.2 Q30 2.2 29 16 Q27 8 20 8 Q13 8 11 16 Z" className="acc acc-hood" />
+      <ellipse cx="20" cy="7" rx="11" ry="2.4" className="acc acc-brim" />
+      <path d="M15 7 Q15.6 1.4 20 1.4 Q24.4 1.4 25 7 Z" className="acc acc-crown" />
+      <rect x="12" y="17" width="16" height="3.2" rx="1.5" className="acc acc-scarf" />
     </svg>
   );
 }
@@ -492,7 +518,7 @@ function MiniKicker() {
  * 컷신 — 눈싸움(키커와 골키퍼가 화면을 반씩 나눠 노려본다) → 도움닫기(옆모습으로 달려온다)
  * → 뻥(발이 공을 차고 공이 찌그러지며 튀어 나간다). fly 가 시작되면 번지며 경기장으로 넘어간다.
  */
-function Cutscene({ phase, final, shot, stareMs, runMs }: { phase: Phase | null; final: boolean; shot: number; stareMs: number; runMs: number }) {
+function Cutscene({ phase, final, shot, stareMs, runMs, weather }: { phase: Phase | null; final: boolean; shot: number; stareMs: number; runMs: number; weather: AmbienceWeather }) {
   const stage = phase === 'stare' ? 'stare' : phase === 'run' ? 'run' : 'kick';
   return (
     <div
@@ -540,6 +566,7 @@ function Cutscene({ phase, final, shot, stareMs, runMs }: { phase: Phase | null;
       ) : (
         <>
           <span className="penalty__cut-bg" />
+          <SceneWeather weather={weather === 'fog' ? 'cloudy' : weather} />
           {final && <span className="penalty__focus" />}
           <span className="penalty__speed" />
           <svg className="penalty__hero" viewBox="0 0 260 180">
@@ -553,7 +580,14 @@ function Cutscene({ phase, final, shot, stareMs, runMs }: { phase: Phase | null;
               <line x1="88" y1="68" x2="66" y2="94" className="penalty__h-arm" />
               <line x1="124" y1="68" x2="146" y2="88" className="penalty__h-arm" />
               <circle cx="108" cy="38" r="22" className="penalty__h-head" />
-              <path d="M86 34 Q96 6 128 24 Q120 30 86 34 Z" className="penalty__h-hair" />
+              <path d="M86 34 Q96 6 128 24 Q120 30 86 34 Z" className="penalty__h-hair acc-base" />
+              <path d="M85.5 36 Q85.5 14 108 14 Q130.5 14 130.5 36 Q108 28 85.5 36 Z" className="acc acc-beanie" />
+              <circle cx="108" cy="13" r="6" className="acc acc-pom" />
+              <path d="M83 50 Q80 12 108 12 Q136 12 133 50 Q128 26 108 26 Q88 26 83 50 Z" className="acc acc-hood" />
+              <ellipse cx="108" cy="24" rx="32" ry="6" className="acc acc-brim" />
+              <path d="M92 24 Q94 6 108 6 Q122 6 124 24 Z" className="acc acc-crown" />
+              <g className="acc acc-flower"><circle cx="92" cy="22" r="4.4" /><circle cx="98" cy="18" r="4.4" /><circle cx="95" cy="27" r="4.4" /><circle cx="95" cy="22.4" r="2.6" className="acc-flower__eye" /></g>
+              <path d="M90 58 Q108 66 126 58 L127 65 Q108 73 89 65 Z" className="acc acc-scarf" />
               <circle cx="120" cy="38" r="3" className="penalty__h-eye" />
               <path d="M114 50 Q120 53 126 49" className="penalty__h-mouth" />
               <g className="penalty__h-kickleg">

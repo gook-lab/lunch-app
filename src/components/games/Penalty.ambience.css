@@ -1,0 +1,44 @@
+/*
+ * 승부차기 — 계절·날씨·요일. 잔디 두 줄 색(--grass/--grass2)과 컷신 잔디(--cut-g*), 관중 옷차림,
+ * 가을 낙엽·겨울 눈 둑, 전광판 계절 리그 이름(Penalty.tsx), 선수 덧옷, 날씨. 연출 전용.
+ */
+.amb--spring .penalty__pitch { --grass: oklch(0.79 0.13 135); --grass2: oklch(0.75 0.13 135); }
+.amb--summer .penalty__pitch { --grass: oklch(0.66 0.17 145); --grass2: oklch(0.61 0.17 145); }
+.amb--autumn .penalty__pitch { --grass: oklch(0.74 0.11 128); --grass2: oklch(0.7 0.11 118); }
+.amb--winter .penalty__pitch { --grass: oklch(0.66 0.08 160); --grass2: oklch(0.62 0.08 160); }
+.amb--spring .penalty__cut { --cut-g1: oklch(0.8 0.13 135); --cut-g2: oklch(0.76 0.13 135); }
+.amb--summer .penalty__cut { --cut-g1: oklch(0.67 0.17 145); --cut-g2: oklch(0.62 0.17 145); }
+.amb--autumn .penalty__cut { --cut-g1: oklch(0.75 0.11 125); --cut-g2: oklch(0.71 0.11 115); }
+.amb--winter .penalty__cut { --cut-g1: oklch(0.9 0.02 230); --cut-g2: oklch(0.86 0.025 230); --cut-g1d: oklch(0.62 0.02 240); }
+[data-theme='dark'] .amb--autumn .penalty__pitch { --grass: oklch(0.45 0.08 110); --grass2: oklch(0.41 0.08 105); }
+[data-theme='dark'] .amb--winter .penalty__pitch { --grass: oklch(0.42 0.05 165); --grass2: oklch(0.38 0.05 165); }
+[data-theme='dark'] .amb--spring .penalty__pitch { --grass: oklch(0.48 0.1 140); --grass2: oklch(0.44 0.1 140); }
+
+/* 가을 — 경기장에 떨어진 낙엽, 겨울 — 양옆 눈 둑. 골문·스폿 근처는 비운다. */
+.penalty__world::after { content: ''; position: absolute; inset: 0; pointer-events: none; }
+.amb--autumn .penalty__world::after {
+  background:
+    radial-gradient(ellipse 1.4cqw 0.9cqw at 8% 72%, oklch(0.66 0.18 45) 90%, transparent),
+    radial-gradient(ellipse 1.4cqw 0.9cqw at 14% 86%, oklch(0.6 0.19 30) 90%, transparent),
+    radial-gradient(ellipse 1.4cqw 0.9cqw at 88% 78%, oklch(0.8 0.15 85) 90%, transparent),
+    radial-gradient(ellipse 1.4cqw 0.9cqw at 93% 64%, oklch(0.66 0.18 45) 90%, transparent),
+    radial-gradient(ellipse 1.4cqw 0.9cqw at 30% 94%, oklch(0.8 0.15 85) 90%, transparent),
+    radial-gradient(ellipse 1.4cqw 0.9cqw at 72% 92%, oklch(0.6 0.19 30) 90%, transparent);
+}
+.amb--winter .penalty__world::after {
+  background:
+    radial-gradient(ellipse 9cqw 14% at 0% 100%, oklch(0.97 0.006 240) 70%, transparent 72%),
+    radial-gradient(ellipse 9cqw 14% at 100% 100%, oklch(0.97 0.006 240) 70%, transparent 72%),
+    radial-gradient(ellipse 5cqw 8% at 20% 100%, oklch(0.97 0.006 240) 70%, transparent 72%),
+    radial-gradient(ellipse 5cqw 8% at 80% 100%, oklch(0.97 0.006 240) 70%, transparent 72%);
+}
+[data-theme='dark'] .amb--winter .penalty__world::after {
+  background:
+    radial-gradient(ellipse 9cqw 14% at 0% 100%, oklch(0.75 0.01 240) 70%, transparent 72%),
+    radial-gradient(ellipse 9cqw 14% at 100% 100%, oklch(0.75 0.01 240) 70%, transparent 72%);
+}
+
+/* 관중 옷차림 — 겨울은 털모자, 여름은 밀짚모자, 비 오면 우비 모자 */
+.amb--winter .penalty__fans span { background: radial-gradient(ellipse at 50% 14%, oklch(0.6 0.19 calc(var(--h) * 1deg)) 0 30%, transparent 32%), radial-gradient(circle at 50% 34%, oklch(0.82 0.06 60) 0 26%, transparent 27%), linear-gradient(to bottom, transparent 52%, oklch(0.4 0.06 255) 52%); }
+.amb--summer .penalty__fans span { background: radial-gradient(ellipse 70% 14% at 50% 14%, oklch(0.86 0.1 85) 0 90%, transparent 92%), radial-gradient(circle at 50% 32%, oklch(0.82 0.06 60) 0 28%, transparent 29%), linear-gradient(to bottom, transparent 52%, oklch(0.78 0.16 calc(var(--h) * 1deg)) 52%); }
+.amb--w-rain .penalty__fans span { background: radial-gradient(ellipse at 50% 20%, oklch(0.86 0.16 95) 0 40%, transparent 42%), radial-gradient(circle at 50% 36%, oklch(0.82 0.06 60) 0 24%, transparent 25%), linear-gradient(to bottom, transparent 52%, oklch(0.86 0.16 95) 52%); }
