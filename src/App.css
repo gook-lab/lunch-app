@@ -4026,6 +4026,9 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 .party__ask { font-size: var(--fs-sm); color: var(--color-text); }
 
 .party-sheet { max-height: 92svh; overflow-y: auto; }
+/* 데스크톱 팟 모으기 — 가운데 창. 폭은 메뉴 다섯·시간 네 칸이 한 줄에 들어가게. */
+.party-dialog { width: min(520px, 92vw); max-height: 88svh; overflow-y: auto; }
+.party-dialog__desc { margin: 0 0 var(--space-4); font-size: var(--fs-sm); color: var(--color-neutral-800); }
 .party-form { display: grid; gap: var(--space-4); }
 .party-form__field { margin: 0; padding: 0; border: 0; min-width: 0; display: grid; gap: var(--space-2); }
 .party-form__field > legend { padding: 0; margin-bottom: var(--space-2); font-size: var(--fs-sm); font-weight: 600; }
@@ -4036,7 +4039,8 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
   padding: 0 var(--space-3);
   border: 1px solid var(--color-neutral-400);
   border-radius: var(--radius-lg);
-  background: var(--color-bg);
+  /* 창 바탕 위에 투명하게. --color-bg 로 칠하니 어두운 테마에서 단추가 창보다 검게 떠 보였다(10/16 사용자). */
+  background: transparent;
   color: var(--color-text);
   font: inherit;
   font-size: var(--fs-sm);

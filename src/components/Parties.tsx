@@ -14,6 +14,7 @@ import type { Place } from '../lib/candidates';
 import type { DayId } from '../lib/date';
 import { MENUS, categoryHue } from '../lib/category';
 import { avatarOf, avatarsIn } from '../lib/avatar';
+import { useMedia } from '../hooks/useMedia';
 import {
   PARTY_DEFAULT_MAX,
   PARTY_MAX,
@@ -74,6 +75,8 @@ function useNow(): Date {
   return now;
 }
 
+const FORM_DESC = '같이 갈 사람을 모아요. 이름 대신 동물 아바타로 보여요.';
+
 const menuIcon = (category: string) => MENUS.find((m) => m.id === category)?.icon ?? '🍴';
 
 export function Parties({ day, parties, myUid, places, candidatesFor, preferredMode, actions, alerts = [], onDismissAlert }: Props) {
@@ -92,6 +95,23 @@ export function Parties({ day, parties, myUid, places, candidatesFor, preferredM
     a.type === 'joined' && a.uid
       ? `${avatarOf(a.uid, day).label}님이 ${a.category} 팟에 들어왔어요`
       : `${a.category} 팟이 곧 출발해요`;
+
+  const wide = useMedia('(min-width: 960px)');
+  const form = formOpen && (
+    <PartyForm
+      busy={busy === 'open'}
+      problem={problem}
+      onSubmit={async (input) => {
+        const message = partyInputProblem(input);
+        if (message) {
+          setProblem(message);
+          return;
+        }
+        if (await run('open', () => actions.open(input), '팟을 열지 못했어요. 잠시 뒤 다시 눌러 주세요.')) setFormOpen(false);
+      }}
+      onCancel={() => setFormOpen(false)}
+    />
+  );
 
   const run = async (key: string, task: () => Promise<void>, fail = '저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.') => {
     setBusy(key);
@@ -290,30 +310,24 @@ export function Parties({ day, parties, myUid, places, candidatesFor, preferredM
         </p>
       )}
 
-      <Sheet
-        open={formOpen}
-        onClose={() => setFormOpen(false)}
-        title="점심 팟 모으기"
-        description="같이 갈 사람을 모아요. 이름 대신 동물 아바타로 보여요."
-        className="party-sheet"
-      >
-        {formOpen && (
-          <PartyForm
-            busy={busy === 'open'}
-            problem={problem}
-            onSubmit={async (input) => {
-              const message = partyInputProblem(input);
-              if (message) {
-                setProblem(message);
-                return;
-              }
-              if (await run('open', () => actions.open(input), '팟을 열지 못했어요. 잠시 뒤 다시 눌러 주세요.'))
-                setFormOpen(false);
-            }}
-            onCancel={() => setFormOpen(false)}
-          />
-        )}
-      </Sheet>
+      {/* 휴대폰은 아래에서 올라오는 시트, 데스크톱은 가운데 창. 데스크톱에서도 시트를 쓰니
+          화면 아래에 붙어 "팟 열기" 단추가 잘렸다(10/16 사용자). */}
+      {wide ? (
+        <Modal open={formOpen} onClose={() => setFormOpen(false)} title="점심 팟 모으기" className="party-dialog">
+          <p className="party-dialog__desc">{FORM_DESC}</p>
+          {form}
+        </Modal>
+      ) : (
+        <Sheet
+          open={formOpen}
+          onClose={() => setFormOpen(false)}
+          title="점심 팟 모으기"
+          description={FORM_DESC}
+          className="party-sheet"
+        >
+          {form}
+        </Sheet>
+      )}
 
       <Modal
         open={gameFor !== null && gameParty !== null}
