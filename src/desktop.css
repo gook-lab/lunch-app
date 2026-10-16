@@ -289,3 +289,27 @@
   }
   .stage:not(.stage--full) > .modebar .modebar__icon { font-size: 20px; line-height: 1; }
 }
+
+/* 핀볼 데스크톱: 설정을 왼쪽 칼럼에, 게임 중에는 숨기고 보드 확장 */
+@media (min-width: 960px) {
+  .pinball .pinball__play {
+    display: grid;
+    grid-template-columns: minmax(0, 280px) 1fr;
+    gap: var(--space-3);
+    align-items: start;
+  }
+  .pinball__settings {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-height: 0;
+    overflow-y: auto;
+  }
+  /* 게임 중: 설정 숨기고 보드 확장 */
+  .pinball--spinning .pinball__play {
+    grid-template-columns: 1fr;
+  }
+  .pinball--spinning .pinball__settings {
+    display: none;
+  }
+}
