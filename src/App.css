@@ -210,8 +210,9 @@ body {
 .chip { position: relative; cursor: pointer; transition: background var(--motion-fast) var(--ease-out); }
 
 .modebar__more {
+  height: 100%;
   min-height: 44px;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-1);
   border: 1px dashed var(--color-neutral-500);
   background: var(--color-surface);
   color: var(--color-text);
@@ -223,6 +224,14 @@ body {
 
 .modebar__more:hover:not(:disabled) { border-color: var(--color-accent); color: var(--color-accent); }
 .modebar__more:disabled { cursor: not-allowed; opacity: 0.5; }
+
+.modebar-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px;
+  gap: 2px;
+}
+
+.modebar-shell__action { background: var(--color-neutral-300); padding: 2px 2px 2px 0; }
 
 /*
  * 터치 영역. 칩·도보 알약·카테고리 라벨은 보이는 크기가 작다(390px 실측:
@@ -1416,7 +1425,6 @@ footer.muted { text-align: center; }
   scroll-snap-type: x proximity;
   scrollbar-width: none;
   background: var(--color-neutral-300);
-  mask-image: linear-gradient(to right, var(--color-text) calc(100% - 24px), transparent);
 }
 .modebar::-webkit-scrollbar { display: none; }
 .modebar__item {

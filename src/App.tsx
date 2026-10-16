@@ -164,7 +164,16 @@ function focusIfLost(node: HTMLElement | null) {
 /** 처음 온 사람의 게임. 컷신·이벤트가 있는 활쏘기로 시작한다(10/15 사용자). games/index.ts 가 바로 싣는다. */
 const NO_IDS: string[] = [];
 const DEFAULT_MODE: GameMode = 'archery';
-const RECOMMENDED_MODE_IDS: GameMode[] = ['archery', 'wheel', 'ladder', 'claw', 'fishing', 'cards'];
+const RECOMMENDED_MODE_IDS: GameMode[] = [
+  'archery',
+  'wheel',
+  'ladder',
+  'claw',
+  'fishing',
+  'cards',
+  'pinball',
+  'tournament',
+];
 const ALL_MODE_IDS = new Set(GAME_MODES.map((item) => item.id));
 
 function revealPickedMode(node: HTMLElement | null) {
@@ -948,11 +957,11 @@ export default function App() {
    * Tab 이 오른쪽 메뉴 칩을 다 지난 뒤에 왼쪽 레일로 되돌아갔다(10/15 리뷰). 휴대폰은 칩 아래에
    * 보이므로 DOM 도 칩 뒤다. 자리(grid)는 CSS 가 정하므로 화면은 그대로다.
    */
-  const compactModes = compactGameIds(mode, recentGames, RECOMMENDED_MODE_IDS);
+  const compactModes = compactGameIds(mode, recentGames, RECOMMENDED_MODE_IDS, 8);
   const visibleModes = wide || showAllGames ? GAME_MODES : GAME_MODES.filter((item) => compactModes.includes(item.id));
   const hiddenGameCount = GAME_MODES.length - visibleModes.length;
-  const modebar = (
-    <div className="modebar" role="group" aria-label="방식" ref={revealPickedMode}>
+  const modeButtons = (
+    <>
       {visibleModes.map((m) => (
         <button
           key={m.id}
@@ -968,11 +977,22 @@ export default function App() {
           {m.label}
         </button>
       ))}
-      {!wide && (
+    </>
+  );
+  const modebar = wide ? (
+    <div className="modebar" role="group" aria-label="방식" ref={revealPickedMode}>
+      {modeButtons}
+    </div>
+  ) : (
+    <div className="modebar-shell">
+      <div className="modebar" role="group" aria-label="방식" ref={revealPickedMode}>
+        {modeButtons}
+      </div>
+      <div className="modebar-shell__action">
         <button type="button" className="modebar__more" onClick={() => setShowAllGames((open) => !open)} disabled={spinning}>
-          {showAllGames ? '게임 접기' : `다른 게임 보기 (${hiddenGameCount})`}
+          {showAllGames ? '게임 접기' : `게임 더 보기 (${hiddenGameCount})`}
         </button>
-      )}
+      </div>
     </div>
   );
 
@@ -1383,12 +1403,21 @@ export default function App() {
                           className="linkish result-bar__detail"
                           onClick={() => setResultOpen(true)}
                         >
-                          상세
+                          결과 보기
                         </button>
                         {/* 정한 뒤엔 모달과 같은 말로. 오늘 기록이 바뀌는 재추첨임을 분명히 한다. */}
                         <Button variant="secondary" onClick={spin} disabled={spinning}>
                           {confirmed ? '그래도 다시 뽑기' : '다시 뽑기'}
                         </Button>
+                        <button
+                          type="button"
+                          className="result-bar__clear"
+                          aria-label="결과 지우기"
+                          title="결과 지우기"
+                          onClick={clearBoard}
+                        >
+                          ✕
+                        </button>
                       </div>
                     </div>
                   )) : gate ? null : (
