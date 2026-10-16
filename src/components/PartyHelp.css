@@ -26,3 +26,19 @@
 .party__head .gametitle__help { min-height: 0; }
 /* 작은 화면에서 위·아래로 잘리지 않게 — 남은 높이만큼만 쓰고 안에서 스크롤. */
 .partyhelp { max-height: var(--radix-popover-content-available-height, 80svh); overflow-y: auto; overscroll-behavior: contain; }
+/* 처음 온 사람에게만 — (?) 오른쪽 위 강조색 점. 한 번 열면 사라진다. */
+.partyhelp__trigger--new { position: relative; }
+.partyhelp__trigger--new::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-surface);
+  animation: partyhelp-ping 1.6s ease-out infinite;
+}
+@keyframes partyhelp-ping { 0%, 60%, 100% { scale: 1; } 30% { scale: 1.35; } }
+@media (prefers-reduced-motion: reduce) { .partyhelp__trigger--new::after { animation: none; } }

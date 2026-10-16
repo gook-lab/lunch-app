@@ -39,8 +39,30 @@ const STEPS: { title: string; body: string; alt: string }[] = [
   },
 ];
 
+const SEEN_KEY = 'lunch-app:party-help-seen';
+
+function seenBefore(): boolean {
+  try {
+    return window.localStorage.getItem(SEEN_KEY) === '1';
+  } catch {
+    return true; // 기억할 수 없으면 점을 띄우지 않는다 — 매번 뜨면 거슬린다.
+  }
+}
+
 export function PartyHelp() {
   const [k, setK] = useState(0);
+  // 한 번도 안 열어 봤으면 (?) 에 작은 점 — 처음 온 사람에게만 "여기 설명 있어요".
+  const [fresh, setFresh] = useState(() => !seenBefore());
+  const open = () => {
+    setK(0);
+    if (!fresh) return;
+    setFresh(false);
+    try {
+      window.localStorage.setItem(SEEN_KEY, '1');
+    } catch {
+      // 다음에 점이 또 떠도 괜찮다.
+    }
+  };
   const step = STEPS[k];
   return (
     <Popover
@@ -48,7 +70,12 @@ export function PartyHelp() {
       aria-label="점심 팟 사용법"
       collisionPadding={12}
       trigger={
-        <button type="button" className="gametitle__help" aria-label="점심 팟 사용법 보기" onClick={() => setK(0)}>
+        <button
+          type="button"
+          className={fresh ? 'gametitle__help partyhelp__trigger--new' : 'gametitle__help'}
+          aria-label={fresh ? '점심 팟 사용법 보기, 새 안내' : '점심 팟 사용법 보기'}
+          onClick={open}
+        >
           ?
         </button>
       }
