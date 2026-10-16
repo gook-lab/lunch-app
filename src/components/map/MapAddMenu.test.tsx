@@ -20,7 +20,7 @@ describe('지도 가게 추가 메뉴 초점', () => {
         onGoTo={vi.fn()}
         onDirect={vi.fn()}
         onClose={vi.fn()}
-        returnFocus={map}
+        returnFocusRef={{ current: map }}
       />,
     );
 

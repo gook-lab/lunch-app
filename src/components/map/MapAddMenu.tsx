@@ -5,7 +5,7 @@
  *
  * 카카오 CustomOverlay 안에 portal 로 그린다. 글자는 전부 React 가 넣는다(XSS).
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import type { Place } from '../../lib/candidates';
 import type { NearbyHit } from './nearbyHits';
@@ -20,20 +20,20 @@ interface Props {
   onGoTo: (place: Place) => void;
   onDirect: () => void;
   onClose: () => void;
-  returnFocus?: HTMLElement | null;
+  returnFocusRef?: RefObject<HTMLElement | null>;
 }
 
-export function MapAddMenu({ host, hits, onPick, onGoTo, onDirect, onClose, returnFocus }: Props) {
+export function MapAddMenu({ host, hits, onPick, onGoTo, onDirect, onClose, returnFocusRef }: Props) {
   const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const before = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     closeRef.current?.focus({ preventScroll: true });
     return () => {
-      const target = before && before !== document.body && before.isConnected ? before : returnFocus;
+      const target = before && before !== document.body && before.isConnected ? before : returnFocusRef?.current;
       target?.focus({ preventScroll: true });
     };
-  }, [returnFocus]);
+  }, [returnFocusRef]);
 
   return createPortal(
     <div className="map-add" role="dialog" aria-label="이 자리에 가게 넣기">
