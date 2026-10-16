@@ -25,6 +25,7 @@ import { useAmbience } from '../../hooks/useAmbience';
 import { getFishDex, recordCaughtFish, fishName, specialsFor, type FishSpeciesId, type FishSpecial, FISH_SPECIALS, FISH_SPECIES_NAMES, FISH_EMOJI, SEASON_HUE, SPECIAL_LABEL, SPECIAL_MARK } from '../../lib/fishDex';
 import { Horizon } from './scene/Horizon';
 import { SceneWeather } from './scene/SceneWeather';
+import { Climax } from './scene/Climax';
 import { ambienceClasses } from './scene/outfit';
 import './Fishing.ambience.css';
 
@@ -58,6 +59,8 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
   const specialsKey = specials.join(',');
   const [state, setState] = useState<FishingState>({ run: -1, phase: 'cast', fish: 0 });
   const [showDex, setShowDex] = useState(false);
+  // 끝에서 두 번째 입질부터 긴박감을 켠다 — 마지막 입질에서 켜면 당첨 물고기를 미리 알려 주는 셈이다.
+  const [tenseRun, setTenseRun] = useState(-1);
   const layout = useMemo(() => pondLayout(count, seededRandom(LAYOUT_SEED + count)), [count]);
   // 생김새도 자리처럼 후보 수마다 고정 — 판마다 바뀌면 '아까 그 복어'를 따라갈 수 없다.
   const looks = useMemo(() => fishLooks(count, layout.cols, seededRandom(LOOK_SEED + count)), [count, layout.cols]);
@@ -100,6 +103,8 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
       if (last) sounds.push([leaveMs, 'splash']);
     });
     at(plan.landMs, 'land', winnerIndex);
+    const tenseAt = plan.bites.at(-2)?.biteMs;
+    if (tenseAt !== undefined) timers.push(window.setTimeout(() => setTenseRun(run), tenseAt));
     timers.push(window.setTimeout(() => {
       // 낚은 물고기를 도감에 기록한다.
       if (winner) {
@@ -199,6 +204,7 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
         </span>
         {season === 'winter' && phase && aim && <span className="fishing__hole" style={{ left: `${lineX}%` }} aria-hidden="true" />}
         <SceneWeather weather={weather} band={[0, SKY]} />
+        <Climax on={live && tenseRun === run && state.phase !== 'land'} label="곧 낚여요!" />
         {phase && aim && (
           <>
             {/* 낚싯줄은 하늘 위에서 곧장 내려온다. 자리·길이는 transition 으로 옮긴다. */}

@@ -36,6 +36,7 @@ import { planeSfxLater, type PlaneSfxName, type SfxName } from '../../lib/sfx';
 import { useAmbience } from '../../hooks/useAmbience';
 import { Horizon } from './scene/Horizon';
 import { SceneWeather } from './scene/SceneWeather';
+import { Climax } from './scene/Climax';
 import { ambienceClasses } from './scene/outfit';
 import './PaperPlane.css';
 import './PaperPlane.ambience.css';
@@ -229,6 +230,7 @@ export function PaperPlane({ candidates, winnerIndex, spinning, run, onSpinEnd, 
           <SceneWeather weather={ambience.weather} />
         </span>
         <span className="plane__garland" aria-hidden="true" />
+        <Climax on={showFx && !landed && count > 2 && alive <= 2} label="마지막 두 대!" />
         <span className="plane__table" aria-hidden="true" />
         <span className="plane__floor" aria-hidden="true" />
 

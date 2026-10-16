@@ -43,3 +43,5 @@
   .climax__edge { animation: none; opacity: 0.5; }
   .climax__banner { animation: none; }
 }
+/* 짝 맞추기는 뿌리가 흐름 배치라 긴박감 층의 기준을 세워 준다. */
+.memory:has(> .climax) { position: relative; }

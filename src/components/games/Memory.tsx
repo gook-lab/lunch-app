@@ -26,6 +26,7 @@ import { prefersReducedMotion, type GameProps } from './types';
 import { sfx } from '../../lib/sfx';
 import { useAmbience } from '../../hooks/useAmbience';
 import { ambienceClasses } from './scene/outfit';
+import { Climax } from './scene/Climax';
 import './scene/scene.css';
 import './scene/cardback.css';
 
@@ -214,6 +215,8 @@ export function Memory({
   return (
     <div className={['memory', ambienceClasses(ambience), expanded ? 'memory--big' : ''].filter(Boolean).join(' ')}>
       <p className="muted small memory__hint">{hint}</p>
+      {/* 안 뒤집힌 카드가 4장 이하 — 두 장만 더 열리면 판이 굳는다. */}
+      <Climax on={live && !board.done && board.faces.length > 4 && board.faces.filter((f) => f === null).length <= 4} label="마지막 고비!" />
       {live && (
         <ul className="memory__left" aria-label="남아 있는 가게">
           {board.places.map((p) => {
