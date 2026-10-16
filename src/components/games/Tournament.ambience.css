@@ -1,0 +1,60 @@
+/*
+ * 토너먼트 분위기 — 맞대결 컷신 경기장 빛이 계절을 타고(봄 분홍·여름 청록·가을 호박·겨울 얼음),
+ * 날씨가 경기장에 내리며, 왼쪽 위에 계절 리그 배지(금요일 불금 리그). 맞붙는 카드는 옷차림에 맞는 모자를 쓴다.
+ * 당첨·대진과는 상관없다.
+ */
+.tour { --arena-1: oklch(0.36 0.09 280); --arena-2: oklch(0.2 0.05 270); --arena-3: oklch(0.14 0.03 265); }
+.tour.amb--spring { --arena-1: oklch(0.42 0.1 345); --arena-2: oklch(0.24 0.06 330); --arena-3: oklch(0.15 0.03 320); }
+.tour.amb--summer { --arena-1: oklch(0.4 0.09 210); --arena-2: oklch(0.22 0.06 230); --arena-3: oklch(0.14 0.03 240); }
+.tour.amb--autumn { --arena-1: oklch(0.42 0.1 50); --arena-2: oklch(0.24 0.06 40); --arena-3: oklch(0.15 0.03 35); }
+.tour.amb--winter { --arena-1: oklch(0.42 0.06 240); --arena-2: oklch(0.24 0.05 250); --arena-3: oklch(0.15 0.03 255); }
+.tour[class*='amb--'] .tour__cut-bg {
+  background: radial-gradient(ellipse 60% 70% at 50% 46%, var(--arena-1) 0%, var(--arena-2) 60%, var(--arena-3) 100%);
+}
+.tour__cut-bg .scene-wx { z-index: 0; }
+.tour__cut-bg .scene-wx--rain { background: none; }
+
+/* ── 리그 배지 ── */
+.tour__league {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 3;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: clamp(10px, 2.8cqw, 13px);
+  font-weight: 800;
+  white-space: nowrap;
+  color: oklch(0.97 0.01 90);
+  background: oklch(1 0 0 / 0.14);
+  box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.3);
+}
+.tour__cut--final .tour__league { top: 20px; }
+.tour.amb--fri .tour__league { background: oklch(0.6 0.22 25); box-shadow: none; }
+
+/* ── 카드 모자 — 카드 위 가장자리에 걸친다. ── */
+.tour__hat { display: none; }
+.tour[class*='outfit--'] .tour__hat {
+  display: block;
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 38%;
+  height: clamp(10px, 4cqw, 20px);
+  translate: -50% -78%;
+  pointer-events: none;
+}
+.tour__hat::before, .tour__hat::after { content: ''; position: absolute; }
+/* 겨울 — 털모자와 방울. */
+.tour.outfit--winter .tour__hat { border-radius: 50% 50% 4px 4px / 100% 100% 4px 4px; background: repeating-linear-gradient(90deg, oklch(0.6 0.19 25) 0 4px, oklch(0.54 0.18 25) 4px 6px); box-shadow: inset 0 -4px 0 oklch(0.96 0.01 90); }
+.tour.outfit--winter .tour__hat::after { left: 50%; top: -6px; width: 9px; height: 9px; translate: -50% 0; border-radius: 50%; background: oklch(0.97 0.01 90); }
+/* 비 — 노란 우비 모자. */
+.tour.outfit--rain .tour__hat { width: 52%; border-radius: 50% 50% 6px 6px / 100% 100% 6px 6px; background: oklch(0.86 0.16 95); box-shadow: inset 0 -3px 0 oklch(0.7 0.14 85); }
+/* 여름 — 밀짚모자(넓은 챙 + 머리). */
+.tour.outfit--summer .tour__hat { width: 64%; height: clamp(5px, 1.6cqw, 8px); translate: -50% -40%; border-radius: 50%; background: oklch(0.86 0.1 85); box-shadow: 0 0 0 1px oklch(0.62 0.09 75); }
+.tour.outfit--summer .tour__hat::before { left: 25%; right: 25%; bottom: 60%; height: clamp(8px, 2.8cqw, 14px); border-radius: 50% 50% 0 0 / 100% 100% 0 0; background: oklch(0.86 0.1 85); box-shadow: inset 0 -3px 0 oklch(0.62 0.18 25); }
+/* 봄 — 꽃 한 송이. */
+.tour.outfit--spring .tour__hat { width: clamp(14px, 5cqw, 24px); aspect-ratio: 1; height: auto; left: 22%; translate: -50% -55%; border-radius: 50%; background: radial-gradient(circle, oklch(0.88 0.14 90) 0 22%, transparent 24%), conic-gradient(oklch(0.86 0.1 355) 0 100%); -webkit-mask: radial-gradient(circle at 50% 18%, black 30%, transparent 31%), radial-gradient(circle at 82% 45%, black 30%, transparent 31%), radial-gradient(circle at 70% 85%, black 30%, transparent 31%), radial-gradient(circle at 30% 85%, black 30%, transparent 31%), radial-gradient(circle at 18% 45%, black 30%, transparent 31%), radial-gradient(circle, black 30%, transparent 31%); mask: radial-gradient(circle at 50% 18%, black 30%, transparent 31%), radial-gradient(circle at 82% 45%, black 30%, transparent 31%), radial-gradient(circle at 70% 85%, black 30%, transparent 31%), radial-gradient(circle at 30% 85%, black 30%, transparent 31%), radial-gradient(circle at 18% 45%, black 30%, transparent 31%), radial-gradient(circle, black 30%, transparent 31%); }
+/* 가을 — 기울인 베레모. */
+.tour.outfit--autumn .tour__hat { width: 44%; translate: -50% -60%; rotate: -8deg; border-radius: 50%; background: oklch(0.5 0.12 40); box-shadow: inset 0 -3px 0 oklch(0.4 0.1 40); }
+.tour.outfit--autumn .tour__hat::after { left: 50%; top: -4px; width: 3px; height: 6px; translate: -50% 0; border-radius: 2px; background: oklch(0.4 0.1 40); }

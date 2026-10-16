@@ -31,7 +31,14 @@ import {
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
 import { tournbalSfxLater, type TournbalSfx } from '../../lib/sfx';
 import type { SfxName } from '../../lib/sfx';
+import { useAmbience } from '../../hooks/useAmbience';
+import { SEASON_NAME } from '../../lib/ambience';
+import { SceneWeather } from './scene/SceneWeather';
+import { ambienceClasses } from './scene/outfit';
 import './Tournament.css';
+import './Tournament.ambience.css';
+
+const SEASON_MARK = { spring: '🌸', summer: '🌊', autumn: '🍁', winter: '❄️' } as const;
 
 interface Shown {
   run: number;
@@ -43,6 +50,7 @@ interface Shown {
 const CONFETTI = 18;
 
 export function Tournament({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
+  const ambience = useAmbience();
   const count = candidates.length;
   const [cheer, setCheer] = useState<number | null>(null);
   const [shown, setShown] = useState<Shown>({ run: -1, k: -1 });
@@ -106,7 +114,7 @@ export function Tournament({ candidates, winnerIndex, spinning, run, onSpinEnd, 
   // 아직 안 돌렸으면 응원할 가게 고르기 판.
   if (!bracket || !plan || !cue) {
     return (
-      <div className={expanded ? 'tour tour--big' : 'tour'}>
+      <div className={['tour', ambienceClasses(ambience), expanded ? 'tour--big' : ''].filter(Boolean).join(' ')}>
         <p className="muted small tour__hint">
           {cheer === null
             ? '응원할 가게를 하나 골라 보세요. 응원은 결과에 영향이 없어요.'
@@ -197,7 +205,7 @@ export function Tournament({ candidates, winnerIndex, spinning, run, onSpinEnd, 
 
   return (
     <div
-      className={['tour', 'tour--live', expanded ? 'tour--big' : '', settled ? 'tour--settled' : ''].filter(Boolean).join(' ')}
+      className={['tour', 'tour--live', ambienceClasses(ambience), expanded ? 'tour--big' : '', settled ? 'tour--settled' : ''].filter(Boolean).join(' ')}
     >
       <ol className="tour__steps" aria-label="진행">
         {bracket.rounds.slice(0, -1).map((rd, i) => (
@@ -336,6 +344,7 @@ function Clash({
   feature: Feature;
   shout: { text: string; tone: string; key: number } | null;
 }) {
+  const ambience = useAmbience();
   const fighting = phase === 'fight' || phase === 'shout' || phase === 'ko' || phase === 'out';
   const ko = phase === 'ko' || phase === 'out';
   // 게이지는 왼쪽(a) 몫이다. a 가 이긴 쪽이면 그대로, 아니면 뒤집는다.
@@ -356,6 +365,7 @@ function Clash({
           .filter(Boolean)
           .join(' ')}
       >
+        <span className="tour__hat" aria-hidden="true" />
         <span className="tour__eyes" aria-hidden="true">
           <span />
           <span />
@@ -380,7 +390,12 @@ function Clash({
         .join(' ')}
       aria-hidden="true"
     >
-      <span className="tour__cut-bg" />
+      <span className="tour__cut-bg">
+        <SceneWeather weather={ambience.weather} band={[0, 30]} />
+      </span>
+      <span className="tour__league">
+        {SEASON_MARK[ambience.season]} {ambience.weekday === 5 ? '불금 리그' : `${SEASON_NAME[ambience.season]} 리그`}
+      </span>
       {final && (
         <>
           <span className="tour__bar tour__bar--top" />
