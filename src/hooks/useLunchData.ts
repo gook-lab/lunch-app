@@ -39,8 +39,6 @@ export interface LunchData {
   reload: () => void;
   /** 회사 위치가 바뀌면 달라지는 값. 지도처럼 회사 좌표로 그린 것을 새로 만들 때 쓴다. */
   officeKey: string;
-  /** 현재 회사 위치 (null 이면 설정되지 않음). */
-  office: { lat: number; lng: number } | null;
 }
 
 /**
@@ -71,7 +69,6 @@ export function useLunchData(day: DayId): LunchData {
   const [nonce, setNonce] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [officeKey, setOfficeKey] = useState('env');
-  const [office, setOffice] = useState<{ lat: number; lng: number } | null>(null);
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
 
@@ -87,7 +84,6 @@ export function useLunchData(day: DayId): LunchData {
       .then(([p, v, office]) => {
         if (!alive) return;
         setOfficeOverride(office);
-        setOffice(office);
         setOfficeKey(office ? `${office.lat},${office.lng}` : 'env');
         // 지운 가게는 화면 어디에도 안 보인다. 방문 기록은 남아 있어도 이름 대신 빠진다.
         setPlaces(p.filter((x) => !x.removed).map((x) => withMenu(withCurrentWalk(x))));
@@ -125,5 +121,5 @@ export function useLunchData(day: DayId): LunchData {
     return [...withoutToday, todayVisit];
   }, [history, today, day]);
 
-  return { state, error, places, visits, today, refreshing, reload, officeKey, office };
+  return { state, error, places, visits, today, refreshing, reload, officeKey };
 }

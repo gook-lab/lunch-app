@@ -73,15 +73,11 @@ describe('getLunchHint', () => {
     };
     const hint = getLunchHint(data);
     expect(hint).not.toBeNull();
-    expect(hint?.message).toContain('비가 와요');
+    expect(hint?.message).toContain('눈이 와요');
     expect(hint?.action).toBe('setWalkFilter5');
   });
 
   it('점심시간(11-13시)에 강수 확률 50% 이상이면 가까운 곳 추천', () => {
-    const now = new Date();
-    const mealTime = new Date(now);
-    mealTime.setHours(12, 0, 0, 0);
-
     const data: WeatherData = {
       current: {
         temperature_2m: 20,
@@ -96,20 +92,12 @@ describe('getLunchHint', () => {
         precipitation_probability: [0, 0, 30, 50, 70, 30, 0],
         temperature_2m: [15, 16, 18, 20, 19, 17, 16],
         weather_code: [2, 2, 2, 2, 2, 2, 2],
-        time: [
-          new Date(mealTime.getTime() - 2 * 3600000).toISOString(),
-          new Date(mealTime.getTime() - 1 * 3600000).toISOString(),
-          new Date(mealTime.getTime()).toISOString(),
-          new Date(mealTime.getTime() + 1 * 3600000).toISOString(),
-          new Date(mealTime.getTime() + 2 * 3600000).toISOString(),
-          new Date(mealTime.getTime() + 3 * 3600000).toISOString(),
-          new Date(mealTime.getTime() + 4 * 3600000).toISOString(),
-        ],
+        time: ['2026-10-16T10:00', '2026-10-16T11:00', '2026-10-16T12:00', '2026-10-16T13:00', '2026-10-16T14:00', '2026-10-16T15:00', '2026-10-16T16:00'],
       },
     };
     const hint = getLunchHint(data);
     expect(hint).not.toBeNull();
-    expect(hint?.message).toContain('비가 와요');
+    expect(hint?.message).toContain('점심때 비 소식');
     expect(hint?.action).toBe('setWalkFilter5');
   });
 
@@ -163,7 +151,7 @@ describe('getLunchHint', () => {
     };
     const hint = getLunchHint(data);
     expect(hint).not.toBeNull();
-    expect(hint?.message).toBe('걷기 좋은 날이에요');
+    expect(hint?.message).toContain('걷기 좋은 날이에요');
     expect(hint?.action).toBeUndefined();
   });
 
@@ -198,5 +186,12 @@ describe('getLunchHint', () => {
     const hint = getLunchHint(data);
     expect(hint).not.toBeNull();
     expect(hint?.action).toBe('setWalkFilter5');
+  });
+});
+
+describe('안개', () => {
+  it('안개는 비로 치지 않는다', () => {
+    const hint = getLunchHint({ current: { temperature_2m: 12, apparent_temperature: 11, precipitation: 0, rain: 0, snowfall: 0, weather_code: 45, wind_speed_10m: 2 } });
+    expect(hint).toBeNull();
   });
 });

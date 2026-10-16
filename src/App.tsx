@@ -70,7 +70,7 @@ import { addShown, readShown, readSkipShown, withoutShown, writeSkipShown } from
 import { MIN_GAME_CANDIDATES, recentlyVisitedIds, selectCandidates, type Filters, type Place } from './lib/candidates';
 import { categoryHue } from './lib/category';
 import { josa, withJosa } from './lib/josa';
-import { officeSource } from './lib/walk';
+import { officeCoord, officeSource } from './lib/walk';
 import { retryLoad } from './lib/retryLoad';
 import { gameGate, noticeMessage } from './lib/messages';
 import { decideToday } from './services/lunch';
@@ -162,8 +162,17 @@ function revealPickedMode(node: HTMLElement | null) {
 
 export default function App() {
   const today = useTodayKST();
-  const { state, error, places, visits, today: decision, refreshing, reload, officeKey, office } = useLunchData(today);
+  const { state, error, places, visits, today: decision, refreshing, reload, officeKey } = useLunchData(today);
   const ratings = useRatings(places);
+  // 날씨는 회사 좌표로 본다. 저장한 위치가 없으면 환경 변수 좌표. 둘 다 없으면 날씨 칸을 숨긴다.
+  const office = useMemo(() => {
+    try {
+      return officeCoord();
+    } catch {
+      return null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- officeKey 가 바뀌면 다시 읽는다
+  }, [officeKey]);
   // 다음 날 "어제 ○○ 어땠어요?". 별점만 묻고 후보·당첨에는 닿지 않는다.
   const rateTarget = useMemo(
     () => ratePromptTarget(visits, places, today, (id) => Boolean(ratings.get(id)?.mine)),
@@ -731,13 +740,17 @@ export default function App() {
     />
   );
 
+  const weather = (
+    <WeatherChip
+      office={office}
+      nearOn={filters.maxWalkMin <= 5}
+      onSetWalkFilter={(minutes) => updateFilters((f) => ({ ...f, maxWalkMin: minutes }))}
+    />
+  );
   const filtersPanel = (
     <>
       <CandidateChips result={result} winnerId={winner?.id ?? null} />
-      <WeatherChip
-        office={office}
-        onSetWalkFilter={(minutes) => updateFilters((f) => ({ ...f, maxWalkMin: minutes }))}
-      />
+      {wide && weather}
       {wide && notice && <p className="notice">{notice}</p>}
       {wide && predictions}
       {wide && parties}
@@ -1350,7 +1363,8 @@ export default function App() {
               </div>
             </section>
 
-            {/* 휴대폰은 게임 아래에 팟을 둔다. 데스크톱은 오른쪽 칸(filtersPanel) 예측 아래. */}
+            {/* 휴대폰은 게임 아래에 날씨·팟을 둔다. 데스크톱은 오른쪽 칸(filtersPanel). 조건 시트 안에 두면 안 열어 보면 못 본다. */}
+            {!wide && weather}
             {!wide && parties}
 
             {/* 조건은 게임 옆(데스크톱)·아래(휴대폰)에 둔다. 첫 화면은 게임이 차지한다. */}

@@ -39,7 +39,7 @@ const WMO_CODES: Record<number, WeatherLabel> = {
   55: { label: '이슬비', emoji: '🌦️' },
   61: { label: '비', emoji: '🌧️' },
   63: { label: '비', emoji: '🌧️' },
-  65: { label: '빗소나기', emoji: '🌧️' },
+  65: { label: '많은 비', emoji: '🌧️' },
   71: { label: '눈', emoji: '❄️' },
   73: { label: '눈', emoji: '❄️' },
   75: { label: '눈', emoji: '❄️' },
@@ -73,64 +73,24 @@ export interface LunchHint {
  * - 그 외 → 긍정적인 메시지
  */
 export function getLunchHint(data: WeatherData): LunchHint | null {
-  const current = data.current;
-  const hourly = data.hourly;
+  const { current, hourly } = data;
+  const snowNow = current.snowfall > 0 || SNOW_CODES.includes(current.weather_code);
+  const rainNow = !snowNow && (current.precipitation > 0 || current.rain > 0 || RAIN_CODES.includes(current.weather_code));
 
-  // 현재 강수 중
-  const isRainingNow = current.precipitation > 0 || current.rain > 0 || current.snowfall > 0;
-
-  // 11–13시 강수 확률이 50% 이상인지 확인
-  let precipChance50InMealTime = false;
-  if (hourly && hourly.time) {
-    for (let i = 0; i < hourly.time.length; i++) {
-      const hour = new Date(hourly.time[i]).getHours();
-      if (hour >= 11 && hour <= 13) {
-        if ((hourly.precipitation_probability[i] ?? 0) >= 50) {
-          precipChance50InMealTime = true;
-          break;
-        }
-      }
-    }
-  }
-
-  // 비 또는 눈 코드 판별
-  const isWetWeather = [45, 48, 51, 53, 55, 61, 63, 65, 71, 73, 75, 77, 80, 81, 82, 85, 86, 95, 96, 99].includes(
-    current.weather_code,
+  // 점심때(11~13시) 강수 확률. 시각 문자열은 Asia/Seoul 기준 "2026-10-16T11:00" 이라 글자로 시를 뗀다.
+  const lunchRain = (hourly?.time ?? []).some(
+    (t, i) => [11, 12, 13].includes(Number(t.slice(11, 13))) && (hourly?.precipitation_probability[i] ?? 0) >= 50,
   );
 
-  if (isRainingNow || isWetWeather || precipChance50InMealTime) {
-    const hint: LunchHint = {
-      message: '비가 와요 · 가까운 곳(도보 5분 안)을 추천해요',
-      action: 'setWalkFilter5',
-    };
-    return hint;
-  }
-
-  // 체감 온도 ≥ 31°C (매우 더움)
-  if (current.apparent_temperature >= 31) {
-    const hint: LunchHint = {
-      message: '날씨가 더워요 · 가까운 곳을 추천해요',
-      action: 'setWalkFilter5',
-    };
-    return hint;
-  }
-
-  // 체감 온도 ≤ -5°C (매우 추움)
-  if (current.apparent_temperature <= -5) {
-    const hint: LunchHint = {
-      message: '날씨가 추워요 · 가까운 곳을 추천해요',
-      action: 'setWalkFilter5',
-    };
-    return hint;
-  }
-
-  // 날씨가 좋으면 긍정적인 메시지
-  if ([0, 1, 2].includes(current.weather_code)) {
-    return {
-      message: '걷기 좋은 날이에요',
-    };
-  }
-
-  // 그 외 경우
+  if (snowNow) return { message: '눈이 와요 · 가까운 곳은 어때요?', action: 'setWalkFilter5' };
+  if (rainNow) return { message: '비가 와요 · 가까운 곳은 어때요?', action: 'setWalkFilter5' };
+  if (lunchRain) return { message: '점심때 비 소식이 있어요 · 우산 챙겨요', action: 'setWalkFilter5' };
+  if (current.apparent_temperature >= 31) return { message: '많이 더워요 · 가까운 곳은 어때요?', action: 'setWalkFilter5' };
+  if (current.apparent_temperature <= -5) return { message: '많이 추워요 · 가까운 곳은 어때요?', action: 'setWalkFilter5' };
+  if ([0, 1, 2].includes(current.weather_code)) return { message: '걷기 좋은 날이에요 · 조금 멀어도 괜찮아요' };
   return null;
 }
+
+/** 비(이슬비·소나기·뇌우 포함). 안개(45·48)는 비가 아니다. */
+const RAIN_CODES = [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99];
+const SNOW_CODES = [71, 73, 75, 77, 85, 86];

@@ -1,10 +1,7 @@
 /**
- * 날씨 정보 칩 — 온도, 상황, 점심 힌트.
- *
- * 사무실 위치가 없으면 아무것도 보이지 않는다.
- * 날씨 조회 실패도 조용히 감춘다 (데모 모드에서 API 차단 가능).
+ * 회사 날씨 한 줄 — 지금 기온·하늘과 점심 길 조언.
+ * 좌표가 없거나 조회가 안 되면 아무것도 그리지 않는다. 날씨는 후보·당첨에 닿지 않는다(필터 단추만 제안).
  */
-
 import { useEffect, useState } from 'react';
 import { fetchWeather, type WeatherData } from '../services/weather';
 import { getWeatherLabel, getLunchHint } from '../lib/weather';
@@ -12,58 +9,48 @@ import './WeatherChip.css';
 
 export interface WeatherChipProps {
   office: { lat: number; lng: number } | null;
+  /** 이미 5분 안으로 좁혀 두었으면 단추를 숨긴다. */
+  nearOn?: boolean;
   onSetWalkFilter?: (minutes: number) => void;
 }
 
-export function WeatherChip({ office, onSetWalkFilter }: WeatherChipProps) {
+export function WeatherChip({ office, nearOn = false, onSetWalkFilter }: WeatherChipProps) {
   const [weather, setWeather] = useState<WeatherData | null>(null);
+  const lat = office?.lat;
+  const lng = office?.lng;
 
   useEffect(() => {
-    if (!office) {
+    if (lat == null || lng == null) {
       setWeather(null);
       return;
     }
+    let alive = true;
+    fetchWeather(lat, lng).then((data) => {
+      if (alive) setWeather(data);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [lat, lng]);
 
-    fetchWeather(office.lat, office.lng)
-      .then((data) => {
-        setWeather(data);
-      })
-      .catch(() => {
-        setWeather(null);
-      });
-  }, [office]);
-
-  if (!office || !weather) {
-    return null;
-  }
+  if (!office || !weather) return null;
 
   const { current } = weather;
-  const weatherLabel = getWeatherLabel(current.weather_code);
+  const { emoji, label } = getWeatherLabel(current.weather_code);
   const hint = getLunchHint(weather);
-  const temp = Math.round(current.apparent_temperature);
 
   return (
-    <div className="weather-chip">
-      <div className="weather-chip__main">
-        <span className="weather-chip__weather">
-          {weatherLabel.emoji} {temp}° {weatherLabel.label}
-        </span>
-      </div>
-      {hint && (
-        <div className="weather-chip__hint">
-          <p className="weather-chip__hint-text">{hint.message}</p>
-          {hint.action === 'setWalkFilter5' && onSetWalkFilter && (
-            <button
-              type="button"
-              className="weather-chip__action-btn"
-              onClick={() => onSetWalkFilter(5)}
-              aria-label="가까운 곳만 보기 (5분 이내)"
-            >
-              가까운 곳만
-            </button>
-          )}
-        </div>
+    <section className="weather" aria-label="회사 날씨">
+      <p className="weather__now">
+        <span aria-hidden="true">{emoji}</span> {Math.round(current.temperature_2m)}° {label}
+        <span className="weather__feel">체감 {Math.round(current.apparent_temperature)}°</span>
+      </p>
+      {hint && <p className="weather__hint">{hint.message}</p>}
+      {hint?.action === 'setWalkFilter5' && onSetWalkFilter && !nearOn && (
+        <button type="button" className="weather__near" onClick={() => onSetWalkFilter(5)}>
+          5분 안 가게만 보기
+        </button>
       )}
-    </div>
+    </section>
   );
 }

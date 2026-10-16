@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { WeatherChip } from './WeatherChip';
 
 // Mock the weather service
@@ -46,7 +46,7 @@ describe('WeatherChip', () => {
     render(<WeatherChip office={{ lat: 37.5, lng: 127 }} />);
     await new Promise((resolve) => setTimeout(resolve, 100));
     expect(screen.getByText(/맑음/)).toBeTruthy();
-    expect(screen.getByText(/20°/)).toBeTruthy();
+    expect(screen.getAllByText(/20°/).length).toBeGreaterThan(0);
   });
 
   it('비가 오면 힌트를 보여준다', async () => {
@@ -83,5 +83,16 @@ describe('WeatherChip', () => {
     render(<WeatherChip office={{ lat: 37.5, lng: 127 }} />);
     await new Promise((resolve) => setTimeout(resolve, 100));
     expect(screen.getByText(/더워요/)).toBeTruthy();
+  });
+
+  it('비가 오면 5분 안 단추로 필터를 좁히고, 이미 좁혔으면 단추를 숨긴다', async () => {
+    const rain = { current: { temperature_2m: 15, apparent_temperature: 14, precipitation: 2, rain: 2, snowfall: 0, weather_code: 61, wind_speed_10m: 5 } };
+    mockFetchWeather.mockResolvedValue(rain);
+    const set = vi.fn();
+    const { rerender } = render(<WeatherChip office={{ lat: 37.5, lng: 127 }} onSetWalkFilter={set} />);
+    fireEvent.click(await screen.findByRole('button', { name: '5분 안 가게만 보기' }));
+    expect(set).toHaveBeenCalledWith(5);
+    rerender(<WeatherChip office={{ lat: 37.5, lng: 127 }} nearOn onSetWalkFilter={set} />);
+    expect(screen.queryByRole('button', { name: '5분 안 가게만 보기' })).toBeNull();
   });
 });
