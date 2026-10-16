@@ -19,7 +19,14 @@ import { clawLayout, clawNameMax, clawPlan, type ClawLayout, type Step, type Toy
 import { seededRandom } from '../../lib/random';
 import { clawSfxLater } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
+import { useAmbience } from '../../hooks/useAmbience';
+import { SEASON_NAME } from '../../lib/ambience';
+import { ambienceClasses } from './scene/outfit';
 import './Claw.css';
+import './Claw.ambience.css';
+
+/** 지붕에 올리는 계절 장식(왼쪽·가운데·오른쪽). */
+const TOPPER = { spring: ['🌷', '🌸', '🌷'], summer: ['🍉', '☀️', '🍧'], autumn: ['🍂', '🎃', '🍁'], winter: ['❄️', '🎄', '⛄'] } as const;
 
 interface ClawState {
   run: number;
@@ -95,6 +102,7 @@ function statusText(step: Step, candidates: GameProps['candidates'], attempts: n
 }
 
 export function Claw({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
+  const ambience = useAmbience();
   const count = candidates.length;
   const [state, setState] = useState<ClawState>({ run: -1, step: 0 });
   const layout = useMemo(() => clawLayout(count, seededRandom(LAYOUT_SEED + count)), [count]);
@@ -162,15 +170,23 @@ export function Claw({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
 
   return (
     <div
-      className={['claw', expanded ? 'claw--big' : '', settled ? 'claw--settled' : ''].filter(Boolean).join(' ')}
+      className={['claw', 'scene-outfit', ambienceClasses(ambience), expanded ? 'claw--big' : '', settled ? 'claw--settled' : '']
+        .filter(Boolean)
+        .join(' ')}
       // 함 폭 ÷ 높이. 크게 보기는 이 비로 남는 높이에 맞춘다(desktop.css).
       style={{ '--fit': fit.toFixed(4) } as React.CSSProperties}
     >
       <div className="claw__cab">
+        <div className="claw__topper" aria-hidden="true">
+          {TOPPER[ambience.season].map((e, i) => (
+            <span key={i}>{e}</span>
+          ))}
+        </div>
         <div className="claw__sign" aria-hidden="true">
           <span className="claw__bulbs" />
           <span className="claw__neon">인형뽑기</span>
           <span className="claw__bulbs claw__bulbs--r" />
+          <span className="claw__badge">{ambience.weekday === 5 ? '불금 특가' : `${SEASON_NAME[ambience.season]} 한정`}</span>
         </div>
 
         <div
@@ -223,6 +239,7 @@ export function Claw({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
               ))}
             </span>
           )}
+          <span className="claw__wx" aria-hidden="true" />
           <span className="claw__glass" aria-hidden="true" />
           {callout && (
             <span key={`${run}-${callout.key}`} className={`claw__callout claw__callout--${callout.tone}`} aria-hidden="true">
@@ -401,6 +418,23 @@ function Doll({ kind }: { kind: ToyKind }) {
       ) : kind === 'pig' ? null : (
         <path d={kind === 'bear' || kind === 'dog' ? 'M50 51 v4 M45 56 Q50 60 55 56' : 'M45 52 Q47.5 55 50 52 Q52.5 55 55 52'} className="d-line" />
       )}
+      {/* 계절 덧옷(scene.css 가 옷차림에 맞는 것만 켠다). 개구리는 눈이 머리 위라 모자를 안 쓴다. */}
+      <path d="M27 64 Q50 74 73 64 L74 71 Q50 81 26 71 Z" className="acc acc-scarf" />
+      {kind !== 'frog' && (
+        <>
+          <path d="M23.5 37 Q23 14 50 14 Q77 14 76.5 37 Q50 29 23.5 37 Z" className="acc acc-beanie" />
+          <circle cx="50" cy="13" r="5" className="acc acc-pom" />
+          <path d="M19 52 Q15 13 50 13 Q85 13 81 52 Q77 26 50 26 Q23 26 19 52 Z" className="acc acc-hood" />
+          <ellipse cx="50" cy="21" rx="31" ry="5" className="acc acc-brim" />
+          <path d="M34 21 Q36 6 50 6 Q64 6 66 21 Z" className="acc acc-crown" />
+        </>
+      )}
+      <g className="acc acc-flower">
+        <circle cx="29" cy="23" r="4.4" />
+        <circle cx="35" cy="19.5" r="4.4" />
+        <circle cx="33" cy="27.5" r="4.4" />
+        <circle cx="32.2" cy="23.4" r="2.6" className="acc-flower__eye" />
+      </g>
     </svg>
   );
 }
