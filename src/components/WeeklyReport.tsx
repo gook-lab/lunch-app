@@ -1,9 +1,8 @@
 /**
  * 이번 주 점심 리포트 — 가게 목록 탭의 좌측 패널 (공정성 무관).
  */
-import { useEffect, useState } from 'react';
-import { predictionKings, weekDaysUpTo, weeklyReport } from '../lib/report';
-import { subscribeVotes, type Vote } from '../services/predictions';
+import { predictionKings, weeklyReport } from '../lib/report';
+import type { VotesByDay } from '../hooks/useMonthVotes';
 import { GAME_MODES, MODE_ICON, type GameMode } from './games/types';
 import type { Place, Visit } from '../lib/candidates';
 import type { DayId } from '../lib/date';
@@ -12,29 +11,12 @@ interface Props {
   places: Place[];
   visits: Visit[];
   today: DayId;
+  votesByDay: VotesByDay;
 }
 
-/** 이번 주 날마다의 예측 표. 지난 날 표는 규칙상 읽기만 된다. */
-function useWeekVotes(today: DayId): Partial<Record<DayId, Vote[]>> {
-  const [byDay, setByDay] = useState<Partial<Record<DayId, Vote[]>>>({});
-  useEffect(() => {
-    const stops = weekDaysUpTo(today).map((day) =>
-      subscribeVotes(
-        day,
-        (votes) => setByDay((s) => ({ ...s, [day]: votes })),
-        () => {
-          // 표를 못 읽어도 리포트의 나머지는 보인다.
-        },
-      ),
-    );
-    return () => stops.forEach((stop) => stop());
-  }, [today]);
-  return byDay;
-}
-
-export function WeeklyReport({ places, visits, today }: Props) {
+export function WeeklyReport({ places, visits, today, votesByDay }: Props) {
   const report = weeklyReport(visits, places, today);
-  const kings = predictionKings(useWeekVotes(today), visits, today);
+  const kings = predictionKings(votesByDay, visits, today);
 
   // 기록이 없으면 안내 문구
   if (report.decisionCount === 0) {

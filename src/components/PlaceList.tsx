@@ -14,6 +14,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { Button, Input, Menu } from '@gook-lab/ui';
 import { LunchStats } from './LunchStats';
 import { WeeklyReport } from './WeeklyReport';
+import { useMonthVotes } from '../hooks/useMonthVotes';
 import { CATEGORIES, categoryLabel } from '../lib/category';
 import { CategoryPicker } from './CategoryPicker';
 import type { Place, Visit } from '../lib/candidates';
@@ -225,6 +226,8 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
 }
 
 export function PlaceList({ places, visits, today, onChanged, recent, onShowOnMap, onAdd, ratings }: Props) {
+  // 예측왕(이번 주·이번 달)이 같이 쓰는 표 — 한 번만 읽는다.
+  const votesByDay = useMonthVotes(today);
   const [editing, setEditing] = useState<string | null>(null);
   // 별점 칸을 연 가게. 고치기와 같은 자리에 펼친다.
   const [rating, setRating] = useState<string | null>(null);
@@ -409,8 +412,8 @@ export function PlaceList({ places, visits, today, onChanged, recent, onShowOnMa
         </p>
       )}
       <div className="lt__side">
-        <WeeklyReport places={places} visits={visits} today={today} />
-        <LunchStats places={places} visits={visits} today={today} />
+        <WeeklyReport places={places} visits={visits} today={today} votesByDay={votesByDay} />
+        <LunchStats places={places} visits={visits} today={today} votesByDay={votesByDay} />
         <History places={places} visits={visits} today={today} onShowOnMap={onShowOnMap} />
       </div>
       <div className="lt__main">

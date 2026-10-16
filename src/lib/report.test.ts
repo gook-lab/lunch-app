@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { predictionKings, weekDaysUpTo, weeklyReport } from './report';
+import { monthDaysUpTo, predictionKings, weekDaysUpTo, weeklyReport } from './report';
 import type { Place, Visit } from './candidates';
 import type { DayId } from './date';
 
@@ -178,5 +178,17 @@ describe('예측왕', () => {
       WED,
     );
     expect(kings).toEqual([{ name: '민지', hits: 2 }]);
+  });
+
+  it('이번 달 날짜는 1일부터 오늘까지', () => {
+    expect(monthDaysUpTo('20261003')).toEqual(['20261001', '20261002', '20261003']);
+    expect(monthDaysUpTo('20261001')).toEqual(['20261001']);
+  });
+
+  it('이번 달로 세면 지난주 표도 들어가고 지난달은 빠진다', () => {
+    const votes = { '20261006': [vote('a', 'p1', '민지')], [MON]: [vote('a', 'p2', '민지')], '20260930': [vote('a', 'p3', '민지')] };
+    const visits = [{ id: '20261006', placeId: 'p1' }, { id: MON, placeId: 'p2' }, { id: '20260930', placeId: 'p3' }];
+    expect(predictionKings(votes, visits, WED, 'month')).toEqual([{ name: '민지', hits: 2 }]);
+    expect(predictionKings(votes, visits, WED)).toEqual([{ name: '민지', hits: 1 }]);
   });
 });

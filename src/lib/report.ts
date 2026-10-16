@@ -143,6 +143,12 @@ export function weekDaysUpTo(today: DayId): DayId[] {
   return Array.from({ length: last + 1 }, (_, k) => dayIdBefore(monday, -k));
 }
 
+/** 이번 달 1일부터 오늘까지의 날짜들(주말 포함 — 점심을 정한 날만 세므로 상관없다). */
+export function monthDaysUpTo(today: DayId): DayId[] {
+  const first = `${today.slice(0, 6)}01` as DayId;
+  return Array.from({ length: daysBetween(first, today) + 1 }, (_, k) => dayIdBefore(first, -k));
+}
+
 /**
  * 예측왕 — 이번 주 정해진 날마다 그날 표가 당첨 가게와 같으면 1번 맞힌 것으로 센다.
  * 같은 기기(uid)를 한 사람으로 보고, 이름은 가장 최근 표의 것을 쓴다. 맞힌 적 없는 사람은 뺀다.
@@ -151,9 +157,12 @@ export function predictionKings(
   votesByDay: Partial<Record<DayId, Vote[]>>,
   visits: Visit[],
   today: DayId,
+  span: 'week' | 'month' = 'week',
 ): { name: string; hits: number }[] {
   const by = new Map<string, { name: string; hits: number; last: DayId }>();
-  for (const visit of getWeeklyVisits(visits, today)) {
+  const counted =
+    span === 'week' ? getWeeklyVisits(visits, today) : visits.filter((v) => v.id.slice(0, 6) === today.slice(0, 6) && v.id <= today);
+  for (const visit of counted) {
     for (const v of votesByDay[visit.id] ?? []) {
       if (v.placeId !== visit.placeId) continue;
       const prev = by.get(v.uid);

@@ -2,6 +2,8 @@
  * 이번 달 점심 통계와 뱃지 — 목록 탭 좌측 패널 (공정성 무관).
  */
 import { calculateStats } from '../lib/stats';
+import { predictionKings } from '../lib/report';
+import type { VotesByDay } from '../hooks/useMonthVotes';
 import { GAME_MODES, MODE_ICON, type GameMode } from './games/types';
 import type { Place, Visit } from '../lib/candidates';
 import type { DayId } from '../lib/date';
@@ -10,6 +12,7 @@ interface Props {
   places: Place[];
   visits: Visit[];
   today: DayId;
+  votesByDay: VotesByDay;
 }
 
 /**
@@ -27,7 +30,8 @@ function NumberRoller({ value }: { value: number }) {
   );
 }
 
-export function LunchStats({ places, visits, today }: Props) {
+export function LunchStats({ places, visits, today, votesByDay }: Props) {
+  const kings = predictionKings(votesByDay, visits, today, 'month').slice(0, 3);
   const stats = calculateStats(visits, places, today);
 
   // 기록이 없으면 안내 문구
@@ -85,6 +89,23 @@ export function LunchStats({ places, visits, today }: Props) {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* 이번 달 예측왕 — 동료 예측이 그날 정한 가게와 맞은 횟수. 1등에게 왕관. */}
+      {kings.length > 0 && (
+        <div className="stats__games">
+          <h3 className="stats__subheading">이번 달 예측왕</h3>
+          <ol className="stats__gameList">
+            {kings.map(({ name, hits }, i) => (
+              <li key={name} className="stats__game">
+                <span aria-hidden="true">{i === 0 ? '👑' : '🔮'} </span>
+                {name}
+                {i === 0 && <span className="sr-only">, 1등</span>}
+                <span className="stats__gameCount">{hits}번 맞힘</span>
+              </li>
+            ))}
+          </ol>
         </div>
       )}
 

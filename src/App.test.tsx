@@ -51,6 +51,7 @@ vi.mock('./services/predictions', () => ({
   },
   castVote: vi.fn(async () => {}),
   clearVote: vi.fn(async () => {}),
+  fetchVotes: async () => [],
 }));
 vi.mock('./hooks/useLunchData', () => ({
   useLunchData: () => ({

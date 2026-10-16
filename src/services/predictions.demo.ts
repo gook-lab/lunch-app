@@ -30,3 +30,7 @@ export async function clearVote(day: DayId): Promise<void> {
   await tick();
   writeDemo((s) => ({ ...s, votes: { ...s.votes, [day]: (s.votes[day] ?? []).filter((v) => v.uid !== DEMO_UID) } }));
 }
+
+export async function fetchVotes(day: DayId): Promise<Vote[]> {
+  return [...(readDemo().votes[day] ?? [])];
+}

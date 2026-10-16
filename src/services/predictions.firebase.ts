@@ -9,6 +9,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDocs,
   onSnapshot,
   serverTimestamp,
   setDoc,
@@ -64,4 +65,14 @@ export async function castVote(day: DayId, placeId: string, name: string): Promi
 export async function clearVote(day: DayId): Promise<void> {
   await ensureAuth();
   await deleteDoc(doc(votes(day), auth.currentUser!.uid));
+}
+
+/** 지난 날 표 한 번 읽기 — 지난 날은 규칙상 쓸 수 없어 실시간 구독이 필요 없다. */
+export async function fetchVotes(day: DayId): Promise<Vote[]> {
+  await ensureAuth();
+  const snap = await getDocs(votes(day));
+  return snap.docs.map((d) => {
+    const v = d.data() as { placeId: string; name: string };
+    return { uid: d.id, placeId: v.placeId, name: v.name };
+  });
 }

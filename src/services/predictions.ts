@@ -11,6 +11,7 @@ export const myUid = async (): Promise<string> => (await impl()).myUid();
 export const castVote = async (day: DayId, placeId: string, name: string) =>
   (await impl()).castVote(day, placeId, name);
 export const clearVote = async (day: DayId) => (await impl()).clearVote(day);
+export const fetchVotes = async (day: DayId): Promise<Vote[]> => (await impl()).fetchVotes(day);
 
 export function subscribeVotes(
   day: DayId,
