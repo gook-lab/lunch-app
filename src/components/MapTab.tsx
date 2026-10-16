@@ -1139,6 +1139,7 @@ export default function MapTab({
             setSelectedId(null);
             setDraft({ lat: at.lat, lng: at.lng, name: '' });
           }}
+          returnFocus={containerRef.current}
         />
       )}
       <RemovePlaceSheet
