@@ -1,0 +1,30 @@
+/*
+ * 핀볼 분위기 — 판 그림·물리·테마는 그대로 두고, 판 위 가장자리에 계절 전구 줄(봄 분홍·여름 청록·가을 호박·겨울 빨강·초록)을
+ * 걸고, 금요일엔 전구가 빨리 깜빡인다. 캔버스 위 한 겹이라 누르기(공 따라가기)를 막지 않는다.
+ */
+.pinball__play { position: relative; }
+.pinball__lights {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 10px;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle 3px at 50% 70%, var(--l1) 92%, transparent) 4px 0 / 24px 100% repeat-x,
+    radial-gradient(circle 3px at 50% 70%, var(--l2) 92%, transparent) 16px 0 / 24px 100% repeat-x,
+    linear-gradient(to bottom, oklch(0.3 0.02 260) 0 1.5px, transparent 1.5px) 0 2px / 100% 100% no-repeat;
+  filter: drop-shadow(0 0 3px var(--l1));
+  animation: pinball-lights 1.6s steps(2) infinite;
+}
+@media (min-width: 480px) {
+  .pinball:not(.pinball--live) .pinball__lights { left: 104px; }
+}
+.pinball.amb--spring { --l1: oklch(0.82 0.13 355); --l2: oklch(0.88 0.1 140); }
+.pinball.amb--summer { --l1: oklch(0.8 0.13 200); --l2: oklch(0.88 0.15 90); }
+.pinball.amb--autumn { --l1: oklch(0.75 0.16 50); --l2: oklch(0.85 0.15 85); }
+.pinball.amb--winter { --l1: oklch(0.65 0.2 25); --l2: oklch(0.72 0.16 150); }
+.pinball.amb--fri .pinball__lights { animation-duration: 0.5s; }
+@keyframes pinball-lights { 50% { filter: drop-shadow(0 0 3px var(--l2)); background-position: 16px 0, 4px 0, 0 2px; } }
+:root[data-motion='reduced'] .pinball__lights { animation: none; }
