@@ -4072,8 +4072,8 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 .map__next p { margin: 0; }
 .pf__where { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* 점심 팟 — 카테고리 모집 · 익명 아바타. 예측과 같은 점선 상자, 팟 하나는 얇은 카드 */
-.party { display: grid; gap: var(--space-2); padding: var(--space-3); border: 1px dashed var(--color-neutral-400); border-radius: var(--radius-md); }
+/* 점심 팟 — 섹션은 구분선으로만 나누고, 개별 팟 카드에 시각적 무게를 둔다. */
+.party { display: grid; gap: var(--space-2); padding: var(--space-4) 0 0; border-top: 1px dashed var(--color-neutral-400); }
 .party__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
 .party__title { margin: 0; font-size: var(--fs-md); font-family: var(--app-mono); letter-spacing: 0.04em; }
 .party__me { margin: 0; font-size: var(--fs-sm); color: var(--color-text); }
