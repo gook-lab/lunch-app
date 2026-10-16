@@ -21,6 +21,7 @@ import { seededRandom } from '../../lib/random';
 import { bombSfxLater, type BombSfxName } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
 import { useAmbience } from '../../hooks/useAmbience';
+import { ambienceClasses } from './scene/outfit';
 import './Bomb.css';
 import './Bomb.ambience.css';
 
@@ -232,10 +233,7 @@ export function Bomb({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
 
   return (
     <div
-      className={expanded ? 'bomb bomb--big' : 'bomb'}
-      data-season={ambience.season}
-      data-weather={ambience.weather}
-      data-weekday={ambience.weekday}
+      className={['bomb', expanded ? 'bomb--big' : '', ambienceClasses(ambience)].filter(Boolean).join(' ')}
     >
       <div
         className={[

@@ -20,6 +20,7 @@ import { seededRandom } from '../../lib/random';
 import { clawSfxLater } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
 import { useAmbience } from '../../hooks/useAmbience';
+import { ambienceClasses } from './scene/outfit';
 import './Claw.css';
 import './Claw.ambience.css';
 
@@ -165,12 +166,9 @@ export function Claw({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
 
   return (
     <div
-      className={['claw', expanded ? 'claw--big' : '', settled ? 'claw--settled' : ''].filter(Boolean).join(' ')}
+      className={['claw', expanded ? 'claw--big' : '', settled ? 'claw--settled' : '', ambienceClasses(ambience)].filter(Boolean).join(' ')}
       // 함 폭 ÷ 높이. 크게 보기는 이 비로 남는 높이에 맞춘다(desktop.css).
       style={{ '--fit': fit.toFixed(4) } as React.CSSProperties}
-      data-season={ambience.season}
-      data-weather={ambience.weather}
-      data-weekday={ambience.weekday}
     >
       <div className="claw__cab">
         <div className="claw__sign" aria-hidden="true">

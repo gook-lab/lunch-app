@@ -34,6 +34,7 @@ import { seededRandom } from '../../lib/random';
 import { prefersReducedMotion, type GameProps } from './types';
 import { planeSfxLater, type PlaneSfxName, type SfxName } from '../../lib/sfx';
 import { useAmbience } from '../../hooks/useAmbience';
+import { ambienceClasses } from './scene/outfit';
 import './PaperPlane.css';
 import './PaperPlane.ambience.css';
 
@@ -198,12 +199,9 @@ export function PaperPlane({ candidates, winnerIndex, spinning, run, onSpinEnd, 
 
   return (
     <div
-      className={['plane', expanded ? 'plane--big' : '', roomy ? 'plane--roomy' : '', settled ? 'plane--settled' : ''].filter(Boolean).join(' ')}
+      className={['plane', expanded ? 'plane--big' : '', roomy ? 'plane--roomy' : '', settled ? 'plane--settled' : '', ambienceClasses(ambience)].filter(Boolean).join(' ')}
       // 장면 폭 ÷ 높이. 크게 보기는 이 비로 남는 높이에 맞춘다(desktop.css).
       style={{ '--fit': layout.aspect.toFixed(4) } as React.CSSProperties}
-      data-season={ambience.season}
-      data-weather={ambience.weather}
-      data-weekday={ambience.weekday}
     >
       <div
         className="plane__scene"

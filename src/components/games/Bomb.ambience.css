@@ -1,119 +1,139 @@
 /*
- * 폭탄 돌리기 분위기 — 계절·날씨·요일에 따른 시각 변화.
- * 식탁 테두리, 참가자들의 옷차림, 배경 장식이 바뀐다.
- * 금요일(weekday=5)에는 불금 분위기를 강조한다.
+ * 폭탄 돌리기 — 계절·날씨. 배경 색, 식탁(돗자리/낙엽/눈밭),
+ * 참가자 덧옷 색감, 날씨 효과(비/눈/안개), 금요일 장식. 연출 전용.
  */
 
-/* ── 배경색 — 계절별 ── */
-.bomb[data-season='spring'] .bomb__stage {
-  background: linear-gradient(135deg, #e8f5e9 0%, #fff9c4 100%);
+.bomb__stage {
+  --bg: oklch(0.92 0.06 100);
+  background: linear-gradient(135deg, oklch(0.93 0.05 100), oklch(0.91 0.07 80));
+  position: relative;
 }
 
-.bomb[data-season='summer'] .bomb__stage {
-  background: linear-gradient(135deg, #e1f5fe 0%, #fff8e1 100%);
+.amb--spring .bomb__stage {
+  --bg: oklch(0.90 0.08 90);
+  background: linear-gradient(135deg, oklch(0.96 0.05 100), oklch(0.92 0.06 70));
 }
 
-.bomb[data-season='autumn'] .bomb__stage {
-  background: linear-gradient(135deg, #ffe0b2 0%, #fff9c4 100%);
+.amb--summer .bomb__stage {
+  --bg: oklch(0.92 0.06 210);
+  background: linear-gradient(135deg, oklch(0.93 0.08 220), oklch(0.91 0.06 180));
 }
 
-.bomb[data-season='winter'] .bomb__stage {
-  background: linear-gradient(135deg, #b3e5fc 0%, #f0f4c3 100%);
+.amb--autumn .bomb__stage {
+  --bg: oklch(0.90 0.08 60);
+  background: linear-gradient(135deg, oklch(0.94 0.08 70), oklch(0.91 0.07 50));
 }
 
-/* 어두운 모드 배경 */
-[data-theme='dark'] .bomb[data-season='spring'] .bomb__stage {
-  background: linear-gradient(135deg, #1b5e20 0%, #33691e 100%);
+.amb--winter .bomb__stage {
+  --bg: oklch(0.92 0.04 230);
+  background: linear-gradient(135deg, oklch(0.93 0.05 250), oklch(0.91 0.03 220));
 }
 
-[data-theme='dark'] .bomb[data-season='summer'] .bomb__stage {
-  background: linear-gradient(135deg, #01579b 0%, #1a237e 100%);
+[data-theme='dark'] .bomb__stage {
+  --bg: oklch(0.24 0.05 100);
+  background: linear-gradient(135deg, oklch(0.26 0.04 100), oklch(0.22 0.05 80));
 }
 
-[data-theme='dark'] .bomb[data-season='autumn'] .bomb__stage {
-  background: linear-gradient(135deg, #3e2723 0%, #5d4037 100%);
+[data-theme='dark'] .amb--spring .bomb__stage {
+  --bg: oklch(0.28 0.06 90);
+  background: linear-gradient(135deg, oklch(0.30 0.05 100), oklch(0.26 0.05 70));
 }
 
-[data-theme='dark'] .bomb[data-season='winter'] .bomb__stage {
-  background: linear-gradient(135deg, #0d47a1 0%, #1565c0 100%);
+[data-theme='dark'] .amb--summer .bomb__stage {
+  --bg: oklch(0.24 0.05 210);
+  background: linear-gradient(135deg, oklch(0.26 0.06 220), oklch(0.22 0.05 180));
 }
 
-/* ── 식탁 색 ── */
-.bomb[data-season='spring'] .bomb__table {
-  fill: #a5d6a7;
-  stroke: #66bb6a;
+[data-theme='dark'] .amb--autumn .bomb__stage {
+  --bg: oklch(0.26 0.06 60);
+  background: linear-gradient(135deg, oklch(0.28 0.06 70), oklch(0.24 0.05 50));
 }
 
-.bomb[data-season='summer'] .bomb__table {
-  fill: #81d4fa;
-  stroke: #4fc3f7;
+[data-theme='dark'] .amb--winter .bomb__stage {
+  --bg: oklch(0.22 0.02 230);
+  background: linear-gradient(135deg, oklch(0.24 0.03 250), oklch(0.20 0.02 220));
 }
 
-.bomb[data-season='autumn'] .bomb__table {
-  fill: #ffab91;
-  stroke: #ff8a65;
+/* ── 식탁/바닥 색 ── */
+.bomb__table {
+  fill: oklch(0.85 0.08 200);
+  stroke: oklch(0.80 0.10 200);
 }
 
-.bomb[data-season='winter'] .bomb__table {
-  fill: #b3e5fc;
-  stroke: #81d4fa;
+.amb--spring .bomb__table {
+  fill: oklch(0.85 0.10 110);
+  stroke: oklch(0.78 0.12 120);
 }
 
-/* ── 참가자 의상 — 계절별 색상 ── */
-/* (SVG에서 렌더되는 경우 CSS로 직접 제어하기 어려우므로, 배경/오버레이로 표현) */
+.amb--summer .bomb__table {
+  fill: oklch(0.82 0.12 210);
+  stroke: oklch(0.75 0.14 220);
+}
 
-.bomb[data-season='spring'] .bomb__stage::before {
+.amb--autumn .bomb__table {
+  fill: oklch(0.78 0.12 50);
+  stroke: oklch(0.70 0.14 60);
+}
+
+.amb--winter .bomb__table {
+  fill: oklch(0.93 0.02 240);
+  stroke: oklch(0.88 0.04 250);
+}
+
+/* ── 참가자 의상 배경 강조 — 계절 색감 ── */
+.amb--spring .bomb__stage::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 30% 20%, rgba(244, 188, 211, 0.1) 0%, transparent 30%),
-              radial-gradient(circle at 70% 30%, rgba(244, 188, 211, 0.08) 0%, transparent 35%);
+  background:
+    radial-gradient(circle at 30% 20%, oklch(0.88 0.15 0 / 0.08), transparent 30%),
+    radial-gradient(circle at 70% 30%, oklch(0.88 0.15 0 / 0.06), transparent 35%);
   pointer-events: none;
   z-index: 1;
 }
 
-.bomb[data-season='summer'] .bomb__stage::before {
+.amb--summer .bomb__stage::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 35% 25%, rgba(255, 235, 59, 0.08) 0%, transparent 40%);
+  background: radial-gradient(circle at 35% 25%, oklch(0.90 0.12 60 / 0.08), transparent 40%);
   pointer-events: none;
   z-index: 1;
 }
 
-.bomb[data-season='autumn'] .bomb__stage::before {
+.amb--autumn .bomb__stage::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 30% 25%, rgba(255, 152, 0, 0.1) 0%, transparent 35%);
+  background: radial-gradient(circle at 30% 25%, oklch(0.68 0.18 40 / 0.08), transparent 35%);
   pointer-events: none;
   z-index: 1;
 }
 
-.bomb[data-season='winter'] .bomb__stage::before {
+.amb--winter .bomb__stage::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 35% 20%, rgba(100, 181, 246, 0.08) 0%, transparent 40%);
+  background: radial-gradient(circle at 35% 20%, oklch(0.70 0.12 210 / 0.08), transparent 40%);
   pointer-events: none;
   z-index: 1;
 }
 
-/* ── 비 날씨: 우산 색상 강조 + 빗줄 표현 ── */
-.bomb[data-weather='rain'] .bomb__stage {
-  opacity: 0.92;
+/* ── 비 날씨: 우비 색감 + 빗줄 ── */
+.amb--w-rain .bomb__stage {
+  opacity: 0.90;
 }
 
-.bomb[data-weather='rain'] .bomb__stage::after {
+.amb--w-rain .bomb__stage::after {
   content: '';
   position: absolute;
   inset: 0;
   background: repeating-linear-gradient(
     135deg,
-    transparent 0,
+    transparent,
     transparent 20px,
-    rgba(100, 150, 200, 0.05) 20px,
-    rgba(100, 150, 200, 0.05) 22px
+    oklch(0.60 0.08 240 / 0.08) 20px,
+    oklch(0.60 0.08 240 / 0.08) 22px
   );
   pointer-events: none;
   z-index: 10;
@@ -125,14 +145,14 @@
   100% { background-position: 40px 40px; }
 }
 
-/* ── 눈 날씨: 옷차림 변경(패딩 점프) + 눈 표현 ── */
-.bomb[data-weather='snow'] .bomb__stage::after {
+/* ── 눈 날씨: 눈송이 ── */
+.amb--w-snow .bomb__stage::after {
   content: '';
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle 1px, rgba(255, 255, 255, 0.7) 0%, transparent 1px) 0 0 / 12px 12px,
-    radial-gradient(circle 1px, rgba(255, 255, 255, 0.5) 0%, transparent 1px) 6px 6px / 12px 12px;
+    radial-gradient(circle 1px, oklch(1 0 0 / 0.70), transparent 1px) 0 0 / 12px 12px,
+    radial-gradient(circle 1px, oklch(1 0 0 / 0.50), transparent 1px) 6px 6px / 12px 12px;
   animation: bomb-snow 6s linear infinite;
   pointer-events: none;
   z-index: 10;
@@ -143,72 +163,60 @@
   100% { background-position: 0 24px, 0 24px; }
 }
 
+[data-theme='dark'] .amb--w-snow .bomb__stage::after {
+  background:
+    radial-gradient(circle 1px, oklch(0.75 0.02 240 / 0.55), transparent 1px) 0 0 / 12px 12px,
+    radial-gradient(circle 1px, oklch(0.75 0.02 240 / 0.35), transparent 1px) 6px 6px / 12px 12px;
+}
+
 /* ── 안개 날씨 ── */
-.bomb[data-weather='fog'] .bomb__stage {
+.amb--w-fog .bomb__stage {
   opacity: 0.85;
 }
 
-.bomb[data-weather='fog'] .bomb__stage::after {
+.amb--w-fog .bomb__stage::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom,
-    rgba(200, 200, 200, 0.1) 0%,
-    rgba(200, 200, 200, 0.05) 50%,
-    rgba(200, 200, 200, 0.08) 100%);
+  background: linear-gradient(
+    to bottom,
+    oklch(0.80 0.01 240 / 0.12),
+    oklch(0.80 0.01 240 / 0.06) 50%,
+    oklch(0.80 0.01 240 / 0.10) 100%
+  );
   pointer-events: none;
   z-index: 10;
 }
 
 /* ── 금요일: 불금 장식 ── */
-.bomb[data-weekday='5'] .bomb__stage {
-  position: relative;
-}
-
-.bomb[data-weekday='5'] .bomb__stage::before {
-  background:
-    radial-gradient(circle at 30% 20%, rgba(244, 188, 211, 0.1) 0%, transparent 30%),
-    radial-gradient(circle at 70% 30%, rgba(244, 188, 211, 0.08) 0%, transparent 35%),
-    repeating-conic-gradient(from 0deg at 50% 10%, #ff6b6b 0deg 30deg, #ffe66d 30deg 60deg, #4ecdc4 60deg 90deg) !important;
-  background-size: auto, auto, 80px 80px;
-  background-position: 0 0, 0 0, 0 0;
-  opacity: 0.2;
-}
-
-.bomb[data-weekday='5']::after {
-  content: '🎉 불금! 🎉';
+.amb--fri.bomb::after {
+  content: '🎉';
   position: absolute;
-  top: 5%;
+  top: 4%;
   left: 50%;
   translate: -50% 0;
-  font-size: clamp(16px, 5cqw, 24px);
-  font-weight: 900;
-  color: #ff6b6b;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  animation: bomb-friday-pulse 1.5s ease-in-out infinite;
+  font-size: clamp(18px, 6cqw, 28px);
+  animation: bomb-fri-bounce 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
   pointer-events: none;
   z-index: 20;
 }
 
-@keyframes bomb-friday-pulse {
-  0%, 100% { transform: scale(1) rotateZ(0deg); }
-  50% { transform: scale(1.15) rotateZ(-5deg); }
+@keyframes bomb-fri-bounce {
+  0%, 100% { transform: scale(0.8) rotate(-15deg); opacity: 0.6; }
+  50% { transform: scale(1.2) rotate(15deg); opacity: 1; }
 }
 
-/* ── 심지 색상 강조 — 금요일 ── */
-.bomb[data-weekday='5'] .bomb__fuse {
-  filter: drop-shadow(0 0 8px rgba(255, 107, 107, 0.5));
+.amb--fri .bomb__fuse {
+  filter: drop-shadow(0 0 6px oklch(0.6 0.25 10 / 0.4));
 }
 
-/* 움직임 줄이기 */
 @media (prefers-reduced-motion: reduce) {
-  .bomb[data-weather='rain'] .bomb__stage::after {
+  .amb--w-rain .bomb__stage::after,
+  .amb--w-snow .bomb__stage::after,
+  .amb--fri.bomb::after {
     animation: none;
   }
-  .bomb[data-weather='snow'] .bomb__stage::after {
-    animation: none;
-  }
-  .bomb[data-weekday='5']::after {
-    animation: none;
+  .amb--fri .bomb__fuse {
+    filter: none;
   }
 }

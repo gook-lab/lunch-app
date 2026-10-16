@@ -34,6 +34,7 @@ import { seededRandom } from '../../lib/random';
 import { curlSfxLater, type CurlSfxName, type SfxName } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
 import { useAmbience } from '../../hooks/useAmbience';
+import { ambienceClasses } from './scene/outfit';
 import './Curling.css';
 import './Curling.ambience.css';
 
@@ -220,13 +221,11 @@ export function Curling({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
         expanded ? 'curling--big' : '',
         settled ? 'curling--settled' : '',
         racking ? 'curling--rack' : '',
+        ambienceClasses(ambience),
       ]
         .filter(Boolean)
         .join(' ')}
       style={{ '--fit': (100 / SHEET_L).toFixed(4) } as React.CSSProperties}
-      data-season={ambience.season}
-      data-weather={ambience.weather}
-      data-weekday={ambience.weekday}
     >
       <div
         className="curling__sheet"

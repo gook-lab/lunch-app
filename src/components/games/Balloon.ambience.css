@@ -1,164 +1,166 @@
 /*
- * 풍선 터뜨리기 분위기 — 계절·날씨·요일에 따른 시각 변화.
- * 공원 배경이 바뀌고, 풍선 무늬도 계절에 맞춘다. 비/눈 날씨에 따라 배경이 바뀐다.
- * 금요일(weekday=5)에는 불금 장식을 넣는다.
+ * 풍선 터뜨리기 — 계절·날씨. 공원 배경(봄 꽃, 여름 잔디, 가을 단풍, 겨울 눈밭),
+ * 풍선 몸통·끈 계절 색, 날씨 효과(비/눈/안개), 금요일 장식. 연출 전용.
  */
 
-/* ── 봄: 꽃 피는 공원 ── */
-.balloon[data-season='spring'] .balloon__board {
-  background: linear-gradient(to bottom,
-    #e8f5e9 0%,
-    #fff9c4 50%,
-    #c8e6c9 100%);
+.balloon__board {
+  --bg-sky: oklch(0.92 0.06 200);
+  --bg-mid: oklch(0.88 0.08 100);
+  --bg-land: oklch(0.85 0.10 120);
+  background: linear-gradient(to bottom, var(--bg-sky), var(--bg-mid) 50%, var(--bg-land));
   position: relative;
 }
 
-.balloon[data-season='spring'] .balloon__board::before {
+/* ── 봄: 벚꽃 공원 ── */
+.amb--spring .balloon__board {
+  --bg-sky: oklch(0.96 0.05 30);
+  --bg-mid: oklch(0.94 0.04 50);
+  --bg-land: oklch(0.88 0.08 120);
+}
+
+.amb--spring .balloon__board::before {
   content: '';
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 120px 100px at 20% 10%, rgba(244, 188, 211, 0.3) 0%, transparent 60%),
-    radial-gradient(ellipse 100px 80px at 80% 20%, rgba(244, 188, 211, 0.25) 0%, transparent 60%),
-    radial-gradient(ellipse 110px 90px at 50% 15%, rgba(188, 212, 230, 0.2) 0%, transparent 60%);
+    radial-gradient(ellipse 120px 100px at 20% 10%, oklch(0.88 0.15 0 / 0.25), transparent 60%),
+    radial-gradient(ellipse 100px 80px at 80% 20%, oklch(0.88 0.15 0 / 0.20), transparent 60%),
+    radial-gradient(ellipse 110px 90px at 50% 15%, oklch(0.85 0.10 200 / 0.15), transparent 60%);
   pointer-events: none;
   z-index: 0;
 }
 
-/* ── 여름: 밝은 공원 ── */
-.balloon[data-season='summer'] .balloon__board {
-  background: linear-gradient(to bottom,
-    #e1f5fe 0%,
-    #fff8e1 50%,
-    #ffecb3 100%);
+/* ── 여름: 밝은 잔디 공원 ── */
+.amb--summer .balloon__board {
+  --bg-sky: oklch(0.93 0.08 230);
+  --bg-mid: oklch(0.92 0.06 100);
+  --bg-land: oklch(0.88 0.10 110);
+  background: linear-gradient(to bottom, var(--bg-sky), var(--bg-mid) 50%, var(--bg-land));
 }
 
 /* ── 가을: 단풍 공원 ── */
-.balloon[data-season='autumn'] .balloon__board {
-  background: linear-gradient(to bottom,
-    #ffe0b2 0%,
-    #fff9c4 50%,
-    #ffccbc 100%);
+.amb--autumn .balloon__board {
+  --bg-sky: oklch(0.94 0.06 50);
+  --bg-mid: oklch(0.92 0.05 60);
+  --bg-land: oklch(0.85 0.10 30);
+  background: linear-gradient(to bottom, var(--bg-sky), var(--bg-mid) 50%, var(--bg-land));
   position: relative;
 }
 
-.balloon[data-season='autumn'] .balloon__board::before {
+.amb--autumn .balloon__board::before {
   content: '';
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 130px 100px at 25% 10%, rgba(255, 152, 0, 0.25) 0%, transparent 60%),
-    radial-gradient(ellipse 110px 85px at 75% 15%, rgba(255, 87, 34, 0.2) 0%, transparent 60%);
+    radial-gradient(ellipse 130px 100px at 25% 10%, oklch(0.65 0.18 40 / 0.20), transparent 60%),
+    radial-gradient(ellipse 110px 85px at 75% 15%, oklch(0.60 0.20 30 / 0.18), transparent 60%);
   pointer-events: none;
   z-index: 0;
 }
 
-/* ── 겨울: 하얀 눈 공원 ── */
-.balloon[data-season='winter'] .balloon__board {
-  background: linear-gradient(to bottom,
-    #e3f2fd 0%,
-    #f1f8e9 50%,
-    #eceff1 100%);
+/* ── 겨울: 눈밭 공원 ── */
+.amb--winter .balloon__board {
+  --bg-sky: oklch(0.92 0.04 250);
+  --bg-mid: oklch(0.90 0.03 240);
+  --bg-land: oklch(0.96 0.01 230);
+  background: linear-gradient(to bottom, var(--bg-sky), var(--bg-mid) 50%, var(--bg-land));
 }
 
-/* 어두운 모드 배경 */
-[data-theme='dark'] .balloon[data-season='spring'] .balloon__board {
-  background: linear-gradient(to bottom, #1b5e20 0%, #33691e 50%, #1b5e20 100%);
+[data-theme='dark'] .balloon__board {
+  --bg-sky: oklch(0.28 0.04 230);
+  --bg-mid: oklch(0.24 0.05 200);
+  --bg-land: oklch(0.22 0.06 210);
 }
 
-[data-theme='dark'] .balloon[data-season='summer'] .balloon__board {
-  background: linear-gradient(to bottom, #01579b 0%, #1a237e 50%, #0d47a1 100%);
+[data-theme='dark'] .amb--spring .balloon__board {
+  --bg-sky: oklch(0.32 0.04 30);
+  --bg-mid: oklch(0.28 0.04 50);
+  --bg-land: oklch(0.22 0.06 120);
 }
 
-[data-theme='dark'] .balloon[data-season='autumn'] .balloon__board {
-  background: linear-gradient(to bottom, #3e2723 0%, #5d4037 50%, #4e342e 100%);
+[data-theme='dark'] .amb--summer .balloon__board {
+  --bg-sky: oklch(0.27 0.06 230);
+  --bg-mid: oklch(0.26 0.05 100);
+  --bg-land: oklch(0.22 0.07 110);
 }
 
-[data-theme='dark'] .balloon[data-season='winter'] .balloon__board {
-  background: linear-gradient(to bottom, #0d47a1 0%, #1565c0 50%, #1a237e 100%);
+[data-theme='dark'] .amb--autumn .balloon__board {
+  --bg-sky: oklch(0.32 0.04 50);
+  --bg-mid: oklch(0.28 0.04 60);
+  --bg-land: oklch(0.20 0.07 30);
 }
 
-/* ── 풍선 무늬 — 계절 패턴 ── */
-.balloon[data-season='spring'] .balloon__body {
-  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), transparent),
-    conic-gradient(#f06292 0deg, #f48fb1 90deg, #f06292 180deg, #f48fb1 270deg, #f06292 360deg);
+[data-theme='dark'] .amb--winter .balloon__board {
+  --bg-sky: oklch(0.26 0.02 250);
+  --bg-mid: oklch(0.24 0.02 240);
+  --bg-land: oklch(0.72 0.01 230);
 }
 
-.balloon[data-season='summer'] .balloon__body {
-  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.4), transparent),
-    repeating-linear-gradient(45deg, currentColor, currentColor 10px, rgba(255, 255, 255, 0.2) 10px, rgba(255, 255, 255, 0.2) 12px);
+/* ── 풍선 몸통 — 계절 색 ── */
+.balloon__body {
+  background: conic-gradient(oklch(0.65 0.20 260), oklch(0.70 0.18 250), oklch(0.65 0.20 260));
 }
 
-.balloon[data-season='autumn'] .balloon__body {
-  background: radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.35), transparent),
-    conic-gradient(#ff6f00 0deg, #ff9800 120deg, #ff6f00 240deg, #ff9800 360deg);
+.amb--spring .balloon__body {
+  background:
+    radial-gradient(circle at 30% 30%, oklch(1 0 0 / 0.3), transparent),
+    conic-gradient(oklch(0.85 0.18 0), oklch(0.82 0.16 355), oklch(0.85 0.18 0));
 }
 
-.balloon[data-season='winter'] .balloon__body {
-  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.5), transparent),
-    repeating-linear-gradient(90deg, currentColor, currentColor 8px, rgba(255, 255, 255, 0.15) 8px, rgba(255, 255, 255, 0.15) 10px);
+.amb--summer .balloon__body {
+  background:
+    radial-gradient(circle at 35% 35%, oklch(1 0 0 / 0.4), transparent),
+    repeating-linear-gradient(45deg, currentColor, currentColor 10px, oklch(1 0 0 / 0.15) 10px, oklch(1 0 0 / 0.15) 12px);
 }
 
-/* ── 리본 색 — 계절별 ── */
-.balloon[data-season='spring'] .balloon__tie {
-  background: linear-gradient(to right, #f06292, #f48fb1);
+.amb--autumn .balloon__body {
+  background:
+    radial-gradient(circle at 25% 25%, oklch(1 0 0 / 0.35), transparent),
+    conic-gradient(oklch(0.65 0.20 40), oklch(0.68 0.18 50), oklch(0.65 0.20 40));
 }
 
-.balloon[data-season='summer'] .balloon__tie {
-  background: linear-gradient(to right, #ffeb3b, #fff176);
+.amb--winter .balloon__body {
+  background:
+    radial-gradient(circle at 35% 35%, oklch(1 0 0 / 0.5), transparent),
+    repeating-linear-gradient(90deg, currentColor, currentColor 8px, oklch(1 0 0 / 0.12) 8px, oklch(1 0 0 / 0.12) 10px);
 }
 
-.balloon[data-season='autumn'] .balloon__tie {
-  background: linear-gradient(to right, #ff6f00, #ff9800);
+/* ── 풍선 끈 색 ── */
+.balloon__tie {
+  background: linear-gradient(to right, oklch(0.65 0.20 260), oklch(0.72 0.18 250));
 }
 
-.balloon[data-season='winter'] .balloon__tie {
-  background: linear-gradient(to right, #64b5f6, #90caf9);
+.amb--spring .balloon__tie {
+  background: linear-gradient(to right, oklch(0.85 0.15 0), oklch(0.82 0.13 355));
+}
+
+.amb--summer .balloon__tie {
+  background: linear-gradient(to right, oklch(0.90 0.12 60), oklch(0.88 0.10 50));
+}
+
+.amb--autumn .balloon__tie {
+  background: linear-gradient(to right, oklch(0.65 0.20 40), oklch(0.68 0.18 50));
+}
+
+.amb--winter .balloon__tie {
+  background: linear-gradient(to right, oklch(0.70 0.15 210), oklch(0.75 0.12 200));
 }
 
 /* ── 비 날씨 ── */
-.balloon[data-weather='rain'] .balloon__board {
-  opacity: 0.94;
-  background: linear-gradient(to bottom,
-    var(--rain-color-start),
-    var(--rain-color-mid),
-    var(--rain-color-end));
+.amb--w-rain .balloon__board {
+  opacity: 0.90;
 }
 
-.balloon[data-season='spring'][data-weather='rain'] .balloon__board {
-  --rain-color-start: #a5d6a7;
-  --rain-color-mid: #fff3e0;
-  --rain-color-end: #a1887f;
-}
-
-.balloon[data-season='summer'][data-weather='rain'] .balloon__board {
-  --rain-color-start: #81d4fa;
-  --rain-color-mid: #ffe0b2;
-  --rain-color-end: #90a4ae;
-}
-
-.balloon[data-season='autumn'][data-weather='rain'] .balloon__board {
-  --rain-color-start: #ffab91;
-  --rain-color-mid: #fff59d;
-  --rain-color-end: #9e837a;
-}
-
-.balloon[data-season='winter'][data-weather='rain'] .balloon__board {
-  --rain-color-start: #b3e5fc;
-  --rain-color-mid: #f1f8e9;
-  --rain-color-end: #b0bec5;
-}
-
-.balloon[data-weather='rain'] .balloon__board::after {
+.amb--w-rain .balloon__board::after {
   content: '';
   position: absolute;
   inset: 0;
   background: repeating-linear-gradient(
     45deg,
-    transparent 0,
+    transparent,
     transparent 25px,
-    rgba(0, 0, 0, 0.05) 25px,
-    rgba(0, 0, 0, 0.05) 50px
+    oklch(0.5 0.02 250 / 0.08) 25px,
+    oklch(0.5 0.02 250 / 0.08) 50px
   );
   pointer-events: none;
   z-index: 5;
@@ -171,20 +173,17 @@
 }
 
 /* ── 눈 날씨 ── */
-.balloon[data-weather='snow'] .balloon__board {
-  background: linear-gradient(to bottom,
-    #e0f2f1 0%,
-    #f1f8e9 50%,
-    #f0f4c3 100%);
+.amb--w-snow .balloon__board {
+  opacity: 0.92;
 }
 
-.balloon[data-weather='snow'] .balloon__board::after {
+.amb--w-snow .balloon__board::after {
   content: '';
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle 1.2px, rgba(255, 255, 255, 0.8) 0%, transparent 1.2px) 0 0 / 16px 16px,
-    radial-gradient(circle 1.2px, rgba(255, 255, 255, 0.6) 0%, transparent 1.2px) 8px 8px / 16px 16px;
+    radial-gradient(circle 1.2px, oklch(1 0 0 / 0.80), transparent 1.2px) 0 0 / 16px 16px,
+    radial-gradient(circle 1.2px, oklch(1 0 0 / 0.60), transparent 1.2px) 8px 8px / 16px 16px;
   animation: balloon-snow 6s linear infinite;
   pointer-events: none;
   z-index: 5;
@@ -195,51 +194,57 @@
   100% { background-position: 0 32px, 0 32px; }
 }
 
-/* ── 안개 날씨 ── */
-.balloon[data-weather='fog'] .balloon__board {
-  opacity: 0.88;
-  background: linear-gradient(to bottom,
-    rgba(180, 180, 180, 0.2),
-    rgba(200, 200, 200, 0.15),
-    rgba(180, 180, 180, 0.2));
+[data-theme='dark'] .amb--w-snow .balloon__board::after {
+  background:
+    radial-gradient(circle 1.2px, oklch(0.75 0.02 240 / 0.60), transparent 1.2px) 0 0 / 16px 16px,
+    radial-gradient(circle 1.2px, oklch(0.75 0.02 240 / 0.40), transparent 1.2px) 8px 8px / 16px 16px;
 }
 
-.balloon[data-weather='fog'] .balloon__balloon {
-  filter: drop-shadow(0 0 3px rgba(200, 200, 200, 0.3));
+/* ── 안개 날씨 ── */
+.amb--w-fog .balloon__board {
+  opacity: 0.85;
+}
+
+.amb--w-fog .balloon__board::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    oklch(0.80 0.01 240 / 0.15),
+    oklch(0.80 0.01 240 / 0.10),
+    oklch(0.80 0.01 240 / 0.15)
+  );
+  pointer-events: none;
+  z-index: 5;
+}
+
+.amb--w-fog .balloon__balloon {
+  filter: drop-shadow(0 0 2px oklch(0.80 0.01 240 / 0.35));
 }
 
 /* ── 금요일: 불금 장식 ── */
-.balloon[data-weekday='5']::before {
-  content: '🎊 불금 🎊';
+.amb--fri.balloon::before {
+  content: '🎊';
   position: absolute;
-  top: 8%;
+  top: 6%;
   left: 50%;
   translate: -50% 0;
-  font-size: clamp(12px, 3.5cqw, 18px);
-  font-weight: 900;
-  color: #ff6b6b;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  animation: balloon-friday-bounce 2.2s ease-in-out infinite;
+  font-size: clamp(14px, 4cqw, 22px);
+  animation: balloon-fri-spin 2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
   pointer-events: none;
   z-index: 20;
 }
 
-@keyframes balloon-friday-bounce {
-  0%, 100% { transform: translateY(0) rotateZ(0deg); }
-  25% { transform: translateY(-10px) rotateZ(-5deg); }
-  50% { transform: translateY(0) rotateZ(5deg); }
-  75% { transform: translateY(-6px) rotateZ(-3deg); }
+@keyframes balloon-fri-spin {
+  0%, 100% { transform: rotate(-15deg) scale(0.85); opacity: 0.7; }
+  50% { transform: rotate(15deg) scale(1.15); opacity: 1; }
 }
 
-/* 움직임 줄이기 */
 @media (prefers-reduced-motion: reduce) {
-  .balloon[data-weather='rain'] .balloon__board::after {
-    animation: none;
-  }
-  .balloon[data-weather='snow'] .balloon__board::after {
-    animation: none;
-  }
-  .balloon[data-weekday='5']::before {
+  .amb--w-rain .balloon__board::after,
+  .amb--w-snow .balloon__board::after,
+  .amb--fri.balloon::before {
     animation: none;
   }
 }
