@@ -76,7 +76,7 @@ export function Settings() {
         <span className="settings__label" id="settings-season">
           계절 테마
         </span>
-        <div className="segmented" role="group" aria-labelledby="settings-season">
+        <div className="segmented segmented--grid" role="group" aria-labelledby="settings-season">
           {SEASONS.map((s) => (
             <button
               key={s.id}

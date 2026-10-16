@@ -17,6 +17,10 @@ body {
   margin: 0;
   background: var(--color-bg);
   color: var(--color-text);
+  /* 한국어는 기본값이면 글자 하나 단위로 꺾인다("바꾸/기"). 어절 단위로 꺾고,
+     띄어쓰기 없는 긴 이름만 칸을 넘을 때 아무 데서나 꺾는다. */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 #root {

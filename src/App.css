@@ -193,6 +193,7 @@ body {
 
 .segmented button {
   border: 0;
+  white-space: nowrap;
   background: transparent;
   padding: var(--space-2) var(--space-3);
   font-size: var(--fs-sm);
@@ -1403,6 +1404,7 @@ footer.muted { text-align: center; }
   align-items: center;
   gap: 2px;
   min-height: 52px;
+  white-space: nowrap;
   padding: var(--space-2) var(--space-1);
   border: 0;
   background: var(--color-bg);
@@ -1707,6 +1709,7 @@ html:has(dialog[open]:modal) { overflow: hidden; }
   font-size: var(--fs-sm);
   color: var(--color-neutral-700);
 }
+.today__office > .linkish { flex: none; white-space: nowrap; }
 .today__office--temp { color: var(--color-accent-700); font-weight: 600; }
 
 /* 회사 위치 단추 셋 — 좁으면 한 줄에 하나씩 */
@@ -3840,6 +3843,14 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 .settings { display: grid; gap: var(--space-3); min-width: 240px; }
 .settings__row { display: grid; gap: var(--space-1); }
 .settings__label { font-size: var(--fs-sm); font-weight: 600; }
+/* 설정 안의 고르기 칸은 팝오버 폭을 꽉 채운다. */
+.settings .segmented { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.settings .segmented button { text-align: center; }
+/* 계절은 여섯 개라 한 줄이면 칸이 좁아 글자가 세로로 선다. 세 칸씩 두 줄. */
+.settings .segmented--grid { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); }
+.settings .segmented--grid button + button { border-left: 0; }
+.settings .segmented--grid button:not(:nth-child(3n + 1)) { border-left: 1px solid var(--color-neutral-400); }
+.settings .segmented--grid button:nth-child(n + 4) { border-top: 1px solid var(--color-neutral-400); }
 
 /* 카테고리 칩 두 줄 — 메뉴, 그 아래 세부 */
 .catbar-wrap { display: grid; gap: var(--space-1); }

@@ -47,3 +47,75 @@
 :root[data-theme='dark'][data-season] body {
   background: color-mix(in srgb, var(--season-seed) 9%, var(--color-bg));
 }
+
+/* ──────── 계절 입자 — SeasonSky ──────── */
+.season-sky { display: none; }
+:root[data-season] .season-sky {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.season-sky span {
+  position: absolute;
+  top: -40px;
+  left: var(--x);
+  width: calc(12px * var(--s));
+  height: calc(12px * var(--s));
+  animation: season-fall var(--d) linear var(--delay) infinite;
+}
+@keyframes season-fall {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(var(--sway), 55vh) rotate(180deg); }
+  100% { transform: translate(0, calc(100vh + 80px)) rotate(360deg); }
+}
+
+/* 봄 — 꽃잎 */
+:root[data-season='spring'] .season-sky span {
+  border-radius: 100% 0;
+  background: color-mix(in srgb, var(--season-seed) 35%, white);
+  opacity: 0.55;
+}
+/* 여름 — 반딧불처럼 아래에서 떠오르는 빛 */
+:root[data-season='summer'] .season-sky span {
+  top: auto;
+  bottom: -40px;
+  width: calc(6px * var(--s));
+  height: calc(6px * var(--s));
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--season-seed) 30%, white);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--season-seed) 40%, white);
+  opacity: 0.5;
+  animation-name: season-rise;
+}
+@keyframes season-rise {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(var(--sway), -55vh); }
+  100% { transform: translate(0, calc(-100vh - 80px)); }
+}
+/* 가을 — 낙엽. 세 가지 빛깔을 번갈아 */
+:root[data-season='autumn'] .season-sky span {
+  width: calc(14px * var(--s));
+  height: calc(14px * var(--s));
+  border-radius: 0 100%;
+  background: var(--season-seed);
+  opacity: 0.5;
+}
+:root[data-season='autumn'] .season-sky span:nth-child(3n + 1) { background: color-mix(in srgb, var(--season-seed) 60%, white); }
+:root[data-season='autumn'] .season-sky span:nth-child(3n + 2) { background: color-mix(in srgb, var(--season-seed) 70%, black); }
+/* 겨울 — 눈송이. 밝은 바탕에선 흰 눈이 안 보여 푸른 회색으로 */
+:root[data-season='winter'] .season-sky span {
+  border-radius: 50%;
+  width: calc(9px * var(--s));
+  height: calc(9px * var(--s));
+  background: color-mix(in srgb, var(--season-seed) 30%, white);
+  opacity: 0.7;
+}
+:root[data-theme='dark'][data-season='winter'] .season-sky span { background: white; opacity: 0.45; }
+
+@media (prefers-reduced-motion: reduce) {
+  .season-sky span { animation: none; top: calc(var(--x) * 0.9); }
+  :root[data-season='summer'] .season-sky span { bottom: auto; }
+}
