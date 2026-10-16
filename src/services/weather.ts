@@ -26,6 +26,9 @@ export interface WeatherData {
 
 const CACHE_KEY_PREFIX = 'lunch-app:weather:';
 const CACHE_DURATION_MS = 15 * 60 * 1000; // 15분
+const FAILURE_CACHE_MS = 60 * 1000; // 장애 중 재마운트가 외부 API를 연속 호출하지 않게 1분 쉰다.
+const failedAt = new Map<string, number>();
+const inflight = new Map<string, Promise<WeatherData | null>>();
 
 function getCacheKey(lat: number, lng: number): string {
   // 반올림해서 캐시 키 만들기 — 약간의 좌표 변화는 같은 캐시를 쓴다.
@@ -58,11 +61,16 @@ export async function fetchWeather(
   lat: number,
   lng: number,
 ): Promise<WeatherData | null> {
-  try {
-    const cacheKey = getCacheKey(lat, lng);
-    const cached = readCache(cacheKey);
-    if (cached) return cached;
+  const cacheKey = getCacheKey(lat, lng);
+  const cached = readCache(cacheKey);
+  if (cached) return cached;
+  if (Date.now() - (failedAt.get(cacheKey) ?? 0) < FAILURE_CACHE_MS) return null;
 
+  const running = inflight.get(cacheKey);
+  if (running) return running;
+
+  const request = (async () => {
+    try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000); // 5초 타임아웃
 
@@ -74,15 +82,24 @@ export async function fetchWeather(
     url.searchParams.set('timezone', 'Asia/Seoul');
     url.searchParams.set('forecast_days', '1');
 
-    const res = await fetch(url.toString(), { signal: controller.signal });
-    clearTimeout(timeout);
+      const res = await fetch(url.toString(), { signal: controller.signal }).finally(() => clearTimeout(timeout));
 
-    if (!res.ok) return null;
-    const data = (await res.json()) as WeatherData;
-    writeCache(cacheKey, data);
-    return data;
-  } catch {
-    // 네트워크 오류, 타임아웃, JSON 파싱 실패 — 모두 무시
-    return null;
-  }
+      if (!res.ok) {
+        failedAt.set(cacheKey, Date.now());
+        return null;
+      }
+      const data = (await res.json()) as WeatherData;
+      failedAt.delete(cacheKey);
+      writeCache(cacheKey, data);
+      return data;
+    } catch {
+      // 네트워크 오류, 타임아웃, JSON 파싱 실패 — 모두 무시하되 잠깐 쉬어 장애를 증폭하지 않는다.
+      failedAt.set(cacheKey, Date.now());
+      return null;
+    } finally {
+      inflight.delete(cacheKey);
+    }
+  })();
+  inflight.set(cacheKey, request);
+  return request;
 }

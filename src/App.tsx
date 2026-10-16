@@ -1055,6 +1055,7 @@ export default function App() {
                 places={places}
                 onChanged={reload}
                 onOfficeChanged={reload}
+                onShowList={() => goTab('list')}
                 todayId={decidedPlace?.id ?? null}
                 recentIds={recentIds}
                 focusId={mapFocus}

@@ -183,6 +183,16 @@ body {
 
 .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
+/* 손가락으로 쓰는 좁은 화면에서는 보이는 밀도보다 실제 누르는 면적을 우선한다. */
+@media (pointer: coarse), (max-width: 640px) {
+  .chip,
+  .stage__opt,
+  .weather__near,
+  .party__head button {
+    min-height: 44px;
+  }
+}
+
 /* 하나만 고르는 묶음은 붙여서 세그먼트로 보이게 한다 */
 .segmented {
   display: inline-flex;
@@ -222,6 +232,13 @@ body {
   content: '';
   position: absolute;
   inset: -10px -4px;
+}
+
+.map__troubleActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
 }
 
 /*

@@ -54,6 +54,8 @@ const MAX_RESULTS = 10;
 interface Props {
   places: Place[];
   onChanged: () => void;
+  /** 지도 장애 중에도 사용자가 막히지 않게 가게 목록으로 돌려보낸다. */
+  onShowList?: () => void;
   /** 회사 위치를 바꾼 뒤. 데이터를 다시 읽고 지도를 새 기준으로 다시 만든다. */
   onOfficeChanged: () => void;
   /** 오늘 정한 가게. 지도 핀에 "오늘" 표시를 단다. */
@@ -99,10 +101,8 @@ function troubleOf(error: unknown): Trouble {
     }
     return {
       title: '지도를 불러오지 못했어요',
-      detail: import.meta.env.DEV
-        ? '도메인이 등록되지 않았을 수 있어요. 카카오 개발자 콘솔의 앱 > 플랫폼 > Web 사이트 도메인에 ' +
-          `${window.location.origin} 이 있는지 확인해 주세요.`
-        : '잠시 뒤 다시 시도해 주세요.',
+      // 도메인·SDK 설정은 사용자가 해결할 수 없다. 원인은 콘솔에 남기고 화면에는 다음 행동만 준다.
+      detail: '잠시 뒤 다시 시도하거나, 가게 목록에서 점심을 골라 주세요.',
       retryable: true,
     };
   }
@@ -118,6 +118,7 @@ function troubleOf(error: unknown): Trouble {
 export default function MapTab({
   places,
   onChanged,
+  onShowList,
   onOfficeChanged,
   todayId = null,
   recentIds,
@@ -803,9 +804,12 @@ export default function MapTab({
           <p className="map__troubleTitle">{trouble.title}</p>
           <p className="muted small">{trouble.detail}</p>
           {trouble.retryable && (
-            <Button variant="secondary" onClick={retry}>
-              다시 시도
-            </Button>
+            <div className="map__troubleActions">
+              <Button variant="secondary" onClick={retry}>
+                다시 시도
+              </Button>
+              {places.length > 0 && onShowList && <Button onClick={onShowList}>가게 목록 보기</Button>}
+            </div>
           )}
         </div>
         {/* "다른 탭은 그대로 쓸 수 있어요" 는 여기 한 곳에서만 한다. 위 안내와 두 번 말했다(10/15).
