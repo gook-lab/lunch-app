@@ -7,7 +7,8 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DayId } from '../lib/date';
-import { departingAlerts, joinAlerts, nowMinutesKST, type PartyAlert } from '../lib/party';
+import { departingAlerts, joinAlerts, nowMinutesKST, partyAlertText, type PartyAlert } from '../lib/party';
+import { askNotifyOnce, notifyIfHidden } from '../lib/notify';
 import {
   cancelParty,
   joinParty,
@@ -44,6 +45,8 @@ export function useParties(day: DayId): {
       const fresh = found.filter((a) => !seen.current.has(a.key));
       if (fresh.length === 0) return;
       for (const a of fresh) seen.current.add(a.key);
+      // 다른 창을 보고 있으면 브라우저 알림으로도(허락했을 때만).
+      notifyIfHidden(fresh.map((a) => ({ tag: a.key, text: `${a.type === 'joined' ? '🙌' : '⏰'} ${partyAlertText(a, day)}` })));
       setAlerts((prev) => ({ day, list: [...(prev.day === day ? prev.list : []), ...fresh] }));
     },
     [day],
@@ -86,8 +89,15 @@ export function useParties(day: DayId): {
 
   const actions = useMemo<PartyActions>(
     () => ({
-      open: (input) => openParty(day, input),
-      join: (id) => joinParty(day, id),
+      // 팟에 들어가거나 열 때 — 알림이 쓸모 있어지는 순간에 한 번만 허락을 묻는다.
+      open: (input) => {
+        askNotifyOnce();
+        return openParty(day, input);
+      },
+      join: (id) => {
+        askNotifyOnce();
+        return joinParty(day, id);
+      },
       leave: (id) => leaveParty(day, id),
       setStatus: (id, status) => setPartyStatus(day, id, status),
       cancel: (id) => cancelParty(day, id),

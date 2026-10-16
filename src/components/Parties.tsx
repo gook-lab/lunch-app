@@ -32,6 +32,7 @@ import {
   modeLabel,
   partyCandidates,
   partyInputProblem,
+  partyAlertText,
   partyPhase,
   sortParties,
 } from '../lib/party';
@@ -92,10 +93,7 @@ export function Parties({ day, parties, myUid, places, candidatesFor, preferredM
   const [cancelAsk, setCancelAsk] = useState<string | null>(null);
   // 게임: 방장이 고르는 중(pick) 또는 저장된 판을 보는 중(watch).
   const [gameFor, setGameFor] = useState<{ partyId: string; view: 'pick' | 'watch' } | null>(null);
-  const alertMessage = (a: PartyAlert): string =>
-    a.type === 'joined' && a.uid
-      ? `${avatarOf(a.uid, day).label}님이 ${a.category} 팟에 들어왔어요`
-      : `${a.category} 팟이 곧 출발해요`;
+  const alertMessage = (a: PartyAlert): string => partyAlertText(a, day);
 
   const wide = useMedia('(min-width: 960px)');
   const form = formOpen && (

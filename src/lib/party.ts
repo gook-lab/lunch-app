@@ -8,6 +8,8 @@ import type { Place } from './candidates';
 import { CATEGORIES } from './category';
 import { GAME_MODES, type GameMode } from '../components/games/types';
 import type { Party, PartyGame, PartyInput, PartyMember } from '../services/types';
+import { avatarOf } from './avatar';
+import type { DayId } from './date';
 
 export const PARTY_MIN = 2;
 export const PARTY_MAX = 10;
@@ -220,6 +222,13 @@ export interface PartyAlert {
   category: string;
   /** joined 일 때 들어온 사람 uid. 화면에선 익명 아바타 이름으로 바꿔 보여 준다. */
   uid?: string;
+}
+
+/** 알림 한 줄 — 화면 안 알림과 브라우저 알림이 같은 말을 쓴다. */
+export function partyAlertText(a: PartyAlert, day: DayId): string {
+  return a.type === 'joined' && a.uid
+    ? `${avatarOf(a.uid, day).label}님이 ${a.category} 팟에 들어왔어요`
+    : `${a.category} 팟이 곧 출발해요`;
 }
 
 /** 출발 몇 분 전부터 "곧 출발" 로 알리나. */
