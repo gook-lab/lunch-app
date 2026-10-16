@@ -19,3 +19,6 @@
  * 키보드로 닿을 수 없는 스크롤 영역이 된다(axe scrollable-region-focusable). 잠긴 동안은 스크롤을 접는다.
  */
 :is(.catbar, .modebar):not(:has(:is(button, a, input, [tabindex]):not(:disabled, [tabindex='-1']))) { overflow: hidden; }
+
+/* "결과" 배지 — 계절 끔이면 accent 가 원색 #ec3013 이라 흰 12px 글자가 3.75:1. 한 단 진한 색으로(다크에선 밝은 단 + 어두운 글자). */
+.tabs .tabs__badge--done { background: var(--color-accent-700); color: var(--color-bg); }
