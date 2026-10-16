@@ -110,4 +110,33 @@ describe('픽셀 경주 — 당첨이 1등', () => {
     }
     expect(hits).toBeGreaterThan(50);
   });
+
+  it('날씨 미끄러짐 승수를 적용해도 당첨이 1등이다', () => {
+    for (let seed = 0; seed < 50; seed += 1) {
+      // 비: 미끄러짐 2배
+      const rain = buildRace(8, 3, seededRandom(seed * 2), {
+        maxEvents: 2,
+        eventChance: 0.5,
+        weatherSlipChance: 2,
+      });
+      expect(rain.order[0]).toBe(3);
+      const others = rain.finish.filter((_, i) => i !== 3);
+      if (others.length) expect(Math.min(...others)).toBeGreaterThan(rain.finish[3]);
+    }
+  });
+
+  it('날씨 휘청 승수를 적용해도 당첨이 1등이다', () => {
+    for (let seed = 0; seed < 50; seed += 1) {
+      // 눈: 휘청 1.5배, 미끄러짐 1.2배
+      const snow = buildRace(8, 4, seededRandom(seed * 3), {
+        maxEvents: 2,
+        eventChance: 0.5,
+        weatherWobbleChance: 1.5,
+        weatherSlipChance: 1.2,
+      });
+      expect(snow.order[0]).toBe(4);
+      const others = snow.finish.filter((_, i) => i !== 4);
+      if (others.length) expect(Math.min(...others)).toBeGreaterThan(snow.finish[4]);
+    }
+  });
 });

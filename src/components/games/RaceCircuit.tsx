@@ -7,10 +7,11 @@
  * 순위표의 이름을 누르면 카메라가 그 주자를 당겨 따라간다.
  * 위치·순위 계산은 PixelRace 가 하고, 여기는 그리기만 한다.
  */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { Place } from '../../lib/candidates';
 import type { RaceEventKind } from '../../lib/race';
 import { shortName } from '../../lib/name';
+import type { Season, Weather } from '../../lib/weather';
 import {
   PLANE_H,
   gridBack,
@@ -179,6 +180,10 @@ interface Props {
   shuffling: boolean;
   /** 관중이 던져 바닥에 떨어진 것. d 는 떨어진 거리, runner 는 밟은 주자(차선). */
   hazards: { key: string; runner: number; d: number; icon: string }[];
+  /** 계절 — CSS 수정자를 위해 쓴다. */
+  season: Exclude<Season, 'auto'>;
+  /** 날씨 — 오버레이와 상태 표시를 위해 쓴다. */
+  weather: Weather;
 }
 
 export function RaceCircuit({
@@ -198,7 +203,11 @@ export function RaceCircuit({
   slots,
   shuffling,
   hazards,
+  season,
+  weather,
 }: Props) {
+  // 마우스 호버로 주자를 강조한다 — 클릭 없이 줄이 선택된다.
+  const [hoverRunnerIndex, setHoverRunnerIndex] = useState<number | null>(null);
   const n = candidates.length;
   const lanes = laneCount(n);
   const road = roadWidth(lanes);
@@ -240,7 +249,7 @@ export function RaceCircuit({
           ? 'FINAL LAP'
           : `LAP ${lap}/${laps}`;
   return (
-    <div className={['rc', `rc--${theme}`, shuffling ? 'rc--shuffle' : ''].filter(Boolean).join(' ')}>
+    <div className={['rc', `rc--${theme}`, `rc--${season}`, `rc--${weather}`, shuffling ? 'rc--shuffle' : ''].filter(Boolean).join(' ')}>
       <div className="rc__stage" aria-hidden="true">
         {lapText && <span className="rc__lap">{lapText}</span>}
         {focus !== null && (
@@ -290,6 +299,29 @@ export function RaceCircuit({
               y2={paths.start[1].y}
             />
           </svg>
+          {/* 날씨 오버레이 — 빗줄기·눈송이·안개 등 */}
+          {weather === 'rain' && (
+            <div className="rc__weather rc__weather--rain" aria-hidden="true">
+              {Array.from({ length: 20 }).map((_, i) => (
+                <span key={i} className="rc__raindrop" />
+              ))}
+            </div>
+          )}
+          {weather === 'snow' && (
+            <div className="rc__weather rc__weather--snow" aria-hidden="true">
+              {Array.from({ length: 30 }).map((_, i) => (
+                <span key={i} className="rc__snowflake" />
+              ))}
+            </div>
+          )}
+          {weather === 'fog' && <div className="rc__weather rc__weather--fog" aria-hidden="true" />}
+          {weather === 'wind' && (
+            <div className="rc__weather rc__weather--wind" aria-hidden="true">
+              {Array.from({ length: 15 }).map((_, i) => (
+                <span key={i} className="rc__windparticle" />
+              ))}
+            </div>
+          )}
           {hazards.map((h) => {
             const p = trackPoint(shape, h.d, laneOf(h.runner), laps);
             // 트랙 바깥(관중석) 쪽에서 날아온다 — 타원 중심에서 그 자리로 향하는 방향의 연장선.
@@ -318,6 +350,7 @@ export function RaceCircuit({
             const ev = active[i];
             // 말은 세워 그린다 — 방향은 왼쪽/오른쪽 뒤집기만.
             const flip = theme === 'horse' && Math.cos((deg * Math.PI) / 180) < 0;
+            const isHighlighted = hoverRunnerIndex === i || focus === i;
             return (
               <span
                 key={p.id}
@@ -326,7 +359,7 @@ export function RaceCircuit({
                   'rc__runner',
                   ev ? `rc__runner--${ev}` : '',
                   rankOf.get(i) === 1 ? 'rc__runner--win' : '',
-                  focus === i ? 'rc__runner--focus' : focus !== null ? 'rc__runner--dim' : '',
+                  isHighlighted ? 'rc__runner--focus' : focus !== null || hoverRunnerIndex !== null ? 'rc__runner--dim' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -340,6 +373,8 @@ export function RaceCircuit({
                     '--flip': flip ? -1 : 1,
                   } as React.CSSProperties
                 }
+                onMouseEnter={() => setHoverRunnerIndex(i)}
+                onMouseLeave={() => setHoverRunnerIndex(null)}
               >
                 <span className="rc__shadow" />
                 {ev === 'boost' && <span className="rc__flame" />}
@@ -360,6 +395,10 @@ export function RaceCircuit({
                 {ev === 'crash' && <span className="rc__smoke" />}
                 {bubbles?.[i] && <span className="rc__bubble">{bubbles[i]}</span>}
                 {theme === 'horse' && (ev === 'boost' || ev === 'crash') && <span className="rc__dust" />}
+                {/* 주자 번호 배지 — 주자마다 고유한 색 */}
+                <span className="rc__badge" style={{ background: runnerColor(i, n) }} aria-hidden="true">
+                  {i + 1}
+                </span>
               </span>
             );
           })}
@@ -372,11 +411,17 @@ export function RaceCircuit({
               type="button"
               className={rankOf.get(i) === 1 ? 'rc__pos rc__pos--win' : 'rc__pos'}
               title={theme === 'horse' ? `${candidates[i].name} · ${breedOf(i, round).name}` : candidates[i].name}
-              aria-pressed={focus === i}
+              aria-pressed={focus === i || hoverRunnerIndex === i}
               onClick={() => onFocus(focus === i ? null : i)}
+              onMouseEnter={() => setHoverRunnerIndex(i)}
+              onMouseLeave={() => setHoverRunnerIndex(null)}
             >
               <span className="rc__posNo">{r + 1}</span>
               <span className="rc__posDot" style={{ background: runnerColor(i, n) }} aria-hidden="true" />
+              {/* 주자 번호 — 모양은 선택 전후로 다르다. */}
+              <span className="rc__posNum" aria-hidden="true">
+                {i + 1}
+              </span>
               {/* 1등 알약은 결과 카드와 같은 이름이 보이게 길게 둔다(8차: '한 그릇 …' 으로 잘림). */}
               {shortName(candidates[i].name, rankOf.get(i) === 1 ? 12 : n > 10 ? 4 : 6)}
               {active[i] && <span aria-hidden="true">{STAND_ICON[theme][active[i]]}</span>}

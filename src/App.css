@@ -3629,6 +3629,137 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
   60% { translate: calc(var(--px) * 3) 0; rotate: 12deg; }
 }
 
+/* 계절 — 봄·여름·가을·겨울에 따라 배경과 풀 색을 바꾼다. */
+.rc--spring .rc__grassA { fill: oklch(0.72 0.15 145); }
+.rc--spring .rc__grassB { fill: oklch(0.68 0.15 145); }
+.rc--spring .rc__rail { fill: oklch(0.94 0.05 95); }
+.rc--summer .rc__grassA { fill: oklch(0.56 0.13 145); }
+.rc--summer .rc__grassB { fill: oklch(0.52 0.13 145); }
+.rc--autumn .rc__grassA { fill: oklch(0.62 0.15 40); }
+.rc--autumn .rc__grassB { fill: oklch(0.56 0.14 40); }
+.rc--autumn .rc__rail { fill: oklch(0.88 0.08 40); }
+.rc--winter .rc__grassA { fill: oklch(0.93 0.02 250); }
+.rc--winter .rc__grassB { fill: oklch(0.91 0.02 250); }
+.rc--winter .rc__rail { fill: oklch(0.95 0.01 250); }
+/* 겨울엔 도로가 얼음처럼 밝아진다. */
+.rc--winter .rc__road { fill: oklch(0.72 0.02 250); }
+
+/* 날씨 효과 오버레이 — 포인터는 통과, 애니메이션 존중 */
+.rc__weather {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* 비 — 검은 빗줄기들이 대각선으로 떨어진다. */
+.rc__weather--rain {
+  background: linear-gradient(110deg, transparent 24%, rgba(0, 0, 0, 0.05) 25%, rgba(0, 0, 0, 0.05) 26%, transparent 27%, transparent 74%, rgba(0, 0, 0, 0.05) 75%, rgba(0, 0, 0, 0.05) 76%, transparent 77%, transparent);
+  background-size: 50px 50px;
+  animation: rc-rain-move 0.5s linear infinite;
+}
+.rc__raindrop {
+  position: absolute;
+  width: 1px;
+  height: 10px;
+  background: rgba(100, 150, 200, 0.6);
+  will-change: transform;
+}
+@keyframes rc-rain-move {
+  to { background-position: 50px 0; }
+}
+
+/* 눈 — 천천히 떨어지는 흰 눈송이 */
+.rc__weather--snow { background: rgba(255, 255, 255, 0.1); }
+.rc__snowflake {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: white;
+  border-radius: 50%;
+  opacity: 0.8;
+  animation: rc-snowfall linear infinite;
+}
+@keyframes rc-snowfall {
+  to { transform: translateY(100vh) translateX(20px); opacity: 0; }
+}
+.rc__snowflake:nth-child(odd) { animation-duration: 8s; animation-delay: calc(var(--i, 0) * -0.5s); }
+.rc__snowflake:nth-child(even) { animation-duration: 12s; animation-delay: calc(var(--i, 0) * -0.8s); }
+
+/* 안개 — 반투명 회색 오버레이가 멀리 가면 더 짙어진다. */
+.rc__weather--fog {
+  background: radial-gradient(ellipse at 50% 0%, rgba(200, 200, 200, 0.3), rgba(220, 220, 220, 0.6));
+}
+
+/* 바람 — 입자들이 수평으로 떠다닌다. */
+.rc__weather--wind {}
+.rc__windparticle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: rgba(100, 100, 100, 0.4);
+  border-radius: 50%;
+  animation: rc-wind-drift linear infinite;
+}
+@keyframes rc-wind-drift {
+  to { transform: translateX(100vw) translateY(10px); opacity: 0; }
+}
+
+/* 주자 번호 배지 — 주자 위에 작은 원형 배지 */
+.rc__badge {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -80%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 800;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+  pointer-events: none;
+}
+/* 주자가 많으면 배지를 숨긴다(가독성 위해) */
+.rc__runner { min-width: 0; }
+/* 포커스되지 않은 주자의 배지는 흐린다. */
+.rc__runner--dim .rc__badge { opacity: 0.4; }
+
+/* 순위표 — 주자 번호와 등수를 분리해서 표시 */
+.rc__posNum {
+  font-weight: 700;
+  color: var(--color-neutral-600);
+  font-size: var(--fs-xs);
+  margin-right: 2px;
+}
+.rc__pos[aria-pressed='true'] .rc__posNum { color: var(--color-accent); }
+
+/* prefers-reduced-motion 존중 */
+@media (prefers-color-scheme: dark) {
+  .rc--autumn .rc__rail { fill: oklch(0.45 0.06 40); }
+  .rc--winter .rc__grassA { fill: oklch(0.72 0.02 250); }
+  .rc--winter .rc__grassB { fill: oklch(0.70 0.02 250); }
+}
+
+@supports (animation-duration: 0s) {
+  @media (prefers-reduced-motion: reduce) {
+    .rc__raindrop,
+    .rc__snowflake,
+    .rc__windparticle {
+      animation: none !important;
+      opacity: 0 !important;
+    }
+    .rc__weather--rain {
+      animation: none !important;
+      background: transparent !important;
+    }
+  }
+}
+
 /* 공개 데모 안내 */
 .demo-note {
   margin: var(--space-1) 0 0;

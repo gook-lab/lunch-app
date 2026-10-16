@@ -69,13 +69,23 @@ export interface RaceOptions {
   eventChance?: number;
   /** 사고(crash)가 날 때 가장 가까운 주자를 같이 받게 할지. 레이싱 전용. */
   collisions?: boolean;
+  /** 날씨 — 미끄러짐 확률 승수(기본 1). */
+  weatherSlipChance?: number;
+  /** 날씨 — 휘청 확률 승수(기본 1). */
+  weatherWobbleChance?: number;
 }
 
 export function buildRace(
   count: number,
   winnerIndex: number,
   random: () => number = Math.random,
-  { maxEvents = 1, eventChance = 0.38, collisions = false }: RaceOptions = {},
+  {
+    maxEvents = 1,
+    eventChance = 0.38,
+    collisions = false,
+    weatherSlipChance = 1,
+    weatherWobbleChance = 1,
+  }: RaceOptions = {},
 ): Race {
   const runners = Array.from({ length: count }, () => {
     // 기본 속도에 구간마다 흔들림. 막판 스퍼트를 하는 주자가 섞여 역전이 생긴다.
@@ -94,7 +104,25 @@ export function buildRace(
       if (random() >= eventChance) continue;
       const slice = Math.min(6, 1 + e * span + Math.floor(random() * span));
       const roll = random();
-      const kind: RaceEventKind = roll < 0.32 ? 'crash' : roll < 0.6 ? 'boost' : roll < 0.8 ? 'wobble' : 'slip';
+      let kind: RaceEventKind;
+      // 기본: crash 32%, boost 28%, wobble 20%, slip 20%
+      // 날씨 승수를 적용한다: 비=미끄러짐 2배, 눈=휘청 1.5배·미끄러짐 1.2배
+      // 가중치를 다시 계산한다.
+      const wobbleWeight = 0.2 * weatherWobbleChance;
+      const slipWeight = 0.2 * weatherSlipChance;
+      const totalWeight = 0.32 + 0.28 + wobbleWeight + slipWeight;
+      const crashThreshold = 0.32 / totalWeight;
+      const boostThreshold = crashThreshold + 0.28 / totalWeight;
+      const wobbleThreshold = boostThreshold + wobbleWeight / totalWeight;
+      if (roll < crashThreshold) {
+        kind = 'crash';
+      } else if (roll < boostThreshold) {
+        kind = 'boost';
+      } else if (roll < wobbleThreshold) {
+        kind = 'wobble';
+      } else {
+        kind = 'slip';
+      }
       pace[slice] =
         kind === 'crash'
           ? 0.15

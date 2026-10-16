@@ -14,6 +14,7 @@ import { shortName } from '../../lib/name';
 import { buildRace, progress, SLICE, type RaceEventKind } from '../../lib/race';
 import { seededRandom } from '../../lib/random';
 import { TRACK_LABEL, TRACK_SHAPES, type TrackShape } from '../../lib/raceTrack';
+import { pickWeather, resolveSeason, SEASON_LABEL, SEASONS, WEATHERS, weatherDescription, weatherModifiers, type Season, type Weather } from '../../lib/weather';
 import { RaceCircuit } from './RaceCircuit';
 import { prefersReducedMotion, type GameProps } from './types';
 import { sfxLater, type SfxName } from '../../lib/sfx';
@@ -43,6 +44,17 @@ function readShape(theme: RaceTheme): TrackShape {
     return (TRACK_SHAPES as readonly string[]).includes(saved ?? '') ? (saved as TrackShape) : 'oval';
   } catch {
     return 'oval';
+  }
+}
+/** 계절은 테마마다 따로 기억한다. */
+const DEFAULT_SEASON: Season = 'auto';
+const seasonKey = (theme: RaceTheme) => `lunch-app:race-season-${theme}`;
+function readSeason(theme: RaceTheme): Season {
+  try {
+    const saved = localStorage.getItem(seasonKey(theme));
+    return (SEASONS as readonly string[]).includes(saved ?? '') ? (saved as Season) : DEFAULT_SEASON;
+  } catch {
+    return DEFAULT_SEASON;
   }
 }
 
@@ -146,14 +158,44 @@ export function PixelRace({
       // 시크릿 창에서는 저장이 막힌다. 이번 방문 동안만 바뀐다.
     }
   };
+  const [season, setSeasonState] = useState(() => readSeason(theme));
+  const setSeason = (next: Season) => {
+    setSeasonState(next);
+    try {
+      localStorage.setItem(seasonKey(theme), next);
+    } catch {
+      // 시크릿 창. 이번 방문 동안만.
+    }
+  };
+  // 계절을 정한다 — auto면 현재 달로.
+  const resolvedSeason = resolveSeason(season);
+  // 날씨는 run마다 seeded로 고른다. 개발 오버라이드 가능(localStorage 'lunch-app:race-weather').
+  const weather = useMemo(() => {
+    try {
+      const override = localStorage?.getItem?.('lunch-app:race-weather');
+      if (override && (WEATHERS as readonly string[]).includes(override)) {
+        return override as Weather;
+      }
+    } catch {
+      // 시크릿 창 또는 접근 거부.
+    }
+    return pickWeather(seededRandom(run * 17 + 3), resolvedSeason);
+  }, [run, resolvedSeason]);
   // 돌리는 순간의 바퀴 수로 경기를 만든다(칩은 경주 중 잠긴다).
-  const race = useMemo(
-    () =>
-      winnerIndex === null || count === 0
-        ? null
-        : buildRace(count, winnerIndex, seededRandom(run * 13 + 5), raceOptions(laps)),
-    [count, winnerIndex, run, laps],
-  );
+  const race = useMemo(() => {
+    if (winnerIndex === null || count === 0) return null;
+    const weatherMods = weatherModifiers(weather);
+    return buildRace(
+      count,
+      winnerIndex,
+      seededRandom(run * 13 + 5),
+      {
+        ...raceOptions(laps),
+        weatherSlipChance: weatherMods.slipChance ?? 1,
+        weatherWobbleChance: weatherMods.wobbleChance ?? 1,
+      },
+    );
+  }, [count, winnerIndex, run, laps, weather]);
   // 출발 자리(차선) — 주자 i 는 slots[i] 번째 자리에 선다. "자리 섞기" 로 바뀌고 보이기만 바뀐다.
   const [lanePos, setLanePos] = useState<number[]>([]);
   const slots = lanePos.length === count ? lanePos : candidates.map((_, i) => i);
@@ -286,6 +328,8 @@ export function PixelRace({
 
   const counting = live && view.count >= 0;
   const winner = winnerIndex === null ? null : candidates[winnerIndex];
+  // 경주 전 날씨 안내.
+  const weatherPrefix = !live && !counting && race ? `${weatherDescription(weather)} · ` : '';
   const line = counting
     ? '곧 출발해요'
     : (rankOf.get(winnerIndex ?? -1) ?? 0) === 1 && winner
@@ -302,12 +346,12 @@ export function PixelRace({
         : live
           ? `${laps > 1 && dist[leader] >= (laps - 1) / laps ? '마지막 바퀴! ' : ''}선두 ${shortName(candidates[leader].name, 8)}`
           : theme === 'horse'
-            ? `말 ${count}마리가 출발선에 섰어요`
-            : `차 ${count}대가 출발선에 섰어요`;
+            ? `${weatherPrefix}말 ${count}마리가 출발선에 섰어요`
+            : `${weatherPrefix}차 ${count}대가 출발선에 섰어요`;
 
   return (
     <div
-      className={['prace', `prace--${theme}`, expanded ? 'prace--big' : ''].filter(Boolean).join(' ')}
+      className={['prace', `prace--${theme}`, `prace--season-${resolvedSeason}`, expanded ? 'prace--big' : ''].filter(Boolean).join(' ')}
       style={{ '--px': `${px}px` } as React.CSSProperties}
     >
       <p className="prace__line" aria-live="polite">
@@ -343,6 +387,20 @@ export function PixelRace({
               </button>
             ))}
           </div>
+          <div className="prace__laps prace__season" role="group" aria-label="계절">
+            {SEASONS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                className="pinball__chip"
+                aria-pressed={season === s}
+                disabled={spinning}
+                onClick={() => setSeason(s)}
+              >
+                {SEASON_LABEL[s]}
+              </button>
+            ))}
+          </div>
           <button type="button" className="pinball__chip" onClick={shuffleSlots} disabled={spinning || count < 2}>
             <span aria-hidden="true">🔀 </span>자리 섞기
           </button>
@@ -364,6 +422,8 @@ export function PixelRace({
           slots={slots}
           shuffling={shuffling}
           hazards={hazards}
+          season={resolvedSeason}
+          weather={weather}
         />
         {counting && (
           <span className="prace__count" aria-hidden="true">
