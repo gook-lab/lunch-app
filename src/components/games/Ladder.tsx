@@ -29,7 +29,11 @@ import { shortName } from '../../lib/name';
 import { seededRandom } from '../../lib/random';
 import { ladderDiceSfxLater, sfx, type LadderDiceSfxName, type SfxName } from '../../lib/sfx';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
+import { useAmbience } from '../../hooks/useAmbience';
+import { SceneWeather } from './scene/SceneWeather';
+import { ambienceClasses } from './scene/outfit';
 import './Ladder.css';
+import './Ladder.ambience.css';
 
 const ROWS = 9;
 const VIEW_W = 320;
@@ -113,6 +117,7 @@ function fakeLean(u: number): number {
 }
 
 export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRequestSpin }: GameProps) {
+  const ambience = useAmbience();
   const count = candidates.length;
   const columns = Math.max(count, 1);
 
@@ -363,7 +368,7 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
   };
 
   return (
-    <div className={['ladder', playing && !done ? 'ladder--running' : '', done ? 'ladder--done' : ''].filter(Boolean).join(' ')}>
+    <div className={['ladder', 'scene-outfit', ambienceClasses(ambience), playing && !done ? 'ladder--running' : '', done ? 'ladder--done' : ''].filter(Boolean).join(' ')}>
       <div className="ladder__bar">
         <p className="muted small">번호를 누르면 출발해요. 판을 누르면 가로줄을 넣거나 뺄 수 있어요.</p>
         <button type="button" className="ladder__shuffle" onClick={reshuffle} disabled={spinning}>
@@ -372,6 +377,9 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
       </div>
 
       <div className="ladder__stage">
+        <span className="ladder__yard" aria-hidden="true">
+          <SceneWeather weather={ambience.weather} band={[0, 30]} />
+        </span>
         <div className="ladder__camera" ref={cameraRef} style={camStyle}>
           <div className="ladder__board" ref={boardRef} style={{ '--cols': count } as React.CSSProperties}>
             <svg
@@ -573,6 +581,21 @@ function Runner({ x, y, r, dir, step, cls }: { x: number; y: number; r: number; 
         <circle cx={r * 0.34 + look} cy={-r * 0.12} r={eye} className="ladder__runner-eye" />
         <circle cx={-r * 0.34 + look * 1.5} cy={-r * 0.1} r={eye * 0.5} className="ladder__runner-pupil" />
         <circle cx={r * 0.34 + look * 1.5} cy={-r * 0.1} r={eye * 0.5} className="ladder__runner-pupil" />
+        {/* 계절 덧옷 — 반지름 10 기준으로 그려 r 에 맞춰 줄인다. */}
+        <g transform={`scale(${(r / 10).toFixed(3)})`}>
+          <path d="M-8 5.5 Q0 9.5 8 5.5 L8.4 8.6 Q0 13 -8.4 8.6 Z" className="acc acc-scarf" />
+          <path d="M-9.6 -3.4 Q-9.6 -10.4 0 -10.4 Q9.6 -10.4 9.6 -3.4 Q0 -6.4 -9.6 -3.4 Z" className="acc acc-beanie" />
+          <circle cy="-10.6" r="2.4" className="acc acc-pom" />
+          <path d="M-11 2 Q-12 -12 0 -12 Q12 -12 11 2 Q9 -8 0 -8 Q-9 -8 -11 2 Z" className="acc acc-hood" />
+          <ellipse cy="-6.8" rx="13" ry="2.4" className="acc acc-brim" />
+          <path d="M-6.5 -6.8 Q-6 -13.5 0 -13.5 Q6 -13.5 6.5 -6.8 Z" className="acc acc-crown" />
+          <g className="acc acc-flower">
+            <circle cx="-7.4" cy="-7.6" r="2.2" />
+            <circle cx="-4.6" cy="-9.4" r="2.2" />
+            <circle cx="-4.9" cy="-5.8" r="2.2" />
+            <circle cx="-5.6" cy="-7.6" r="1.3" className="acc-flower__eye" />
+          </g>
+        </g>
       </g>
     </g>
   );

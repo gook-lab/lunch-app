@@ -1,0 +1,53 @@
+/*
+ * 사다리 분위기 — 판 뒤 계절 빛(옅은 하늘)과 날씨, 계절 색 세로줄·가로줄(봄 벚나무·여름 대나무·가을 나무·겨울 얼음),
+ * 바닥 커튼 색(겨울은 흰 털 단), 꼬마 주자 덧옷. 금요일 커튼은 금빛 줄무늬. 당첨·길과는 상관없다.
+ */
+.ladder { --rail: var(--color-neutral-400); --cur-1: oklch(0.5 0.17 25); --cur-2: oklch(0.42 0.16 25); --yard-1: transparent; --yard-2: transparent; }
+.ladder.amb--spring { --rail: oklch(0.68 0.07 20); --cur-1: oklch(0.62 0.15 355); --cur-2: oklch(0.54 0.15 352); --yard-1: oklch(0.96 0.025 350); --yard-2: oklch(0.97 0.02 140); }
+.ladder.amb--summer { --rail: oklch(0.62 0.1 140); --cur-1: oklch(0.55 0.13 230); --cur-2: oklch(0.47 0.13 235); --yard-1: oklch(0.95 0.035 215); --yard-2: oklch(0.97 0.03 90); }
+.ladder.amb--autumn { --rail: oklch(0.58 0.08 55); --cur-1: oklch(0.6 0.15 50); --cur-2: oklch(0.52 0.14 42); --yard-1: oklch(0.96 0.03 80); --yard-2: oklch(0.95 0.04 60); }
+.ladder.amb--winter { --rail: oklch(0.62 0.04 240); --yard-1: oklch(0.96 0.012 240); --yard-2: oklch(0.98 0.005 240); }
+[data-theme='dark'] .ladder[class*='amb--'] { --yard-1: oklch(0.26 0.02 260); --yard-2: oklch(0.22 0.015 260); }
+[data-theme='dark'] .ladder.amb--spring { --rail: oklch(0.6 0.07 20); }
+[data-theme='dark'] .ladder.amb--summer { --rail: oklch(0.58 0.09 140); }
+[data-theme='dark'] .ladder.amb--autumn { --rail: oklch(0.58 0.08 55); }
+[data-theme='dark'] .ladder.amb--winter { --rail: oklch(0.62 0.04 240); }
+
+.ladder[class*='amb--'] .ladder__rail,
+.ladder[class*='amb--'] .ladder__rung { stroke: var(--rail); stroke-width: 2; stroke-linecap: round; }
+
+/* ── 판 뒤 — 카메라 밖에 고정. ── */
+.ladder__yard {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: linear-gradient(to bottom, var(--yard-1), var(--yard-2));
+}
+.ladder__yard + .ladder__camera { z-index: 1; }
+
+/* ── 커튼 ── */
+.ladder[class*='amb--'] .ladder__curtain {
+  background:
+    linear-gradient(180deg, oklch(0.3 0.09 25 / 0.45), transparent 35%),
+    repeating-linear-gradient(90deg, var(--cur-1) 0 7px, var(--cur-2) 7px 12px, var(--cur-1) 12px 16px);
+}
+.ladder.amb--fri .ladder__curtain {
+  background:
+    linear-gradient(180deg, oklch(0.3 0.09 25 / 0.45), transparent 35%),
+    repeating-linear-gradient(90deg, var(--cur-1) 0 7px, oklch(0.82 0.15 85) 7px 9px, var(--cur-2) 9px 14px, var(--cur-1) 14px 16px);
+}
+.ladder.amb--winter .ladder__curtain::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 7px;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  background: radial-gradient(circle 3.6px at 50% 40%, oklch(0.99 0 0) 92%, transparent) 0 0 / 7px 100% repeat-x, oklch(0.97 0.005 240);
+}
+
+/* ── 주자 덧옷 ── */
+.ladder .acc-beanie { fill: oklch(0.6 0.18 25); stroke: oklch(0.42 0.13 25); stroke-width: 0.6; }
+.ladder .acc { stroke-width: 0.6; }
