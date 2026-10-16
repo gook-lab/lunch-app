@@ -89,6 +89,7 @@ import { useRatings } from './hooks/useRatings';
 import { RatePrompt } from './components/RatePrompt';
 import { ratePromptTarget } from './lib/ratePrompt';
 import { compactGameIds, readRecentGames, rememberGame } from './lib/gameRecents';
+import { shouldShowRatePrompt } from './lib/promptVisibility';
 import { CategoryChips } from './components/CategoryChips';
 import './App.css';
 // 종이 식권 테마는 App.css 뒤에 — 같은 명시도로 덮는다.
@@ -677,6 +678,7 @@ export default function App() {
   // 후보가 모자라면 무대 안내("한 곳만 더 있으면…")가 먼저 길을 알려 준다. 가게 1곳일 때 띄웠더니
   // 안내가 "지도에서 가게 넣기" 를 가리고, 짚는 "돌리기" 단추는 아직 없었다(10/15).
   const canPlay = result.candidates.length >= MIN_GAME_CANDIDATES;
+  const [tourWasUnseenAtLoad] = useState(() => !tourSeen());
   const [tourOpen, setTourOpen] = useState(false);
   const tourChecked = useRef(false);
   useEffect(() => {
@@ -1120,7 +1122,9 @@ export default function App() {
         >
           {/* 게임 중·결과가 나와도 배너를 그대로 둔다. 결과가 나오는 순간 사라지면 아래 화면 전체가
             위로 올라붙었다(10/14 사용자). 새로 "여기로 결정" 을 누르면 배너 내용만 바뀐다. */}
-          {places.length > 0 && <RatePrompt key={today} today={today} target={rateTarget} ratings={ratings} />}
+          {places.length > 0 && shouldShowRatePrompt(tourWasUnseenAtLoad, tourOpen) && (
+            <RatePrompt key={today} today={today} target={rateTarget} ratings={ratings} />
+          )}
           {decidedPlace && (
             <section className="decided" aria-label="오늘 정한 곳">
               <span className="decided__check" aria-hidden="true">
