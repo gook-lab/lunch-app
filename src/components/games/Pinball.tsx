@@ -835,7 +835,7 @@ export function Pinball({
   if (count === 0) return <div className="pinball pinball--empty" />;
 
   return (
-    <div className={['pinball', expanded ? 'pinball--big' : '', spinning ? 'pinball--spinning' : ''].filter(Boolean).join(' ')}>
+    <div className={expanded ? 'pinball pinball--big' : 'pinball'}>
       <div className="pinball__bar">
         <div className="pinball__themes" role="group" aria-label="판 테마">
           {PINBALL_THEMES.map((th) => (
@@ -857,120 +857,25 @@ export function Pinball({
         </button>
       </div>
       <div className="pinball__play">
-        {/* 데스크톱: 왼쪽에 설정 칼럼. 게임 중에는 접힌다. */}
-        <aside className="pinball__settings" aria-hidden={spinning}>
-          {/* 확률은 판 옆에 늘 보인다. 공 개수 설정은 접혀 있어 확률이 안 보였다(10/13 사용자).
-              누르면 그 공을 따라간다 — 캔버스·카메라 고르기와 같은 상태다. */}
-          <ul className="pinball__odds" aria-label="가게별 당첨 확률">
-            {candidates.map((p, i) => (
-              <li key={p.id}>
-                <button
-                  type="button"
-                  className="pinball__odd"
-                  aria-pressed={follow === i}
-                  title={`${p.name} 공을 따라가기`}
-                  onClick={() => setFollow(follow === i ? null : i)}
-                  disabled={spinning}
-                >
-                  <span className="pinball__dot" style={{ background: marbleColor(i) }} aria-hidden="true" />
-                  <span className="pinball__oddName">{shortName(p.name, 5)}</span>
-                  <span className="pinball__oddPct">{Math.round((ballsOf(i) / Math.max(1, total)) * 100)}%</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-          {/* 키보드·화면낭독기로도 고를 수 있게. 캔버스 클릭과 같은 상태를 쓴다. */}
-          <label className="pinball__follow">
-            <span>카메라</span>
-            <select
-              value={follow === null ? '' : String(follow)}
-              onChange={(e) => setFollow(e.target.value === '' ? null : Number(e.target.value))}
-              disabled={spinning}
-            >
-              <option value="">선두 따라가기</option>
-              {candidates.map((p, i) => (
-                <option key={p.id} value={i}>
-                  {p.name} 따라가기
-                </option>
-              ))}
-            </select>
-            {follow !== null && followRank !== null ? (
-              <span className="pinball__tip pinball__tip--done" role="status">
-                {followRank === 1 ? '🎉 ' : '📍 '}
-                {shortName(candidates[follow].name, 10)} {followRank}등으로 들어왔어요
-              </span>
-            ) : follow !== null && followMarbles && race && t >= 1 ? (
-              // 1등이 들어오면 바로 끝낸다(빨리감기 없음). 따라가던 공이 아직 판 위면 그때 자리를 알려 준다.
-              <span className="pinball__tip pinball__tip--done" role="status">
-                📍 {shortName(candidates[follow].name, 10)}{' '}
-                {Math.min(...followMarbles.map((m) => standing.indexOf(m) + 1).filter((r) => r > 0))}위에서 끝났어요
-              </span>
-            ) : (
-              <span className="pinball__tip" aria-hidden="true">
-                공을 누르면 그 가게 공을 따라가요
-              </span>
-            )}
-          </label>
-          {onBallCounts && (
-            // 처음부터 펼쳐 둔다 — 시작 전에 공 개수를 고르는 게 이 판의 재미라 접혀 있으면 지나쳤다(10/13 사용자).
-            <details className="pinball__balls" open>
-              <summary>
-                가게별 공과 당첨 확률 <span className="pinball__total">공 {total}개</span>
-              </summary>
-              <p className="muted small">
-                공이 많은 가게일수록 잘 걸려요. 이번 방문 동안만 쓰고, 다른 게임은 늘 똑같은 확률이에요.
-              </p>
-              <div className="pinball__all" role="group" aria-label="모든 가게 같은 개수로">
-                {[1, 2, 3].map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    className="pinball__chip"
-                    aria-pressed={balls.slice(0, count).every((b) => b === n)}
-                    disabled={spinning || n * count > MAX_MARBLES}
-                    onClick={() => setAll(n)}
-                  >
-                    모두 {n}개
-                  </button>
-                ))}
-              </div>
-              <ul className="pinball__ballList">
-                {candidates.map((p, i) => {
-                  const n = ballsOf(i);
-                  return (
-                    <li key={p.id}>
-                      <span className="pinball__dot" style={{ background: marbleColor(i) }} aria-hidden="true" />
-                      <span className="pinball__ballName">{p.name}</span>
-                      <span className="pinball__pct">{Math.round((n / Math.max(1, total)) * 100)}%</span>
-                      <span className="pinball__stepper">
-                        <button
-                          type="button"
-                          aria-label={`${p.name} 공 하나 빼기`}
-                          disabled={spinning || n <= 1}
-                          onClick={() => setBalls(i, n - 1)}
-                        >
-                          −
-                        </button>
-                        <span>
-                          {n}
-                          <span className="sr-only">개</span>
-                        </span>
-                        <button
-                          type="button"
-                          aria-label={`${p.name} 공 하나 더`}
-                          disabled={spinning || n >= MAX_BALLS_EACH || total >= MAX_MARBLES}
-                          onClick={() => setBalls(i, n + 1)}
-                        >
-                          +
-                        </button>
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </details>
-          )}
-        </aside>
+        {/* 확률은 판 옆에 늘 보인다. 공 개수 설정은 접혀 있어 확률이 안 보였다(10/13 사용자).
+            누르면 그 공을 따라간다 — 캔버스·카메라 고르기와 같은 상태다. */}
+        <ul className="pinball__odds" aria-label="가게별 당첨 확률">
+          {candidates.map((p, i) => (
+            <li key={p.id}>
+              <button
+                type="button"
+                className="pinball__odd"
+                aria-pressed={follow === i}
+                title={`${p.name} 공을 따라가기`}
+                onClick={() => setFollow(follow === i ? null : i)}
+              >
+                <span className="pinball__dot" style={{ background: marbleColor(i) }} aria-hidden="true" />
+                <span className="pinball__oddName">{shortName(p.name, 5)}</span>
+                <span className="pinball__oddPct">{Math.round((ballsOf(i) / Math.max(1, total)) * 100)}%</span>
+              </button>
+            </li>
+          ))}
+        </ul>
         <canvas
           ref={canvasRef}
           style={{ aspectRatio: `${CANVAS_W} / ${viewH}` }}
@@ -981,6 +886,96 @@ export function Pinball({
           onClick={onCanvasClick}
         />
       </div>
+      {/* 키보드·화면낭독기로도 고를 수 있게. 캔버스 클릭과 같은 상태를 쓴다. */}
+      <label className="pinball__follow">
+        <span>카메라</span>
+        <select
+          value={follow === null ? '' : String(follow)}
+          onChange={(e) => setFollow(e.target.value === '' ? null : Number(e.target.value))}
+        >
+          <option value="">선두 따라가기</option>
+          {candidates.map((p, i) => (
+            <option key={p.id} value={i}>
+              {p.name} 따라가기
+            </option>
+          ))}
+        </select>
+        {follow !== null && followRank !== null ? (
+          <span className="pinball__tip pinball__tip--done" role="status">
+            {followRank === 1 ? '🎉 ' : '📍 '}
+            {shortName(candidates[follow].name, 10)} {followRank}등으로 들어왔어요
+          </span>
+        ) : follow !== null && followMarbles && race && t >= 1 ? (
+          // 1등이 들어오면 바로 끝낸다(빨리감기 없음). 따라가던 공이 아직 판 위면 그때 자리를 알려 준다.
+          <span className="pinball__tip pinball__tip--done" role="status">
+            📍 {shortName(candidates[follow].name, 10)}{' '}
+            {Math.min(...followMarbles.map((m) => standing.indexOf(m) + 1).filter((r) => r > 0))}위에서 끝났어요
+          </span>
+        ) : (
+          <span className="pinball__tip" aria-hidden="true">
+            공을 누르면 그 가게 공을 따라가요
+          </span>
+        )}
+      </label>
+      {onBallCounts && (
+        // 처음부터 펼쳐 둔다 — 시작 전에 공 개수를 고르는 게 이 판의 재미라 접혀 있으면 지나쳤다(10/13 사용자).
+        <details className="pinball__balls" open>
+          <summary>
+            가게별 공과 당첨 확률 <span className="pinball__total">공 {total}개</span>
+          </summary>
+          <p className="muted small">
+            공이 많은 가게일수록 잘 걸려요. 이번 방문 동안만 쓰고, 다른 게임은 늘 똑같은 확률이에요.
+          </p>
+          <div className="pinball__all" role="group" aria-label="모든 가게 같은 개수로">
+            {[1, 2, 3].map((n) => (
+              <button
+                key={n}
+                type="button"
+                className="pinball__chip"
+                aria-pressed={balls.slice(0, count).every((b) => b === n)}
+                disabled={spinning || n * count > MAX_MARBLES}
+                onClick={() => setAll(n)}
+              >
+                모두 {n}개
+              </button>
+            ))}
+          </div>
+          <ul className="pinball__ballList">
+            {candidates.map((p, i) => {
+              const n = ballsOf(i);
+              return (
+                <li key={p.id}>
+                  <span className="pinball__dot" style={{ background: marbleColor(i) }} aria-hidden="true" />
+                  <span className="pinball__ballName">{p.name}</span>
+                  <span className="pinball__pct">{Math.round((n / Math.max(1, total)) * 100)}%</span>
+                  <span className="pinball__stepper">
+                    <button
+                      type="button"
+                      aria-label={`${p.name} 공 하나 빼기`}
+                      disabled={spinning || n <= 1}
+                      onClick={() => setBalls(i, n - 1)}
+                    >
+                      −
+                    </button>
+                    <span>
+                      {n}
+                      <span className="sr-only">개</span>
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={`${p.name} 공 하나 더`}
+                      disabled={spinning || n >= MAX_BALLS_EACH || total >= MAX_MARBLES}
+                      onClick={() => setBalls(i, n + 1)}
+                    >
+                      +
+                    </button>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </details>
+      )}
       {onBallCounts && (
         <p className="sr-only" role="status">
           {ballNote}
