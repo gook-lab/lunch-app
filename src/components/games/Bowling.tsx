@@ -27,7 +27,16 @@ import {
 import { seededRandom } from '../../lib/random';
 import { bowlSfxLater, type BowlSfxName, type SfxName } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
+import { useAmbience } from '../../hooks/useAmbience';
+import { SEASON_NAME, type Ambience } from '../../lib/ambience';
+import { Horizon } from './scene/Horizon';
+import { SceneWeather } from './scene/SceneWeather';
+import { ambienceClasses } from './scene/outfit';
 import './Bowling.css';
+import './Bowling.ambience.css';
+
+const SEASON_MARK = { spring: '🌸', summer: '🍉', autumn: '🎃', winter: '🎄' } as const;
+const WEATHER_MARK = { clear: '', cloudy: '☁️', rain: '☔', snow: '⛄', fog: '🌫️' } as const;
 
 interface BowlingState {
   run: number;
@@ -119,6 +128,7 @@ function calloutOf(plan: BowlingPlan, t: number): { key: string; text: string; t
 }
 
 export function Bowling({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
+  const ambience = useAmbience();
   const count = candidates.length;
   const [state, setState] = useState<BowlingState>({ run: -1, t: 0 });
   const layout = useMemo(() => deckLayout(count), [count]);
@@ -254,7 +264,7 @@ export function Bowling({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
 
   return (
     <div
-      className={['bowling', expanded ? 'bowling--big' : '', settled ? 'bowling--settled' : '']
+      className={['bowling', 'scene-outfit', ambienceClasses(ambience), expanded ? 'bowling--big' : '', settled ? 'bowling--settled' : '']
         .filter(Boolean)
         .join(' ')}
       style={{ '--fit': (100 / layout.view).toFixed(4) } as React.CSSProperties}
@@ -285,6 +295,12 @@ export function Bowling({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
           </span>
           <span className="bowling__dots" style={{ top: cqw(layout.foulY - 12) }} aria-hidden="true" />
           <span className="bowling__pit" style={{ height: cqw(layout.pitY) }} aria-hidden="true" />
+          {/* 레인 끝 벽 — 계절 가랜드와 네온 간판(금요일엔 불금 볼링). 핀 위로는 내려오지 않는다. */}
+          <span className="bowling__decor" style={{ height: cqw(layout.pitY) }} aria-hidden="true">
+            <span className="bowling__neon">
+              {SEASON_MARK[ambience.season]} {ambience.weekday === 5 ? '불금 볼링' : `${SEASON_NAME[ambience.season]} 레인`} {WEATHER_MARK[ambience.weather]}
+            </span>
+          </span>
           {layout.pins.map((p, i) => (
             <span
               key={`spot-${i}`}
@@ -456,7 +472,7 @@ export function Bowling({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
         </div>
 
         {showCut && roll && t !== null && (
-          <Cutscene key={`cut-${run}`} out={stage === 'travel'} cutMs={roll.release - roll.t0} />
+          <Cutscene key={`cut-${run}`} out={stage === 'travel'} cutMs={roll.release - roll.t0} ambience={ambience} />
         )}
       </div>
       <p className="bowling__status" aria-live="polite">
@@ -476,7 +492,7 @@ function MiniBowler({ holding }: { holding: boolean }) {
       <ellipse cx="20" cy="49" rx="12" ry="2.6" className="bowling__mini-shadow" />
       <rect x="13" y="34" width="6" height="14" rx="3" className="bowling__mini-leg" />
       <rect x="21" y="34" width="6" height="14" rx="3" className="bowling__mini-leg" />
-      <rect x="11" y="17" width="18" height="20" rx="7" className="bowling__mini-shirt" />
+      <rect x="11" y="17" width="18" height="20" rx="7" className="bowling__mini-shirt acc-coat" />
       <rect x="11" y="27" width="18" height="3" className="bowling__mini-stripe" />
       <g className="bowling__mini-arm">
         <rect x="27" y="19" width="5" height="15" rx="2.5" className="bowling__mini-shirt" />
@@ -484,7 +500,13 @@ function MiniBowler({ holding }: { holding: boolean }) {
       </g>
       <rect x="8" y="19" width="5" height="14" rx="2.5" className="bowling__mini-shirt" />
       <circle cx="20" cy="11" r="8" className="bowling__mini-head" />
-      <path d="M12 10 Q20 0 28 10 Q20 6 12 10 Z" className="bowling__mini-hair" />
+      <path d="M12 10 Q20 0 28 10 Q20 6 12 10 Z" className="bowling__mini-hair acc-base" />
+      <path d="M11.8 11.5 Q11.8 2.6 20 2.6 Q28.2 2.6 28.2 11.5 Q20 8 11.8 11.5 Z" className="acc acc-beanie" />
+      <circle cx="20" cy="2.6" r="2.3" className="acc acc-pom" />
+      <path d="M10.6 16 Q9.6 1.8 20 1.8 Q30.4 1.8 29.4 16 Q27.2 7.6 20 7.6 Q12.8 7.6 10.6 16 Z" className="acc acc-hood" />
+      <ellipse cx="20" cy="6.6" rx="11.5" ry="2.4" className="acc acc-brim" />
+      <path d="M14.8 6.6 Q15.4 0.8 20 0.8 Q24.6 0.8 25.2 6.6 Z" className="acc acc-crown" />
+      <rect x="11.5" y="17.5" width="17" height="3.2" rx="1.5" className="acc acc-scarf" />
     </svg>
   );
 }
@@ -493,7 +515,7 @@ function MiniBowler({ holding }: { holding: boolean }) {
  * 컷신 — 마지막 공. 볼러 옆모습 클로즈업: 공을 든 팔이 뒤로 크게 젖혀지고(휙~) 앞으로 내던진다.
  * 공을 놓으면(travel) 잠깐 흐려지며 레인으로 넘어간다.
  */
-function Cutscene({ out, cutMs }: { out: boolean; cutMs: number }) {
+function Cutscene({ out, cutMs, ambience }: { out: boolean; cutMs: number; ambience: Ambience }) {
   return (
     <div
       className={['bowling__cut', out ? 'bowling__cut--out' : ''].filter(Boolean).join(' ')}
@@ -501,6 +523,14 @@ function Cutscene({ out, cutMs }: { out: boolean; cutMs: number }) {
       aria-hidden="true"
     >
       <span className="bowling__cut-bg" />
+      {/* 볼링장 창 — 바깥 계절과 날씨가 보인다 */}
+      <span className="bowling__window">
+        <span className="bowling__window-hz">
+          <Horizon season={ambience.season} />
+        </span>
+        <SceneWeather weather={ambience.weather} />
+      </span>
+      <span className="bowling__garland" />
       <span className="bowling__speed" />
       <svg className="bowling__hero" viewBox="0 0 260 180">
         <rect x="0" y="150" width="260" height="30" className="bowling__h-floor" />
@@ -512,13 +542,20 @@ function Cutscene({ out, cutMs }: { out: boolean; cutMs: number }) {
         <rect x="124" y="144" width="22" height="7" rx="3" className="bowling__h-shoe" />
         <rect x="42" y="145" width="18" height="7" rx="3" className="bowling__h-shoe" />
         {/* 몸(앞으로 숙임) */}
-        <path d="M92 116 Q88 84 112 66 L130 70 Q130 100 118 118 Z" className="bowling__h-body" />
+        <path d="M92 116 Q88 84 112 66 L130 70 Q130 100 118 118 Z" className="bowling__h-body acc-coat" />
         <path d="M95 104 L124 108" className="bowling__h-stripe" />
         {/* 왼팔 — 균형 잡느라 뒤로 */}
         <path d="M112 74 L84 84 L70 78" className="bowling__h-arm-l" />
         {/* 머리 */}
         <circle cx="140" cy="54" r="18" className="bowling__h-head" />
-        <path d="M122 50 Q130 30 156 40 Q146 40 140 46 Q132 44 122 50 Z" className="bowling__h-hair" />
+        <path d="M122 50 Q130 30 156 40 Q146 40 140 46 Q132 44 122 50 Z" className="bowling__h-hair acc-base" />
+        <path d="M121.5 52 Q121.5 34 140 34 Q158.5 34 158.5 52 Q140 45 121.5 52 Z" className="acc acc-beanie" />
+        <circle cx="140" cy="33" r="5" className="acc acc-pom" />
+        <path d="M119 64 Q116 32 140 32 Q164 32 161 64 Q157 44 140 44 Q123 44 119 64 Z" className="acc acc-hood" />
+        <ellipse cx="140" cy="42" rx="27" ry="5" className="acc acc-brim" />
+        <path d="M127 42 Q129 27 140 27 Q151 27 153 42 Z" className="acc acc-crown" />
+        <g className="acc acc-flower"><circle cx="127" cy="40" r="3.6" /><circle cx="132" cy="37" r="3.6" /><circle cx="129.6" cy="44" r="3.6" /><circle cx="129.5" cy="40.4" r="2.1" className="acc-flower__eye" /></g>
+        <path d="M124 68 Q138 74 152 66 L153 72 Q138 80 123 74 Z" className="acc acc-scarf" />
         <circle cx="148" cy="54" r="2.6" className="bowling__h-eye" />
         <path d="M144 47 L153 46" className="bowling__h-brow" />
         <path d="M150 63 Q153 65 156 62" className="bowling__h-mouth" />
