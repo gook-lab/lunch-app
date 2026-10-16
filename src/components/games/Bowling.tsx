@@ -28,6 +28,7 @@ import { seededRandom } from '../../lib/random';
 import { bowlSfxLater, type BowlSfxName, type SfxName } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
 import { useAmbience } from '../../hooks/useAmbience';
+import { ambienceClasses } from './scene/outfit';
 import './Bowling.css';
 import './Bowling.ambience.css';
 
@@ -122,7 +123,7 @@ function calloutOf(plan: BowlingPlan, t: number): { key: string; text: string; t
 
 export function Bowling({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
   const count = candidates.length;
-  const { season, weekday, weather } = useAmbience();
+  const ambience = useAmbience();
   const [state, setState] = useState<BowlingState>({ run: -1, t: 0 });
   const layout = useMemo(() => deckLayout(count), [count]);
   const plan = useMemo(
@@ -257,7 +258,7 @@ export function Bowling({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
 
   return (
     <div
-      className={['bowling', expanded ? 'bowling--big' : '', settled ? 'bowling--settled' : '', `bowling--${season}`, `bowling--${weather}`, weekday === 5 ? 'bowling--friday' : '']
+      className={['bowling', expanded ? 'bowling--big' : '', settled ? 'bowling--settled' : '', ambienceClasses(ambience)]
         .filter(Boolean)
         .join(' ')}
       style={{ '--fit': (100 / layout.view).toFixed(4) } as React.CSSProperties}

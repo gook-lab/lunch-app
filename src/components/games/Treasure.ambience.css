@@ -1,179 +1,152 @@
-/**
- * 보물찾기 — 계절·날씨 변화.
- * 섬 풍경(여름 해변 모래사장 ↔ 겨울 눈), 날씨 오버레이(비·눈), 캐릭터 옷차림(우비·겨울옷).
+/*
+ * 보물찾기 — 계절·날씨·요일 연출.
+ * 섬 풍경(봄=벚꽃·연두, 여름=청록 바다·야자수·모래, 가을=단풍·낙엽, 겨울=눈·얼음),
+ * 날씨(비·눈·안개), 해적 옷차림(우비·털모자·목도리·밀짚모자).
  */
 
-/* 계절별 배경색 및 섬 모습 */
-
-/* 봄 — 초록 풀, 밝은 하늘 */
-.treasure--spring .treasure__range {
-  --island-color: #7cb342;
-  --sand-color: #daa520;
-  --sky-color: #87ceeb;
+/* ── 계절 팔레트 (밝게) ── */
+.amb--spring .treasure__range {
+  --island-color: oklch(0.82 0.12 135);
+  --sand-color: oklch(0.88 0.06 95);
+  --sky-color: oklch(0.95 0.03 340);
+  --water-color: oklch(0.88 0.08 230);
 }
 
-/* 여름 — 밝은 모래사장, 파란 바다 */
-.treasure--summer .treasure__range {
-  --island-color: #c1a86b;
-  --sand-color: #f4a460;
-  --sky-color: #87ceeb;
-  --water-color: #1e90ff;
+.amb--summer .treasure__range {
+  --island-color: oklch(0.72 0.17 140);
+  --sand-color: oklch(0.88 0.08 90);
+  --sky-color: oklch(0.88 0.08 230);
+  --water-color: oklch(0.72 0.17 240);
 }
 
-/* 가을 — 주황 섬, 갈색 모래 */
-.treasure--autumn .treasure__range {
-  --island-color: #cd853f;
-  --sand-color: #d2691e;
-  --sky-color: #ffa500;
+.amb--autumn .treasure__range {
+  --island-color: oklch(0.66 0.18 45);
+  --sand-color: oklch(0.8 0.06 70);
+  --sky-color: oklch(0.94 0.04 75);
+  --water-color: oklch(0.82 0.08 230);
 }
 
-/* 겨울 — 하얀 눈 섬, 얼음 */
-.treasure--winter .treasure__range {
-  --island-color: #e0e0e0;
-  --sand-color: #f5f5f5;
-  --sky-color: #e0f6ff;
-  --water-color: #87ceeb;
+.amb--winter .treasure__range {
+  --island-color: oklch(0.97 0.006 250);
+  --sand-color: oklch(0.9 0.012 250);
+  --sky-color: oklch(0.92 0.015 250);
+  --water-color: oklch(0.93 0.01 250);
 }
 
-/* 날씨 오버레이 */
+/* 날씨가 계절을 오버라이드한다 */
+:is(.amb--w-rain, .amb--w-cloudy) .treasure__range {
+  --sky-color: oklch(0.8 0.015 250);
+}
 
-/* 비 */
-.treasure--rain .treasure__range::before {
+.amb--w-fog .treasure__range {
+  --sky-color: oklch(0.9 0.005 250);
+}
+
+/* ── 다크 모드 ── */
+[data-theme='dark'] .amb--spring .treasure__range {
+  --island-color: oklch(0.42 0.08 140);
+  --sand-color: oklch(0.44 0.04 80);
+}
+
+[data-theme='dark'] .amb--summer .treasure__range {
+  --island-color: oklch(0.4 0.1 145);
+  --sand-color: oklch(0.48 0.04 85);
+}
+
+[data-theme='dark'] .amb--autumn .treasure__range {
+  --island-color: oklch(0.45 0.12 45);
+  --sand-color: oklch(0.4 0.05 60);
+}
+
+[data-theme='dark'] .amb--winter .treasure__range {
+  --island-color: oklch(0.62 0.01 250);
+  --sand-color: oklch(0.56 0.01 250);
+}
+
+[data-theme='dark'] :is(.amb--spring, .amb--summer, .amb--autumn) .treasure__range {
+  --sky-color: oklch(0.3 0.04 260);
+  --water-color: oklch(0.35 0.05 255);
+}
+
+[data-theme='dark'] .amb--winter .treasure__range {
+  --sky-color: oklch(0.3 0.03 260);
+  --water-color: oklch(0.4 0.02 250);
+}
+
+/* ── 캐릭터 옷차림 — 해적 ── */
+.treasure .acc { display: none; }
+
+.outfit--rain .acc-hood,
+.outfit--winter :is(.acc-beanie, .acc-scarf, .acc-pom),
+.outfit--summer .acc-brim,
+.outfit--spring .acc-flower,
+.outfit--autumn .acc-scarf { display: inline; }
+
+/* 우비는 몸 색을 노랗게 */
+.outfit--rain .treasure__pirate {
+  --pirate-body: oklch(0.86 0.16 95);
+}
+
+/* 겨울 털모자 색 */
+.treasure .acc-beanie {
+  fill: oklch(0.55 0.15 255);
+  stroke: oklch(0.35 0.1 255);
+  stroke-width: 1.5;
+}
+
+.treasure .acc-pom {
+  fill: oklch(0.97 0.01 250);
+}
+
+/* 겨울 목도리 색 */
+.outfit--winter .acc-scarf {
+  fill: oklch(0.6 0.19 25);
+  stroke: oklch(0.4 0.12 25);
+  stroke-width: 1;
+}
+
+.outfit--autumn .acc-scarf {
+  fill: oklch(0.62 0.14 55);
+  stroke: oklch(0.42 0.09 50);
+}
+
+/* 우비 색 */
+.treasure .acc-hood {
+  fill: oklch(0.86 0.16 95);
+  stroke: oklch(0.6 0.12 85);
+  stroke-width: 1.5;
+}
+
+/* 여름 밀짚모자 */
+.treasure .acc-brim {
+  fill: oklch(0.86 0.1 85);
+  stroke: oklch(0.62 0.09 75);
+  stroke-width: 1.2;
+}
+
+/* 봄 꽃핀 */
+.treasure .acc-flower circle {
+  fill: oklch(0.86 0.1 355);
+}
+
+/* 금요일 — 작은 깃발 줄 */
+.amb--fri .treasure__world::before {
   content: '';
   position: absolute;
-  top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
-  background: repeating-linear-gradient(
-    90deg,
-    transparent,
-    transparent 1px,
-    rgba(100, 150, 200, 0.1) 1px,
-    rgba(100, 150, 200, 0.1) 3px
-  );
-  pointer-events: none;
-  animation: rain-fall 0.8s linear infinite;
-}
-
-@keyframes rain-fall {
-  0% {
-    transform: translateY(-100%);
-  }
-  100% {
-    transform: translateY(100%);
-  }
-}
-
-/* 눈 */
-.treasure--snow .treasure__range::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(1.5px 1.5px at 20px 30px, #ffffff 0%, transparent 0%),
-              radial-gradient(1.5px 1.5px at 60px 70px, #ffffff 0%, transparent 0%),
-              radial-gradient(1px 1px at 50px 50px, #ffffff 0%, transparent 0%),
-              radial-gradient(1px 1px at 130px 80px, #ffffff 0%, transparent 0%),
-              radial-gradient(1.5px 1.5px at 90px 10px, #ffffff 0%, transparent 0%);
-  background-repeat: repeat;
-  background-size: 150px 150px;
-  pointer-events: none;
-  animation: snow-fall 2.5s linear infinite;
-}
-
-@keyframes snow-fall {
-  0% {
-    transform: translateY(-150px);
-  }
-  100% {
-    transform: translateY(150px);
-  }
-}
-
-/* 안개 */
-.treasure--fog .treasure__range {
-  filter: brightness(0.85);
-}
-
-.treasure--fog .treasure__range::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(200, 200, 200, 0.25);
+  top: 5%;
+  height: 3cqw;
+  background:
+    conic-gradient(from 135deg at 50% 0, oklch(0.75 0.17 25) 0 90deg, transparent 90deg) 0 0 / 6cqw 3cqw repeat-x,
+    linear-gradient(oklch(0.5 0.02 60), oklch(0.5 0.02 60)) 0 0 / 100% 1px no-repeat;
+  opacity: 0.85;
   pointer-events: none;
 }
 
-/* 흐림 */
-.treasure--cloudy .treasure__range {
-  filter: brightness(0.9);
-}
-
-/* 캐릭터 옷차림 — 해적 */
-
-/* 여름: 가벼운 옷 */
-.treasure--summer::before {
-  content: '';
-  position: absolute;
-  width: 3%;
-  height: 3%;
-  background: #ff6b6b;
-  top: 15%;
-  left: 5%;
-  border-radius: 50%;
-  pointer-events: none;
-  opacity: 0.4;
-}
-
-/* 겨울: 방한용품 */
-.treasure--winter .treasure__range {
-  filter: hue-rotate(-10deg);
-}
-
-/* 비: 우비 */
-.treasure--rain .treasure__range {
-  filter: hue-rotate(20deg) saturate(1.05);
-}
-
-/* 눈: 스노우 모드 */
-.treasure--snow .treasure__range {
-  filter: saturate(0.8) brightness(1.05);
-}
-
-/* prefers-reduced-motion 존중 */
+/* reduced motion 존중 */
 @media (prefers-reduced-motion: reduce) {
-  .treasure--rain .treasure__range::before,
-  .treasure--snow .treasure__range::after {
-    animation: none;
-    opacity: 0.5;
-  }
+  .treasure .scene-wx i { animation: none; }
 }
 
-/* 다크 모드 */
-html[data-theme='dark'] {
-  .treasure--spring .treasure__range {
-    --island-color: #558b2f;
-    --sand-color: #8b6914;
-  }
-
-  .treasure--summer .treasure__range {
-    --island-color: #8b6914;
-    --sand-color: #a0522d;
-    --water-color: #1a5f9e;
-  }
-
-  .treasure--autumn .treasure__range {
-    --island-color: #8b5a2b;
-    --sand-color: #654321;
-  }
-
-  .treasure--winter .treasure__range {
-    --island-color: #a9a9a9;
-    --sand-color: #d3d3d3;
-  }
-}
+:root[data-motion='reduced'] .treasure .scene-wx i { animation: none; }

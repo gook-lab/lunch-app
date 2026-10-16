@@ -27,6 +27,7 @@ import {
 } from '../../lib/treasure';
 import { prefersReducedMotion, type GameProps } from './types';
 import { useAmbience } from '../../hooks/useAmbience';
+import { ambienceClasses } from './scene/outfit';
 import './Treasure.css';
 import './Treasure.ambience.css';
 
@@ -63,7 +64,7 @@ function zoomFor(layout: MapLayout): number {
 
 export function Treasure({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
   const count = candidates.length;
-  const { season, weather } = useAmbience();
+  const ambience = useAmbience();
   const [state, setState] = useState<TreasureState>({ run: -1, dig: -1, phase: 'intro' });
   const layout = useMemo(() => treasureLayout(count, seededRandom(LAYOUT_SEED + count)), [count]);
   // 일정은 판 번호 시드라 몇 번 계산해도 같다. 구덩이·길을 그리려고 렌더에서도 쓴다.
@@ -293,7 +294,7 @@ export function Treasure({ candidates, winnerIndex, spinning, run, onSpinEnd, ex
 
   return (
     <div
-      className={['treasure', expanded ? 'treasure--big' : '', settled ? 'treasure--settled' : '', `treasure--${season}`, `treasure--${weather}`].filter(Boolean).join(' ')}
+      className={['treasure', expanded ? 'treasure--big' : '', settled ? 'treasure--settled' : '', ambienceClasses(ambience)].filter(Boolean).join(' ')}
       // 지도 폭 ÷ 높이. 크게 보기는 이 비로 남는 높이에 맞춘다(desktop.css).
       style={{ '--fit': layout.aspect.toFixed(4) } as React.CSSProperties}
     >
