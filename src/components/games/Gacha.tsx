@@ -20,6 +20,7 @@ import { SEASON_NAME } from '../../lib/ambience';
 import { Horizon } from './scene/Horizon';
 import { SceneWeather } from './scene/SceneWeather';
 import { ambienceClasses } from './scene/outfit';
+import { Climax } from './scene/Climax';
 import './Gacha.css';
 import './Gacha.ambience.css';
 
@@ -205,6 +206,7 @@ export function Gacha({ candidates, winnerIndex, spinning, run, onSpinEnd, expan
           <Horizon season={ambience.season} className="gacha__hz" />
           <SceneWeather weather={ambience.weather} />
         </span>
+        <Climax on={say === 'drop' || say === 'jam' || say === 'knock' || say === 'open'} />
         <div className={['gacha__machine', camera ? `gacha__machine--${camera}` : ''].filter(Boolean).join(' ')} aria-hidden="true">
           <span className="gacha__topper">
             {TOPPER[ambience.season].map((e, i) => (

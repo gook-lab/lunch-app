@@ -93,3 +93,4 @@
   box-shadow: 0 0 0 1px oklch(0.6 0.08 75);
 }
 [data-theme='dark'] .curling.amb--w-rain .curling__wx { opacity: 0.5; }
+.curling .climax__banner { top: auto; bottom: 10%; }

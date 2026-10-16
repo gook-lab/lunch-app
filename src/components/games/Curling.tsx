@@ -36,6 +36,7 @@ import { prefersReducedMotion, type GameProps } from './types';
 import { useAmbience } from '../../hooks/useAmbience';
 import { SEASON_NAME } from '../../lib/ambience';
 import { ambienceClasses } from './scene/outfit';
+import { Climax } from './scene/Climax';
 import './Curling.css';
 import './Curling.ambience.css';
 
@@ -170,6 +171,9 @@ export function Curling({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
   const winnerName = winner ? shortName(winner.name, 12) : '';
   const revealed = winnerIndex !== null && (live || settled) && (!plan || (t !== null && t >= plan.revealMs));
   const ev = plan && t !== null ? eventAt(plan, t) : null;
+  // 마지막 스톤을 놓은 뒤부터 결과가 보일 때까지 — 긴박감 층.
+  const lastDeliver = plan?.events.find((e) => e.kind === 'deliver' && e.throwNo === plan.throws - 1)?.t;
+  const climax = live && t !== null && lastDeliver !== undefined && t >= lastDeliver && !revealed;
   const status =
     revealed && winner
       ? `${withJosa(winnerName, '이/가')} 버튼에 제일 가까워요!`
@@ -260,6 +264,7 @@ export function Curling({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
           </span>
         </div>
         <span className="curling__wx" aria-hidden="true" />
+        <Climax on={climax} label="마지막 스톤!" />
 
         {candidates.map((p, i) => {
           const at = pos[i] ?? BUTTON;

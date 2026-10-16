@@ -29,6 +29,7 @@ import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
 import { useAmbience } from '../../hooks/useAmbience';
 import { SceneWeather } from './scene/SceneWeather';
 import { ambienceClasses } from './scene/outfit';
+import { Climax } from './scene/Climax';
 import './Wheel.css';
 import './Wheel.ambience.css';
 
@@ -240,6 +241,7 @@ export function Wheel({ candidates, winnerIndex, spinning, run, onSpinEnd }: Gam
     <div className={['wheelgame', 'scene-outfit', ambienceClasses(ambience)].join(' ')}>
       {/* 날씨는 원판 뒤 바탕에만 — 칸 글자 위로 비·안개가 덮이지 않게(Wheel.ambience.css 층). */}
       <SceneWeather weather={ambience.weather} className="wheelgame__wx" />
+      <Climax on={beat === 'slow' || beat === 'hold' || beat === 'move'} />
       <div
         className={[
           'wheel',

@@ -22,6 +22,7 @@ import { prefersReducedMotion, type GameProps } from './types';
 import { useAmbience } from '../../hooks/useAmbience';
 import { SEASON_NAME } from '../../lib/ambience';
 import { ambienceClasses } from './scene/outfit';
+import { Climax } from './scene/Climax';
 import './Claw.css';
 import './Claw.ambience.css';
 
@@ -240,6 +241,7 @@ export function Claw({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
             </span>
           )}
           <span className="claw__wx" aria-hidden="true" />
+          <Climax on={live && !!step && step.attempt === attempts - 1 && !won} />
           <span className="claw__glass" aria-hidden="true" />
           {callout && (
             <span key={`${run}-${callout.key}`} className={`claw__callout claw__callout--${callout.tone}`} aria-hidden="true">

@@ -16,6 +16,7 @@ import { useAmbience } from '../../hooks/useAmbience';
 import { Horizon } from './scene/Horizon';
 import { SceneWeather } from './scene/SceneWeather';
 import { ambienceClasses } from './scene/outfit';
+import { Climax } from './scene/Climax';
 import './Balloon.css';
 import './Balloon.ambience.css';
 
@@ -192,6 +193,7 @@ export function Balloon({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
           <Horizon season={ambience.season} className="balloon__hz" />
           <SceneWeather weather={ambience.weather} band={[0, 45]} />
         </span>
+        <Climax on={!!frame?.duel && !frame.float && !still} label="마지막 2개!" />
         {candidates.map((p, i) => {
           const isPopped = popped.has(i);
           const isWin = !!frame?.float && i === winnerIndex;

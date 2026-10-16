@@ -1,0 +1,45 @@
+/*
+ * 긴박감 층 — 결과 직전 "마지막 순간"에만 켠다. 가장자리가 붉게 맥박 치고, 짧은 배너가 한 번 튀어나온다.
+ * 연출 전용이고 누를 수 없다. 움직임 줄이기면 맥박 없이 옅은 붉은 테두리만 남는다.
+ */
+.climax { position: absolute; inset: 0; z-index: 40; pointer-events: none; border-radius: inherit; overflow: hidden; }
+.climax__edge {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(farthest-corner, oklch(0.6 0.24 28 / 0) 55%, oklch(0.58 0.24 28 / 0.3) 76%, oklch(0.5 0.22 28 / 0.6) 100%);
+  animation: climax-pulse var(--beat, 760ms) ease-out infinite;
+}
+@keyframes climax-pulse { 0% { opacity: 0.9; } 16% { opacity: 0.45; } 28% { opacity: 0.85; } 100% { opacity: 0.12; } }
+.climax__banner {
+  position: absolute;
+  left: 50%;
+  top: 10%;
+  translate: -50% 0;
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-family: var(--font-heading);
+  font-weight: 900;
+  font-size: clamp(14px, 4.4cqw, 22px);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: oklch(0.99 0 0);
+  background: oklch(0.56 0.22 25);
+  box-shadow: 0 3px 0 oklch(0.38 0.15 25), 0 6px 18px oklch(0.4 0.2 25 / 0.45);
+  animation: climax-banner 1.6s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+@keyframes climax-banner {
+  0% { scale: 0.4; opacity: 0; }
+  14% { scale: 1.12; opacity: 1; }
+  22%, 70% { scale: 1; opacity: 1; rotate: 0deg; }
+  74% { rotate: -3deg; }
+  78% { rotate: 3deg; }
+  82% { rotate: 0deg; opacity: 1; }
+  100% { opacity: 0; translate: -50% -8px; }
+}
+:root[data-motion='reduced'] .climax__edge { animation: none; opacity: 0.5; }
+:root[data-motion='reduced'] .climax__banner { animation: none; opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .climax__edge { animation: none; opacity: 0.5; }
+  .climax__banner { animation: none; }
+}

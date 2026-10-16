@@ -32,6 +32,7 @@ import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
 import { useAmbience } from '../../hooks/useAmbience';
 import { SceneWeather } from './scene/SceneWeather';
 import { ambienceClasses } from './scene/outfit';
+import { Climax } from './scene/Climax';
 import './Ladder.css';
 import './Ladder.ambience.css';
 
@@ -380,6 +381,7 @@ export function Ladder({ candidates, winnerIndex, spinning, run, onSpinEnd, onRe
         <span className="ladder__yard" aria-hidden="true">
           <SceneWeather weather={ambience.weather} band={[0, 30]} />
         </span>
+        <Climax on={curtain === 'down'} />
         <div className="ladder__camera" ref={cameraRef} style={camStyle}>
           <div className="ladder__board" ref={boardRef} style={{ '--cols': count } as React.CSSProperties}>
             <svg
