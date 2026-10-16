@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { shortName } from '../../lib/name';
 import { buildRace, progress, SLICE, type RaceEventKind } from '../../lib/race';
 import { seededRandom } from '../../lib/random';
+import { TRACK_LABEL, TRACK_SHAPES, type TrackShape } from '../../lib/raceTrack';
 import { RaceCircuit } from './RaceCircuit';
 import { prefersReducedMotion, type GameProps } from './types';
 import { sfxLater, type SfxName } from '../../lib/sfx';
@@ -34,6 +35,17 @@ function readLaps(theme: RaceTheme): number {
   }
 }
 /** 당첨이 결승하는 데 걸리는 실제 시간 — 한 바퀴 3초에 출발·결승 3초. 세 바퀴면 12초. */
+/** 코스 모양은 게임마다 따로 기억한다(lib/raceTrack.ts). */
+const shapeKey = (theme: RaceTheme) => `lunch-app:race-track-${theme}`;
+function readShape(theme: RaceTheme): TrackShape {
+  try {
+    const saved = localStorage.getItem(shapeKey(theme));
+    return (TRACK_SHAPES as readonly string[]).includes(saved ?? '') ? (saved as TrackShape) : 'oval';
+  } catch {
+    return 'oval';
+  }
+}
+
 const raceMs = (laps: number) => 3000 + laps * 3000;
 /** 사건은 바퀴가 많을수록 많이(둘~다섯). 넘어지거나 뒤집히면 옆 주자도 같이 받는다. */
 const raceOptions = (laps: number) => ({ maxEvents: Math.max(2, laps), eventChance: 0.5, collisions: true });
@@ -116,6 +128,15 @@ export function PixelRace({
   expanded = false,
 }: GameProps & { theme: RaceTheme }) {
   const count = candidates.length;
+  const [shape, setShapeState] = useState(() => readShape(theme));
+  const setShape = (next: TrackShape) => {
+    setShapeState(next);
+    try {
+      localStorage.setItem(shapeKey(theme), next);
+    } catch {
+      // 시크릿 창. 이번 방문 동안만.
+    }
+  };
   const [laps, setLapsState] = useState(() => readLaps(theme));
   const setLaps = (next: number) => {
     setLapsState(next);
@@ -216,7 +237,9 @@ export function PixelRace({
 
   if (count === 0) return <div className="prace prace--empty" />;
 
-  const px = expanded ? 4 : count > 10 ? 2 : 3;
+  // 주자 그림 크기. 큰 그림(크게 보기·데스크톱 판)이어도 주자가 많으면 줄인다 — 4px 차 16대가
+  // 10차선(차선 폭 ≈ 판의 1.7%)에 다 들어가지 않아 한 덩어리로 겹쳤다(10/16 사용자).
+  const px = expanded ? (count > 10 ? 3 : 4) : count > 8 ? 2 : 3;
   const frame = Math.floor(t * 24) % 2;
   const dist = candidates.map((_, i) => (race && (live || settled) ? progress(race.paces[i], t) : 0));
   const rankOf = new Map<number, number>();
@@ -306,18 +329,33 @@ export function PixelRace({
               </button>
             ))}
           </div>
+          <div className="prace__laps prace__course" role="group" aria-label="코스">
+            {TRACK_SHAPES.map((t) => (
+              <button
+                key={t}
+                type="button"
+                className="pinball__chip"
+                aria-pressed={shape === t}
+                disabled={spinning}
+                onClick={() => setShape(t)}
+              >
+                {TRACK_LABEL[t]}
+              </button>
+            ))}
+          </div>
           <button type="button" className="pinball__chip" onClick={shuffleSlots} disabled={spinning || count < 2}>
             <span aria-hidden="true">🔀 </span>자리 섞기
           </button>
         </div>
         <RaceCircuit
           theme={theme}
+          shape={shape}
           candidates={candidates}
           dist={dist}
           rankOf={rankOf}
           active={active}
           bubbles={bubbles}
-          px={expanded ? 4 : count > 8 ? 2 : 3}
+          px={px}
           frame={frame}
           focus={focus !== null && focus < count ? focus : null}
           onFocus={setFocus}

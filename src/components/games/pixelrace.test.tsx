@@ -3,7 +3,7 @@
  * 픽셀 경마 · 레이싱. 당첨은 App 이 정했고, 경주는 당첨이 1등으로 들어오게 만든다.
  * 끝나면 onSpinEnd 를 한 번 부른다. 움직임 줄이기면 바로 결과를 보여 준다.
  */
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Place } from '../../lib/candidates';
 import { CarRace, HorseRace } from './PixelRace';
@@ -163,7 +163,7 @@ describe('경주 설정', () => {
     const onSpinEnd = vi.fn();
     const props = { candidates: places(5), winnerIndex: 2, run: 7, onSpinEnd };
     const r = render(<CarRace {...props} spinning={false} />);
-    const chips = [...r.container.querySelectorAll<HTMLButtonElement>('.prace__laps button')];
+    const chips = [...r.container.querySelectorAll<HTMLButtonElement>('[aria-label="바퀴 수"] button')];
     expect(chips.map((b) => b.textContent)).toEqual(['1바퀴', '3바퀴', '5바퀴']);
     expect(chips[1].getAttribute('aria-pressed')).toBe('true');
     act(() => chips[2].click());
@@ -195,5 +195,17 @@ describe('경주 설정', () => {
       vi.advanceTimersByTime(800);
     });
     expect(r.container.querySelector('.rc--shuffle')).toBeNull();
+  });
+});
+
+describe('경주 코스', () => {
+  it('코스를 고르면 저장되고, 코스를 바꿔도 당첨이 1등이다', () => {
+    localStorage.removeItem('lunch-app:race-track-car');
+    const r = render(<CarRace candidates={places(5)} winnerIndex={null} spinning={false} run={0} onSpinEnd={() => {}} />);
+    const course = [...r.container.querySelectorAll<HTMLButtonElement>('[aria-label="코스"] button')];
+    expect(course.map((b) => b.textContent)).toEqual(['타원', '스타디움', '삼각', '콩팥']);
+    fireEvent.click(course[3]);
+    expect(localStorage.getItem('lunch-app:race-track-car')).toBe('bean');
+    localStorage.removeItem('lunch-app:race-track-car');
   });
 });

@@ -7,22 +7,27 @@
  * 순위표의 이름을 누르면 카메라가 그 주자를 당겨 따라간다.
  * 위치·순위 계산은 PixelRace 가 하고, 여기는 그리기만 한다.
  */
+import { useMemo } from 'react';
 import type { Place } from '../../lib/candidates';
 import type { RaceEventKind } from '../../lib/race';
 import { shortName } from '../../lib/name';
+import {
+  PLANE_H,
+  gridBack,
+  laneCount,
+  laneOffset,
+  roadWidth,
+  trackAt,
+  trackPath,
+  trackPoint,
+  type TrackShape,
+} from '../../lib/raceTrack';
 
 type TrackTheme = 'horse' | 'car';
 
-/** 트랙 판 좌표(가로 100 × 세로 PLANE_H). 타원 중심과 반지름. */
-const PLANE_H = 64;
+/** 트랙 판 가운데(판 단위). 모양·차선은 lib/raceTrack.ts. */
 const CX = 50;
 const CY = PLANE_H / 2;
-const RX = 38;
-const RY = 21;
-/** 도로 폭(판 단위, 연석 안쪽). 차선은 최대 MAX_LANES 개로 나누고 주자는 번호 순으로 돌아가며 선다. */
-const ROAD = 13;
-const MAX_LANES = 6;
-const laneOffset = (k: number, lanes: number) => -ROAD / 2 + ((k + 0.5) * ROAD) / lanes;
 /** 따라가기 배율. */
 const ZOOM = 1.9;
 
@@ -145,17 +150,6 @@ function paint(theme: TrackTheme, i: number, n: number, frame: number, px: numbe
   return [body, ...extra].join(',');
 }
 
-/** 거리 d(0~1, 전체 바퀴) → 판 위 위치(%)와 진행 방향(도). 출발선은 아래 가운데. */
-function trackPoint(d: number, lane: number, laps: number): { x: number; y: number; deg: number } {
-  const theta = Math.PI / 2 + d * laps * 2 * Math.PI;
-  const rx = RX + lane;
-  const ry = RY + lane;
-  const x = CX + rx * Math.cos(theta);
-  const y = CY + ry * Math.sin(theta);
-  const deg = (Math.atan2(ry * Math.cos(theta), -rx * Math.sin(theta)) * 180) / Math.PI;
-  return { x, y: (y / PLANE_H) * 100, deg };
-}
-
 const STAND_ICON: Record<TrackTheme, Record<RaceEventKind, string>> = {
   car: { boost: ' 🔥', crash: ' 💫', bump: ' 💢', wobble: ' 💥', slip: ' 🍌' },
   horse: { boost: ' 🥕', crash: ' 💥', bump: ' 💢', wobble: ' 💫', slip: ' 🍌' },
@@ -163,6 +157,8 @@ const STAND_ICON: Record<TrackTheme, Record<RaceEventKind, string>> = {
 
 interface Props {
   theme: TrackTheme;
+  /** 코스 모양(타원·스타디움·삼각·콩팥). */
+  shape: TrackShape;
   candidates: Place[];
   dist: number[];
   rankOf: Map<number, number>;
@@ -187,6 +183,7 @@ interface Props {
 
 export function RaceCircuit({
   theme,
+  shape,
   candidates,
   dist,
   rankOf,
@@ -203,11 +200,30 @@ export function RaceCircuit({
   hazards,
 }: Props) {
   const n = candidates.length;
-  const lanes = Math.min(n, MAX_LANES);
+  const lanes = laneCount(n);
+  const road = roadWidth(lanes);
   const laneOf = (i: number) => laneOffset((slots[i] ?? i) % lanes, lanes);
+  // 한 차선에 여럿이면 뒷줄은 출발선 뒤에 선다(lib/raceTrack.ts gridBack).
+  const rowOf = (i: number) => Math.floor((slots[i] ?? i) / lanes);
+  // 트랙 그림은 모양·차선 수가 바뀔 때만 다시 만든다.
+  const paths = useMemo(
+    () => ({
+      outer: trackPath(shape, road / 2 + 1.2),
+      road: trackPath(shape, road / 2),
+      inner: trackPath(shape, -road / 2),
+      infield: trackPath(shape, -road / 2 - 1.2),
+      curbOut: trackPath(shape, road / 2 + 0.6),
+      curbIn: trackPath(shape, -road / 2 - 0.6),
+      lines: Array.from({ length: lanes - 1 }, (_, k) => trackPath(shape, -road / 2 + ((k + 1) * road) / lanes)),
+      start: [trackAt(shape, Math.PI / 2, -road / 2), trackAt(shape, Math.PI / 2, road / 2)],
+    }),
+    [shape, road, lanes],
+  );
   const lead = Math.max(...dist);
   const lap = Math.min(laps, 1 + Math.floor(lead * laps + 1e-9));
-  const points = candidates.map((_, i) => trackPoint(dist[i], laneOf(i), laps));
+  const points = candidates.map((_, i) =>
+    trackPoint(shape, dist[i] - gridBack(rowOf(i), dist[i], laps), laneOf(i), laps),
+  );
   const cam = focus === null ? null : points[focus];
   // 지금 순서(들어온 주자는 등수, 나머지는 달린 거리 순).
   const standing = candidates
@@ -243,29 +259,39 @@ export function RaceCircuit({
             scale: cam ? String(ZOOM) : undefined,
           }}
         >
-          <span className="rc__track" />
-          <span className="rc__infield" />
-          {Array.from({ length: lanes - 1 }, (_, k) => {
-            // 차선 사이 점선 — 차선 경계 반지름에 타원을 하나씩.
-            const off = -ROAD / 2 + ((k + 1) * ROAD) / lanes;
-            const rx = RX + off;
-            const ry = RY + off;
-            return (
-              <span
-                key={k}
-                className="rc__laneLine"
-                style={{
-                  left: `${CX - rx}%`,
-                  width: `${rx * 2}%`,
-                  top: `${((CY - ry) / PLANE_H) * 100}%`,
-                  height: `${((ry * 2) / PLANE_H) * 100}%`,
-                }}
-              />
-            );
-          })}
-          <span className="rc__start" />
+          <svg className="rc__svg" viewBox={`0 0 100 ${PLANE_H}`} preserveAspectRatio="none">
+            <defs>
+              <pattern id={`rc-grass-${theme}`} width="6" height="6" patternUnits="userSpaceOnUse">
+                <rect width="3" height="6" className="rc__grassA" />
+                <rect x="3" width="3" height="6" className="rc__grassB" />
+              </pattern>
+            </defs>
+            <path className="rc__rail" d={paths.outer} />
+            <path className="rc__road" d={paths.road} />
+            <path className="rc__rail" d={paths.inner} />
+            <path className="rc__infield" d={paths.infield} fill={`url(#rc-grass-${theme})`} />
+            <path className="rc__curb" d={paths.curbOut} />
+            <path className="rc__curb" d={paths.curbIn} />
+            {paths.lines.map((d, k) => (
+              <path key={k} className="rc__laneLine" d={d} />
+            ))}
+            <line
+              className="rc__startBase"
+              x1={paths.start[0].x}
+              y1={paths.start[0].y}
+              x2={paths.start[1].x}
+              y2={paths.start[1].y}
+            />
+            <line
+              className="rc__startCheck"
+              x1={paths.start[0].x}
+              y1={paths.start[0].y}
+              x2={paths.start[1].x}
+              y2={paths.start[1].y}
+            />
+          </svg>
           {hazards.map((h) => {
-            const p = trackPoint(h.d, laneOf(h.runner), laps);
+            const p = trackPoint(shape, h.d, laneOf(h.runner), laps);
             // 트랙 바깥(관중석) 쪽에서 날아온다 — 타원 중심에서 그 자리로 향하는 방향의 연장선.
             const dx = p.x - CX;
             const dy = ((p.y / 100) * PLANE_H - CY) * 1.6;
