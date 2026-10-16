@@ -317,7 +317,7 @@
   }
   .stage:not(.stage--full) .pinball canvas { width: auto; height: calc(100cqh - 72px); max-width: 100%; }
   /* 게임 중: 설정·테마 줄을 접고 판만. */
-  .stage:not(.stage--full) .pinball--spinning { grid-template-columns: auto; grid-template-areas: 'play'; }
-  .stage:not(.stage--full) .pinball--spinning > :is(.pinball__bar, .pinball__follow, .pinball__balls) { display: none; }
-  .stage:not(.stage--full) .pinball--spinning canvas { height: calc(100cqh - 8px); }
+  .stage:not(.stage--full) .pinball.pinball--live:not(.pinball--empty) { grid-template-columns: auto; grid-template-areas: 'play'; margin-inline: auto; }
+  .stage:not(.stage--full) .pinball--live > :is(.pinball__bar, .pinball__follow, .pinball__balls) { display: none; }
+  .stage:not(.stage--full) .pinball--live canvas { height: calc(100cqh - 8px); }
 }

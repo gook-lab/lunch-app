@@ -1839,6 +1839,8 @@ html:has(.stage--full) { overflow: hidden; }
 /* 핀볼 캔버스는 크게 볼 때 320:340 이다(가까이 당겨 보기). 높이가 무대를 넘지 않게 폭을 정한다. */
 /* 캔버스 아래위로 테마 줄(약 50px)·카메라 줄(약 50px)이 붙는다. 그만큼 빼야 한 화면에 들어온다. */
 .stage--full .pinball { width: min(92vw, calc((100svh - 420px) * 320 / 340), 900px); }
+/* 판이 시작되면 아래 공 개수 칸이 접힌다. 그만큼 판을 키운다. */
+.stage--full .pinball.pinball--live { width: min(92vw, calc((100svh - 390px) * 320 / 340), 900px); }
 
 :root[data-motion='reduced'] {
   .stage--full { animation: none; }
@@ -3298,7 +3300,12 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .pinball__odd[aria-pressed='true'] { border-color: var(--color-neutral-300); color: var(--color-bg); }
 .pinball__odd:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
 .pinball__oddName { white-space: nowrap; }
-.pinball__oddPct { font-weight: 700; color: var(--color-bg); font-variant-numeric: tabular-nums; }
+.pinball__oddPct { font-weight: 700; color: var(--color-bg); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* 판이 시작되면 확률표를 접고 판을 가운데로 */
+.pinball--live .pinball__odds { display: none; }
+.pinball--live .pinball__play { display: block; }
+.pinball--live:has(.pinball__odds) { width: auto; }
+.stage--full .pinball--live .pinball__balls { display: none; }
 @media (min-width: 480px) {
   .pinball:has(.pinball__odds) { width: min(424px, 94vw); }
   .pinball__play { display: grid; grid-template-columns: 104px 1fr; align-items: start; }

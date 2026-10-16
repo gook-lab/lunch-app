@@ -1,0 +1,220 @@
+/*
+ * 종이비행기 분위기 — 계절·날씨·요일에 따른 시각 변화.
+ * 배경의 나무·건물·하늘이 바뀌고, 비/눈 날씨에 따라 비행기가 흔들거린다.
+ * 금요일(weekday=5)에는 불금 장식을 넣는다.
+ */
+
+/* ── 봄: 벚꽃 나무 ── */
+.plane[data-season='spring'] .plane__scene {
+  background: linear-gradient(to bottom, #e3f2fd 0%, #fff9c4 100%);
+  position: relative;
+}
+
+.plane[data-season='spring'] .plane__scene::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80px 60px at 15% 20%, rgba(244, 188, 211, 0.4) 0%, transparent 70%),
+    radial-gradient(ellipse 70px 50px at 75% 15%, rgba(244, 188, 211, 0.3) 0%, transparent 70%),
+    radial-gradient(ellipse 90px 70px at 40% 10%, rgba(244, 188, 211, 0.35) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ── 여름: 해변 ── */
+.plane[data-season='summer'] .plane__scene {
+  background: linear-gradient(to bottom,
+    #e1f5fe 0%,
+    #b3e5fc 40%,
+    #fff8e1 40%,
+    #fff176 100%);
+}
+
+.plane[data-season='summer'] .plane__scene::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 8%;
+  background: #d2b48c;
+  z-index: 1;
+}
+
+/* ── 가을: 단풍나무 ── */
+.plane[data-season='autumn'] .plane__scene {
+  background: linear-gradient(to bottom, #fff8e1 0%, #ffecb3 100%);
+  position: relative;
+}
+
+.plane[data-season='autumn'] .plane__scene::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 90px 70px at 20% 25%, rgba(255, 152, 0, 0.35) 0%, transparent 70%),
+    radial-gradient(ellipse 85px 65px at 70% 20%, rgba(255, 152, 0, 0.3) 0%, transparent 70%),
+    radial-gradient(ellipse 75px 55px at 45% 15%, rgba(255, 87, 34, 0.32) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ── 겨울: 눈 덮인 지붕 ── */
+.plane[data-season='winter'] .plane__scene {
+  background: linear-gradient(to bottom, #b3e5fc 0%, #e0f2f1 60%, #f0f4c3 100%);
+  position: relative;
+}
+
+.plane[data-season='winter'] .plane__scene::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 25%;
+  background:
+    linear-gradient(to bottom, transparent 0%, rgba(255, 255, 255, 0.6) 100%),
+    repeating-linear-gradient(90deg, #2c3e50 0%, #2c3e50 30%, #34495e 30%, #34495e 60%);
+  clip-path: polygon(0 40%, 5% 35%, 10% 38%, 15% 32%, 20% 36%, 25% 30%, 30% 34%, 35% 28%, 40% 32%, 45% 26%, 50% 30%, 55% 26%, 60% 32%, 65% 28%, 70% 34%, 75% 30%, 80% 36%, 85% 32%, 90% 38%, 95% 35%, 100% 40%, 100% 100%, 0 100%);
+  z-index: 1;
+}
+
+/* 어두운 모드 배경 */
+[data-theme='dark'] .plane[data-season='spring'] .plane__scene {
+  background: linear-gradient(to bottom, #1b5e20 0%, #33691e 100%);
+}
+
+[data-theme='dark'] .plane[data-season='summer'] .plane__scene {
+  background: linear-gradient(to bottom, #01579b 0%, #0277bd 40%, #663d00 40%, #1a237e 100%);
+}
+
+[data-theme='dark'] .plane[data-season='autumn'] .plane__scene {
+  background: linear-gradient(to bottom, #3e2723 0%, #5d4037 100%);
+}
+
+[data-theme='dark'] .plane[data-season='winter'] .plane__scene {
+  background: linear-gradient(to bottom, #0d47a1 0%, #1565c0 60%, #1a237e 100%);
+}
+
+/* ── 비 날씨: 비행기 흔들림 ── */
+.plane[data-weather='rain'] .plane__craft {
+  animation: plane-wobble-rain 0.6s ease-in-out infinite;
+}
+
+@keyframes plane-wobble-rain {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-1px); }
+  50% { transform: translateY(1px); }
+  75% { transform: translateY(-0.5px); }
+}
+
+/* 비 표시 */
+.plane[data-weather='rain'] .plane__scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent 0,
+    transparent 35px,
+    rgba(100, 150, 200, 0.08) 35px,
+    rgba(100, 150, 200, 0.08) 70px
+  );
+  pointer-events: none;
+  z-index: 10;
+  animation: plane-rain-drip 3s linear infinite;
+}
+
+@keyframes plane-rain-drip {
+  0% { background-position: 0 0; }
+  100% { background-position: 100px 100px; }
+}
+
+/* ── 눈 날씨: 눈 표현 ── */
+.plane[data-weather='snow'] .plane__craft {
+  animation: plane-wobble-snow 1s ease-in-out infinite;
+}
+
+@keyframes plane-wobble-snow {
+  0%, 100% { transform: translateY(0) translateX(0); }
+  33% { transform: translateY(-2px) translateX(1px); }
+  66% { transform: translateY(1px) translateX(-1px); }
+}
+
+.plane[data-weather='snow'] .plane__scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle 1.5px, rgba(255, 255, 255, 0.8) 0%, transparent 1.5px) 0 0 / 15px 15px,
+    radial-gradient(circle 1.5px, rgba(255, 255, 255, 0.6) 0%, transparent 1.5px) 7.5px 7.5px / 15px 15px;
+  animation: plane-snow-fall 4s linear infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes plane-snow-fall {
+  0% { background-position: 0 0, 0 0; }
+  100% { background-position: 0 100%, 0 100%; }
+}
+
+/* ── 안개 날씨 ── */
+.plane[data-weather='fog'] .plane__scene {
+  opacity: 0.85;
+}
+
+.plane[data-weather='fog'] .plane__scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom,
+    rgba(200, 200, 200, 0.15) 0%,
+    rgba(200, 200, 200, 0.08) 50%,
+    rgba(200, 200, 200, 0.12) 100%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ── 구름 층(안개 강화) ── */
+.plane[data-weather='fog'] .plane__craft {
+  filter: drop-shadow(0 0 4px rgba(200, 200, 200, 0.4));
+}
+
+/* ── 금요일: 불금 장식 ── */
+.plane[data-weekday='5']::before {
+  content: '🎉 불금 🎉';
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  translate: -50% 0;
+  font-size: clamp(12px, 4cqw, 20px);
+  font-weight: 900;
+  color: #ff6b6b;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  animation: plane-friday-bounce 2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 20;
+}
+
+@keyframes plane-friday-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.1); }
+}
+
+/* 움직임 줄이기 */
+@media (prefers-reduced-motion: reduce) {
+  .plane[data-weather='rain'] .plane__craft {
+    animation: none;
+  }
+  .plane[data-weather='rain'] .plane__scene::after {
+    animation: none;
+  }
+  .plane[data-weather='snow'] .plane__craft {
+    animation: none;
+  }
+  .plane[data-weather='snow'] .plane__scene::after {
+    animation: none;
+  }
+  .plane[data-weekday='5']::before {
+    animation: none;
+  }
+}

@@ -1224,7 +1224,8 @@ export default function App() {
                             run,
                             onSpinEnd,
                             // 데스크톱 작게 보기도 판 칸을 채우는 큰 그림으로 그린다(stage--fit, desktop.css).
-                            expanded: expanded || fitBoard,
+                            // 핀볼은 판이 시작되면 데스크톱에서도 가까이 당긴 넓은 판(320:340)으로 바꾼다. 확률 칸은 접힌다.
+                            expanded: expanded || fitBoard || (wide && mode === 'pinball' && (spinning || winnerIndex !== null)),
                           };
                           // 사다리는 사용자가 판을 고친다. 후보 구성이 바뀌면 새 판이어야 하므로
                           // 후보 id 를 key 로 준다. 돌린 순간 얼리는 board 는 같은 id 라 판이 유지된다.

@@ -835,7 +835,17 @@ export function Pinball({
   if (count === 0) return <div className="pinball pinball--empty" />;
 
   return (
-    <div className={['pinball', expanded ? 'pinball--big' : '', spinning ? 'pinball--spinning' : ''].filter(Boolean).join(' ')}>
+    <div
+      className={[
+        'pinball',
+        expanded ? 'pinball--big' : '',
+        spinning ? 'pinball--spinning' : '',
+        // 판이 시작된 뒤(끝나도 결과를 보는 동안)는 확률표가 필요 없다. 판을 가운데로.
+        spinning || winnerIndex !== null ? 'pinball--live' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <div className="pinball__bar">
         <div className="pinball__themes" role="group" aria-label="판 테마">
           {PINBALL_THEMES.map((th) => (
