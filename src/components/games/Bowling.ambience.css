@@ -36,7 +36,7 @@
 .amb--fri.bowling { --neon: oklch(0.9 0.17 95); }
 .amb--fri .bowling__neon { animation: bowling-neon 1.2s steps(2) infinite; }
 @keyframes bowling-neon { 50% { opacity: 0.6; } }
-@media (prefers-reduced-motion: reduce) { .bowling__neon { animation: none !important; } }
+:root[data-motion='reduced'] .bowling__neon { animation: none !important; }
 
 /* 컷신 창 — 벽 위쪽 오른편 */
 .bowling__window {

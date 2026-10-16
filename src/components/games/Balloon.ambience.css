@@ -232,7 +232,7 @@
 }
 
 /* 움직임 줄이기 */
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .balloon[data-weather='rain'] .balloon__board::after {
     animation: none;
   }

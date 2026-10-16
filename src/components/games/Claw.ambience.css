@@ -202,7 +202,7 @@
 }
 
 /* 움직임 줄이기: 애니메이션 비활성화 */
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .claw[data-weekday='5']::before {
     animation: none;
   }

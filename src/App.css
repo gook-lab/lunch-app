@@ -827,7 +827,8 @@ footer.muted { text-align: center; }
 }
 .map__pin:hover::after,
 .map__pin--hover::after { filter: drop-shadow(0 1px 0 var(--color-text)); }
-@media (prefers-reduced-motion: reduce) {
+/* 앱의 움직임 설정이 OS 기본값을 초기값으로 삼고, 사용자가 앱 안에서 덮어쓸 수 있다. */
+:root[data-motion='reduced'] {
   .map__pin { transition: none; }
 }
 .map__pinIcon {
@@ -2990,7 +2991,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   to { filter: brightness(1.15) drop-shadow(0 0 8px var(--color-accent-100)); }
 }
 
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .dice__die--rolling, .bomb__burst, .bomb__pop { animation: none !important; }
   .bomb__bomb { transition: none; }
   .balloon__float, .balloon__item--win .balloon__body { animation: none; }
@@ -3067,7 +3068,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .list__item:nth-child(6) { animation-delay: 200ms; }
 .list__item:nth-child(7) { animation-delay: 240ms; }
 .list__item:nth-child(n + 8) { animation-delay: 280ms; }
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .panel:not([hidden]), .list__item, .history__item { animation-name: panel-fade; animation-delay: 0ms; }
 }
 @keyframes panel-fade { from { opacity: 0; } }
@@ -3087,7 +3088,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   background-size: 200% 100%;
   animation: mdl-shimmer 1.4s linear infinite;
 }
-@media (prefers-reduced-motion: reduce) { .map__loading { animation: none; } }
+:root[data-motion='reduced'] .map__loading { animation: none; }
 
 /* 게임 코드를 받는 동안 — 판 자리를 비워 두지 않고 반짝인다 */
 .game-loading {
@@ -3098,7 +3099,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   background-size: 200% 100%;
   animation: mdl-shimmer 1.4s linear infinite;
 }
-@media (prefers-reduced-motion: reduce) { .game-loading { animation: none; } }
+:root[data-motion='reduced'] .game-loading { animation: none; }
 
 /* 꽃가루 — 결과 모달 위쪽 가운데서 터져 퍼지며 떨어진다 */
 .result-modal { overflow: visible; }
@@ -3116,7 +3117,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   35% { opacity: 1; translate: calc(var(--dx) * 0.7) var(--up); }
   100% { opacity: 0; translate: var(--dx) 260px; rotate: var(--rot); }
 }
-@media (prefers-reduced-motion: reduce) { .confetti { display: none; } }
+:root[data-motion='reduced'] .confetti { display: none; }
 
 /* 소리 켜기 단추 — 크게 보기 옆 */
 .stage__sound {
@@ -4071,7 +4072,7 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
 .ladder__label--win { animation: win-pop 600ms var(--ease-out) both; }
 .cards__card--win { animation: win-pop 600ms var(--ease-out) 450ms both; }
 @keyframes win-pop { 0% { scale: 1; } 40% { scale: 1.18; } 100% { scale: 1; } }
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .ladder__label--win, .cards__card--win { animation: none; }
 }
 .add__walk { font-weight: 400; font-size: var(--fs-xs); color: var(--color-neutral-700); }

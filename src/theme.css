@@ -102,7 +102,6 @@
 }
 @keyframes status-spin { to { rotate: 360deg; } }
 :root[data-motion='reduced'] .status__ring { animation: none; }
-@media (prefers-reduced-motion: reduce) { .status__ring { animation: none; } }
 .status__bang {
   display: grid;
   place-items: center;

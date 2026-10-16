@@ -201,7 +201,7 @@
 }
 
 /* 움직임 줄이기 */
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .bomb[data-weather='rain'] .bomb__stage::after {
     animation: none;
   }

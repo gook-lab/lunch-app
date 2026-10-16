@@ -115,7 +115,7 @@
 }
 :root[data-theme='dark'][data-season='winter'] .season-sky span { background: white; opacity: 0.45; }
 
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .season-sky span { animation: none; top: calc(var(--x) * 0.9); }
   :root[data-season='summer'] .season-sky span { bottom: auto; }
 }

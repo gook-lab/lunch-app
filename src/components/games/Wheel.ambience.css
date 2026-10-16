@@ -69,5 +69,5 @@
   animation: wheel-bulb 900ms steps(2) infinite;
 }
 @keyframes wheel-bulb { 50% { opacity: 0.35; } }
-@media (prefers-reduced-motion: reduce) { .amb--fri .wheel__garland i::before { animation: none; } }
+:root[data-motion='reduced'] .amb--fri .wheel__garland i::before { animation: none; }
 .wheelgame__wx:is(.scene-wx--rain, .scene-wx--cloudy) { background: none; }

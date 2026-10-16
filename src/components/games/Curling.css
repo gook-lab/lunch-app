@@ -384,7 +384,7 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .curling__stone,
   .curling__granite,
   .curling__broom,

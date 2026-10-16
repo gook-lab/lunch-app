@@ -218,7 +218,7 @@
 }
 
 /* 움직임 줄이기 */
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .curling[data-weekday='5']::after {
     animation: none;
   }

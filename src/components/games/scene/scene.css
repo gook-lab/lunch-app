@@ -47,7 +47,7 @@
   background: radial-gradient(ellipse 40% 50% at 30% 50%, oklch(0.6 0.01 250 / 0.45), transparent 70%),
     radial-gradient(ellipse 35% 45% at 75% 60%, oklch(0.6 0.01 250 / 0.35), transparent 70%);
 }
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .scene-wx i { animation: none; }
   .scene-wx--rain i { top: calc(var(--x) * 0.8); }
   .scene-wx--snow i { top: calc(var(--x) * 0.9); }
