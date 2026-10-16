@@ -9,14 +9,21 @@
  * 연출 사건(판 번호 run 시드로 정해진다): 당첨이 아닌 물고기가 걸려 반쯤 올라오다 빠져나가는
  * '놓친 대물'(hook → slip → leave), 큰 물고기 그림자가 지나가는 장면(pass). 둘 다 당첨과 상관없다.
  * 물고기 생김새(종류·색)는 자리와 같이 후보 수마다 한 번 정한다(lib/fishing.ts fishLooks).
+ *
+ * 계절·날씨: 배경·옷차림·등장 물고기 종류를 바꾼다. useAmbience() 로 받는다.
+ * 도감: 낚은 물고기 종류를 localStorage 에 기록하고, 도감 버튼으로 본다.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { Button, Sheet } from '@gook-lab/ui';
 import { shortName } from '../../lib/name';
 import { withJosa } from '../../lib/josa';
 import { fishingPlan, fishLooks, FISH_SPECIES, pondLayout, SKY } from '../../lib/fishing';
 import { seededRandom } from '../../lib/random';
 import { prefersReducedMotion, type GameProps } from './types';
 import { sfxLater, type SfxName } from '../../lib/sfx';
+import { useAmbience } from '../../hooks/useAmbience';
+import { getFishDex, recordCaughtFish, type FishSpeciesId, FISH_SPECIES_NAMES } from '../../lib/fishDex';
+import './Fishing.ambience.css';
 
 /**
  * cast: 줄이 내려가는 중 · move: 다음 물고기 위로 옮기는 중 · bite: 입질(찌 흔들림)
@@ -41,7 +48,9 @@ const LOOK_SEED = 101;
 
 export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
   const count = candidates.length;
+  const { season, weekday, weather } = useAmbience();
   const [state, setState] = useState<FishingState>({ run: -1, phase: 'cast', fish: 0 });
+  const [showDex, setShowDex] = useState(false);
   const layout = useMemo(() => pondLayout(count, seededRandom(LAYOUT_SEED + count)), [count]);
   // 생김새도 자리처럼 후보 수마다 고정 — 판마다 바뀌면 '아까 그 복어'를 따라갈 수 없다.
   const looks = useMemo(() => fishLooks(count, layout.cols, seededRandom(LOOK_SEED + count)), [count, layout.cols]);
@@ -84,14 +93,21 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
       if (last) sounds.push([leaveMs, 'splash']);
     });
     at(plan.landMs, 'land', winnerIndex);
-    timers.push(window.setTimeout(onSpinEnd, plan.endMs));
+    timers.push(window.setTimeout(() => {
+      // 낚은 물고기를 도감에 기록한다.
+      if (winner) {
+        const fishSpeciesId = `${season}-${looks[winnerIndex].kind}` as FishSpeciesId;
+        recordCaughtFish(fishSpeciesId);
+      }
+      onSpinEnd();
+    }, plan.endMs));
 
     const stopSfx = sfxLater(sounds);
     return () => {
       timers.forEach((t) => window.clearTimeout(t));
       stopSfx();
     };
-  }, [spinning, winnerIndex, count, run, onSpinEnd, plan]);
+  }, [spinning, winnerIndex, count, run, onSpinEnd, plan, season, looks]);
 
   if (count === 0) return <div className="fishing fishing--empty" />;
 
@@ -154,7 +170,7 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
 
   return (
     <div
-      className={['fishing', expanded ? 'fishing--big' : '', settled ? 'fishing--settled' : ''].filter(Boolean).join(' ')}
+      className={['fishing', expanded ? 'fishing--big' : '', settled ? 'fishing--settled' : '', `fishing--season-${season}`, `fishing--weather-${weather}`, weekday === 5 ? 'fishing--friday' : ''].filter(Boolean).join(' ')}
       // 연못 폭 ÷ 높이. 크게 보기는 이 비로 남는 높이에 맞춘다(desktop.css).
       style={{ '--fit': layout.aspect.toFixed(4) } as React.CSSProperties}
     >
@@ -243,9 +259,69 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
           );
         })}
       </div>
-      <p className="fishing__status" aria-live="polite">
-        {status}
-      </p>
+      <div className="fishing__controls">
+        <p className="fishing__status" aria-live="polite">
+          {status}
+        </p>
+        <Button variant="secondary" size="sm" onClick={() => setShowDex(!showDex)}>
+          도감
+        </Button>
+      </div>
+      <FishDexSheet open={showDex} onOpenChange={setShowDex} />
     </div>
+  );
+}
+
+/** 도감 — 낚은 물고기를 본다. */
+function FishDexSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const dex = getFishDex();
+  const allSpecies: Array<{ id: FishSpeciesId; season: 'spring' | 'summer' | 'autumn' | 'winter'; name: string }> = [];
+
+  // 모든 가능한 종을 생성한다.
+  for (const s of ['spring', 'summer', 'autumn', 'winter'] as const) {
+    for (const kind of Object.keys(FISH_SPECIES_NAMES) as (keyof typeof FISH_SPECIES_NAMES)[]) {
+      const speciesId = `${s}-${kind}` as FishSpeciesId;
+      allSpecies.push({
+        id: speciesId,
+        season: s,
+        name: FISH_SPECIES_NAMES[kind],
+      });
+    }
+  }
+
+  const seen = new Set(dex);
+  const caught = allSpecies.filter((s) => seen.has(s.id));
+  const total = allSpecies.length;
+
+  return (
+    <Sheet open={open} onClose={() => onOpenChange(false)} title="낚시 도감">
+      <div className="fishing-dex">
+        <div className="fishing-dex__header">
+          <p className="fishing-dex__count">
+            {caught.length}/{total}
+          </p>
+        </div>
+        <div className="fishing-dex__content">
+          {allSpecies.map((species) => {
+            const hasCaught = seen.has(species.id);
+            return (
+              <div
+                key={species.id}
+                className={['fishing-dex__item', hasCaught ? 'fishing-dex__item--caught' : 'fishing-dex__item--unseen'].filter(Boolean).join(' ')}
+                title={hasCaught ? `${species.name} (${species.season})` : '아직 낚지 못했어요'}
+              >
+                <div className="fishing-dex__icon">
+                  {hasCaught ? <span className="fishing-dex__silhouette">{species.name}</span> : '?'}
+                </div>
+                <div className="fishing-dex__meta">
+                  <div className="fishing-dex__name">{hasCaught ? species.name : '미발견'}</div>
+                  <div className="fishing-dex__season">{species.season}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </Sheet>
   );
 }
