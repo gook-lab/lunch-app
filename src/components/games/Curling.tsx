@@ -33,7 +33,14 @@ import {
 import { seededRandom } from '../../lib/random';
 import { curlSfxLater, type CurlSfxName, type SfxName } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
+import { useAmbience } from '../../hooks/useAmbience';
+import { SEASON_NAME } from '../../lib/ambience';
+import { ambienceClasses } from './scene/outfit';
 import './Curling.css';
+import './Curling.ambience.css';
+
+/** 얼음 밑 대회 로고의 계절 표시. */
+const LOGO_MARK = { spring: '🌸', summer: '☀️', autumn: '🍁', winter: '❄️' } as const;
 
 interface CurlingState {
   run: number;
@@ -92,6 +99,7 @@ function statusText(plan: CurlingPlan, ev: CurlEvent | null, t: number, winnerNa
 }
 
 export function Curling({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
+  const ambience = useAmbience();
   const count = candidates.length;
   const [state, setState] = useState<CurlingState>({ run: -1, t: 0 });
   const plan = useMemo(
@@ -214,6 +222,7 @@ export function Curling({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
     <div
       className={[
         'curling',
+        ambienceClasses(ambience),
         expanded ? 'curling--big' : '',
         settled ? 'curling--settled' : '',
         racking ? 'curling--rack' : '',
@@ -244,6 +253,13 @@ export function Curling({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
             y2={BUTTON.y + RINGS[0] + 26}
           />
         </svg>
+        <div className="curling__logo" aria-hidden="true">
+          <span className="curling__logo-mark">{LOGO_MARK[ambience.season]}</span>
+          <span className="curling__logo-name">
+            {ambience.weekday === 5 ? '불금 컬링 나이트' : `${SEASON_NAME[ambience.season]} 컬링 리그`}
+          </span>
+        </div>
+        <span className="curling__wx" aria-hidden="true" />
 
         {candidates.map((p, i) => {
           const at = pos[i] ?? BUTTON;
