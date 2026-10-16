@@ -258,6 +258,7 @@ export default function App() {
   // 데스크톱(960px~)은 오른쪽 칸에 후보·조건을 펼쳐 두고, 휴대폰은 요약 한 줄 → 시트로 연다.
   const wide = useMedia('(min-width: 960px)');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [partyComposeRequest, setPartyComposeRequest] = useState(0);
   // 핀볼 공 개수(가게 id → 개수). 이번 방문 동안만 쓴다. 핀볼일 때만 확률이 된다(lib/weights.ts).
   const [ballCounts, setBallCounts] = useState<Record<string, number>>({});
   // 돌린 순간의 공 개수. board 처럼 얼려 둬야 연출 중에 바꿔도 경기가 안 바뀐다.
@@ -773,6 +774,7 @@ export default function App() {
       actions={party.actions}
       alerts={party.alerts}
       onDismissAlert={party.dismissAlert}
+      composeRequest={partyComposeRequest}
     />
   );
 
@@ -898,7 +900,12 @@ export default function App() {
           </p>
           {/* 정한 다음 할 일은 같이 갈 사람에게 알리기. 가장 큰 단추로 둔다. */}
           <ShareButton place={winner} primary game={`${MODE_ICON[mode]} ${GAME_MODES.find((m) => m.id === mode)?.label ?? ''}`} />
-          <DirectionsLink place={winner} />
+          <div className="ticket__next">
+            <DirectionsLink place={winner} />
+            <Button variant="secondary" onClick={() => setPartyComposeRequest((request) => request + 1)}>
+              점심 팟 모으기
+            </Button>
+          </div>
           <Button block variant="secondary" onClick={spin} disabled={spinning}>
             그래도 다시 뽑기
           </Button>
@@ -1366,26 +1373,18 @@ export default function App() {
                             여기로 결정
                           </Button>
                         )}
-                        <Button
+                        <button
                           ref={resultBarRef}
-                          variant={confirmed ? 'primary' : 'secondary'}
+                          type="button"
+                          className="linkish result-bar__detail"
                           onClick={() => setResultOpen(true)}
                         >
-                          결과 보기
-                        </Button>
+                          상세
+                        </button>
                         {/* 정한 뒤엔 모달과 같은 말로. 오늘 기록이 바뀌는 재추첨임을 분명히 한다. */}
                         <Button variant="secondary" onClick={spin} disabled={spinning}>
                           {confirmed ? '그래도 다시 뽑기' : '다시 뽑기'}
                         </Button>
-                        <button
-                          type="button"
-                          className="result-bar__clear"
-                          aria-label="결과 지우기"
-                          title="결과 지우기"
-                          onClick={clearBoard}
-                        >
-                          ✕
-                        </button>
                       </div>
                     </div>
                   )) : gate ? null : (

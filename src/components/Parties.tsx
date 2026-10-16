@@ -9,7 +9,7 @@
  * 모인 사람은 저장된 값으로 같은 연출을 다시 본다(PartyGame.tsx).
  */
 import { PartyHelp } from './PartyHelp';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Input, Modal, Sheet } from '@gook-lab/ui';
 import type { Place } from '../lib/candidates';
 import type { DayId } from '../lib/date';
@@ -65,6 +65,8 @@ interface Props {
   /** 팟 알림(hooks/useParties.ts). 닫으면 onDismissAlert. */
   alerts?: readonly PartyAlert[];
   onDismissAlert?: (key: string) => void;
+  /** 결과 화면에서 팟 만들기를 누를 때마다 증가한다. */
+  composeRequest?: number;
 }
 
 /** 출발 시각이 지났는지 30초마다 다시 본다. */
@@ -81,15 +83,22 @@ const FORM_DESC = '같이 갈 사람을 모아요. 이름 대신 동물 아바�
 
 const menuIcon = (category: string) => MENUS.find((m) => m.id === category)?.icon ?? '🍴';
 
-export function Parties({ day, parties, myUid, places, candidatesFor, preferredMode, actions, alerts = [], onDismissAlert }: Props) {
+export function Parties({ day, parties, myUid, places, candidatesFor, preferredMode, actions, alerts = [], onDismissAlert, composeRequest = 0 }: Props) {
   const now = useNow();
   const sorted = useMemo(() => sortParties(parties, now), [parties, now]);
   const hosting = myUid !== null && parties.some((p) => p.hostUid === myUid);
   const me = myUid ? avatarOf(myUid, day) : null;
 
   const [formOpen, setFormOpen] = useState(false);
+  const seenComposeRequest = useRef(composeRequest);
   const [busy, setBusy] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  useEffect(() => {
+    if (composeRequest <= seenComposeRequest.current) return;
+    seenComposeRequest.current = composeRequest;
+    setProblem(null);
+    setFormOpen(true);
+  }, [composeRequest]);
   const [cancelAsk, setCancelAsk] = useState<string | null>(null);
   // 게임: 방장이 고르는 중(pick) 또는 저장된 판을 보는 중(watch).
   const [gameFor, setGameFor] = useState<{ partyId: string; view: 'pick' | 'watch' } | null>(null);
