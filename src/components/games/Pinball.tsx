@@ -835,7 +835,7 @@ export function Pinball({
   if (count === 0) return <div className="pinball pinball--empty" />;
 
   return (
-    <div className={expanded ? 'pinball pinball--big' : 'pinball'}>
+    <div className={['pinball', expanded ? 'pinball--big' : '', spinning ? 'pinball--spinning' : ''].filter(Boolean).join(' ')}>
       <div className="pinball__bar">
         <div className="pinball__themes" role="group" aria-label="판 테마">
           {PINBALL_THEMES.map((th) => (

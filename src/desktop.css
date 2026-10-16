@@ -289,3 +289,35 @@
   }
   .stage:not(.stage--full) > .modebar .modebar__icon { font-size: 20px; line-height: 1; }
 }
+
+/*
+ * 핀볼 데스크톱(작게 보기) — 설정(카메라·가게별 공)은 판 왼쪽 칸, 판은 오른쪽에서 판 칸 높이에 맞춘다.
+ * 예전엔 설정이 판 아래로 쌓여 판 칸이 270px 넘게 스크롤했다(10/16 사용자). 게임이 시작되면 설정과
+ * 테마 줄을 숨겨 판이 그 자리까지 커진다. 판 칸 높이는 크기 컨테이너(100cqh)로 읽는다.
+ */
+@media (min-width: 960px) {
+  .stage:not(.stage--full) > .stage__main > .stage__board { container-type: size; }
+  .stage:not(.stage--full) .pinball:not(.pinball--empty) {
+    width: fit-content;
+    max-width: 100%;
+    display: grid;
+    grid-template-columns: 280px auto;
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: 'follow bar' 'balls play';
+    align-items: start;
+  }
+  .stage:not(.stage--full) .pinball > .pinball__bar { grid-area: bar; }
+  .stage:not(.stage--full) .pinball > .pinball__play { grid-area: play; }
+  .stage:not(.stage--full) .pinball > .pinball__follow { grid-area: follow; align-self: stretch; }
+  .stage:not(.stage--full) .pinball > .pinball__balls {
+    grid-area: balls;
+    align-self: stretch;
+    max-height: calc(100cqh - 72px);
+    overflow-y: auto;
+  }
+  .stage:not(.stage--full) .pinball canvas { width: auto; height: calc(100cqh - 72px); max-width: 100%; }
+  /* 게임 중: 설정·테마 줄을 접고 판만. */
+  .stage:not(.stage--full) .pinball--spinning { grid-template-columns: auto; grid-template-areas: 'play'; }
+  .stage:not(.stage--full) .pinball--spinning > :is(.pinball__bar, .pinball__follow, .pinball__balls) { display: none; }
+  .stage:not(.stage--full) .pinball--spinning canvas { height: calc(100cqh - 8px); }
+}
