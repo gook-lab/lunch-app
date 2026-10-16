@@ -1,105 +1,59 @@
 /*
- * 인형뽑기 — 계절·날씨. 기계 배경(하늘·벽), 조명색, 인형 계절 소품·덧옷,
- * 날씨 효과(비/눈/안개), 금요일 장식. 연출 전용.
+ * 인형뽑기 분위기 — 계절·날씨·요일에 따른 시각 변화.
+ * 내 그린 인형, 함, 간판은 빛·어둠이 같고, 배경·무늬·액세서리만 바꾼다.
+ * 금요일(weekday=5)에는 들뜬 장식을 넣는다.
  */
 
-.claw__box {
-  --sky-top: oklch(0.96 0.04 120);
-  --sky-bot: oklch(0.92 0.05 110);
-  --wall: oklch(0.84 0.06 100);
-  background: linear-gradient(to bottom, var(--sky-top), var(--sky-bot) 35%, var(--wall));
+/* ── 배경 그러데이션 ── */
+.claw[data-season='spring'] .claw__box {
+  background: linear-gradient(to bottom, #e8f5e9 0%, #fff9c4 100%);
 }
 
-.amb--spring .claw__box {
-  --sky-top: oklch(0.97 0.05 30);
-  --sky-bot: oklch(0.94 0.06 50);
-  --wall: oklch(0.88 0.08 80);
+.claw[data-season='summer'] .claw__box {
+  background: linear-gradient(to bottom, #e1f5fe 0%, #fff8e1 100%);
 }
 
-.amb--summer .claw__box {
-  --sky-top: oklch(0.95 0.08 230);
-  --sky-bot: oklch(0.92 0.07 220);
-  --wall: oklch(0.86 0.09 210);
+.claw[data-season='autumn'] .claw__box {
+  background: linear-gradient(to bottom, #ffe0b2 0%, #fff9c4 100%);
 }
 
-.amb--autumn .claw__box {
-  --sky-top: oklch(0.94 0.08 60);
-  --sky-bot: oklch(0.90 0.07 50);
-  --wall: oklch(0.82 0.10 70);
+.claw[data-season='winter'] .claw__box {
+  background: linear-gradient(to bottom, #b3e5fc 0%, #f1f8e9 100%);
 }
 
-.amb--winter .claw__box {
-  --sky-top: oklch(0.93 0.04 250);
-  --sky-bot: oklch(0.89 0.05 240);
-  --wall: oklch(0.97 0.02 230);
+/* 어두운 모드 배경 */
+[data-theme='dark'] .claw[data-season='spring'] .claw__box {
+  background: linear-gradient(to bottom, #1b5e20 0%, #33691e 100%);
 }
 
-[data-theme='dark'] .claw__box {
-  --sky-top: oklch(0.28 0.04 250);
-  --sky-bot: oklch(0.24 0.04 250);
-  --wall: oklch(0.18 0.05 240);
+[data-theme='dark'] .claw[data-season='summer'] .claw__box {
+  background: linear-gradient(to bottom, #01579b 0%, #1a237e 100%);
 }
 
-[data-theme='dark'] .amb--spring .claw__box {
-  --sky-top: oklch(0.32 0.04 30);
-  --sky-bot: oklch(0.28 0.05 50);
-  --wall: oklch(0.22 0.06 80);
+[data-theme='dark'] .claw[data-season='autumn'] .claw__box {
+  background: linear-gradient(to bottom, #3e2723 0%, #4e342e 100%);
 }
 
-[data-theme='dark'] .amb--summer .claw__box {
-  --sky-top: oklch(0.30 0.06 230);
-  --sky-bot: oklch(0.26 0.05 220);
-  --wall: oklch(0.20 0.06 210);
+[data-theme='dark'] .claw[data-season='winter'] .claw__box {
+  background: linear-gradient(to bottom, #0d47a1 0%, #01579b 100%);
 }
 
-[data-theme='dark'] .amb--autumn .claw__box {
-  --sky-top: oklch(0.32 0.06 60);
-  --sky-bot: oklch(0.28 0.06 50);
-  --wall: oklch(0.20 0.07 70);
+/* ── 내 그린 인형: 계절 액세서리 ── */
+/* 겨울: 산타 모자 */
+.claw[data-season='winter'] .claw__svgdoll::before {
+  content: '';
+  position: absolute;
+  width: 28%;
+  height: 24%;
+  top: -8%;
+  left: 36%;
+  background: #d32f2f;
+  border-radius: 50% 50% 45% 45%;
+  box-shadow: -2px 0 0 #ffeb3b inset, 2px 0 0 #ffeb3b inset, 0 0 0 2px #fff;
 }
 
-[data-theme='dark'] .amb--winter .claw__box {
-  --sky-top: oklch(0.26 0.02 250);
-  --sky-bot: oklch(0.22 0.03 240);
-  --wall: oklch(0.75 0.02 230);
-}
-
-/* ── 조명색 — 간판 불빛 계절 색상 ── */
-.claw__neon {
-  color: oklch(0.9 0.08 260);
-  text-shadow:
-    0 0 0.6cqw oklch(0.8 0.15 260),
-    0 0 1.8cqw oklch(0.7 0.2 260),
-    0 0 3.6cqw oklch(0.65 0.22 260);
-}
-
-.amb--spring .claw__neon {
-  color: oklch(0.9 0.08 0);
-  text-shadow:
-    0 0 0.6cqw oklch(0.8 0.15 0),
-    0 0 1.8cqw oklch(0.7 0.2 0),
-    0 0 3.6cqw oklch(0.65 0.22 0);
-}
-
-.amb--summer .claw__neon {
-  color: oklch(0.9 0.08 210);
-  text-shadow:
-    0 0 0.6cqw oklch(0.8 0.15 210),
-    0 0 1.8cqw oklch(0.7 0.2 210),
-    0 0 3.6cqw oklch(0.65 0.22 210);
-}
-
-.amb--autumn .claw__neon {
-  color: oklch(0.9 0.08 40);
-  text-shadow:
-    0 0 0.6cqw oklch(0.8 0.15 40),
-    0 0 1.8cqw oklch(0.7 0.2 40),
-    0 0 3.6cqw oklch(0.65 0.22 40);
-}
-
-/* ── 인형 계절 소품 ── */
 /* 봄: 꽃 크라운 */
-.amb--spring .claw__toy::before {
+.claw[data-season='spring'] .claw__toy::before {
   content: '';
   position: absolute;
   top: -15%;
@@ -108,17 +62,17 @@
   width: 110%;
   height: 32%;
   background:
-    radial-gradient(circle 6px, oklch(0.85 0.2 0), transparent 6px) 0% 0% / 18% 100%,
-    radial-gradient(circle 6px, oklch(0.85 0.2 0), transparent 6px) 18% 0% / 18% 100%,
-    radial-gradient(circle 6px, oklch(0.85 0.2 0), transparent 6px) 36% 0% / 18% 100%,
-    radial-gradient(circle 6px, oklch(0.85 0.2 0), transparent 6px) 54% 0% / 18% 100%,
-    radial-gradient(circle 6px, oklch(0.85 0.2 0), transparent 6px) 72% 0% / 18% 100%;
+    radial-gradient(circle 6px, #f06292 0%, transparent 6px) 0% 0% / 18% 100%,
+    radial-gradient(circle 6px, #f06292 0%, transparent 6px) 18% 0% / 18% 100%,
+    radial-gradient(circle 6px, #f06292 0%, transparent 6px) 36% 0% / 18% 100%,
+    radial-gradient(circle 6px, #f06292 0%, transparent 6px) 54% 0% / 18% 100%,
+    radial-gradient(circle 6px, #f06292 0%, transparent 6px) 72% 0% / 18% 100%;
   background-repeat: no-repeat;
   pointer-events: none;
 }
 
-/* 여름: 선글라스·튜브 */
-.amb--summer .claw__toy::after {
+/* 여름: 모자 */
+.claw[data-season='summer'] .claw__toy::after {
   content: '';
   position: absolute;
   top: -12%;
@@ -126,36 +80,77 @@
   translate: -50% 0;
   width: 100%;
   height: 20%;
-  background: linear-gradient(to bottom, oklch(0.85 0.15 45), oklch(0.80 0.16 40));
+  background: linear-gradient(to bottom, #ffb74d, #ff9800);
   border-radius: 50% 50% 0 0;
-  border: 3px solid oklch(0.98 0.02 80);
-  box-shadow: inset 0 -2px 4px oklch(0 0 0 / 0.2);
+  border: 3px solid #fff;
+  box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.2);
   pointer-events: none;
 }
 
-/* 가을: 베레·목도리 */
-.amb--autumn .claw__toy {
-  /* 베레는 toy 요소 자체 scale 수정으로 표현 */
+/* ── 간판 불빛: 계절 색상 ── */
+.claw__neon {
+  text-shadow:
+    0 0 0.6cqw oklch(0.8 0.2 350),
+    0 0 1.8cqw oklch(0.7 0.25 350),
+    0 0 3.6cqw oklch(0.65 0.25 350);
 }
 
-/* 겨울: 산타 모자 */
-.amb--winter .claw__toy::before {
-  content: '';
+.claw[data-season='spring'] .claw__neon {
+  color: oklch(0.9 0.08 0);
+  text-shadow:
+    0 0 0.6cqw oklch(0.8 0.15 0),
+    0 0 1.8cqw oklch(0.7 0.2 0),
+    0 0 3.6cqw oklch(0.65 0.22 0);
+}
+
+.claw[data-season='summer'] .claw__neon {
+  color: oklch(0.9 0.08 210);
+  text-shadow:
+    0 0 0.6cqw oklch(0.8 0.15 210),
+    0 0 1.8cqw oklch(0.7 0.2 210),
+    0 0 3.6cqw oklch(0.65 0.22 210);
+}
+
+.claw[data-season='autumn'] .claw__neon {
+  color: oklch(0.9 0.08 40);
+  text-shadow:
+    0 0 0.6cqw oklch(0.8 0.15 40),
+    0 0 1.8cqw oklch(0.7 0.2 40),
+    0 0 3.6cqw oklch(0.65 0.22 40);
+}
+
+.claw[data-season='winter'] .claw__neon {
+  color: oklch(0.9 0.08 260);
+  text-shadow:
+    0 0 0.6cqw oklch(0.8 0.15 260),
+    0 0 1.8cqw oklch(0.7 0.2 260),
+    0 0 3.6cqw oklch(0.65 0.22 260);
+}
+
+/* ── 금요일 "불금" 장식 ── */
+.claw[data-weekday='5']::before {
+  content: '불금';
   position: absolute;
-  width: 28%;
-  height: 24%;
-  top: -8%;
-  left: 36%;
-  background: oklch(0.6 0.25 10);
-  border-radius: 50% 50% 45% 45%;
-  box-shadow: -2px 0 0 oklch(0.97 0.01 50) inset, 2px 0 0 oklch(0.97 0.01 50) inset, 0 0 0 2px oklch(0.98 0.01 0);
+  top: 8%;
+  right: 6%;
+  font-size: clamp(14px, 5.2cqw, 24px);
+  font-weight: 900;
+  color: #ff6b6b;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  animation: claw-friday 2s ease-in-out infinite;
   pointer-events: none;
 }
 
-/* ── 비 날씨: 빗줄무늬 ── */
-.amb--w-rain .claw__box {
+@keyframes claw-friday {
+  0%, 100% { transform: rotate(-8deg) scale(1); }
+  50% { transform: rotate(8deg) scale(1.1); }
+}
+
+/* ── 비 날씨: 빗소리 시각화(잔물결 텍스처) ── */
+.claw[data-weather='rain'] .claw__box {
   background-image:
-    repeating-linear-gradient(90deg, transparent, transparent 2px, oklch(1 0 0 / 0.08) 2px, oklch(1 0 0 / 0.08) 3px);
+    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255, 255, 255, 0.1) 2px, rgba(255, 255, 255, 0.1) 3px),
+    linear-gradient(to bottom, var(--wall), var(--wall));
   animation: claw-rain 8s linear infinite;
 }
 
@@ -164,56 +159,54 @@
   100% { background-position: 4px 100px; }
 }
 
-/* ── 눈 날씨: 축적된 눈 ── */
-.amb--w-snow .claw__box {
+/* 눈 날씨: 축적된 눈 표현 */
+.claw[data-weather='snow'] .claw__box {
   position: relative;
 }
 
-.amb--w-snow .claw__box::before {
+.claw[data-weather='snow'] .claw__box::before {
   content: '';
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle 1.2px, oklch(1 0 0 / 0.7), transparent 1.2px) 0 0 / 8px 8px,
-    radial-gradient(circle 1.2px, oklch(1 0 0 / 0.5), transparent 1.2px) 4px 4px / 8px 8px;
+    radial-gradient(circle 1.2px, rgba(255, 255, 255, 0.7) 0%, transparent 1.2px) 0 0 / 8px 8px,
+    radial-gradient(circle 1.2px, rgba(255, 255, 255, 0.5) 0%, transparent 1.2px) 4px 4px / 8px 8px;
   pointer-events: none;
   z-index: 1;
   border-radius: 1.6cqw;
 }
 
-.amb--w-snow .claw__toy {
+.claw[data-weather='snow'] .claw__toy {
   position: relative;
   z-index: 2;
 }
 
-/* ── 안개 날씨: 흐린 효과 ── */
-.amb--w-fog .claw__box::after {
+/* 안개 날씨: 흐린 효과 */
+.claw[data-weather='fog'] .claw__box {
+  background: linear-gradient(to bottom, rgba(192, 192, 192, 0.15), rgba(192, 192, 192, 0.05));
+}
+
+.claw[data-weather='fog'] .claw__box::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: oklch(0.85 0.01 240 / 0.2);
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0px,
+    rgba(255, 255, 255, 0.03) 40px,
+    rgba(200, 200, 200, 0.02) 80px
+  );
   border-radius: 1.6cqw;
   pointer-events: none;
   z-index: 450;
 }
 
-/* ── 금요일 "불금" 장식 ── */
-.amb--fri.claw::before {
-  content: '🎉';
-  position: absolute;
-  top: 5%;
-  right: 4%;
-  font-size: clamp(16px, 6cqw, 28px);
-  animation: claw-fri-pop 2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
-  pointer-events: none;
-}
-
-@keyframes claw-fri-pop {
-  0%, 100% { transform: scale(0.8) rotate(-12deg); opacity: 0.7; }
-  50% { transform: scale(1.1) rotate(8deg); opacity: 1; }
-}
-
+/* 움직임 줄이기: 애니메이션 비활성화 */
 @media (prefers-reduced-motion: reduce) {
-  .amb--fri.claw::before { animation: none; }
-  .amb--w-rain .claw__box { animation: none; }
+  .claw[data-weekday='5']::before {
+    animation: none;
+  }
+  .claw[data-weather='rain'] .claw__box {
+    animation: none;
+  }
 }

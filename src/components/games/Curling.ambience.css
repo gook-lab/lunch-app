@@ -1,147 +1,157 @@
 /*
- * 컬링 — 계절·날씨. 얼음 시트 배경, 스톤·스위퍼 의상, 나무 줄(겨울),
- * 날씨 효과(비/눈/안개), 금요일 번팅. 연출 전용.
+ * 컬링 분위기 — 계절·날씨·요일에 따른 시각 변화.
+ * 얼음 시트, 스톤, 스위퍼는 네 계절이 다르고, 겨울에는 실외 스케이트장, 비/눈 날씨에 따라 변한다.
+ * 금요일(weekday=5)에는 번팅을 달고 관객의 응원을 넣는다.
  */
 
-.curling__ice {
-  --ice: oklch(0.92 0.02 230);
-  --sweeper: oklch(0.82 0.08 345);
-  background: linear-gradient(to right, oklch(0.88 0.04 200), var(--ice));
+/* ── 얼음 시트 배경 색 ── */
+.curling[data-season='spring'] .curling__ice {
+  background: linear-gradient(to right, #c8e6c9 0%, #fff9c4 100%);
 }
 
-.amb--spring .curling__ice {
-  --ice: oklch(0.90 0.06 120);
-  --sweeper: oklch(0.85 0.12 345);
-  background: linear-gradient(to right, oklch(0.92 0.08 100), oklch(0.94 0.05 80));
+.curling[data-season='summer'] .curling__ice {
+  background: linear-gradient(to right, #b3e5fc 0%, #fff8e1 100%);
 }
 
-.amb--summer .curling__ice {
-  --ice: oklch(0.91 0.06 210);
-  --sweeper: oklch(0.85 0.10 60);
-  background: linear-gradient(to right, oklch(0.88 0.08 200), oklch(0.92 0.06 180));
+.curling[data-season='autumn'] .curling__ice {
+  background: linear-gradient(to right, #ffe0b2 0%, #ffecb3 100%);
 }
 
-.amb--autumn .curling__ice {
-  --ice: oklch(0.88 0.08 50);
-  --sweeper: oklch(0.82 0.12 40);
-  background: linear-gradient(to right, oklch(0.85 0.10 60), oklch(0.90 0.06 40));
+.curling[data-season='winter'] .curling__ice {
+  background: linear-gradient(to right, #e3f2fd 0%, #f0f4c3 100%);
 }
 
-.amb--winter .curling__ice {
-  --ice: oklch(0.96 0.01 240);
-  --sweeper: oklch(0.80 0.06 240);
-  background: linear-gradient(to right, oklch(0.93 0.02 250), oklch(0.97 0.01 230));
+/* 어두운 모드 */
+[data-theme='dark'] .curling[data-season='spring'] .curling__ice {
+  background: linear-gradient(to right, #1b5e20 0%, #33691e 100%);
 }
 
-[data-theme='dark'] .curling__ice {
-  --ice: oklch(0.24 0.02 230);
-  --sweeper: oklch(0.35 0.08 345);
-  background: linear-gradient(to right, oklch(0.22 0.04 200), oklch(0.26 0.02 230));
+[data-theme='dark'] .curling[data-season='summer'] .curling__ice {
+  background: linear-gradient(to right, #01579b 0%, #1a237e 100%);
 }
 
-[data-theme='dark'] .amb--spring .curling__ice {
-  --ice: oklch(0.28 0.05 120);
-  --sweeper: oklch(0.45 0.10 345);
-  background: linear-gradient(to right, oklch(0.26 0.06 100), oklch(0.30 0.04 80));
+[data-theme='dark'] .curling[data-season='autumn'] .curling__ice {
+  background: linear-gradient(to right, #3e2723 0%, #5d4037 100%);
 }
 
-[data-theme='dark'] .amb--summer .curling__ice {
-  --ice: oklch(0.26 0.05 210);
-  --sweeper: oklch(0.40 0.08 60);
-  background: linear-gradient(to right, oklch(0.24 0.06 200), oklch(0.28 0.04 180));
+[data-theme='dark'] .curling[data-season='winter'] .curling__ice {
+  background: linear-gradient(to right, #0d47a1 0%, #1565c0 100%);
 }
 
-[data-theme='dark'] .amb--autumn .curling__ice {
-  --ice: oklch(0.24 0.06 50);
-  --sweeper: oklch(0.38 0.10 40);
-  background: linear-gradient(to right, oklch(0.22 0.08 60), oklch(0.26 0.04 40));
+/* ── 스톤(스위퍼) 의상 — 계절 색상 ── */
+.curling[data-season='spring'] .curling__body {
+  background: #ffc1cc;
 }
 
-[data-theme='dark'] .amb--winter .curling__ice {
-  --ice: oklch(0.72 0.01 240);
-  --sweeper: oklch(0.35 0.05 240);
-  background: linear-gradient(to right, oklch(0.70 0.01 250), oklch(0.74 0.01 230));
+.curling[data-season='summer'] .curling__body {
+  background: #fff9c4;
 }
 
-/* 스위퍼 의상 */
-.curling__body {
-  background: var(--sweeper);
+.curling[data-season='autumn'] .curling__body {
+  background: #ffb74d;
 }
 
-/* 브룸 색 */
-.curling__broom {
-  background: linear-gradient(to right, var(--sweeper), oklch(0.88 0.08 hsl(from var(--sweeper) h s l)));
+.curling[data-season='winter'] .curling__body {
+  background: #bbdefb;
 }
 
-/* ── 겨울: 야외 호수 링크 ── */
-.amb--winter .curling::before {
+/* 어두운 모드 스위퍼 */
+[data-theme='dark'] .curling[data-season='spring'] .curling__body {
+  background: #d81b60;
+}
+
+[data-theme='dark'] .curling[data-season='summer'] .curling__body {
+  background: #f57f17;
+}
+
+[data-theme='dark'] .curling[data-season='autumn'] .curling__body {
+  background: #d84315;
+}
+
+[data-theme='dark'] .curling[data-season='winter'] .curling__body {
+  background: #1565c0;
+}
+
+/* ── 빗자루(브룸) 색 — 계절별 ── */
+.curling[data-season='spring'] .curling__broom {
+  background: linear-gradient(to right, #ffb3d9, #ffc0dd);
+}
+
+.curling[data-season='summer'] .curling__broom {
+  background: linear-gradient(to right, #ffeb3b, #fff176);
+}
+
+.curling[data-season='autumn'] .curling__broom {
+  background: linear-gradient(to right, #ff9800, #ffb74d);
+}
+
+.curling[data-season='winter'] .curling__broom {
+  background: linear-gradient(to right, #64b5f6, #90caf9);
+}
+
+/* ── 그링(환) 색상 — 계절에 따라 약간 조정 ── */
+.curling[data-season='winter'] .curling__ring--12 {
+  stroke: #1565c0;
+}
+
+.curling[data-season='winter'] .curling__ring--8 {
+  fill: rgba(13, 71, 161, 0.08);
+}
+
+/* ── 겨울: 실외 스케이트장 ── */
+.curling[data-season='winter']::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 35%;
+  inset: 0;
   z-index: 0;
   background:
-    radial-gradient(ellipse 30% 100% at 15% 0%, oklch(0.92 0.01 250 / 0.4), transparent 50%),
-    radial-gradient(ellipse 35% 120% at 85% -10%, oklch(0.90 0.01 230 / 0.5), transparent 50%),
-    linear-gradient(to bottom, oklch(0.88 0.02 240), oklch(0.85 0.03 250));
+    linear-gradient(to bottom, rgba(200, 230, 255, 0.3) 0%, transparent 40%),
+    linear-gradient(to top, rgba(200, 230, 255, 0.2) 0%, transparent 60%);
   pointer-events: none;
 }
 
-/* 겨울: 눈 둑과 침엽수 — 지평선 역할 */
-.amb--winter .curling__sheet::before {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 28%;
-  background:
-    /* 침엽수 여럿 */
-    conic-gradient(from 0deg at 5% 45%, transparent 45deg, oklch(0.35 0.05 170) 45deg, oklch(0.35 0.05 170) 90deg, transparent 90deg),
-    conic-gradient(from 0deg at 12% 50%, transparent 40deg, oklch(0.32 0.04 170) 40deg, oklch(0.32 0.04 170) 95deg, transparent 95deg),
-    conic-gradient(from 0deg at 88% 48%, transparent 45deg, oklch(0.34 0.05 170) 45deg, oklch(0.34 0.05 170) 90deg, transparent 90deg),
-    conic-gradient(from 0deg at 95% 52%, transparent 40deg, oklch(0.33 0.04 170) 40deg, oklch(0.33 0.04 170) 95deg, transparent 95deg),
-    /* 눈 둑 */
-    linear-gradient(to top, oklch(0.96 0.01 240), oklch(0.93 0.02 245) 20%, transparent 100%);
-  z-index: 1;
-  pointer-events: none;
+/* ── 비 날씨 ── */
+.curling[data-weather='rain'] .curling__ice {
+  background: linear-gradient(to right,
+    var(--rain-base-start),
+    var(--rain-base-end));
+  --rain-base-start: #90caf9;
+  --rain-base-end: #e0f2f1;
+  opacity: 0.92;
 }
 
-/* ── 비 날씨: 젖은 얼음 ── */
-.amb--w-rain .curling__ice {
-  opacity: 0.88;
-}
-
-.amb--w-rain .curling__ice::before {
+.curling[data-weather='rain'] .curling__ice::before {
   content: '';
   position: absolute;
   inset: 0;
   background: repeating-linear-gradient(
     90deg,
-    transparent,
+    transparent 0,
     transparent 2px,
-    oklch(0.5 0.02 250 / 0.12) 2px,
-    oklch(0.5 0.02 250 / 0.12) 3px
+    rgba(100, 100, 100, 0.08) 2px,
+    rgba(100, 100, 100, 0.08) 3px
   );
-  animation: curling-rain 6s linear infinite;
+  animation: curling-raindrops 6s linear infinite;
   pointer-events: none;
 }
 
-@keyframes curling-rain {
+@keyframes curling-raindrops {
   0% { background-position: 0 0; }
   100% { background-position: 4px 80px; }
 }
 
-/* ── 눈 날씨: 눈송이 ── */
-.amb--w-snow .curling__ice::after {
+/* ── 눈 날씨 ── */
+.curling[data-weather='snow'] .curling__ice {
+  background: linear-gradient(to right, #e0e8ff, #f8f9fa);
+}
+
+.curling[data-weather='snow'] .curling__ice::after {
   content: '';
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle 1px, oklch(1 0 0 / 0.85), transparent 1px) 0 0 / 12px 12px,
-    radial-gradient(circle 1px, oklch(1 0 0 / 0.65), transparent 1px) 6px 6px / 12px 12px;
+    radial-gradient(circle 1px, rgba(255, 255, 255, 0.9) 0%, transparent 1px) 0 0 / 12px 12px,
+    radial-gradient(circle 1px, rgba(255, 255, 255, 0.7) 0%, transparent 1px) 6px 6px / 12px 12px;
   animation: curling-snow 8s linear infinite;
   pointer-events: none;
 }
@@ -151,42 +161,40 @@
   100% { background-position: 24px 0, 24px 0; }
 }
 
-[data-theme='dark'] .amb--w-snow .curling__ice::after {
+/* 어두운 모드 눈 */
+[data-theme='dark'] .curling[data-weather='snow'] .curling__ice::after {
   background:
-    radial-gradient(circle 1px, oklch(0.7 0.02 240 / 0.65), transparent 1px) 0 0 / 12px 12px,
-    radial-gradient(circle 1px, oklch(0.7 0.02 240 / 0.45), transparent 1px) 6px 6px / 12px 12px;
+    radial-gradient(circle 1px, rgba(200, 220, 255, 0.7) 0%, transparent 1px) 0 0 / 12px 12px,
+    radial-gradient(circle 1px, rgba(200, 220, 255, 0.5) 0%, transparent 1px) 6px 6px / 12px 12px;
 }
 
-/* ── 안개 날씨: 흐림 ── */
-.amb--w-fog .curling__ice {
-  opacity: 0.82;
+/* ── 안개 날씨 ── */
+.curling[data-weather='fog'] .curling__ice {
+  opacity: 0.85;
+  background: linear-gradient(to right,
+    var(--fog-base-start),
+    var(--fog-base-end));
+  --fog-base-start: #d0d8e8;
+  --fog-base-end: #e8e8e8;
 }
 
-.amb--w-fog .curling__ice::before {
+/* ── 금요일 "불금" 번팅 ── */
+.curling[data-weekday='5']::after {
   content: '';
   position: absolute;
-  inset: 0;
-  background: oklch(0.85 0.01 240 / 0.15);
-  pointer-events: none;
-}
-
-/* ── 금요일 번팅 ── */
-.amb--fri.curling::after {
-  content: '';
-  position: absolute;
-  top: 8%;
+  top: 12%;
   left: 50%;
   translate: -50% 0;
-  width: 75%;
-  height: 24px;
+  width: 80%;
+  height: 32px;
   background: repeating-linear-gradient(
     90deg,
-    oklch(0.6 0.25 10),
-    oklch(0.6 0.25 10) 12px,
-    oklch(0.75 0.15 180) 12px,
-    oklch(0.75 0.15 180) 24px,
-    oklch(0.90 0.15 50) 24px,
-    oklch(0.90 0.15 50) 36px
+    #ff6b6b 0,
+    #ff6b6b 14px,
+    #4ecdc4 14px,
+    #4ecdc4 28px,
+    #ffe66d 28px,
+    #ffe66d 42px
   );
   clip-path: polygon(0 40%, 5% 0, 10% 40%, 15% 0, 20% 40%, 25% 0, 30% 40%, 35% 0, 40% 40%, 45% 0, 50% 40%, 55% 0, 60% 40%, 65% 0, 70% 40%, 75% 0, 80% 40%, 85% 0, 90% 40%, 95% 0, 100% 40%, 100% 100%, 0 100%);
   pointer-events: none;
@@ -196,13 +204,31 @@
 
 @keyframes curling-bunting {
   0%, 100% { transform: scaleY(1); }
-  50% { transform: scaleY(0.92); }
+  50% { transform: scaleY(0.95); }
 }
 
+/* ── 스톤 이름표 — 금요일 강조 ── */
+.curling[data-weekday='5'] .curling__stone:nth-child(1) {
+  animation: curling-shimmer 2s ease-in-out infinite;
+}
+
+@keyframes curling-shimmer {
+  0%, 100% { filter: drop-shadow(0 0 0 rgba(255, 107, 107, 0)); }
+  50% { filter: drop-shadow(0 0 8px rgba(255, 107, 107, 0.6)); }
+}
+
+/* 움직임 줄이기 */
 @media (prefers-reduced-motion: reduce) {
-  .amb--w-rain .curling__ice::before,
-  .amb--w-snow .curling__ice::after,
-  .amb--fri.curling::after {
+  .curling[data-weekday='5']::after {
+    animation: none;
+  }
+  .curling[data-weekday='5'] .curling__stone:nth-child(1) {
+    animation: none;
+  }
+  .curling[data-weather='rain'] .curling__ice::before {
+    animation: none;
+  }
+  .curling[data-weather='snow'] .curling__ice::after {
     animation: none;
   }
 }

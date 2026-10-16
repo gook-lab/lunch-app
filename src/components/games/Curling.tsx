@@ -33,10 +33,7 @@ import {
 import { seededRandom } from '../../lib/random';
 import { curlSfxLater, type CurlSfxName, type SfxName } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
-import { useAmbience } from '../../hooks/useAmbience';
-import { ambienceClasses } from './scene/outfit';
 import './Curling.css';
-import './Curling.ambience.css';
 
 interface CurlingState {
   run: number;
@@ -97,7 +94,6 @@ function statusText(plan: CurlingPlan, ev: CurlEvent | null, t: number, winnerNa
 export function Curling({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
   const count = candidates.length;
   const [state, setState] = useState<CurlingState>({ run: -1, t: 0 });
-  const ambience = useAmbience();
   const plan = useMemo(
     () => (winnerIndex === null ? null : curlingPlan(count, winnerIndex, seededRandom(run))),
     [count, winnerIndex, run],
@@ -221,7 +217,6 @@ export function Curling({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
         expanded ? 'curling--big' : '',
         settled ? 'curling--settled' : '',
         racking ? 'curling--rack' : '',
-        ambienceClasses(ambience),
       ]
         .filter(Boolean)
         .join(' ')}

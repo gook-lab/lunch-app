@@ -157,7 +157,7 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
 
   const status =
     phase === 'land' && winner
-      ? `${withJosa(shortName(winner.name, 12), '을/를')} 낚았어요! · ${fishName(`${season}-${looks[winnerIndex!].kind}` as FishSpeciesId)}`
+      ? `${withJosa(shortName(winner.name, 12), '을/를')} 낚았어요!`
       : phase === 'bite'
         ? '입질이 왔어요…'
         : phase === 'hook'
@@ -279,6 +279,9 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
         <p className="fishing__status" aria-live="polite">
           {status}
         </p>
+        {phase === 'land' && winnerIndex !== null && (
+          <span className="fishing__species">🐟 {fishName(`${season}-${looks[winnerIndex].kind}` as FishSpeciesId)}</span>
+        )}
         <Button variant="secondary" size="sm" onClick={() => setShowDex(!showDex)}>
           도감
         </Button>

@@ -31,10 +31,7 @@ import {
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
 import { tournbalSfxLater, type TournbalSfx } from '../../lib/sfx';
 import type { SfxName } from '../../lib/sfx';
-import { useAmbience } from '../../hooks/useAmbience';
-import { ambienceClasses } from './scene/outfit';
 import './Tournament.css';
-import './Tournament.ambience.css';
 
 interface Shown {
   run: number;
@@ -46,7 +43,6 @@ interface Shown {
 const CONFETTI = 18;
 
 export function Tournament({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
-  const ambience = useAmbience();
   const count = candidates.length;
   const [cheer, setCheer] = useState<number | null>(null);
   const [shown, setShown] = useState<Shown>({ run: -1, k: -1 });
@@ -201,7 +197,7 @@ export function Tournament({ candidates, winnerIndex, spinning, run, onSpinEnd, 
 
   return (
     <div
-      className={['tour', 'tour--live', ambienceClasses(ambience), expanded ? 'tour--big' : '', settled ? 'tour--settled' : ''].filter(Boolean).join(' ')}
+      className={['tour', 'tour--live', expanded ? 'tour--big' : '', settled ? 'tour--settled' : ''].filter(Boolean).join(' ')}
     >
       <ol className="tour__steps" aria-label="진행">
         {bracket.rounds.slice(0, -1).map((rd, i) => (

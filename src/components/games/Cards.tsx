@@ -16,10 +16,7 @@ import { shortName } from '../../lib/name';
 import { seededRandom } from '../../lib/random';
 import { gachaCardsSfxLater, type GachaCardsSfxName, type SfxName } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
-import { useAmbience } from '../../hooks/useAmbience';
-import { ambienceClasses } from './scene/outfit';
 import './Cards.css';
-import './Cards.ambience.css';
 
 interface Shown {
   run: number;
@@ -54,7 +51,6 @@ export function Cards({
   onRequestSpin,
   expanded = false,
 }: GameProps) {
-  const ambience = useAmbience();
   const count = candidates.length;
   const [picked, setPicked] = useState<number | null>(null);
   const [shown, setShown] = useState<Shown>({ run: -1, step: 0 });
@@ -178,7 +174,7 @@ export function Cards({
 
   return (
     <div
-      className={['cards', ambienceClasses(ambience), expanded ? 'cards--big' : '', `cards--${say}`, settled ? 'cards--settled' : ''].filter(Boolean).join(' ')}
+      className={['cards', expanded ? 'cards--big' : '', `cards--${say}`, settled ? 'cards--settled' : ''].filter(Boolean).join(' ')}
       style={{ '--cols': bigCols, '--rows': bigRows, '--fit': ((bigCols * 3) / (bigRows * 4)).toFixed(4) } as React.CSSProperties}
     >
       {/* 카드가 많으면 판이 길어 아래 줄은 화면 밖이다. 상태 줄은 판 위에 둔다. */}

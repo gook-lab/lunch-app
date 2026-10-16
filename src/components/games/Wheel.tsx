@@ -26,11 +26,7 @@ import { seededRandom } from '../../lib/random';
 import { CLICK_MS, sliceAt, sliceFrac, wheelAngleAt, wheelPlan, type WheelBeat, type WheelPlan } from '../../lib/wheel';
 import { sfx, wheelSlotSfxLater, type SfxName, type WheelSlotSfx } from '../../lib/sfx';
 import { SPIN_MS, prefersReducedMotion, type GameProps } from './types';
-import { useAmbience } from '../../hooks/useAmbience';
-import { SeasonIcon } from './GameDecor';
-import { ambienceClasses } from './scene/outfit';
 import './Wheel.css';
-import './Wheel.ambience.css';
 
 /** 이 수를 넘는 후보 수부터 라벨을 바퀴살 방향(세로)으로 쓴다. */
 export const RADIAL_FROM = 8;
@@ -54,7 +50,6 @@ interface WheelState {
 const mod = (a: number, n: number) => ((a % n) + n) % n;
 
 export function Wheel({ candidates, winnerIndex, spinning, run, onSpinEnd }: GameProps) {
-  const ambience = useAmbience();
   const count = candidates.length;
   const slice = count > 0 ? 360 / count : 360;
   const [state, setState] = useState<WheelState>({ run: -1, beat: null, angle: 0, plan: null });
@@ -234,7 +229,7 @@ export function Wheel({ candidates, winnerIndex, spinning, run, onSpinEnd }: Gam
             : 'idle';
 
   return (
-    <div className={`wheelgame ${ambienceClasses(ambience)}`}>
+    <div className="wheelgame">
       <div
         className={[
           'wheel',
@@ -320,13 +315,7 @@ export function Wheel({ candidates, winnerIndex, spinning, run, onSpinEnd }: Gam
           </span>
         )}
 
-        {!winner && count > 0 && (
-          <span className="wheel__hub" aria-hidden="true">
-            <div className="wheel__hub-decor" style={{ color: 'var(--game-primary)' }}>
-              <SeasonIcon size={20} />
-            </div>
-          </span>
-        )}
+        {!winner && count > 0 && <span className="wheel__hub" aria-hidden="true" />}
         {callout && (
           <span
             key={`${state.run}-${beat}`}

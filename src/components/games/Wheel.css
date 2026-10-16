@@ -232,16 +232,3 @@
   );
 }
 [data-theme='dark'] .wheelgame__mc-face { stroke: oklch(0.2 0.02 260); }
-
-/* 계절 장식 */
-.wheel__hub-decor {
-  position: absolute;
-  inset: 50%;
-  width: 20px;
-  height: 20px;
-  translate: -50% -50%;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}

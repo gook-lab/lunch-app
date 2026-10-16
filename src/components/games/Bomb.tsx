@@ -20,10 +20,7 @@ import { bombPlan, type Beat, type BombPlan } from '../../lib/bomb';
 import { seededRandom } from '../../lib/random';
 import { bombSfxLater, type BombSfxName } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
-import { useAmbience } from '../../hooks/useAmbience';
-import { ambienceClasses } from './scene/outfit';
 import './Bomb.css';
-import './Bomb.ambience.css';
 
 interface BombState {
   run: number;
@@ -84,7 +81,6 @@ export function Bomb({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
   const count = candidates.length;
   const startSeatRef = useRef(0);
   const [state, setState] = useState<BombState>({ run: -1, plan: null, beat: 0 });
-  const ambience = useAmbience();
 
   useEffect(() => {
     if (!spinning || winnerIndex === null || count === 0) return;
@@ -232,9 +228,7 @@ export function Bomb({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
   const winAt = winnerIndex === null ? null : at(winnerIndex, SEAT_R);
 
   return (
-    <div
-      className={['bomb', expanded ? 'bomb--big' : '', ambienceClasses(ambience)].filter(Boolean).join(' ')}
-    >
+    <div className={expanded ? 'bomb bomb--big' : 'bomb'}>
       <div
         className={[
           'bomb__stage',

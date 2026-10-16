@@ -19,10 +19,7 @@ import { clawLayout, clawNameMax, clawPlan, type ClawLayout, type Step, type Toy
 import { seededRandom } from '../../lib/random';
 import { clawSfxLater } from '../../lib/sfx';
 import { prefersReducedMotion, type GameProps } from './types';
-import { useAmbience } from '../../hooks/useAmbience';
-import { ambienceClasses } from './scene/outfit';
 import './Claw.css';
-import './Claw.ambience.css';
 
 interface ClawState {
   run: number;
@@ -100,7 +97,6 @@ function statusText(step: Step, candidates: GameProps['candidates'], attempts: n
 export function Claw({ candidates, winnerIndex, spinning, run, onSpinEnd, expanded = false }: GameProps) {
   const count = candidates.length;
   const [state, setState] = useState<ClawState>({ run: -1, step: 0 });
-  const ambience = useAmbience();
   const layout = useMemo(() => clawLayout(count, seededRandom(LAYOUT_SEED + count)), [count]);
   // 각본은 판 번호 시드라 몇 번 계산해도 같다. 자세를 그리려고 렌더에서도 쓴다.
   const plan = useMemo(
@@ -166,7 +162,7 @@ export function Claw({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
 
   return (
     <div
-      className={['claw', expanded ? 'claw--big' : '', settled ? 'claw--settled' : '', ambienceClasses(ambience)].filter(Boolean).join(' ')}
+      className={['claw', expanded ? 'claw--big' : '', settled ? 'claw--settled' : ''].filter(Boolean).join(' ')}
       // 함 폭 ÷ 높이. 크게 보기는 이 비로 남는 높이에 맞춘다(desktop.css).
       style={{ '--fit': fit.toFixed(4) } as React.CSSProperties}
     >
