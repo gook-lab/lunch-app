@@ -1,0 +1,21 @@
+/*
+ * 접근성 보정 — 밝은 테마의 주 단추.
+ * MODUL 기본은 강조색(#ec3013) 위에 바탕색(#f3f2f2) 글자라 3.76:1 이다(axe color-contrast, 4.5:1 미달).
+ * 한 단계 진한 강조색(600) + 흰 글자로 4.74:1. 계절 테마의 씨앗색도 600 자리라 모두 5:1 이상.
+ * 어두운 테마는 밝은 강조색 위 어두운 글자라 이미 통과한다.
+ */
+:root:not([data-theme='dark']) .btn-primary:not(.btn-danger):not(:disabled) {
+  background: var(--color-accent-600);
+  border-color: var(--color-accent-600);
+  color: white;
+}
+:root:not([data-theme='dark']) .btn-primary:not(.btn-danger):not(:disabled):hover {
+  background: var(--color-accent-700);
+  border-color: var(--color-accent-700);
+}
+
+/*
+ * 게임 중엔 휴대폰 카테고리·게임 줄의 단추가 모두 잠긴다. 그때 가로 스크롤만 남으면
+ * 키보드로 닿을 수 없는 스크롤 영역이 된다(axe scrollable-region-focusable). 잠긴 동안은 스크롤을 접는다.
+ */
+:is(.catbar, .modebar):not(:has(:is(button, a, input, [tabindex]):not(:disabled, [tabindex='-1']))) { overflow: hidden; }
