@@ -21,6 +21,7 @@
     "@gook-lab/motion": "0.2.7",
     "@gook-lab/tokens": "^0.2.7",
     "@gook-lab/ui": "^0.2.7",
+    "@vercel/analytics": "^2.0.1",
     "firebase": "^12.19.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"

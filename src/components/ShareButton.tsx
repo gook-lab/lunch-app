@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { track } from '../lib/analytics';
 import { Button } from '@gook-lab/ui';
 import type { Place } from '../lib/candidates';
 import { sharePlace, shareMessage, type ShareResult } from '../lib/share';
@@ -34,6 +35,7 @@ export function ShareButton({
   };
   // 데스크톱은 공유 시트가 없어 글만 복사된다. 그림은 따로 받아 슬랙에 끌어다 놓는다.
   const saveCard = async () => {
+    track('share', { kind: 'card' });
     const file = await card();
     if (!file) return;
     const url = URL.createObjectURL(file);
@@ -56,7 +58,10 @@ export function ShareButton({
         block
         size={primary ? 'lg' : 'sm'}
         variant={primary ? 'primary' : 'secondary'}
-        onClick={async () => setResult(await sharePlace(shareMessage(place, APP_URL()), card))}
+        onClick={async () => {
+          track('share', { kind: 'link' });
+          setResult(await sharePlace(shareMessage(place, APP_URL()), card));
+        }}
       >
         📤 동료에게 알리기
       </Button>

@@ -66,6 +66,7 @@
 .clock__hand--m { stroke-width: 1.6; }
 .clock__hand--s { stroke: var(--color-accent-700); stroke-width: 0.9; }
 .clock__pin { fill: var(--color-accent-700); }
+.clock__d { display: inline-block; width: 0.64em; text-align: center; }
 .clock__s { font-size: 0.78em; font-weight: 600; opacity: 0.7; }
 .clock__colon { display: inline-block; margin: 0 1px; animation: clock-blink 1s steps(1, end) infinite; }
 @keyframes clock-blink { 50% { opacity: 0.25; } }

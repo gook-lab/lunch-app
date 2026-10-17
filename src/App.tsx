@@ -65,6 +65,7 @@ import {
 import { Roadmap } from './components/Roadmap';
 import { WeatherChip } from './components/WeatherChip';
 import { LiveClock } from './components/LiveClock';
+import { track } from './lib/analytics';
 import { AmbienceProvider } from './hooks/useAmbience';
 import { useTodayKST } from './hooks/useTodayKST';
 import { useLunchData } from './hooks/useLunchData';
@@ -432,6 +433,7 @@ export default function App() {
 
   const spin = useCallback(() => {
     if (playable.list.length < MIN_GAME_CANDIDATES || spinning) return;
+    track(winner ? 'respin' : 'game_start', { mode, n: playable.list.length });
     const active = document.activeElement;
     focusResult.current =
       active === document.body || (active !== null && !!boardRef.current?.closest('.stage')?.contains(active));
@@ -466,7 +468,7 @@ export default function App() {
         block: 'center',
       });
     });
-  }, [playable.list, spinning, closeResult, mode, ballCounts]);
+  }, [playable.list, spinning, closeResult, mode, ballCounts, winner]);
 
   useEffect(() => {
     if (!winner || !focusResult.current) return;
@@ -685,11 +687,12 @@ export default function App() {
       // 모달이 뜨기 전 0.7초 사이에 게임 아래 카드로 결정했으면 모달은 띄우지 않는다.
       // 띄우면 확인 시트 위에 결과 모달이 덮인다.
       window.clearTimeout(resultTimer.current);
+      track('decide', { mode });
       // 오늘 이미 다른 곳으로 정해져 있으면 덮어쓰기 전에 물어본다.
       if (decision && decision.placeId !== place.id) setConfirming(place);
       else void commit(place);
     },
-    [decision, commit],
+    [decision, commit, mode],
   );
 
   // 첫 방문 안내. 게임을 돌릴 수 있는 오늘 탭이 처음 다 그려졌을 때 한 번 띄운다(pig-ma 시작 안내와 같은 구조).
@@ -748,6 +751,7 @@ export default function App() {
   };
   const switchCatView = (v: CategoryView) => {
     if (v === catView) return;
+    track('cat_view', { view: v });
     setCatView(v);
     clearCategories();
   };
@@ -809,7 +813,10 @@ export default function App() {
       votes={votes}
       myUid={uid}
       locked={spinning}
-      onVote={(placeId, name) => castVote(today, placeId, name)}
+      onVote={(placeId, name) => {
+        track('predict');
+        return castVote(today, placeId, name);
+      }}
       onClear={() => clearVote(today)}
     />
   );

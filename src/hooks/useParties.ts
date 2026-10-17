@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DayId } from '../lib/date';
 import { departingAlerts, joinAlerts, nowMinutesKST, partyAlertText, type PartyAlert } from '../lib/party';
 import { askNotifyOnce, notifyIfHidden } from '../lib/notify';
+import { track } from '../lib/analytics';
 import {
   cancelParty,
   guessParty,
@@ -93,17 +94,25 @@ export function useParties(day: DayId): {
       // 팟에 들어가거나 열 때 — 알림이 쓸모 있어지는 순간에 한 번만 허락을 묻는다.
       open: (input) => {
         askNotifyOnce();
+        track('party_open', { category: input.category });
         return openParty(day, input);
       },
       join: (id) => {
         askNotifyOnce();
+        track('party_join');
         return joinParty(day, id);
       },
       leave: (id) => leaveParty(day, id),
       setStatus: (id, status) => setPartyStatus(day, id, status),
       cancel: (id) => cancelParty(day, id),
-      saveGame: (id, game) => savePartyGame(day, id, game),
-      guess: (id, placeId) => guessParty(day, id, placeId),
+      saveGame: (id, game) => {
+        track('party_game', { mode: game.mode });
+        return savePartyGame(day, id, game);
+      },
+      guess: (id, placeId) => {
+        if (placeId) track('party_guess');
+        return guessParty(day, id, placeId);
+      },
     }),
     [day],
   );

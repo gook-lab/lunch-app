@@ -18,6 +18,17 @@ export function kstClock(now: Date): string {
   return `${parts.hour}:${parts.minute}:${parts.second}`;
 }
 
+/**
+ * 숫자 한 자씩 같은 폭 칸에. 글꼴(Archivo → 대체 글꼴)마다 1 과 0 의 폭이 달라
+ * 초가 바뀔 때마다 옆 글자가 좌우로 밀렸다(10/17 사용자). 자리 수가 같으니 칸 폭을 고정한다.
+ */
+const digits = (two: string) =>
+  [...two].map((c, i) => (
+    <span key={i} className="clock__d">
+      {c}
+    </span>
+  ));
+
 /** 바늘 각도(도). 시침은 분만큼, 분침은 초만큼 같이 움직인다. */
 export function handAngles(hms: string): { h: number; m: number; s: number } {
   const [h, m, sec] = hms.split(':').map(Number);
@@ -60,12 +71,12 @@ export function LiveClock({ className, analog = false }: { className?: string; a
     <time className={className ? `clock ${className}` : 'clock'} dateTime={now.toISOString()} aria-label={`지금 ${text}`}>
       {analog && <Dial hms={text} />}
       <span className="clock__hm" aria-hidden="true">
-        {text.slice(0, 2)}
+        {digits(text.slice(0, 2))}
         <span className="clock__colon">:</span>
-        {text.slice(3, 5)}
+        {digits(text.slice(3, 5))}
       </span>
       <span className="clock__s" aria-hidden="true">
-        {text.slice(6)}
+        {digits(text.slice(6))}
       </span>
     </time>
   );
