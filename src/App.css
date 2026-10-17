@@ -222,7 +222,7 @@ body {
   cursor: pointer;
 }
 
-.modebar__more:hover:not(:disabled) { border-color: var(--color-accent); color: var(--color-accent); }
+@media (hover: hover) { .modebar__more:hover:not(:disabled) { border-color: var(--color-accent); color: var(--color-accent); } }
 .modebar__more:disabled { cursor: not-allowed; opacity: 0.5; }
 
 .modebar-shell {
@@ -282,7 +282,7 @@ body {
   background: transparent;
 }
 
-.chip:not(.chip--on):hover { border-color: var(--color-neutral-600); color: var(--color-text); }
+@media (hover: hover) { .chip:not(.chip--on):hover { border-color: var(--color-neutral-600); color: var(--color-text); } }
 
 .chip--on {
   background: var(--color-text);
@@ -457,7 +457,7 @@ body {
   min-height: 32px;
 }
 
-.ladder__shuffle:hover:not(:disabled) { border-color: var(--color-neutral-700); color: var(--color-text); }
+@media (hover: hover) { .ladder__shuffle:hover:not(:disabled) { border-color: var(--color-neutral-700); color: var(--color-text); } }
 .ladder__shuffle:disabled { opacity: 0.4; cursor: default; }
 
 .ladder__board { position: relative; container-type: inline-size; }
@@ -488,7 +488,7 @@ body {
 /* 누르는 영역은 44px 근처까지. 열이 촘촘하면 이웃과 반씩 나눈다. */
 .ladder__start::before { content: ''; position: absolute; inset: -8px -4px; }
 
-.ladder__start:hover:not(:disabled) { transform: scale(1.08); }
+@media (hover: hover) { .ladder__start:hover:not(:disabled) { transform: scale(1.08); } }
 .ladder__start:disabled { cursor: default; }
 /* 연출 중 잠긴 번호는 흐리게. 투명도 대신 색을 바꿔 글자 대비(neutral-700)를 지킨다.
    고른 출발점(--on)은 그대로 강조한다. */
@@ -653,7 +653,7 @@ body {
   font-size: var(--fs-lg);
   cursor: pointer;
 }
-.list__iconBtn:hover:not(:disabled) { background: var(--color-neutral-100); border-color: var(--color-neutral-300); }
+@media (hover: hover) { .list__iconBtn:hover:not(:disabled) { background: var(--color-neutral-100); border-color: var(--color-neutral-300); } }
 .list__iconBtn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 .list__iconBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -675,7 +675,7 @@ body {
   text-underline-offset: 3px;
 }
 
-.linkish:hover { color: var(--color-text); }
+@media (hover: hover) { .linkish:hover { color: var(--color-text); } }
 
 .edit {
   display: flex;
@@ -919,7 +919,7 @@ footer.muted { text-align: center; }
   transition: border-color var(--motion-fast) var(--ease-out);
 }
 
-.add__hit:hover { border-color: var(--color-neutral-600); }
+@media (hover: hover) { .add__hit:hover { border-color: var(--color-neutral-600); } }
 
 .add__hit--on {
   border-color: var(--color-accent);
@@ -1454,7 +1454,7 @@ footer.muted { text-align: center; }
   cursor: pointer;
   transition: background var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
 }
-.modebar__item:hover:not(:disabled) { background: var(--color-neutral-100); }
+@media (hover: hover) { .modebar__item:hover:not(:disabled) { background: var(--color-neutral-100); } }
 .modebar__item--on,
 .modebar__item--on:hover:not(:disabled) {
   background: var(--color-text);
@@ -1745,7 +1745,7 @@ html:has(dialog[open]:modal) { overflow: hidden; }
   box-shadow: var(--shadow-sm);
   cursor: pointer;
 }
-.map__home:hover { border-color: var(--color-neutral-600); }
+@media (hover: hover) { .map__home:hover { border-color: var(--color-neutral-600); } }
 
 /* 오늘 화면 조건 패널의 회사 위치 한 줄 */
 .today__office {
@@ -1793,7 +1793,7 @@ html:has(dialog[open]:modal) { overflow: hidden; }
   cursor: pointer;
 }
 .gametitle__help::before { content: ''; position: absolute; inset: -11px; } /* 누르는 자리 44px */
-.gametitle__help:hover { border-color: var(--color-accent); color: var(--color-accent); }
+@media (hover: hover) { .gametitle__help:hover { border-color: var(--color-accent); color: var(--color-accent); } }
 .gametitle__help:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 .gamehelp { width: min(340px, calc(100vw - 32px)); }
 .gamehelp__img {
@@ -1826,7 +1826,7 @@ html:has(dialog[open]:modal) { overflow: hidden; }
 }
 .stage__expand::before { content: ''; position: absolute; inset: -4px; }
 .stage__expand { position: relative; }
-.stage__expand:hover { background: var(--color-neutral-200); color: var(--color-text); }
+@media (hover: hover) { .stage__expand:hover { background: var(--color-neutral-200); color: var(--color-text); } }
 .stage__expand:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
 /* 판 옵션(오늘 나온 곳 빼기 · 결과 바로 보기). 실행 단추 아래 작은 체크 두 개. */
@@ -1845,7 +1845,7 @@ html:has(dialog[open]:modal) { overflow: hidden; }
   font-size: var(--fs-sm);
   cursor: pointer;
 }
-.stage__opt:hover:not(:disabled) { color: var(--color-text); }
+@media (hover: hover) { .stage__opt:hover:not(:disabled) { color: var(--color-text); } }
 .stage__opt:disabled { cursor: not-allowed; opacity: 0.6; }
 .stage__opt:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 .stage__optBox {
@@ -2036,7 +2036,7 @@ html:has(.stage--full) { overflow: hidden; }
 .cards--big .cards__face--front strong { font-size: var(--fs-lg); }
 .cards__card--open .cards__face--back { transform: rotateY(-180deg); }
 .cards__card--open .cards__face--front { transform: rotateY(0deg); }
-.cards__card:hover:not(:disabled):not(.cards__card--open) .cards__face--back { transform: translateY(-4px); }
+@media (hover: hover) { .cards__card:hover:not(:disabled):not(.cards__card--open) .cards__face--back { transform: translateY(-4px); } }
 .cards__card--mine .cards__face--back { outline: 3px solid var(--color-accent); }
 .cards__card--win .cards__face--front {
   border: 2px solid var(--color-accent);
@@ -2184,7 +2184,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   cursor: pointer;
 }
 .mp__nearList li:last-child .mp__near { border-bottom: 0; }
-.mp__near:hover { background: var(--color-neutral-200); }
+@media (hover: hover) { .mp__near:hover { background: var(--color-neutral-200); } }
 .mp__nearName { display: inline-flex; align-items: center; gap: var(--space-1); font-weight: 600; }
 
 .list__headRow { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
@@ -2277,7 +2277,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
 .memory__tag { font-size: var(--fs-xs); color: var(--color-neutral-700); }
 .memory__card--open .memory__face--back { transform: rotateY(-180deg); }
 .memory__card--open .memory__face--front { transform: rotateY(0deg); }
-.memory__card:hover:not(:disabled):not(.memory__card--open) .memory__face--back { transform: translateY(-4px); }
+@media (hover: hover) { .memory__card:hover:not(:disabled):not(.memory__card--open) .memory__face--back { transform: translateY(-4px); } }
 /* 탈락 카드도 투명도로 흐리지 않는다 — 11px '탈락' 표가 다크 3.18:1 이었다(10/15). 점선·회색 이름·한 단계 옅은 뒷면으로 물러나게 한다. */
 .memory__card--out:not(.memory__card--win) .memory__face--front { border-style: dashed; }
 .memory__card--out:not(.memory__card--win) .memory__face--front strong { color: var(--color-neutral-700); }
@@ -3042,7 +3042,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   font-size: var(--fs-md);
   cursor: pointer;
 }
-.result-bar__clear:hover { background: var(--color-neutral-200); color: var(--color-text); }
+@media (hover: hover) { .result-bar__clear:hover { background: var(--color-neutral-200); color: var(--color-text); } }
 .result-bar__clear:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 .ticket__next { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
 .ticket__next > * { width: 100%; min-height: 44px; box-sizing: border-box; }
@@ -3383,7 +3383,7 @@ input[aria-invalid='true'] { border-color: var(--color-accent); }
   font-weight: 700;
   text-decoration: none;
 }
-.dir-link:hover { background: var(--color-neutral-100); }
+@media (hover: hover) { .dir-link:hover { background: var(--color-neutral-100); } }
 .dir-link:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
 /* 레이싱 서킷 — 판을 뒤로 눕혀(perspective) 입체로. 차는 판에서 살짝 떠 그림자를 둔다 */
@@ -4235,7 +4235,7 @@ button.rc__pos { border: 1px solid transparent; font: inherit; font-size: var(--
   font-weight: 600;
 }
 .party__alertClose { flex: none; min-width: 32px; min-height: 32px; border: 0; background: transparent; color: var(--color-neutral-800); font: inherit; cursor: pointer; }
-.party__alertClose:hover { color: var(--color-text); }
+@media (hover: hover) { .party__alertClose:hover { color: var(--color-text); } }
 .party__alertClose:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
 /* 이번 주 점심 리포트 */

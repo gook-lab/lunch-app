@@ -21,7 +21,7 @@
   font-weight: 600;
   cursor: pointer;
 }
-.weather__near:hover { background: var(--color-neutral-200); }
+@media (hover: hover) { .weather__near:hover { background: var(--color-neutral-200); } }
 
 /* 머리말 날짜 줄에 잇는 한 줄. 날짜와 같은 작은 글씨, 조언은 한 단계 옅게. 좁으면 다음 줄로 넘어간다. */
 .weather-line { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); }

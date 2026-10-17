@@ -9,9 +9,11 @@
   border-color: var(--color-accent-600);
   color: white;
 }
-:root:not([data-theme='dark']) .btn-primary:not(.btn-danger):not(:disabled):hover {
-  background: var(--color-accent-700);
-  border-color: var(--color-accent-700);
+@media (hover: hover) {
+  :root:not([data-theme='dark']) .btn-primary:not(.btn-danger):not(:disabled):hover {
+    background: var(--color-accent-700);
+    border-color: var(--color-accent-700);
+  }
 }
 
 /*
