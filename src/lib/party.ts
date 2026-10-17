@@ -166,7 +166,7 @@ export function readGame(raw: unknown): PartyGame | null {
 
 /** 저장된 문서 → 화면이 쓰는 팟. 모양이 틀린 문서는 null(목록에서 뺀다). */
 export function readParty(id: string, raw: Record<string, unknown>, memberTime: (v: unknown) => number): Party | null {
-  const { hostUid, category, time, max, memo, status, members, game } = raw;
+  const { hostUid, category, time, max, memo, status, members, game, guesses } = raw;
   if (!isStr(hostUid, 128) || !isStr(category, 20) || !isStr(time, 5) || !isValidTime(time)) return null;
   if (typeof max !== 'number' || !isStr(memo, PARTY_MEMO_MAX)) return null;
   if (status !== 'open' && status !== 'closed') return null;
@@ -175,7 +175,39 @@ export function readParty(id: string, raw: Record<string, unknown>, memberTime: 
     .map(([uid, at]) => ({ uid, at: memberTime(at) }))
     // 방장이 늘 첫 사람. 나머지는 들어온 순서(서버 시각), 같으면 uid.
     .sort((a, b) => (a.uid === hostUid ? -1 : b.uid === hostUid ? 1 : a.at - b.at || a.uid.localeCompare(b.uid)));
-  return { id, hostUid, category, time, max, memo, status, members: list, game: readGame(game) };
+  return { id, hostUid, category, time, max, memo, status, members: list, game: readGame(game), guesses: readGuesses(guesses) };
+}
+
+/** 저장된 예측 맵. 값이 가게 id(문자열)가 아닌 칸은 버린다. */
+function readGuesses(raw: unknown): Record<string, string> {
+  if (!raw || typeof raw !== 'object') return {};
+  const out: Record<string, string> = {};
+  for (const [uid, placeId] of Object.entries(raw as Record<string, unknown>))
+    if (isStr(placeId, 64) && placeId.length > 0) out[uid] = placeId;
+  return out;
+}
+
+/**
+ * 팟 예측 집계 — 지금 멤버의 예측만 센다(나간 사람 것은 빼고). 표시 전용이다.
+ * counts: 가게 id → 고른 사람 수. mine: 내 예측. hits: 게임 결과를 맞힌 멤버 uid(들어온 순).
+ */
+export function partyGuesses(
+  party: Pick<Party, 'members' | 'guesses' | 'game'>,
+  myUid: string | null,
+): { counts: Map<string, number>; mine: string | null; hits: string[]; total: number } {
+  const guesses = party.guesses ?? {};
+  const counts = new Map<string, number>();
+  let total = 0;
+  for (const m of party.members) {
+    const g = guesses[m.uid];
+    if (!g) continue;
+    counts.set(g, (counts.get(g) ?? 0) + 1);
+    total += 1;
+  }
+  const winnerId = party.game ? party.game.ids[party.game.winnerIndex] : null;
+  const hits = winnerId ? party.members.filter((m) => guesses[m.uid] === winnerId).map((m) => m.uid) : [];
+  const mine = myUid && isMember(party, myUid) ? (guesses[myUid] ?? null) : null;
+  return { counts, mine, hits, total };
 }
 
 /**

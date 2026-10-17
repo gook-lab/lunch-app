@@ -507,6 +507,40 @@ d('firestore.rules', () => {
       await assertFails(updateDoc(doc(db(ALICE), path(ALICE, YESTERDAY)), { status: 'closed' }));
       await assertFails(deleteDoc(doc(db(ALICE), path(ALICE, YESTERDAY))));
     });
+
+    describe('팟 예측 — 멤버가 자기 칸만, 게임 전까지', () => {
+      const guess = (uid: string, placeId: unknown) =>
+        updateDoc(doc(db(uid), path(ALICE)), new FieldPath('guesses', uid), placeId);
+
+      it('P1 — 방장·멤버는 자기 예측을 넣고 바꾸고 지운다', async () => {
+        await seedParty({ members: { [ALICE]: new Date(), [BOB]: new Date() } });
+        await assertSucceeds(guess(ALICE, 'p1'));
+        await assertSucceeds(guess(BOB, 'p2'));
+        await assertSucceeds(guess(BOB, 'p3'));
+        await assertSucceeds(guess(BOB, deleteField()));
+      });
+
+      it('P2 — 멤버가 아니면·남의 칸이면·이상한 값이면 거부', async () => {
+        await seedParty({ members: { [ALICE]: new Date(), [BOB]: new Date() }, guesses: { [ALICE]: 'p1' } });
+        await assertFails(guess(CAROL, 'p1'));
+        await assertFails(updateDoc(doc(db(BOB), path(ALICE)), new FieldPath('guesses', ALICE), 'p2'));
+        await assertFails(updateDoc(doc(db(BOB), path(ALICE)), new FieldPath('guesses', ALICE), deleteField()));
+        await assertFails(guess(BOB, ''));
+        await assertFails(guess(BOB, 7));
+        await assertFails(guess(BOB, 'x'.repeat(65)));
+        // 예측과 다른 칸을 같이 고치는 것도 안 된다.
+        await assertFails(updateDoc(doc(db(BOB), path(ALICE)), { [`guesses.${BOB}`]: 'p1', status: 'closed' }));
+      });
+
+      it('P3 — 게임을 돌린 뒤엔 아무도 못 바꾼다', async () => {
+        await seedParty({
+          members: { [ALICE]: new Date(), [BOB]: new Date() },
+          game: { mode: 'wheel', run: 1, ids: ['p1', 'p2'], names: ['가', '나'], winnerIndex: 0, at: new Date() },
+        });
+        await assertFails(guess(BOB, 'p1'));
+        await assertFails(guess(ALICE, 'p1'));
+      });
+    });
   });
 
   describe('그 외 컬렉션', () => {

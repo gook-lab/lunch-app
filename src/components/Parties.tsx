@@ -9,6 +9,7 @@
  * 모인 사람은 저장된 값으로 같은 연출을 다시 본다(PartyGame.tsx).
  */
 import { PartyHelp } from './PartyHelp';
+import { PartyGuess } from './PartyGuess';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Input, Modal, Sheet } from '@gook-lab/ui';
 import type { Place } from '../lib/candidates';
@@ -49,6 +50,8 @@ export interface PartyActions {
   setStatus: (partyId: string, status: PartyStatus) => Promise<void>;
   cancel: (partyId: string) => Promise<void>;
   saveGame: (partyId: string, game: PartyGame) => Promise<void>;
+  /** 팟 예측. null 이면 내 예측을 지운다. */
+  guess?: (partyId: string, placeId: string | null) => Promise<void>;
 }
 
 interface Props {
@@ -229,6 +232,18 @@ export function Parties({ day, parties, myUid, places, candidatesFor, preferredM
                     </li>
                   ))}
                 </ul>
+                {/* 팟 예측. 게임 전엔 고르는 줄, 게임 뒤엔 결과 아래 맞힌 사람. 출발한 팟엔 고르는 줄을 안 띄운다. */}
+                {!p.game && phase !== 'departed' && (
+                  <PartyGuess
+                    party={p}
+                    places={candidatesFor(p.category)}
+                    allPlaces={places}
+                    myUid={myUid}
+                    day={day}
+                    busy={busy === `guess-${p.id}`}
+                    onGuess={actions.guess && ((placeId) => run(`guess-${p.id}`, () => actions.guess!(p.id, placeId)))}
+                  />
+                )}
                 {p.game && winner && (
                   <div className="party__result">
                     <p>
@@ -238,6 +253,7 @@ export function Parties({ day, parties, myUid, places, candidatesFor, preferredM
                     <Button size="sm" variant="secondary" onClick={() => setGameFor({ partyId: p.id, view: 'watch' })}>
                       결과 보기
                     </Button>
+                    <PartyGuess party={p} places={[]} myUid={myUid} day={day} busy={false} />
                   </div>
                 )}
                 <div className="party__actions">

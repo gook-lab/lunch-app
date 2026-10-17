@@ -95,6 +95,12 @@ export async function cancelParty(day: DayId, partyId: string): Promise<void> {
   await deleteDoc(ref(day, partyId));
 }
 
+/** 팟 예측 — 내 칸 하나만 넣고 뺀다. 규칙: 멤버만, 게임 전까지만. */
+export async function guessParty(day: DayId, partyId: string, placeId: string | null): Promise<void> {
+  const uid = (await ensureAuth()).uid;
+  await updateDoc(ref(day, partyId), new FieldPath('guesses', uid), placeId ?? deleteField());
+}
+
 export async function savePartyGame(day: DayId, partyId: string, game: PartyGame): Promise<void> {
   await ensureAuth();
   await updateDoc(ref(day, partyId), {

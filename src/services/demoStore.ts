@@ -118,6 +118,8 @@ function sample(): DemoState {
           { uid: 'demo-c', at: now - 300_000 },
         ],
         game: null,
+        // 팟 예측 — 우동 한 판 · 골목 칼국수
+        guesses: { 'demo-a': 'demo-10', 'demo-c': 'demo-1' },
       },
       {
         id: 'demo-b',
@@ -133,6 +135,7 @@ function sample(): DemoState {
           { uid: 'demo-e', at: now - 700_000 },
         ],
         game: null,
+        guesses: { 'demo-d': 'demo-4' },
       },
     ],
   };

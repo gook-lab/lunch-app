@@ -13,6 +13,8 @@ export const leaveParty = async (day: DayId, partyId: string) => (await impl()).
 export const setPartyStatus = async (day: DayId, partyId: string, status: PartyStatus) =>
   (await impl()).setPartyStatus(day, partyId, status);
 export const cancelParty = async (day: DayId, partyId: string) => (await impl()).cancelParty(day, partyId);
+export const guessParty = async (day: DayId, partyId: string, placeId: string | null) =>
+  (await impl()).guessParty(day, partyId, placeId);
 export const savePartyGame = async (day: DayId, partyId: string, game: PartyGame) =>
   (await impl()).savePartyGame(day, partyId, game);
 

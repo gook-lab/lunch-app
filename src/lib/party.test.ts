@@ -8,6 +8,7 @@ import {
   isValidTime,
   nowMinutesKST,
   partyCandidates,
+  partyGuesses,
   departingAlerts,
   joinAlerts,
   partyInputProblem,
@@ -242,5 +243,52 @@ describe('팟 알림', () => {
     expect(departingAlerts([mine], 'me', at(11, 59))).toHaveLength(1);
     expect(departingAlerts([mine], 'me', at(12, 0))).toEqual([]);
     expect(departingAlerts([mine], null, at(11, 55))).toEqual([]);
+  });
+});
+
+describe('팟 예측', () => {
+  const base: Pick<Party, 'members' | 'guesses' | 'game'> = {
+    members: [
+      { uid: 'host', at: 1 },
+      { uid: 'me', at: 2 },
+      { uid: 'c', at: 3 },
+    ],
+    guesses: { host: 'p1', me: 'p2', c: 'p1', gone: 'p2' },
+    game: null,
+  };
+
+  it('지금 멤버의 예측만 센다 — 나간 사람 것은 빠진다', () => {
+    const g = partyGuesses(base, 'me');
+    expect(g.counts.get('p1')).toBe(2);
+    expect(g.counts.get('p2')).toBe(1);
+    expect(g.total).toBe(3);
+    expect(g.mine).toBe('p2');
+    expect(g.hits).toEqual([]);
+  });
+
+  it('멤버가 아니면 내 예측은 없다', () => {
+    expect(partyGuesses(base, 'gone').mine).toBeNull();
+    expect(partyGuesses(base, null).mine).toBeNull();
+  });
+
+  it('게임 결과를 맞힌 멤버를 들어온 순서로 준다', () => {
+    const game = { mode: 'wheel', run: 1, ids: ['p2', 'p1'], names: ['나', '가'], winnerIndex: 1 };
+    expect(partyGuesses({ ...base, game }, 'me').hits).toEqual(['host', 'c']);
+  });
+
+  it('예측이 없는 예전 팟도 읽는다', () => {
+    expect(partyGuesses({ members: base.members, game: null }, 'me')).toMatchObject({ total: 0, mine: null });
+  });
+
+  it('저장된 예측 맵에서 문자열이 아닌 값은 버린다', () => {
+    const p = readParty(
+      'h',
+      {
+        hostUid: 'h', category: '면', time: '12:00', max: 4, memo: '', status: 'open',
+        members: { h: 1 }, guesses: { h: 'p1', x: 3, y: '' },
+      },
+      (v) => Number(v),
+    );
+    expect(p?.guesses).toEqual({ h: 'p1' });
   });
 });

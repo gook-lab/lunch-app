@@ -85,6 +85,18 @@ export async function cancelParty(day: DayId, partyId: string): Promise<void> {
   writeDemo((s) => ({ ...s, parties: { ...s.parties, [day]: partiesOf(day).filter((p) => p.id !== partyId) } }));
 }
 
+export async function guessParty(day: DayId, partyId: string, placeId: string | null): Promise<void> {
+  await tick();
+  change(day, partyId, (p) => {
+    if (!p.members.some((m) => m.uid === DEMO_UID)) throw new Error('팟에 들어와야 예측할 수 있어요');
+    if (p.game) throw new Error('게임이 시작돼서 바꿀 수 없어요');
+    const guesses = { ...p.guesses };
+    if (placeId) guesses[DEMO_UID] = placeId;
+    else delete guesses[DEMO_UID];
+    return { ...p, guesses };
+  });
+}
+
 export async function savePartyGame(day: DayId, partyId: string, game: PartyGame): Promise<void> {
   await tick();
   change(day, partyId, (p) => {

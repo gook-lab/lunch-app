@@ -11,6 +11,7 @@ import { departingAlerts, joinAlerts, nowMinutesKST, partyAlertText, type PartyA
 import { askNotifyOnce, notifyIfHidden } from '../lib/notify';
 import {
   cancelParty,
+  guessParty,
   joinParty,
   leaveParty,
   openParty,
@@ -102,6 +103,7 @@ export function useParties(day: DayId): {
       setStatus: (id, status) => setPartyStatus(day, id, status),
       cancel: (id) => cancelParty(day, id),
       saveGame: (id, game) => savePartyGame(day, id, game),
+      guess: (id, placeId) => guessParty(day, id, placeId),
     }),
     [day],
   );

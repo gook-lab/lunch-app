@@ -61,6 +61,11 @@ export interface Party {
   /** 참여 순. 방장이 첫 사람이다. */
   members: PartyMember[];
   game: PartyGame | null;
+  /**
+   * 팟 예측 — 멤버 uid → 맞힐 가게 id. 게임 전까지 자기 것만 고친다. 당첨에는 영향이 없다(표시 전용).
+   * 예전 문서·예시엔 없다.
+   */
+  guesses?: Record<string, string>;
 }
 
 /** 팟을 열 때 고르는 값. */

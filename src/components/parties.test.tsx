@@ -70,6 +70,7 @@ beforeEach(() => {
     setStatus: vi.fn(async () => {}),
     cancel: vi.fn(async () => {}),
     saveGame: vi.fn(async () => {}),
+    guess: vi.fn(async () => {}),
   };
   HTMLDialogElement.prototype.showModal = function () {
     this.open = true;
@@ -275,5 +276,54 @@ describe('점심 팟', () => {
     await waitFor(() => expect(within(modal).getByText(/가요!/).textContent).toMatch('사라진 집으로 가요!'));
     fireEvent.click(within(modal).getByRole('button', { name: '다시 보기' }));
     await waitFor(() => expect(within(modal).getByRole('button', { name: '다시 보기' })).toBeTruthy());
+  });
+});
+
+describe('팟 예측', () => {
+  const joined = (over: Partial<Party> = {}) =>
+    party({ members: [{ uid: 'other', at: 1 }, { uid: ME, at: 2 }], ...over });
+
+  it('멤버는 펼쳐서 가게를 고르고, 같은 곳을 다시 누르면 지운다', async () => {
+    const { rerender } = show([joined()]);
+    fireEvent.click(screen.getByRole('button', { name: '맞혀 보기' }));
+    fireEvent.click(screen.getByRole('button', { name: /^나집/ }));
+    await waitFor(() => expect(actions.guess).toHaveBeenCalledWith('other', 'b'));
+
+    rerender(
+      <Parties
+        day={DAY}
+        parties={[joined({ guesses: { [ME]: 'b', other: 'b' } })]}
+        myUid={ME}
+        places={places}
+        candidatesFor={() => places}
+        preferredMode="wheel"
+        actions={actions as unknown as PartyActions}
+      />,
+    );
+    expect(screen.getByText(/내 예측 나집/)).toBeTruthy();
+    const chip = screen.getByRole('button', { name: '나집, 2명이 골랐어요' });
+    expect(chip.getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(chip);
+    await waitFor(() => expect(actions.guess).toHaveBeenLastCalledWith('other', null));
+  });
+
+  it('멤버가 아니면 고를 수 없고 몇 명이 골랐는지만 본다', () => {
+    show([party({ guesses: { other: 'a' } })]);
+    expect(screen.queryByRole('button', { name: '맞혀 보기' })).toBeNull();
+    expect(screen.getByText(/가집 1/)).toBeTruthy();
+    expect(screen.getByText('팟에 들어오면 같이 맞힐 수 있어요')).toBeTruthy();
+  });
+
+  it('게임이 끝나면 고르는 줄 대신 맞힌 사람을 단다', () => {
+    const game = { mode: 'wheel', run: 1, ids: ['a', 'b'], names: ['가집', '나집'], winnerIndex: 1 };
+    show([joined({ game, guesses: { other: 'b', [ME]: 'a' } })]);
+    expect(screen.queryByText(/어디 나올까/)).toBeNull();
+    expect(screen.getByRole('status').textContent ?? '').toMatch(new RegExp(`${avatarOf('other', DAY).label}님이 맞혔어요`));
+  });
+
+  it('아무도 못 맞혔으면 그렇다고 말한다', () => {
+    const game = { mode: 'wheel', run: 1, ids: ['a', 'b'], names: ['가집', '나집'], winnerIndex: 0 };
+    show([joined({ game, guesses: { other: 'b' } })]);
+    expect(screen.getByText(/아무도 못 맞혔어요/)).toBeTruthy();
   });
 });
