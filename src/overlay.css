@@ -4,6 +4,7 @@
  * 모달도 화면보다 길면 안에서 스크롤한다. MODUL 기본(@layer modul.components) 위에 얹는 앱 규칙이다.
  */
 .sheet-panel {
+  max-height: 88vh; /* svh 를 모르는 iOS 15.3 이하 */
   max-height: min(88svh, calc(100svh - 24px));
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -33,6 +34,7 @@
   .sheet-panel { margin-bottom: 16px; max-height: min(84svh, calc(100svh - 48px)); border-radius: var(--radius-lg); }
 }
 dialog.dialog[open] {
+  max-height: calc(100vh - 32px);
   max-height: calc(100svh - 32px);
   overflow-y: auto;
   overscroll-behavior: contain;

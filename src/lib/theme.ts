@@ -28,6 +28,19 @@ export function applyTheme(mode: ThemeMode): void {
   if (dark) root.setAttribute('data-theme', 'dark');
   else root.removeAttribute('data-theme');
   root.style.colorScheme = dark ? 'dark' : 'light';
+  syncThemeColor();
+}
+
+/**
+ * 브라우저 주소창 색(theme-color)을 실제 배경에 맞춘다. index.html 은 기기 설정(prefers-color-scheme)만
+ * 보고 고르는데, 앱에서 어둡게를 고르면 밝은 주소창 아래 어두운 화면이 붙어 위가 떠 보였다.
+ */
+export function syncThemeColor(): void {
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--color-bg').trim();
+  if (!bg) return;
+  document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((m) => {
+    m.content = bg;
+  });
 }
 
 export function saveTheme(mode: ThemeMode): void {
