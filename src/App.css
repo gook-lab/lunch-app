@@ -232,6 +232,13 @@ body {
 }
 
 .modebar-shell__action { background: var(--color-neutral-300); padding: 2px 2px 2px 0; }
+.modebar-shell__hint {
+  grid-column: 1 / -1;
+  margin: 2px 0 0;
+  color: var(--color-neutral-700);
+  font-size: var(--fs-xs);
+  text-align: center;
+}
 
 /*
  * 터치 영역. 칩·도보 알약·카테고리 라벨은 보이는 크기가 작다(390px 실측:

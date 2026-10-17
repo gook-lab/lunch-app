@@ -1010,6 +1010,11 @@ export default function App() {
           {showAllGames ? '게임 접기' : `게임 더 보기 (${hiddenGameCount})`}
         </button>
       </div>
+      {showAllGames && (
+        <p className="modebar-shell__hint" role="status">
+          좌우로 밀어 다른 게임 보기 <span aria-hidden="true">↔</span>
+        </p>
+      )}
     </div>
   );
 
