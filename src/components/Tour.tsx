@@ -84,6 +84,30 @@ interface Rect {
 
 const PAD = 6;
 const CARD_GAP = 12;
+/** 카드가 화면 가장자리에서 띄울 거리. */
+const EDGE = 12;
+
+/**
+ * 안내 카드 자리 — 밝힌 곳 아래 → 위 → 오른쪽 → 왼쪽 중 카드가 통째로 들어가는 첫 자리.
+ * 어디에도 안 들어가면 화면 안 아래쪽에 겹쳐 둔다. 예전엔 아래가 모자라면 무조건 위에 둬서,
+ * 밝힌 곳이 화면만큼 긴 데스크톱 게임 레일에선 카드가 화면 위로 잘려 나갔다(10/17 사용자).
+ */
+export function placeCard(
+  rect: Rect,
+  card: { width: number; height: number },
+  view: { width: number; height: number },
+): { top: number; left: number } {
+  const clampX = (x: number) => Math.min(Math.max(x, EDGE), view.width - card.width - EDGE);
+  const clampY = (y: number) => Math.min(Math.max(y, EDGE), view.height - card.height - EDGE);
+  const centerX = clampX(rect.left + rect.width / 2 - card.width / 2);
+  const bottom = rect.top + rect.height;
+  const right = rect.left + rect.width;
+  if (bottom + CARD_GAP + card.height <= view.height - EDGE) return { top: bottom + CARD_GAP, left: centerX };
+  if (rect.top - CARD_GAP - card.height >= EDGE) return { top: rect.top - CARD_GAP - card.height, left: centerX };
+  if (right + CARD_GAP + card.width <= view.width - EDGE) return { top: clampY(rect.top), left: right + CARD_GAP };
+  if (rect.left - CARD_GAP - card.width >= EDGE) return { top: clampY(rect.top), left: rect.left - CARD_GAP - card.width };
+  return { top: clampY(view.height - card.height - EDGE), left: centerX };
+}
 
 export function Tour({ onClose }: { onClose: () => void }) {
   // 지금 화면에 있는 요소만 단계로 쓴다.
@@ -91,6 +115,16 @@ export function Tour({ onClose }: { onClose: () => void }) {
   const [index, setIndex] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
+  // 카드 실제 크기. 단계마다 글 길이가 달라 높이를 어림하면(예전 220px) 자리를 잘못 골랐다.
+  const cardRef = useRef<HTMLElement>(null);
+  const [cardSize, setCardSize] = useState({ width: 360, height: 220 });
+  useLayoutEffect(() => {
+    const r = cardRef.current?.getBoundingClientRect();
+    if (!r) return;
+    setCardSize((s) =>
+      Math.abs(s.width - r.width) > 1 || Math.abs(s.height - r.height) > 1 ? { width: r.width, height: r.height } : s,
+    );
+  }, [index, rect]);
   const step = steps[index] ?? steps[0];
 
   const finish = useCallback(() => {
@@ -155,12 +189,9 @@ export function Tour({ onClose }: { onClose: () => void }) {
   const last = index === steps.length - 1;
   const next = () => (last ? finish() : setIndex((i) => i + 1));
 
-  // 카드는 밝힌 자리 아래(공간이 모자라면 위)에. 밝힐 곳이 없으면 가운데.
-  const vh = window.innerHeight;
+  // 카드는 밝힌 자리 둘레에서 통째로 들어가는 곳에(placeCard). 밝힐 곳이 없으면 가운데.
   const cardStyle: React.CSSProperties = rect
-    ? rect.top + rect.height + 220 < vh
-      ? { top: rect.top + rect.height + CARD_GAP }
-      : { bottom: vh - rect.top + CARD_GAP }
+    ? { ...placeCard(rect, cardSize, { width: window.innerWidth, height: window.innerHeight }), translate: 'none' }
     : { top: '50%' };
 
   return (
@@ -179,6 +210,7 @@ export function Tour({ onClose }: { onClose: () => void }) {
       <section
         key={index}
         className={rect ? 'onboard__card' : 'onboard__card onboard__card--center'}
+        ref={cardRef}
         style={cardStyle}
         role="dialog"
         aria-modal="true"
