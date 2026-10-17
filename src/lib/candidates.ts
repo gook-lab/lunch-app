@@ -69,6 +69,11 @@ export interface Filters {
   subs?: string[];
   /** 최근 방문 제외 칩. 끌 수 있다. */
   excludeRecent: boolean;
+  /**
+   * 지난번 메뉴 빼기 칩. 오늘 전 마지막 방문 가게의 메뉴(대분류)를 뺀다. 기본은 꺼짐.
+   * 빼면 5곳 미만이 되는 날은 빼지 않고 그 사실을 밝힌다(result.lastCategory).
+   */
+  avoidLastCategory?: boolean;
 }
 
 /** 카테고리 조건에 맞는가. 세부를 골랐으면 세부로, 아니면 메뉴로 본다. */
@@ -112,6 +117,11 @@ export interface CandidateResult {
    * 아무도 빠지지 않는다 — 문구가 "빠졌습니다" 라고 말하면 거짓이다.
    */
   excludedRecent: boolean;
+  /**
+   * 지난번 메뉴. 오늘 전 마지막 방문이 없거나 그 가게를 모르면 null.
+   * applied 는 "지난번 메뉴 빼기" 가 실제로 걸렸는가 — 5곳 미만이 될 땐 걸지 않는다.
+   */
+  lastCategory: { category: string; applied: boolean } | null;
   emptyReason: EmptyReason | null;
 }
 
@@ -186,8 +196,22 @@ function emptyReasonFor(
   return { kind: 'category', countWithoutCategory: afterWalk.length };
 }
 
+/** 오늘 전 마지막 방문 가게의 메뉴(대분류). 기록이 없거나 가게를 모르면 null. */
+export function lastVisitedCategory(
+  places: readonly Place[],
+  visits: readonly Visit[],
+  today: DayId,
+): string | null {
+  let last: Visit | null = null;
+  for (const v of visits) if (v.id < today && (last === null || v.id > last.id)) last = v;
+  if (!last) return null;
+  return places.find((p) => p.id === last.placeId)?.category ?? null;
+}
+
 /**
- * 필터 순서는 (1) active → (2) 도보 → (3) 카테고리 → (4) 최근 방문 제외.
+ * 필터 순서는 (1) active → (2) 도보 → (3) 카테고리(+지난번 메뉴 빼기) → (4) 최근 방문 제외.
+ * 지난번 메뉴 빼기는 (3) 에 넣어 센다 — "N곳 중" 의 N 이 실제 고르는 풀과 같아야 한다.
+ * 빼고 나서 5곳 미만이면 아예 빼지 않는다(반쯤 빼면 무엇이 빠졌는지 설명할 수 없다).
  * (4) 를 걸어 5곳 미만이 되면 마지막 방문일이 오래된 순으로 하나씩 푼다.
  */
 export function selectCandidates(
@@ -198,10 +222,16 @@ export function selectCandidates(
 ): CandidateResult {
   const active = places.filter((p) => p.active);
   const afterWalk = active.filter((p) => p.walkMin <= filters.maxWalkMin);
-  const afterCategory = afterWalk.filter((p) => matchesCategory(p, filters));
+  const matched = afterWalk.filter((p) => matchesCategory(p, filters));
+  const lastCat = lastVisitedCategory(places, visits, today);
+  const withoutLast = lastCat === null ? matched : matched.filter((p) => p.category !== lastCat);
+  const applyAvoid =
+    !!filters.avoidLastCategory && withoutLast.length < matched.length && withoutLast.length >= MIN_CANDIDATES;
+  const afterCategory = applyAvoid ? withoutLast : matched;
 
   const base = {
     excludedRecent: filters.excludeRecent,
+    lastCategory: lastCat === null ? null : { category: lastCat, applied: applyAvoid },
     activeCount: active.length,
     afterWalkCount: afterWalk.length,
     afterCategoryCount: afterCategory.length,
@@ -301,6 +331,7 @@ export function placeStatus(
   if (!place.active) return 'off';
   if (place.walkMin > filters.maxWalkMin) return 'out';
   if (!matchesCategory(place, filters)) return 'out';
+  if (result.lastCategory?.applied && place.category === result.lastCategory.category) return 'out';
   // released 를 먼저 본다. released 는 candidates 안에도 들어 있다.
   if (result.released.some((p) => p.id === place.id)) return 'released';
   if (result.candidates.some((p) => p.id === place.id)) return 'candidate';

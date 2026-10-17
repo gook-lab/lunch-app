@@ -288,8 +288,12 @@ export default function App() {
   // 저장을 보냈지만 서버가 아직 받지 않았다(오프라인). 대기열에 있으니 연결되면 저절로 저장된다.
   const [saveWaiting, setSaveWaiting] = useState(false);
   const resultTimer = useRef(0);
+  // 게임이 끝나고 모달이 뜨기 전의 짧은 틈. 이때 한 줄 결과가 먼저 나왔다가 모달이 뜨며 사라져
+  // 화면이 밀려 보였다(10/17 사용자). 모달을 한 번 띄우고 닫은 뒤에만 한 줄 결과를 보인다.
+  const [resultPending, setResultPending] = useState(false);
   const closeResult = useCallback(() => {
     window.clearTimeout(resultTimer.current);
+    setResultPending(false);
     setResultOpen(false);
     setBurst(0);
   }, []);
@@ -489,8 +493,10 @@ export default function App() {
     // 덮는다. 잠깐 보여 주고 연다.
     if (winnerIndex !== null) {
       window.clearTimeout(resultTimer.current);
+      setResultPending(true);
       resultTimer.current = window.setTimeout(
         () => {
+          setResultPending(false);
           setResultOpen(true);
           if (prefersReducedMotion()) return;
           setBurst(Date.now()); // 판마다 다른 모양
@@ -601,6 +607,7 @@ export default function App() {
     setBoardBalls(null);
     setWinner(null);
     setWinnerIndex(null);
+    setResultPending(false);
     setResultOpen(false);
     setConfirming(null);
     setSaveProblem(false);
@@ -811,6 +818,7 @@ export default function App() {
         onWalk={(walkMin) => updateFilters((f) => ({ ...f, maxWalkMin: walkMin }))}
         onCategory={toggleCategory}
         onExcludeRecent={() => updateFilters((f) => ({ ...f, excludeRecent: !f.excludeRecent }))}
+        onAvoidLastCategory={() => updateFilters((f) => ({ ...f, avoidLastCategory: !f.avoidLastCategory }))}
       />
       {/* officeKey 가 바뀌면 다시 그려진다(회사 위치 저장 → 다시 읽기). */}
       <div
@@ -1194,6 +1202,7 @@ export default function App() {
                     {/* 카테고리는 바로 아래 칩이 보여 준다. 여기까지 쓰면 휴대폰에서 잘렸다(10/14). */}
                     <span className="today__summaryRest">
                       도보 {filters.maxWalkMin}분{filters.excludeRecent ? ' · 최근 1주 제외' : ''}
+                      {result.lastCategory?.applied ? ` · ${result.lastCategory.category} 빼기` : ''}
                     </span>
                     <span className="today__summaryGo">
                       바꾸기<span aria-hidden="true"> ▾</span>
@@ -1370,7 +1379,7 @@ export default function App() {
                   {/* 모달을 닫으면 게임 아래엔 한 줄만 남긴다. 티켓 전체가 남으면 모달과 같은 카드가
             화면 아래를 계속 차지했다(10/13 사용자). 결정·공유는 "결과 보기" 로 다시 연다. */}
                   {/* 결과 모달이 닫힌 뒤에만 한 줄 결과를 남긴다. 같은 결과가 앞뒤에 겹치지 않게 한다. */}
-                  {winner ? (resultOpen ? null : (
+                  {winner ? (resultOpen || resultPending ? null : (
                     <div className="result-bar">
                       <p className="result-bar__text">
                         <span aria-hidden="true">{MODE_ICON[mode]} </span>

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  lastVisitedCategory,
   placeStatus,
   selectCandidates,
   MIN_CANDIDATES,
@@ -273,5 +274,48 @@ describe('placeStatus — 로드맵이 점을 그릴 때 쓰는 처지', () => {
     const a = place('a', { walkMin: 3 });
     const result = selectCandidates([a], [visit('a', 1)], off, TODAY);
     expect(placeStatus(a, off, result)).toBe('candidate');
+  });
+});
+
+describe('지난번 메뉴 빼기', () => {
+  // 한식 6곳 + 면 6곳. 어제 한식집(1)에 갔다. 최근 제외는 꺼서 이 칩만 본다.
+  const places = [...pool(6), ...Array.from({ length: 6 }, (_, i) => place(`m${i}`, { category: '면' }))];
+  const yesterday = [visit('1', 1)];
+
+  it('오늘 전 마지막 방문의 메뉴를 찾는다 — 오늘 기록은 보지 않는다', () => {
+    expect(lastVisitedCategory(places, [visit('1', 3), visit('m0', 1)], TODAY)).toBe('면');
+    expect(lastVisitedCategory(places, [visit('1', 2), { id: TODAY, placeId: 'm0' }], TODAY)).toBe('한식');
+    expect(lastVisitedCategory(places, [], TODAY)).toBeNull();
+    expect(lastVisitedCategory(places, [visit('없는가게', 1)], TODAY)).toBeNull();
+  });
+
+  it('기본은 꺼짐 — 켜지 않으면 지난번 메뉴도 후보다', () => {
+    const r = selectCandidates(places, yesterday, filters({ excludeRecent: false }), TODAY);
+    expect(r.candidates).toHaveLength(12);
+    expect(r.lastCategory).toEqual({ category: '한식', applied: false });
+  });
+
+  it('켜면 지난번 메뉴가 빠지고 "N곳 중" 도 그만큼 줄어든다', () => {
+    const f = filters({ excludeRecent: false, avoidLastCategory: true });
+    const r = selectCandidates(places, yesterday, f, TODAY);
+    expect(r.candidates.map((p) => p.category)).toEqual(Array(6).fill('면'));
+    expect(r.afterCategoryCount).toBe(6);
+    expect(r.lastCategory).toEqual({ category: '한식', applied: true });
+    expect(placeStatus(places[0], f, r)).toBe('out');
+  });
+
+  it(`빼면 ${MIN_CANDIDATES}곳 미만이 되는 날은 빼지 않는다`, () => {
+    const few = [...pool(6), ...Array.from({ length: 4 }, (_, i) => place(`m${i}`, { category: '면' }))];
+    const f = filters({ excludeRecent: false, avoidLastCategory: true });
+    const r = selectCandidates(few, yesterday, f, TODAY);
+    expect(r.candidates).toHaveLength(10);
+    expect(r.lastCategory).toEqual({ category: '한식', applied: false });
+    expect(placeStatus(few[0], f, r)).toBe('candidate');
+  });
+
+  it('최근 1주 제외와 같이 걸 수 있다', () => {
+    const r = selectCandidates(places, [visit('1', 1), visit('m0', 3)], filters({ avoidLastCategory: true }), TODAY);
+    expect(r.lastCategory?.applied).toBe(true);
+    expect(r.candidates.map((p) => p.id)).toEqual(['m1', 'm2', 'm3', 'm4', 'm5']);
   });
 });

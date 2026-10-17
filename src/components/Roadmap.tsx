@@ -9,8 +9,9 @@
  */
 import { useState, type PointerEvent } from 'react';
 import { categorySummary } from '../lib/category';
+import { withJosa } from '../lib/josa';
 import { Tag } from '@gook-lab/ui';
-import type { CandidateResult, Filters, Place } from '../lib/candidates';
+import { MIN_CANDIDATES, type CandidateResult, type Filters, type Place } from '../lib/candidates';
 import { VIEW, buildRoadmap } from '../lib/roadmap';
 
 interface Props {
@@ -20,6 +21,8 @@ interface Props {
   onWalk: (walkMin: number) => void;
   onCategory: (category: string) => void;
   onExcludeRecent: () => void;
+  /** 지난번 메뉴 빼기 칩. 지난 방문이 없으면 칩을 그리지 않는다. */
+  onAvoidLastCategory?: () => void;
   /** 당첨된 가게. 그 점에 빛 고리를 씌운다. */
   winnerId: string | null;
 }
@@ -45,6 +48,7 @@ export function Roadmap({
   onWalk,
   onCategory,
   onExcludeRecent,
+  onAvoidLastCategory,
   winnerId,
 }: Props) {
   const model = buildRoadmap(places, filters, result);
@@ -68,6 +72,8 @@ export function Roadmap({
     if (best !== peekId) setPeekId(best);
   };
   // 후보 수가 먼저다. 조건은 그 뒤에 붙인다. "→" 는 상태 변화로 읽혀 뺐다.
+  const last = result.lastCategory;
+  const avoidOn = !!filters.avoidLastCategory;
   const summary =
     `고를 가게 ${result.candidates.length}곳 · 도보 ${filters.maxWalkMin}분 · ` +
     categorySummary(filters);
@@ -192,7 +198,24 @@ export function Roadmap({
           {/* 켜짐을 색만으로 알리면 늘 켜져 있는 화면에선 상태로 안 읽혔다(10/9 3회차 리뷰). */}
           {filters.excludeRecent ? '✓ 최근 1주 제외' : '최근 1주 제외'}
         </Tag>
+        {last && onAvoidLastCategory && (
+          <Tag
+            as="button"
+            variant={avoidOn ? 'accent' : 'outline'}
+            aria-pressed={avoidOn}
+            className={avoidOn ? 'chip chip--on' : 'chip'}
+            onClick={onAvoidLastCategory}
+          >
+            {avoidOn ? `✓ 지난번 ${last.category} 빼기` : `지난번 ${last.category} 빼기`}
+          </Tag>
+        )}
       </div>
+      {/* 켰는데 못 뺐으면 숨기지 않고 말한다. 빠진 줄 알았다가 같은 메뉴가 나오면 고장으로 읽힌다. */}
+      {avoidOn && last && !last.applied && (
+        <p className="small" role="status">
+          {withJosa(last.category, '을/를')} 빼면 {MIN_CANDIDATES}곳이 안 돼서 오늘은 같이 골라요
+        </p>
+      )}
 
       <div className="rm__legend" role="group" aria-label="가게 점 안내">
         {LEGEND.map((l) => (

@@ -167,11 +167,16 @@ describe('결과 모달', () => {
     window.localStorage.removeItem('lunch-app:sound');
   });
 
-  it('모달이 뜨기 전에도 한 줄 결과의 "결과 보기" 로 바로 연다', () => {
+  it('모달이 뜨기 전엔 한 줄 결과를 띄우지 않고, 모달을 닫은 뒤에 남긴다', () => {
+    // 한 줄 결과가 먼저 나왔다가 모달이 뜨며 사라져 화면이 밀려 보였다(10/17 사용자).
     startWheel();
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
-    fireEvent.click(screen.getByRole('button', { name: '결과 보기' }));
+    expect(document.querySelector('.result-bar')).toBeNull();
+    act(() => { vi.advanceTimersByTime(RESULT_DELAY_MS); });
     expect(modalDecide()).toBeTruthy();
+    expect(document.querySelector('.result-bar')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '닫고 게임 보기' }));
+    expect(document.querySelector('.result-bar')).toBeTruthy();
   });
 });
 
@@ -728,10 +733,11 @@ describe('공정성 — 당첨은 App 의 추첨이 정한다', () => {
 });
 
 describe('결과 모달 예약 — 판을 내려놓으면 같이 끊는다', () => {
-  // 연출이 끝나고(한 줄 결과가 생기고) 모달이 뜨기 전 0.25초 사이.
+  // 연출이 끝나고(낭독 알림이 채워지고) 모달이 뜨기 전 0.25초 사이.
+  const ended = () => [...document.querySelectorAll('.sr-only[aria-live]')].some((n) => n.textContent?.includes('뽑혔어요'));
   const untilSpinEnd = () => {
-    for (let k = 0; k < 800 && !document.querySelector('.result-bar'); k += 1) act(() => { vi.advanceTimersByTime(50); });
-    expect(document.querySelector('.result-bar')).toBeTruthy();
+    for (let k = 0; k < 800 && !ended(); k += 1) act(() => { vi.advanceTimersByTime(50); });
+    expect(ended()).toBe(true);
     expect(screen.queryByRole('dialog', { name: '오늘의 점심 결과' })).toBeNull();
   };
   const noResultBadge = () => {
