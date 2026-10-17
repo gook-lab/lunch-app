@@ -155,13 +155,14 @@ export function Slot({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
     let t0 = -1;
     let prevT = 0;
     const prev = [...starts];
+    const reels = reelRefs.current;
     const frame = (now: number) => {
       if (t0 < 0) t0 = now;
       const t = now - t0;
       const { itemH: h, center: c, count: n } = geo.current;
       for (let k = 0; k < REELS; k += 1) {
         const r = reelAt(plan.segs[k], t, starts[k]);
-        const el = reelRefs.current[k];
+        const el = reels[k];
         if (el) {
           el.style.transform = `translateY(${reelY(r, n, c, h)}px)`;
           const speed = t > prevT ? ((r - prev[k]) * 1000) / (t - prevT) : 0;
@@ -173,7 +174,7 @@ export function Slot({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
       }
       prevT = t;
       if (t < plan.landMs) raf = requestAnimationFrame(frame);
-      else reelRefs.current.forEach((el) => el?.classList.remove('slot__reel--blur'));
+      else reels.forEach((el) => el?.classList.remove('slot__reel--blur'));
     };
     raf = requestAnimationFrame(frame);
 
@@ -181,7 +182,7 @@ export function Slot({ candidates, winnerIndex, spinning, run, onSpinEnd, expand
       timers.forEach((t) => window.clearTimeout(t));
       cancelAnimationFrame(raf);
       stopSfx();
-      reelRefs.current.forEach((el) => el?.classList.remove('slot__reel--blur'));
+      reels.forEach((el) => el?.classList.remove('slot__reel--blur'));
     };
   }, [spinning, winnerIndex, count, run, onSpinEnd]);
 

@@ -28,9 +28,10 @@ export function MapAddMenu({ host, hits, onPick, onGoTo, onDirect, onClose, retu
 
   useEffect(() => {
     const before = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const fallback = returnFocusRef?.current;
     closeRef.current?.focus({ preventScroll: true });
     return () => {
-      const target = before && before !== document.body && before.isConnected ? before : returnFocusRef?.current;
+      const target = before && before !== document.body && before.isConnected ? before : fallback;
       target?.focus({ preventScroll: true });
     };
   }, [returnFocusRef]);

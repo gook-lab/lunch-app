@@ -71,6 +71,7 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
     () => (winnerIndex === null ? null : fishingPlan(count, winnerIndex, seededRandom(run))),
     [count, winnerIndex, run],
   );
+  const winner = winnerIndex === null ? null : candidates[winnerIndex];
 
   useEffect(() => {
     if (!spinning || winnerIndex === null || count === 0) return;
@@ -128,7 +129,7 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
       timers.forEach((t) => window.clearTimeout(t));
       stopSfx();
     };
-  }, [spinning, winnerIndex, count, run, onSpinEnd, plan, season, looks, specialsKey]);
+  }, [spinning, winnerIndex, count, run, onSpinEnd, plan, season, looks, specialsKey, winner]);
 
   if (count === 0) return <div className="fishing fishing--empty" />;
 
@@ -137,7 +138,6 @@ export function Fishing({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
   const settled = !live && winnerIndex !== null && !spinning;
   const phase: Phase | null = live ? state.phase : settled ? 'land' : null;
   const target = live ? state.fish : settled && winnerIndex !== null ? winnerIndex : -1;
-  const winner = winnerIndex === null ? null : candidates[winnerIndex];
   // 이름표 폭은 칸의 72%(390px·4열이면 약 60px)라 다섯 글자쯤. 넘치면 CSS 말줄임이 한 번 더 자른다.
   const nameMax = expanded ? 8 : layout.cols >= 4 ? 6 : 8;
 
