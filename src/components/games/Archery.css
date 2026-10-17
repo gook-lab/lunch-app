@@ -454,7 +454,8 @@
 }
 [data-theme='dark'] .archery__cut-bg {
   background:
-    radial-gradient(circle 4% at 84% 18%, oklch(0.95 0.04 95) 70%, transparent 74%),
+    /* 달. circle 반지름에 % 는 무효라 배경 선언 전체가 버려져 컷신 뒤 사로가 비쳤다(10/17 사용자) — ellipse 로. */
+    radial-gradient(ellipse 4% 6% at 84% 18%, oklch(0.95 0.04 95) 70%, transparent 74%),
     radial-gradient(ellipse 60% 22% at 80% 76%, var(--cut-hill, oklch(0.4 0.07 150)) 60%, transparent 62%),
     linear-gradient(to bottom, var(--cut-sky, oklch(0.32 0.05 260)) 0 70%, var(--cut-grass, oklch(0.36 0.07 150)) 70%);
 }

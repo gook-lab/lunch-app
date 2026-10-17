@@ -171,12 +171,15 @@ describe('결과 모달', () => {
     // 한 줄 결과가 먼저 나왔다가 모달이 뜨며 사라져 화면이 밀려 보였다(10/17 사용자).
     startWheel();
     act(() => { vi.advanceTimersByTime(SPIN_MS.wheel + 50); });
-    expect(document.querySelector('.result-bar')).toBeNull();
+    // 자리는 남기되(판이 출렁이지 않게) 보이지도 눌리지도 않는다.
+    const shown = () => document.querySelector('.result-bar:not(.result-bar--waiting)');
+    expect(shown()).toBeNull();
+    expect(document.querySelector('.result-bar--waiting')?.hasAttribute('inert')).toBe(true);
     act(() => { vi.advanceTimersByTime(RESULT_DELAY_MS); });
     expect(modalDecide()).toBeTruthy();
-    expect(document.querySelector('.result-bar')).toBeNull();
+    expect(shown()).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '닫고 게임 보기' }));
-    expect(document.querySelector('.result-bar')).toBeTruthy();
+    expect(shown()).toBeTruthy();
   });
 });
 
@@ -217,7 +220,9 @@ describe('연출 한 판', () => {
     const dialog = screen.getByRole('dialog', { name: '오늘의 점심 결과' });
     expect(within(dialog).getByRole('button', { name: '여기로 결정' })).toBeTruthy();
     expect(within(dialog).getByRole('button', { name: '다시 뽑기' })).toBeTruthy();
-    expect(document.querySelector('.stage .result-bar')).toBeNull();
+    // 뒤의 결과 줄은 자리만 지키고(판이 출렁이지 않게) 보이지도 눌리지도 않는다.
+    expect(document.querySelector('.stage .result-bar:not(.result-bar--waiting)')).toBeNull();
+    expect(document.querySelector('.stage .result-bar--waiting')?.hasAttribute('inert')).toBe(true);
     expect(document.querySelector('.stage__run')).toBeNull();
     expect(lockedButtons()).toEqual([]);
   });

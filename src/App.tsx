@@ -810,31 +810,40 @@ export default function App() {
       {wide && notice && <p className="notice">{notice}</p>}
       {wide && predictions}
       {wide && parties}
-      <Roadmap
-        places={places}
-        filters={filters}
-        result={result}
-        winnerId={winner?.id ?? null}
-        onWalk={(walkMin) => updateFilters((f) => ({ ...f, maxWalkMin: walkMin }))}
-        onCategory={toggleCategory}
-        onExcludeRecent={() => updateFilters((f) => ({ ...f, excludeRecent: !f.excludeRecent }))}
-        onAvoidLastCategory={() => updateFilters((f) => ({ ...f, avoidLastCategory: !f.avoidLastCategory }))}
-      />
-      {/* officeKey 가 바뀌면 다시 그려진다(회사 위치 저장 → 다시 읽기). */}
-      <div
-        className={officeSource() === 'saved' ? 'today__office' : 'today__office today__office--temp'}
-        data-office={officeKey}
-      >
-        <span>
-          🏢{' '}
-          {officeSource() === 'saved'
-            ? '회사에서 걸어서 몇 분인지 보여 드려요'
-            : '회사 위치를 정하면 걸어서 몇 분인지 알려 드려요'}
-        </span>
-        <button type="button" className="linkish" onClick={() => goTab('map')}>
-          {officeSource() === 'saved' ? '회사 위치 바꾸기' : '정하기'}
-        </button>
-      </div>
+      {/* 데스크톱 오른쪽 칸에선 범위 정하기도 한 구역으로 묶고 제목을 단다. 점심 팟 바로 아래 붙어
+        팟의 일부처럼 읽혔다(10/17 사용자). 휴대폰은 조건 시트 자체가 이 구역이라 제목을 안 단다. */}
+      <section className="today__sec" aria-labelledby={wide ? 'range-title' : undefined}>
+        {wide && (
+          <h3 id="range-title" className="today__secTitle">
+            고르는 범위
+          </h3>
+        )}
+        <Roadmap
+          places={places}
+          filters={filters}
+          result={result}
+          winnerId={winner?.id ?? null}
+          onWalk={(walkMin) => updateFilters((f) => ({ ...f, maxWalkMin: walkMin }))}
+          onCategory={toggleCategory}
+          onExcludeRecent={() => updateFilters((f) => ({ ...f, excludeRecent: !f.excludeRecent }))}
+          onAvoidLastCategory={() => updateFilters((f) => ({ ...f, avoidLastCategory: !f.avoidLastCategory }))}
+        />
+        {/* officeKey 가 바뀌면 다시 그려진다(회사 위치 저장 → 다시 읽기). */}
+        <div
+          className={officeSource() === 'saved' ? 'today__office' : 'today__office today__office--temp'}
+          data-office={officeKey}
+        >
+          <span>
+            🏢{' '}
+            {officeSource() === 'saved'
+              ? '회사에서 걸어서 몇 분인지 보여 드려요'
+              : '회사 위치를 정하면 걸어서 몇 분인지 알려 드려요'}
+          </span>
+          <button type="button" className="linkish" onClick={() => goTab('map')}>
+            {officeSource() === 'saved' ? '회사 위치 바꾸기' : '정하기'}
+          </button>
+        </div>
+      </section>
     </>
   );
 
@@ -1378,9 +1387,14 @@ export default function App() {
 
                   {/* 모달을 닫으면 게임 아래엔 한 줄만 남긴다. 티켓 전체가 남으면 모달과 같은 카드가
             화면 아래를 계속 차지했다(10/13 사용자). 결정·공유는 "결과 보기" 로 다시 연다. */}
-                  {/* 결과 모달이 닫힌 뒤에만 한 줄 결과를 남긴다. 같은 결과가 앞뒤에 겹치지 않게 한다. */}
-                  {winner ? (resultOpen || resultPending ? null : (
-                    <div className="result-bar">
+                  {/* 결과 모달이 닫힌 뒤에만 한 줄 결과를 보인다. 같은 결과가 앞뒤에 겹치지 않게 한다.
+                    모달이 떠 있는 동안에도 자리는 남긴다(보이지 않게·누를 수 없게) — 빼면 실행 단추 자리가
+                    비며 게임판이 늘었다가 닫을 때 줄어 화면이 출렁였다(10/17 사용자). */}
+                  {winner ? (
+                    <div
+                      className={resultOpen || resultPending ? 'result-bar result-bar--waiting' : 'result-bar'}
+                      inert={resultOpen || resultPending}
+                    >
                       <p className="result-bar__text">
                         <span aria-hidden="true">{MODE_ICON[mode]} </span>
                         <strong>{winner.name}</strong>
@@ -1429,7 +1443,7 @@ export default function App() {
                         </button>
                       </div>
                     </div>
-                  )) : gate ? null : (
+                  ) : gate ? null : (
                     // 오늘 이미 정했으면 다시 하기는 보조 동작이다. 위 배너가 "정했어요" 라고 하는데
                     // 가장 큰 빨간 버튼이 또 돌리라고 하면 화면이 두 말을 한다(10/9 UI 점검).
                     <Button

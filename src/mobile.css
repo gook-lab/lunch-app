@@ -46,3 +46,6 @@
     visibility: hidden;
   }
 }
+
+/* 결과 모달이 떠 있는 동안의 한 줄 결과 자리. 보이지 않지만 높이는 남아 게임판이 출렁이지 않는다. */
+.result-bar--waiting { visibility: hidden; }

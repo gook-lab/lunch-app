@@ -55,6 +55,9 @@ import { FRAME_MS, SLOW_RATE, frameAtMs, timingFor, type Timing } from '../../li
 
 /** 캔버스 = 코스 창 + 오른쪽 패널(미니맵, 순위판). */
 const PANEL_W = 112;
+/** 순위판 맨 위 "선두 따라가기" 단추 줄(판 좌표). 순위 줄은 그 아래(ROW0)부터. */
+const LEAD_Y = 32;
+const ROW0 = 52;
 const CANVAS_W = COURSE_W + PANEL_W;
 /** 창 위아래로 더 그리는 여유(판 좌표). 창 밖에 있어도 그림자가 창 안으로 번지는 것까지 덮는다. */
 const VIEW_PAD = 40;
@@ -752,11 +755,31 @@ export function Pinball({
     ctx.font = '600 10px ui-monospace, monospace';
     ctx.fillText(atGate ? '출발 준비' : `${arrived} / ${total}`, CANVAS_W - 6, 14);
 
+    // 선두 따라가기 단추. 선두를 보고 있으면 켜진 모양, 다른 공을 보고 있으면 눌러서 돌아가는 모양.
+    {
+      const x0 = COURSE_W + 24;
+      const w = CANVAS_W - 4 - x0;
+      const leading = follow === null;
+      ctx.save();
+      ctx.fillStyle = leading ? 'oklch(0.85 0.15 85 / 0.22)' : 'oklch(1 0 0 / 0.08)';
+      ctx.strokeStyle = leading ? 'oklch(0.85 0.15 85 / 0.7)' : 'oklch(0.85 0.02 260 / 0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(x0 + 0.5, LEAD_Y - 8.5, w - 1, 17, 8);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = leading ? 'oklch(0.92 0.12 85)' : 'oklch(0.92 0.01 260)';
+      ctx.font = '600 10px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(leading ? '🏁 선두 보는 중' : '🏁 선두 따라가기', x0 + w / 2, LEAD_Y + 0.5);
+      ctx.restore();
+    }
+
     standing.forEach((marble, rank) => {
       const placeIdx = marbles[marble];
       const place = candidates[placeIdx];
       if (!place) return;
-      const y = 34 + rank * 15;
+      const y = ROW0 + rank * 15;
       if (y > viewH - 8) return;
       const champion = leadIn && rank === 0;
       ctx.save();
@@ -800,8 +823,13 @@ export function Pinball({
         }
       });
     } else {
-      const rank = Math.round((y - 34) / 15);
-      if (rank >= 0 && rank < standing.length && Math.abs(y - (34 + rank * 15)) <= 7) hit = standing[rank];
+      // 순위판 맨 위 "선두 따라가기" — 누르면 선두로 돌아간다(10/17 사용자: 게임 중에 돌아갈 길이 없었다).
+      if (Math.abs(y - LEAD_Y) <= 9) {
+        setFollow(null);
+        return;
+      }
+      const rank = Math.round((y - ROW0) / 15);
+      if (rank >= 0 && rank < standing.length && Math.abs(y - (ROW0 + rank * 15)) <= 7) hit = standing[rank];
     }
     if (hit === null) return;
     const place = marbles[hit];
@@ -903,19 +931,24 @@ export function Pinball({
         />
       </div>
       {/* 키보드·화면낭독기로도 고를 수 있게. 캔버스 클릭과 같은 상태를 쓴다. */}
-      <label className="pinball__follow">
-        <span>카메라</span>
-        <select
-          value={follow === null ? '' : String(follow)}
-          onChange={(e) => setFollow(e.target.value === '' ? null : Number(e.target.value))}
-        >
-          <option value="">선두 따라가기</option>
-          {candidates.map((p, i) => (
-            <option key={p.id} value={i}>
-              {p.name} 따라가기
-            </option>
-          ))}
-        </select>
+      {/* 카메라 고르기는 화면엔 안 보인다 — 확률표·공·순위판을 눌러 고르고, 게임 중엔 순위판 맨 위
+          "선두 따라가기" 로 돌아간다. 처음 화면에 선택창이 먼저 보여 설정처럼 읽혔다(10/17 사용자).
+          키보드·화면낭독기는 이 선택창으로 그대로 고른다. */}
+      <div className="pinball__follow">
+        <label className="sr-only">
+          <span>카메라</span>
+          <select
+            value={follow === null ? '' : String(follow)}
+            onChange={(e) => setFollow(e.target.value === '' ? null : Number(e.target.value))}
+          >
+            <option value="">선두 따라가기</option>
+            {candidates.map((p, i) => (
+              <option key={p.id} value={i}>
+                {p.name} 따라가기
+              </option>
+            ))}
+          </select>
+        </label>
         {follow !== null && followRank !== null ? (
           <span className="pinball__tip pinball__tip--done" role="status">
             {followRank === 1 ? '🎉 ' : '📍 '}
@@ -932,7 +965,7 @@ export function Pinball({
             공을 누르면 그 가게 공을 따라가요
           </span>
         )}
-      </label>
+      </div>
       {onBallCounts && (
         // 처음부터 펼쳐 둔다 — 시작 전에 공 개수를 고르는 게 이 판의 재미라 접혀 있으면 지나쳤다(10/13 사용자).
         <details className="pinball__balls" open>

@@ -1,0 +1,40 @@
+/*
+ * 데스크톱 오른쪽 칸(.today__filters) 구역 나누기 — 고를 가게 · 예측 · 점심 팟 · 고르는 범위.
+ * 가는 선 하나로 나누니 구역이 눈에 안 띄고, 범위(로드맵)가 점심 팟의 일부처럼 읽혔다(10/17 사용자).
+ * 상자를 겹치지 않는 규칙(desktop.css)은 지키고, 칸 끝까지 닿는 굵은 띠로 나눈다. 토스의 구역 구분과 같은 방식.
+ */
+.today__sec { display: flex; flex-direction: column; gap: var(--space-3); }
+.today__secTitle {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--fs-md);
+  font-weight: 800;
+}
+
+@media (min-width: 960px) {
+  .today__filters > :is(.predict, .party, .today__sec) {
+    margin-inline: calc(-1 * var(--space-4));
+    padding: var(--space-4) var(--space-4) 0;
+    border: 0;
+    border-top: 8px solid var(--color-neutral-200);
+    border-radius: 0;
+  }
+  /* 예측은 한 줄짜리라 위아래 띠 사이가 좁아 보였다. 아래를 조금 더 비운다. */
+  .today__filters > .predict { padding-bottom: var(--space-1); }
+}
+
+/*
+ * 핀볼 설정 칸(데스크톱, 게임 전) — 판 왼쪽 칸을 설정 구역으로 묶는다. 칸 사이 경계가 없어
+ * 설정과 판이 한 덩어리로 읽혔다(10/17 사용자). 판 바탕이 늘 어두워 토큰 대신 흰색 투명도로 선을 긋는다.
+ */
+@media (min-width: 960px) {
+  .stage:not(.stage--full) .pinball:not(.pinball--empty):not(.pinball--live) > :is(.pinball__follow, .pinball__balls) {
+    margin-right: var(--space-3);
+    padding-inline: var(--space-3);
+    background: oklch(1 0 0 / 0.04);
+    border-right: 1px solid oklch(1 0 0 / 0.16);
+  }
+  .stage:not(.stage--full) .pinball:not(.pinball--empty):not(.pinball--live) > .pinball__follow {
+    padding-block: var(--space-3) 0;
+  }
+}
