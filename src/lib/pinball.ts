@@ -708,6 +708,15 @@ export function simulateRace(count: number, seed: number, untilWinner = false, t
 
       // 벽 (선분)
       for (const wall of COURSE.walls) {
+        // 긴 판의 장애물 대부분은 현재 구슬과 수백 px 떨어져 있다. 충돌 반경을
+        // 벗어난 선분은 제곱근 계산 전에 건너뛰어 시드 탐색 비용을 줄인다.
+        const hitR = MARBLE_R + WALL_R;
+        if (
+          x[i] < Math.min(wall.x1, wall.x2) - hitR ||
+          x[i] > Math.max(wall.x1, wall.x2) + hitR ||
+          y[i] < Math.min(wall.y1, wall.y2) - hitR ||
+          y[i] > Math.max(wall.y1, wall.y2) + hitR
+        ) continue;
         const near = closestOnSegment(x[i], y[i], wall);
         const dx = x[i] - near.x;
         const dy = y[i] - near.y;
@@ -736,6 +745,7 @@ export function simulateRace(count: number, seed: number, untilWinner = false, t
       // 회전 막대. 막대 위 접점의 속도를 빼고 튕긴 뒤 다시 더한다 —
       // 돌아가는 막대에 맞으면 그 방향으로 쳐 내진다.
       for (const sp of COURSE.spinners) {
+        if (Math.abs(y[i] - sp.y) > sp.half + MARBLE_R + WALL_R) continue;
         const seg = spinnerEnds(sp, step);
         const near = closestOnSegment(x[i], y[i], seg);
         const dx = x[i] - near.x;
@@ -760,6 +770,7 @@ export function simulateRace(count: number, seed: number, untilWinner = false, t
 
       // 회전 고리 — 회전 막대처럼, 핀이 움직이는 속도를 빼고 튕긴 뒤 다시 더한다.
       for (const o of COURSE.orbiters) {
+        if (Math.abs(y[i] - o.y) > o.R + MARBLE_R + o.r) continue;
         for (const p of orbiterPegs(o, step)) {
           const dx = x[i] - p.x;
           const dy = y[i] - p.y;
@@ -783,6 +794,7 @@ export function simulateRace(count: number, seed: number, untilWinner = false, t
 
       // 핀
       for (const peg of COURSE.pegs) {
+        if (Math.abs(y[i] - peg.y) >= MARBLE_R + peg.r) continue;
         const dx = x[i] - peg.x;
         const dy = y[i] - peg.y;
         const dist = Math.hypot(dx, dy);
@@ -823,7 +835,9 @@ export function simulateRace(count: number, seed: number, untilWinner = false, t
         y[i] = FINISH_Y;
         done[i] = true;
         order.push(i);
-        if (order.length === 1) winnerFrame = frames.length;
+        // untilWinner 모드에서는 프레임 배열을 만들지 않으므로 물리 스텝을 직접
+        // 기록한다. 일반 모드에서는 push 직전의 frames.length와 같은 값이다.
+        if (order.length === 1) winnerFrame = step;
       }
     }
 
@@ -862,13 +876,17 @@ export function simulateRace(count: number, seed: number, untilWinner = false, t
 
     if (untilWinner && order.length > 0) break;
 
-    frames.push(Array.from({ length: count }, (_, i) => ({ x: x[i], y: y[i] })));
+    // 시드 탐색은 1등 번호만 쓴다. 매 스텝의 좌표 복사와 순위 정렬을 생략하면
+    // 수백 경기를 훑는 테스트와 구버전 호출 경로가 UI 스레드를 붙잡지 않는다.
+    if (!untilWinner) {
+      frames.push(Array.from({ length: count }, (_, i) => ({ x: x[i], y: y[i] })));
 
-    // 이 시점의 순위. 들어온 구슬이 먼저, 나머지는 아래에 있는 순서다.
-    const running = Array.from({ length: count }, (_, i) => i)
-      .filter((i) => !done[i])
-      .sort((a, b) => y[b] - y[a]);
-    standings.push([...order, ...running]);
+      // 이 시점의 순위. 들어온 구슬이 먼저, 나머지는 아래에 있는 순서다.
+      const running = Array.from({ length: count }, (_, i) => i)
+        .filter((i) => !done[i])
+        .sort((a, b) => y[b] - y[a]);
+      standings.push([...order, ...running]);
+    }
 
     if (order.length === count) break;
   }
