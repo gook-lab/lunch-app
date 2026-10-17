@@ -11,7 +11,16 @@ import type { CandidateResult } from '../lib/candidates';
 
 export const CHIPS_FOLDED = 8;
 
-export function CandidateChips({ result, winnerId }: { result: CandidateResult; winnerId?: string | null }) {
+export function CandidateChips({
+  result,
+  winnerId,
+  votes,
+}: {
+  result: CandidateResult;
+  winnerId?: string | null;
+  /** 가게별 동료 예측 수. 데스크톱은 예측 요약 줄 대신 칩에 붙인다(10/17). */
+  votes?: ReadonlyMap<string, number>;
+}) {
   const [open, setOpen] = useState(false);
   if (result.candidates.length === 0) return null;
   const released = new Set(result.released.map((p) => p.id));
@@ -37,6 +46,13 @@ export function CandidateChips({ result, winnerId }: { result: CandidateResult; 
           <span aria-hidden="true">{categoryIcon(p.sub ?? p.category)}</span>
           <span className="cands__name">{p.name}</span>
           <span className="cands__walk">{p.walkMin}분</span>
+          {(votes?.get(p.id) ?? 0) > 0 && (
+            <span className="cands__votes">
+              <span aria-hidden="true">🔮</span>
+              {votes!.get(p.id)}
+              <span className="sr-only">명 예측</span>
+            </span>
+          )}
           {released.has(p.id) && <span className="sr-only">, 최근에 갔지만 다시 넣음</span>}
         </li>
       ))}

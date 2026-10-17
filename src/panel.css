@@ -12,15 +12,14 @@
 }
 
 @media (min-width: 960px) {
-  .today__filters > :is(.predict, .party, .today__sec) {
+  .today__filters > :is(.predict:not(.predict--inline), .party, .today__sec) {
     margin-inline: calc(-1 * var(--space-4));
     padding: var(--space-4) var(--space-4) 0;
     border: 0;
     border-top: 8px solid var(--color-neutral-200);
     border-radius: 0;
   }
-  /* 예측은 한 줄짜리라 위아래 띠 사이가 좁아 보였다. 아래를 조금 더 비운다. */
-  .today__filters > .predict { padding-bottom: var(--space-1); }
+
 }
 
 /*
@@ -102,4 +101,26 @@
 @media (min-width: 960px) and (max-width: 1119px) {
   .topbar__now .topbar__date, .topbar__now .weather-line { display: none; }
   .topbar__now { padding-right: 4px; }
+}
+
+/* 고를 가게 칩의 예측 수 — 데스크톱에서 예측 요약 줄 대신. 이름·도보 뒤에 작게. */
+.cands__votes {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  margin-left: 2px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--color-neutral-200);
+  color: var(--color-text);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+/* 고를 가게 칸 안의 예측 한 줄 — 상자·띠 없이 칩 바로 아래. */
+.predict--inline { padding: 0; border: 0; background: none; }
+.predict--inline .predict__sum { font-size: var(--fs-sm); color: var(--color-neutral-800); }
+@media (min-width: 960px) {
+  /* desktop.css 의 .today__filters .predict(가는 윗선)보다 세게 — 칩과 한 덩어리로 보이게. */
+  .today__filters .predict--inline { border-top: 0; padding-top: 0; }
 }

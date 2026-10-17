@@ -806,20 +806,28 @@ export default function App() {
 
   // 결과 카드. 끝난 순간엔 모달 안에, 닫으면 게임 아래에 같은 카드가 놓인다.
   // 후보와 조건. 데스크톱은 오른쪽 칸, 휴대폰은 시트 안에 같은 것을 그린다(한 번에 한 곳만).
-  const predictions = !gate && (
-    <Predictions
-      candidates={result.candidates}
-      decided={decidedPlace}
-      votes={votes}
-      myUid={uid}
-      locked={spinning}
-      onVote={(placeId, name) => {
-        track('predict');
-        return castVote(today, placeId, name);
-      }}
-      onClear={() => clearVote(today)}
-    />
-  );
+  const predictionsFor = (inline: boolean) =>
+    !gate && (
+      <Predictions
+        inline={inline}
+        candidates={result.candidates}
+        decided={decidedPlace}
+        votes={votes}
+        myUid={uid}
+        locked={spinning}
+        onVote={(placeId, name) => {
+          track('predict');
+          return castVote(today, placeId, name);
+        }}
+        onClear={() => clearVote(today)}
+      />
+    );
+  const predictions = predictionsFor(false);
+
+  const predictionsInline = predictionsFor(true);
+  // 훅이 아니다 — 이 아래는 조건부 return 뒤라 useMemo 를 쓰면 훅 순서가 깨진다. 표는 많아야 열몇 장.
+  const voteCounts = new Map<string, number>();
+  for (const v of votes) voteCounts.set(v.placeId, (voteCounts.get(v.placeId) ?? 0) + 1);
 
   const parties = (
     <Parties
@@ -846,9 +854,10 @@ export default function App() {
   );
   const filtersPanel = (
     <>
-      <CandidateChips result={result} winnerId={winner?.id ?? null} />
+      <CandidateChips result={result} winnerId={winner?.id ?? null} votes={wide ? voteCounts : undefined} />
+      {/* 데스크톱은 예측을 고를 가게 칸 안 한 줄로 — 수는 칩에 붙는다. 휴대폰은 게임 아래 그대로. */}
+      {wide && predictionsInline}
       {wide && notice && <p className="notice">{notice}</p>}
-      {wide && predictions}
       {wide && parties}
       {/* 데스크톱 오른쪽 칸에선 범위 정하기도 한 구역으로 묶고 제목을 단다. 점심 팟 바로 아래 붙어
         팟의 일부처럼 읽혔다(10/17 사용자). 휴대폰은 조건 시트 자체가 이 구역이라 제목을 안 단다. */}

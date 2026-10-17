@@ -22,9 +22,14 @@ interface Props {
   locked: boolean;
   onVote: (placeId: string, name: string) => Promise<void>;
   onClear: () => Promise<void>;
+  /**
+   * 데스크톱 오른쪽 칸 — 고를 가게 칩 바로 아래 한 줄. 예측 수는 칩에 붙으므로(CandidateChips votes)
+   * 요약 줄을 빼고 내 예측·예측하기만 둔다. 예측이 혼자 한 구역을 차지해 패널이 네 칸이었다(10/17).
+   */
+  inline?: boolean;
 }
 
-export function Predictions({ candidates, decided = null, votes, myUid, locked, onVote, onClear }: Props) {
+export function Predictions({ candidates, decided = null, votes, myUid, locked, onVote, onClear, inline = false }: Props) {
   const mine = votes.find((v) => v.uid === myUid) ?? null;
   const [open, setOpen] = useState(false);
   const [pick, setPick] = useState<string | null>(null);
@@ -60,11 +65,21 @@ export function Predictions({ candidates, decided = null, votes, myUid, locked, 
   };
 
   return (
-    <section className="predict" aria-label="동료 예측">
+    <section className={inline ? 'predict predict--inline' : 'predict'} aria-label="동료 예측">
       <div className="predict__row">
         <p className="predict__sum">
           <span aria-hidden="true">🔮 </span>
-          {counted === 0 ? (
+          {inline ? (
+            mine ? (
+              <>내 예측 {shortName(byId.get(mine.placeId)?.name ?? '목록에 없는 가게', 10)}</>
+            ) : counted === 0 ? (
+              '나올 곳을 맞혀 볼까요?'
+            ) : (
+              <>
+                예측 <strong>{counted}명</strong>
+              </>
+            )
+          ) : counted === 0 ? (
             '아직 예측한 사람이 없어요'
           ) : (
             <>
@@ -87,7 +102,7 @@ export function Predictions({ candidates, decided = null, votes, myUid, locked, 
           {locked ? '게임 중엔 못 바꿔요' : open ? '접기' : mine ? '내 예측 바꾸기' : '예측하기'}
         </button>
       </div>
-      {mine && !open && (
+      {mine && !open && !inline && (
         <p className="muted small predict__mine">
           {mine.name} 님은 {withJosa(byId.get(mine.placeId)?.name ?? '목록에 없는 가게', '으로/로')} 예측했어요
         </p>
