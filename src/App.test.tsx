@@ -200,9 +200,24 @@ describe('동료 예측', () => {
   });
 
   it('게임 중엔 예측을 못 바꾼다', () => {
+    // 예측은 함께 고르기 구역 안이다. 오늘 예측이 있으면 저절로 펼쳐진다.
+    fx.votes = [{ uid: 'u1', placeId: 'a', name: '민수' }];
     startWheel();
+    expect(screen.getByRole('button', { name: /함께 고르기/ }).getAttribute('aria-expanded')).toBe('true');
     const toggle = screen.getByRole('button', { name: '게임 중엔 못 바꿔요' }) as HTMLButtonElement;
     expect(toggle.disabled).toBe(true);
+  });
+});
+
+describe('함께 고르기', () => {
+  it('예측·팟이 없으면 접혀 있고, 누르면 예측과 점심 팟이 펼쳐진다', () => {
+    render(<App />);
+    const toggle = screen.getByRole('button', { name: /함께 고르기/ });
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('button', { name: /예측하기/ })).toBeNull();
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(document.getElementById('together-body')?.hidden).toBe(false);
   });
 });
 

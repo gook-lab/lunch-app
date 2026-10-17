@@ -29,6 +29,14 @@ export function compactGameIds(
   recent: readonly GameMode[],
   recommended: readonly GameMode[],
   limit = 6,
+  pinned: readonly GameMode[] = [],
 ): GameMode[] {
-  return [...new Set([current, ...recent, ...recommended])].slice(0, limit);
+  const list = [...new Set([current, ...recent, ...recommended])].slice(0, limit);
+  // 고정 게임(핀볼·토너먼트)은 최근 게임에 밀려 접힌 목록에서 사라지지 않게 맨 뒤 자리와 바꾼다.
+  for (const id of pinned) {
+    if (list.includes(id)) continue;
+    const at = list.findLastIndex((x) => x !== current && !pinned.includes(x));
+    if (at >= 0) list[at] = id;
+  }
+  return list;
 }

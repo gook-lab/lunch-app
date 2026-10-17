@@ -21,7 +21,8 @@ import type { Place, Visit } from '../lib/candidates';
 import { withJosa } from '../lib/josa';
 import { RECENT_WINDOW_DAYS } from '../lib/candidates';
 import { daysBetween, type DayId } from '../lib/date';
-import { walkMinutesBetween } from '../lib/walk';
+import { officeCoord, walkMinutesBetween } from '../lib/walk';
+import { searchPlacesNear, type PlaceHit } from '../services/placeSearch';
 import { updatePlace } from '../services/lunch';
 import type { RatingSummary } from '../lib/ratings';
 import { RatingBadge, RatingEditor, RatingReviews } from './Rating';
@@ -146,6 +147,52 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
   const catRef = useRef<HTMLDivElement>(null);
   const latRef = useRef<HTMLInputElement>(null);
   const lngRef = useRef<HTMLInputElement>(null);
+  /*
+   * 위치는 이름·주소 검색으로 고친다. 위도·경도를 사람이 넣게 두면 사실상 못 고친다(10/17 사용자).
+   * 좌표 칸은 검색이 안 되는 곳(데모·키 없음)을 위한 고급 옵션으로만 남긴다.
+   */
+  const [query, setQuery] = useState(place.name);
+  const [hits, setHits] = useState<PlaceHit[] | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [searchNote, setSearchNote] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string | null>(null);
+  const [advOpen, setAdvOpen] = useState(false);
+
+  const find = async () => {
+    const q = query.trim();
+    if (!q) return setSearchNote('가게 이름이나 주소를 넣어 주세요.');
+    setSearching(true);
+    setSearchNote(null);
+    try {
+      const found = await searchPlacesNear(q, officeCoord());
+      setHits(found);
+      if (found.length === 0) setSearchNote('회사 근처에서 찾지 못했어요. 주소로 다시 찾아 보세요.');
+    } catch {
+      setHits(null);
+      setSearchNote('여기선 검색을 쓸 수 없어요. 아래 고급에서 좌표를 넣거나 지도 탭에서 가게를 옮겨 주세요.');
+      setAdvOpen(true);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const pickHit = (hit: PlaceHit) => {
+    setLat(String(hit.lat));
+    setLng(String(hit.lng));
+    setPicked(`${hit.name} · ${hit.address}`);
+    setHits(null);
+    setSearchNote(null);
+    setProblem(null);
+  };
+
+  // 지금 좌표로 걸리는 시간. 회사 위치가 없으면 비운다.
+  let walkPreview: number | null = null;
+  try {
+    if (Number.isFinite(Number(lat)) && Number.isFinite(Number(lng)) && lat !== '' && lng !== '')
+      walkPreview = walkMinutesBetween(Number(lat), Number(lng));
+  } catch {
+    walkPreview = null;
+  }
 
   const save = async () => {
     const nextLat = Number(lat);
@@ -160,7 +207,9 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
       return setProblem('메뉴를 골라 주세요.');
     }
     if (!Number.isFinite(nextLat) || !Number.isFinite(nextLng)) {
-      (Number.isFinite(nextLat) ? lngRef : latRef).current?.focus();
+      setAdvOpen(true);
+      // 고급 칸이 펼쳐진 뒤에 초점을 옮긴다.
+      requestAnimationFrame(() => (Number.isFinite(nextLat) ? lngRef : latRef).current?.focus());
       return setProblem('좌표는 숫자로 넣어 주세요.');
     }
 
@@ -207,9 +256,51 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
         <span className="filters__label">메뉴</span>
         <CategoryPicker value={category} onPick={setCategory} />
       </div>
-      <div className="edit__coords">
-        <Input label="위도" ref={latRef} value={lat} onChange={(e) => setLat(e.target.value)} inputMode="decimal" aria-invalid={!Number.isFinite(Number(lat)) || undefined} aria-describedby={problem ? errId : undefined} state={!Number.isFinite(Number(lat)) ? 'error' : 'default'} />
-        <Input label="경도" ref={lngRef} value={lng} onChange={(e) => setLng(e.target.value)} inputMode="decimal" aria-invalid={!Number.isFinite(Number(lng)) || undefined} aria-describedby={problem ? errId : undefined} state={!Number.isFinite(Number(lng)) ? 'error' : 'default'} />
+      <div className="edit__where">
+        <span className="filters__label">위치</span>
+        <p className="edit__whereNow">
+          {picked ?? '지금 위치 그대로'}
+          {walkPreview !== null && <span className="muted"> · 회사에서 걸어서 {walkPreview}분</span>}
+        </p>
+        <div
+          className="edit__search"
+          onKeyDown={(e) => {
+            // 칸에서 Enter 는 저장이 아니라 찾기다.
+            if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') {
+              e.preventDefault();
+              void find();
+            }
+          }}
+        >
+          <Input label="가게 이름·주소로 찾기" value={query} onChange={(e) => setQuery(e.target.value)} maxLength={60} enterKeyHint="search" />
+          <Button variant="secondary" onClick={() => void find()} loading={searching}>
+            찾기
+          </Button>
+        </div>
+        {hits && hits.length > 0 && (
+          <ul className="edit__hits" aria-label="찾은 곳">
+            {hits.map((hit) => (
+              <li key={hit.id}>
+                <button type="button" className="edit__hit" onClick={() => pickHit(hit)}>
+                  <strong>{hit.name}</strong>
+                  <span className="muted small">{hit.address}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {searchNote && (
+          <p className="muted small" role="status">
+            {searchNote}
+          </p>
+        )}
+        <details className="edit__adv" open={advOpen} onToggle={(e) => setAdvOpen(e.currentTarget.open)}>
+          <summary>좌표 직접 넣기 (고급)</summary>
+          <div className="edit__coords">
+            <Input label="위도" ref={latRef} value={lat} onChange={(e) => { setLat(e.target.value); setPicked(null); }} inputMode="decimal" aria-invalid={!Number.isFinite(Number(lat)) || undefined} aria-describedby={problem ? errId : undefined} state={!Number.isFinite(Number(lat)) ? 'error' : 'default'} />
+            <Input label="경도" ref={lngRef} value={lng} onChange={(e) => { setLng(e.target.value); setPicked(null); }} inputMode="decimal" aria-invalid={!Number.isFinite(Number(lng)) || undefined} aria-describedby={problem ? errId : undefined} state={!Number.isFinite(Number(lng)) ? 'error' : 'default'} />
+          </div>
+        </details>
       </div>
       <p className="muted small">위치를 바꾸면 도보 시간도 새로 계산해요.</p>
       {problem && <p id={errId} className="notice notice--empty" role="alert">{problem}</p>}

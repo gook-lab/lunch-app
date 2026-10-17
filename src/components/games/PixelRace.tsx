@@ -22,7 +22,8 @@ import { sfxLater, type SfxName } from '../../lib/sfx';
 
 export type RaceTheme = 'horse' | 'car';
 
-const COUNT_STEP_MS = 400;
+// 3·2·1 이 400ms 씩이면 출발까지 1.4초 — "늦게 출발한다" 로 읽혔다(10/17 사용자). 1초 안으로 줄인다.
+const COUNT_STEP_MS = 280;
 const COUNTDOWN = ['3', '2', '1', '출발!'];
 /** 고를 수 있는 바퀴 수. 기본은 세 바퀴(10/13 사용자). */
 const LAP_CHOICES = [1, 3, 5] as const;

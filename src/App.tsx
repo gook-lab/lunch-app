@@ -352,6 +352,10 @@ export default function App() {
   });
   const [recentGames, setRecentGames] = useState<GameMode[]>(() => readRecentGames(ALL_MODE_IDS));
   const [showAllGames, setShowAllGames] = useState(false);
+  // 데스크톱 오른쪽 칸의 고르는 범위(로드맵). 평소엔 요약 한 줄만, 바꾸기를 눌러야 펼친다.
+  const [rangeOpen, setRangeOpen] = useState(false);
+  // 함께 고르기(예측·팟) 펼침. null 이면 자동 — 팟에 들어가 있거나 예측이 있으면 펼친다.
+  const [togetherPick, setTogetherPick] = useState<boolean | null>(null);
 
   /*
    * 데스크톱 작게 보기에서 게임이 판 칸(약 770×540)에 360px 남짓으로 작게 떠 여백이 컸다(10/16 사용자).
@@ -829,6 +833,11 @@ export default function App() {
   const voteCounts = new Map<string, number>();
   for (const v of votes) voteCounts.set(v.placeId, (voteCounts.get(v.placeId) ?? 0) + 1);
 
+  const inParty = party.parties.some((p) => p.members.some((m) => m.uid === party.uid));
+  const togetherOpen = togetherPick ?? (inParty || votes.length > 0);
+  const togetherMeta = [votes.length > 0 ? `예측 ${votes.length}명` : '', party.parties.length > 0 ? `팟 ${party.parties.length}개` : '']
+    .filter(Boolean)
+    .join(' · ');
   const parties = (
     <Parties
       day={today}
@@ -844,6 +853,38 @@ export default function App() {
     />
   );
 
+  /*
+   * 함께 고르기 — 예측과 점심 팟을 한 보조 구역으로 묶는다. 게임판·점심 고르기보다 앞에 읽히지 않게
+   * 기본은 접어 두고, 팟에 들어가 있거나 오늘 예측이 있으면 펼친다(10/17 정보 위계 설계).
+   * 접혀도 그대로 그려 둔다(hidden) — 팟 구독·알림 상태가 펼칠 때마다 새로 시작하지 않게.
+   */
+  const together = (
+    <section className={togetherOpen ? 'together together--open' : 'together'} aria-labelledby="together-title">
+      <h2 className="together__head">
+        <button
+          id="together-title"
+          type="button"
+          className="together__toggle"
+          aria-expanded={togetherOpen}
+          aria-controls="together-body"
+          onClick={() => setTogetherPick(!togetherOpen)}
+        >
+          <span className="together__title">
+            <span aria-hidden="true">🙌 </span>함께 고르기
+          </span>
+          {togetherMeta && <span className="together__meta">{togetherMeta}</span>}
+          <span className="together__caret" aria-hidden="true">
+            {togetherOpen ? '접기 ▴' : '펼치기 ▾'}
+          </span>
+        </button>
+      </h2>
+      <div id="together-body" className="together__body" hidden={!togetherOpen}>
+        {wide ? predictionsInline : predictions}
+        {parties}
+      </div>
+    </section>
+  );
+
   const weather = (
     <WeatherChip
       variant="inline"
@@ -852,21 +893,36 @@ export default function App() {
       onSetWalkFilter={(minutes) => updateFilters((f) => ({ ...f, maxWalkMin: minutes }))}
     />
   );
+  // 오늘의 조건 한 줄. 휴대폰 요약 단추와 데스크톱 고르는 범위가 같은 말을 쓴다.
+  const rangeSummary = `도보 ${filters.maxWalkMin}분${filters.excludeRecent ? ' · 최근 1주 제외' : ''}${
+    result.lastCategory?.applied ? ` · ${result.lastCategory.category} 빼기` : ''
+  }`;
   const filtersPanel = (
     <>
       <CandidateChips result={result} winnerId={winner?.id ?? null} votes={wide ? voteCounts : undefined} />
-      {/* 데스크톱은 예측을 고를 가게 칸 안 한 줄로 — 수는 칩에 붙는다. 휴대폰은 게임 아래 그대로. */}
-      {wide && predictionsInline}
       {wide && notice && <p className="notice">{notice}</p>}
-      {wide && parties}
       {/* 데스크톱 오른쪽 칸에선 범위 정하기도 한 구역으로 묶고 제목을 단다. 점심 팟 바로 아래 붙어
         팟의 일부처럼 읽혔다(10/17 사용자). 휴대폰은 조건 시트 자체가 이 구역이라 제목을 안 단다. */}
       <section className="today__sec" aria-labelledby={wide ? 'range-title' : undefined}>
         {wide && (
-          <h3 id="range-title" className="today__secTitle">
-            고르는 범위
-          </h3>
+          <div className="today__secHead">
+            <h3 id="range-title" className="today__secTitle">
+              고르는 범위
+            </h3>
+            {/* 조건 요약 한 줄. 자세한 조건(로드맵)은 바꾸기를 눌러야 펼친다. */}
+            <p className="today__rangeLine">{rangeSummary}</p>
+            <button
+              type="button"
+              className="linkish today__rangeGo"
+              aria-expanded={rangeOpen}
+              aria-controls="range-body"
+              onClick={() => setRangeOpen((o) => !o)}
+            >
+              {rangeOpen ? '접기' : '바꾸기'}
+            </button>
+          </div>
         )}
+        <div id="range-body" className="today__rangeBody" hidden={wide && !rangeOpen}>
         <Roadmap
           places={places}
           filters={filters}
@@ -891,6 +947,7 @@ export default function App() {
           <button type="button" className="linkish" onClick={() => goTab('map')}>
             {officeSource() === 'saved' ? '회사 위치 바꾸기' : '정하기'}
           </button>
+        </div>
         </div>
       </section>
     </>
@@ -979,7 +1036,11 @@ export default function App() {
           <ShareButton place={winner} primary game={`${MODE_ICON[mode]} ${GAME_MODES.find((m) => m.id === mode)?.label ?? ''}`} />
           <div className="ticket__next">
             <DirectionsLink place={winner} />
-            <Button variant="secondary" onClick={() => setPartyComposeRequest((request) => request + 1)}>
+            <Button variant="secondary" onClick={() => {
+                // 접힌 구역 안의 시트는 뜨지 않는다. 팟 모으기를 부르면 함께 고르기를 먼저 편다.
+                setTogetherPick(true);
+                setPartyComposeRequest((request) => request + 1);
+              }}>
               점심 팟 모으기
             </Button>
           </div>
@@ -1023,9 +1084,10 @@ export default function App() {
    * Tab 이 오른쪽 메뉴 칩을 다 지난 뒤에 왼쪽 레일로 되돌아갔다(10/15 리뷰). 휴대폰은 칩 아래에
    * 보이므로 DOM 도 칩 뒤다. 자리(grid)는 CSS 가 정하므로 화면은 그대로다.
    */
-  const compactModes = compactGameIds(mode, recentGames, RECOMMENDED_MODE_IDS, 8);
-  const visibleModes = wide || showAllGames ? GAME_MODES : GAME_MODES.filter((item) => compactModes.includes(item.id));
-  const hiddenGameCount = GAME_MODES.length - visibleModes.length;
+  const compactModes = compactGameIds(mode, recentGames, RECOMMENDED_MODE_IDS, 8, ['pinball', 'tournament']);
+  // 데스크톱 레일도 추천·최근 8개만 먼저 보이고 나머지는 전체 게임 보기 아래에 둔다(10/17 정보 위계).
+  const visibleModes = showAllGames ? GAME_MODES : GAME_MODES.filter((item) => compactModes.includes(item.id));
+  const hiddenGameCount = GAME_MODES.length - compactModes.length;
   const modeButtons = (
     <>
       {visibleModes.map((m) => (
@@ -1048,6 +1110,15 @@ export default function App() {
   const modebar = wide ? (
     <div className="modebar" role="group" aria-label="방식" ref={revealPickedMode}>
       {modeButtons}
+      <button
+        type="button"
+        className="modebar__more modebar__all"
+        aria-expanded={showAllGames}
+        onClick={() => setShowAllGames((open) => !open)}
+        disabled={spinning}
+      >
+        {showAllGames ? '게임 접기' : `전체 게임 보기 (${hiddenGameCount})`}
+      </button>
     </div>
   ) : (
     <div className="modebar-shell">
@@ -1055,8 +1126,14 @@ export default function App() {
         {modeButtons}
       </div>
       <div className="modebar-shell__action">
-        <button type="button" className="modebar__more" onClick={() => setShowAllGames((open) => !open)} disabled={spinning}>
-          {showAllGames ? '게임 접기' : `게임 더 보기 (${hiddenGameCount})`}
+        <button
+          type="button"
+          className="modebar__more"
+          aria-expanded={showAllGames}
+          onClick={() => setShowAllGames((open) => !open)}
+          disabled={spinning}
+        >
+          {showAllGames ? '게임 접기' : `전체 게임 보기 (${hiddenGameCount})`}
         </button>
       </div>
       {showAllGames && (
@@ -1271,10 +1348,7 @@ export default function App() {
                   >
                     <span className="today__summaryMain">고를 가게 {result.candidates.length}곳</span>
                     {/* 카테고리는 바로 아래 칩이 보여 준다. 여기까지 쓰면 휴대폰에서 잘렸다(10/14). */}
-                    <span className="today__summaryRest">
-                      도보 {filters.maxWalkMin}분{filters.excludeRecent ? ' · 최근 1주 제외' : ''}
-                      {result.lastCategory?.applied ? ` · ${result.lastCategory.category} 빼기` : ''}
-                    </span>
+                    <span className="today__summaryRest">{rangeSummary}</span>
                     <span className="today__summaryGo">
                       바꾸기<span aria-hidden="true"> ▾</span>
                     </span>
@@ -1529,14 +1603,13 @@ export default function App() {
                   {/* 휴대폰은 실행 단추 아래. 데스크톱은 게임 제목 줄 오른쪽(stageOpts). */}
                   {!wide && stageOpts}
 
-                  {/* 데스크톱에선 예측·안내 한 줄을 오른쪽 칸으로 옮긴다. 판이 그만큼 높아진다(10/14 리빌딩). */}
-                  {!wide && predictions}
+                  {/* 예측은 함께 고르기 구역으로 옮겼다. 안내 한 줄은 데스크톱에선 오른쪽 칸에 둔다. */}
                   {!wide && notice && <p className="notice">{notice}</p>}
                 </div>
               </section>
 
-              {/* 휴대폰은 게임 아래에 팟을 둔다. 데스크톱은 오른쪽 칸(filtersPanel). 날씨는 머리말 날짜 줄에 있다. */}
-              {!wide && parties}
+              {/* 휴대폰은 게임 아래에 함께 고르기를 둔다. 데스크톱은 오른쪽 칸 맨 아래. */}
+              {!wide && together}
 
               {/* 조건은 게임 옆(데스크톱)·아래(휴대폰)에 둔다. 첫 화면은 게임이 차지한다. */}
               {wide && (
@@ -1545,6 +1618,7 @@ export default function App() {
                     고를 가게 <span className="today__count">{result.candidates.length}곳</span>
                   </h2>
                   {filtersPanel}
+                  {together}
                 </aside>
               )}
             </div>

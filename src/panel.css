@@ -67,6 +67,8 @@
 .clock__pin { fill: var(--color-accent-700); }
 .clock__d { display: inline-block; width: 0.64em; text-align: center; }
 .clock__s { font-size: 0.78em; font-weight: 600; opacity: 0.7; }
+/* 숫자 글꼴의 위아래 여백이 달라 글자가 알약 가운데보다 1px 남짓 떠 보였다(10/17 사용자). 실측 차이만큼 내린다. */
+.clock__hm, .clock__s { position: relative; top: 0.07em; }
 .clock__colon { display: inline-block; margin: 0 1px; animation: clock-blink 1s steps(1, end) infinite; }
 @keyframes clock-blink { 50% { opacity: 0.25; } }
 :root[data-motion='reduced'] .clock__colon { animation: none; }
@@ -124,3 +126,136 @@
   /* desktop.css 의 .today__filters .predict(가는 윗선)보다 세게 — 칩과 한 덩어리로 보이게. */
   .today__filters .predict--inline { border-top: 0; padding-top: 0; }
 }
+
+/*
+ * 노트북 폭(960~1279px) — 탭 글자가 "점심 / 고르기" 로 두 줄 접혔다. 한 줄로 두고 여백·그림을 줄인다.
+ * 메뉴 칩 줄은 무대 칸이 좁아 옆으로 넘기는데 넘길 게 있다는 표시가 없었다 — 오른쪽 끝을 흐린다.
+ */
+@media (min-width: 960px) {
+  .tabs button { white-space: nowrap; }
+}
+@media (min-width: 960px) and (max-width: 1279px) {
+  .tabs button { padding: 0 var(--space-2); gap: var(--space-1); }
+  .catbar:not(.catbar--sub) {
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    padding-right: 24px;
+  }
+}
+@media (min-width: 960px) and (max-width: 1099px) {
+  .tabs__icon { display: none; }
+}
+
+/*
+ * 정보 위계(10/17 설계) — 한 화면, 한 결정.
+ * 오늘의 조건 한 줄 → 게임 선택 → 게임판 → 점심 고르기 → 함께 고르기·상세 옵션 순서로 읽히게 한다.
+ */
+
+/* 게임 레일: 접힌 상태(8개)에선 칸을 늘리지 않는다. 늘리면 8칸이 무대 높이를 다 먹어 레일이 게임판만큼 커 보였다. */
+.modebar__all { grid-column: 1 / -1; }
+@media (min-width: 960px) {
+  .stage:not(.stage--full) > .modebar:has(.modebar__all[aria-expanded='false']) {
+    grid-auto-rows: 64px;
+    align-content: start;
+  }
+  .stage--full > .modebar .modebar__all { display: none; }
+}
+
+/* 고르는 범위: 제목 · 요약 한 줄 · 바꾸기 */
+.today__secHead {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+}
+.today__rangeLine {
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-neutral-700);
+  font-size: var(--fs-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.today__rangeGo { font-weight: 700; }
+.today__rangeBody { display: flex; flex-direction: column; gap: var(--space-3); }
+.today__rangeBody[hidden] { display: none; }
+
+/* 함께 고르기: 예측 + 점심 팟. 보조 구역이라 제목 줄은 작게, 펼친 몸통만 기존 모양 그대로. */
+.together { display: flex; flex-direction: column; gap: var(--space-3); }
+.together__head { margin: 0; font: inherit; }
+.together__toggle {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--color-neutral-500);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.together--open .together__toggle { border-style: solid; border-color: var(--color-neutral-300); }
+.together__title { font-family: var(--font-heading); font-size: var(--fs-md); font-weight: 800; }
+.together__meta {
+  overflow: hidden;
+  color: var(--color-neutral-700);
+  font-size: var(--fs-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.together__caret { color: var(--color-neutral-700); font-size: var(--fs-sm); font-weight: 700; }
+@media (hover: hover) { .together__toggle:hover { border-color: var(--color-accent); } }
+.together__toggle:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.together__body { display: flex; flex-direction: column; gap: var(--space-4); }
+.together__body[hidden] { display: none; }
+
+@media (min-width: 960px) {
+  /* 오른쪽 칸 맨 아래 구역 — 다른 구역과 같은 굵은 띠로 나눈다. 안쪽 팟은 띠를 다시 긋지 않는다. */
+  .today__filters > .together {
+    margin-inline: calc(-1 * var(--space-4));
+    padding: var(--space-4) var(--space-4) 0;
+    border-top: 8px solid var(--color-neutral-200);
+  }
+  .today__filters .together .party { margin: 0; padding: 0; border: 0; }
+  .today__filters .together .predict--inline { border-top: 0; padding-top: 0; }
+}
+@media (max-width: 959px) {
+  .today > .together { margin-top: var(--space-4); }
+}
+.together .party { border-top: 0; padding-top: 0; }
+
+/* 가게 고치기 — 위치는 검색으로, 좌표는 고급 접힘 안에. */
+.edit__where { display: flex; flex-direction: column; gap: var(--space-2); }
+.edit__whereNow { margin: 0; font-size: var(--fs-sm); }
+.edit__search { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--space-2); }
+.edit__hits { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.edit__hit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-neutral-300);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+@media (hover: hover) { .edit__hit:hover { border-color: var(--color-accent); } }
+.edit__hit:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.edit__adv > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  color: var(--color-neutral-700);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.edit__adv[open] > summary { margin-bottom: var(--space-2); }

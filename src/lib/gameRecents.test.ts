@@ -25,4 +25,14 @@ describe('최근 게임', () => {
       'cards',
     ]);
   });
+  it('고정 게임은 최근 게임이 많아도 접힌 목록에 남는다', () => {
+    const list = compactGameIds('ladder', ['wheel', 'claw', 'dice', 'slot'], ['archery', 'pinball', 'tournament'], 6, [
+      'pinball',
+      'tournament',
+    ]);
+    expect(list).toHaveLength(6);
+    expect(list[0]).toBe('ladder');
+    expect(list).toContain('pinball');
+    expect(list).toContain('tournament');
+  });
 });
