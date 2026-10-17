@@ -38,3 +38,67 @@
     padding-block: var(--space-3) 0;
   }
 }
+
+/*
+ * 머리말 시계·날씨 — 데스크톱은 탭 왼쪽, 휴대폰은 날짜 줄(10/17 사용자: 머리말 가운데가 비어 보였다).
+ * 시계는 작은 전광판처럼: 진한 바탕에 시:분 크게, 초는 작게, 쌍점이 1초에 한 번 숨쉰다.
+ */
+.clock {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-family: var(--font-heading, inherit);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+.clock__dial { width: 1.5em; height: 1.5em; align-self: center; margin-right: var(--space-1); overflow: visible; }
+.clock__face { fill: var(--color-bg); stroke: var(--color-bg); stroke-width: 1; }
+.clock__tick { stroke: var(--color-text); stroke-width: 1.2; stroke-linecap: round; opacity: 0.55; }
+.clock__hand { stroke: var(--color-text); stroke-linecap: round; }
+.clock__hand--h { stroke-width: 2.4; }
+.clock__hand--m { stroke-width: 1.6; }
+.clock__hand--s { stroke: var(--color-accent-700); stroke-width: 0.9; }
+.clock__pin { fill: var(--color-accent-700); }
+.clock__s { font-size: 0.78em; font-weight: 600; opacity: 0.7; }
+.clock__colon { display: inline-block; margin: 0 1px; animation: clock-blink 1s steps(1, end) infinite; }
+@keyframes clock-blink { 50% { opacity: 0.25; } }
+:root[data-motion='reduced'] .clock__colon { animation: none; }
+@media (prefers-reduced-motion: reduce) { .clock__colon { animation: none; } }
+
+.topbar__now { display: none; }
+@media (min-width: 960px) {
+  .topbar__now {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-left: auto;
+    margin-right: var(--space-6);
+    padding: 4px var(--space-3) 4px 4px;
+    border: 1px solid var(--color-neutral-300);
+    border-radius: 999px;
+    background: var(--color-surface);
+    font-size: var(--fs-sm);
+  }
+  .topbar__clock { padding: 3px var(--space-3); border-radius: 999px; font-size: var(--fs-md); }
+  .topbar__date { font-size: var(--fs-xs); font-weight: 700; color: var(--color-neutral-800); white-space: nowrap; }
+  .topbar__now .weather-line { flex-wrap: nowrap; font-size: var(--fs-xs); }
+  .topbar__now .weather-line::before { content: '·'; color: var(--color-neutral-700); }
+  .topbar__now .weather-line__hint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 20ch; }
+}
+/* 노트북 폭 — 날씨 조언은 빼고 날짜·기온만. 더 좁으면 시계만(탭 글자가 세 줄로 접혔다). */
+@media (min-width: 960px) and (max-width: 1239px) {
+  .topbar__now .weather-line__hint, .topbar__now .weather-line__near { display: none; }
+  .topbar__now { margin-right: var(--space-3); }
+}
+@media (min-width: 960px) and (max-width: 1119px) {
+  .topbar__now .topbar__date, .topbar__now .weather-line { display: none; }
+  .topbar__now { padding-right: 4px; }
+}

@@ -64,6 +64,7 @@ import {
 } from './components/games/types';
 import { Roadmap } from './components/Roadmap';
 import { WeatherChip } from './components/WeatherChip';
+import { LiveClock } from './components/LiveClock';
 import { AmbienceProvider } from './hooks/useAmbience';
 import { useTodayKST } from './hooks/useTodayKST';
 import { useLunchData } from './hooks/useLunchData';
@@ -1096,8 +1097,9 @@ export default function App() {
         <div className="topbar">
           <header className="app__header">
             {/* 식권 번호(NO. 0287)·"사내 점심 식권" 은 무슨 뜻인지 안 읽혔다(10/14 사용자). 날짜와 한마디만. */}
+            {/* 데스크톱은 날씨·시계를 탭 왼쪽으로 옮긴다(10/17 사용자: 머리말 가운데가 비어 보였다). */}
             <p className="app__date">
-              {formatDay(today)} · 점심 뭐 먹지? {weather}
+              {wide ? '점심 뭐 먹지?' : <>{formatDay(today)} · <LiveClock /></>} {!wide && weather}
             </p>
             <div className="app__titleRow">
               <h1>{TAB_TITLE[tab]}</h1>
@@ -1116,6 +1118,13 @@ export default function App() {
             {import.meta.env.VITE_DEMO !== '1' && isDevHost(window.location.hostname) && <DevHostNote />}
           </header>
 
+          {wide && (
+            <div className="topbar__now">
+              <LiveClock className="topbar__clock" analog />
+              <span className="topbar__date">{formatDay(today)}</span>
+              {weather}
+            </div>
+          )}
           <nav className="tabs" role="tablist" aria-label="화면" onKeyDown={onTabKey}>
             {TABS.map((t) => (
               <button
