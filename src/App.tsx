@@ -90,7 +90,7 @@ import { RatePrompt } from './components/RatePrompt';
 import { ratePromptTarget } from './lib/ratePrompt';
 import { compactGameIds, readRecentGames, rememberGame } from './lib/gameRecents';
 import { shouldShowRatePrompt } from './lib/promptVisibility';
-import { CategoryChips } from './components/CategoryChips';
+import { CategoryChips, type CategoryView } from './components/CategoryChips';
 import './App.css';
 // 종이 식권 테마는 App.css 뒤에 — 같은 명시도로 덮는다.
 import './theme.css';
@@ -164,6 +164,7 @@ function focusIfLost(node: HTMLElement | null) {
 /** 처음 온 사람의 게임. 컷신·이벤트가 있는 활쏘기로 시작한다(10/15 사용자). games/index.ts 가 바로 싣는다. */
 const NO_IDS: string[] = [];
 const DEFAULT_MODE: GameMode = 'archery';
+const CAT_VIEW_KEY = 'lunch-app:cat-view';
 const RECOMMENDED_MODE_IDS: GameMode[] = [
   'archery',
   'wheel',
@@ -412,7 +413,7 @@ export default function App() {
   // 팟 게임 후보 — 지금 조건(도보·최근 1주)에서 메뉴만 팟 메뉴로 바꾼다.
   const partyCandidatesFor = useCallback(
     (category: string) =>
-      selectCandidates(places, visits, { ...filters, categories: [category], subs: [] }, today).candidates,
+      selectCandidates(places, visits, { ...filters, categories: [category], subs: [], cuisines: [] }, today).candidates,
     [places, visits, filters, today],
   );
 
@@ -712,12 +713,43 @@ export default function App() {
   };
 
   // 메뉴를 바꾸면 세부 고른 것은 버린다. 세부 줄은 메뉴 하나를 골랐을 때만 있다.
-  const toggleCategory = (c: string) =>
+  // 나라로 보던 중에 로드맵 조각(메뉴)을 누르면 메뉴 보기로 돌아온다 — 두 조건을 섞지 않는다.
+  const toggleCategory = (c: string) => {
+    setCatView('menu');
     updateFilters((f) => ({
       ...f,
       categories: f.categories.includes(c) ? f.categories.filter((x) => x !== c) : [...f.categories, c],
       subs: [],
+      cuisines: [],
     }));
+  };
+  const toggleCuisine = (c: string) =>
+    updateFilters((f) => {
+      const cuisines = f.cuisines ?? [];
+      return { ...f, categories: [], subs: [], cuisines: cuisines.includes(c) ? cuisines.filter((x) => x !== c) : [...cuisines, c] };
+    });
+  const clearCategories = () => updateFilters((f) => ({ ...f, categories: [], subs: [], cuisines: [] }));
+  // 메뉴 | 나라 전환. 보는 방법만 기억하고(이 브라우저), 바꾸면 고른 칩은 비운다.
+  const [catView, setCatViewState] = useState<CategoryView>(() => {
+    try {
+      return localStorage.getItem(CAT_VIEW_KEY) === 'cuisine' ? 'cuisine' : 'menu';
+    } catch {
+      return 'menu';
+    }
+  });
+  const setCatView = (v: CategoryView) => {
+    setCatViewState(v);
+    try {
+      localStorage.setItem(CAT_VIEW_KEY, v);
+    } catch {
+      // 막혀 있으면 이번 화면에서만.
+    }
+  };
+  const switchCatView = (v: CategoryView) => {
+    if (v === catView) return;
+    setCatView(v);
+    clearCategories();
+  };
   const toggleSub = (sub: string) =>
     updateFilters((f) => {
       const subs = f.subs ?? [];
@@ -1231,9 +1263,13 @@ export default function App() {
                     subs={filters.subs ?? []}
                     onToggle={toggleCategory}
                     onToggleSub={toggleSub}
-                    onClear={() => updateFilters((f) => ({ ...f, categories: [], subs: [] }))}
+                    onClear={clearCategories}
                     onClearSubs={() => updateFilters((f) => ({ ...f, subs: [] }))}
                     disabled={spinning}
+                    view={catView}
+                    onView={switchCatView}
+                    cuisines={filters.cuisines ?? []}
+                    onToggleCuisine={toggleCuisine}
                   />
                 )}
                 {!wide && modebar}
@@ -1294,7 +1330,7 @@ export default function App() {
                               도보 {gateWalk}분까지 보기
                             </Button>
                           ) : gate.fix.kind === 'category' ? (
-                            <Button onClick={() => updateFilters((f) => ({ ...f, categories: [], subs: [] }))}>
+                            <Button onClick={clearCategories}>
                               메뉴 전체 보기
                             </Button>
                           ) : gate.fix.kind === 'list' ? (

@@ -151,8 +151,59 @@ export function categoryHue(category: string): number {
   return MENUS.find((m) => m.id === menu)?.hue ?? 200;
 }
 
-/** 조건 요약 한 마디. 세부를 골랐으면 세부, 아니면 메뉴, 둘 다 없으면 "메뉴 전체". */
-export function categorySummary(filters: { categories: string[]; subs?: string[] }): string {
+/**
+ * 나라(한식·중식·일식·양식·아시안) — 메뉴를 가로지르는 두 번째 보기. 저장하지 않고 세부에서 계산한다.
+ *
+ * 10/14 에 나라 칩을 걷어 낸 까닭(냉면집이 한식인지 면인지)은 그대로라, 메뉴가 기본 분류다.
+ * 나라는 "오늘은 중식" 처럼 보는 칩 줄 하나로만 쓴다(10/17 사용자). 세부마다 나라 하나 —
+ * 애매한 것(카레·볶음밥·돈까스·버거)은 이 앱 근처 가게가 흔히 팔리는 쪽으로 정했다. 바꾸려면 이 표만.
+ */
+export const CUISINES = [
+  { id: '한식', icon: '🍚' },
+  { id: '중식', icon: '🥟' },
+  { id: '일식', icon: '🍣' },
+  { id: '양식', icon: '🍝' },
+  { id: '아시안', icon: '🍜' },
+] as const;
+export type Cuisine = (typeof CUISINES)[number]['id'];
+
+const CUISINE_OF_SUB: Record<string, Cuisine> = {
+  '백반·한정식': '한식',
+  '국밥·찌개': '한식',
+  '덮밥·초밥': '일식',
+  '카레·볶음밥': '일식',
+  '국수·냉면': '한식',
+  '라멘·우동': '일식',
+  '짬뽕·짜장': '중식',
+  쌀국수: '아시안',
+  파스타: '양식',
+  고기구이: '한식',
+  돈까스: '일식',
+  닭요리: '한식',
+  '족발·보쌈': '한식',
+  '떡볶이·튀김': '한식',
+  김밥: '한식',
+  '라면·만두': '한식',
+  '버거·샌드위치': '양식',
+  피자: '양식',
+  샐러드: '양식',
+  '브런치·양식': '양식',
+};
+
+/** 가게의 나라. 세부가 없으면 메뉴로 — 빵·양식은 양식, 나머지는 한식(근처에 세부 없는 집은 대개 한식당이다). */
+export function cuisineOf(place: { category: string; sub?: string | null }): Cuisine {
+  const bySub = place.sub ? CUISINE_OF_SUB[place.sub] : undefined;
+  if (bySub) return bySub;
+  return place.category === '빵·양식' ? '양식' : '한식';
+}
+
+export function cuisineIcon(cuisine: string): string {
+  return CUISINES.find((c) => c.id === cuisine)?.icon ?? '🍴';
+}
+
+/** 조건 요약 한 마디. 나라를 골랐으면 나라, 세부를 골랐으면 세부, 아니면 메뉴, 다 없으면 "메뉴 전체". */
+export function categorySummary(filters: { categories: string[]; subs?: string[]; cuisines?: string[] }): string {
+  if (filters.cuisines && filters.cuisines.length > 0) return filters.cuisines.join('·');
   if (filters.subs && filters.subs.length > 0) return filters.subs.join('·');
   return filters.categories.length > 0 ? filters.categories.join('·') : '메뉴 전체';
 }

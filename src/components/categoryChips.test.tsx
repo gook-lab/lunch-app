@@ -81,3 +81,48 @@ describe('카테고리 칩', () => {
     expect(onToggleSub).toHaveBeenCalledWith('국수·냉면');
   });
 });
+
+describe('메뉴 | 나라 전환', () => {
+  const places = [
+    place('a', '면', true, '짬뽕·짜장'),
+    place('b', '면', true, '라멘·우동'),
+    place('c', '밥', true, '국밥·찌개'),
+    place('d', '밥', false, '덮밥·초밥'),
+  ];
+
+  it('onView 가 없으면 전환이 없다(지도 탭)', () => {
+    const r = render(
+      <CategoryChips places={places} selected={[]} subs={[]} onToggle={() => {}} onToggleSub={() => {}} onClear={() => {}} onClearSubs={() => {}} />,
+    );
+    expect(r.queryByRole('group', { name: '나눠 보기' })).toBeNull();
+  });
+
+  it('나라로 보면 켜진 가게가 있는 나라만 칩이 되고, 누르면 그 나라를 켜고 끈다', () => {
+    const onToggleCuisine = vi.fn();
+    const onView = vi.fn();
+    const r = render(
+      <CategoryChips
+        places={places}
+        selected={[]}
+        subs={[]}
+        onToggle={() => {}}
+        onToggleSub={() => {}}
+        onClear={() => {}}
+        onClearSubs={() => {}}
+        view="cuisine"
+        onView={onView}
+        cuisines={['중식']}
+        onToggleCuisine={onToggleCuisine}
+      />,
+    );
+    const group = r.getByRole('group', { name: '나라 고르기' });
+    const chips = [...group.querySelectorAll(':scope > button')].map((b) => b.textContent?.replace(/^\S+ /, ''));
+    // 덮밥·초밥(일식)은 꺼진 가게라 칩이 없다.
+    expect(chips).toEqual(['전체', '한식', '중식', '일식']);
+    expect(r.getByRole('button', { name: /중식/ }).getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(r.getByRole('button', { name: /한식/ }));
+    expect(onToggleCuisine).toHaveBeenCalledWith('한식');
+    fireEvent.click(r.getByRole('button', { name: '메뉴' }));
+    expect(onView).toHaveBeenCalledWith('menu');
+  });
+});

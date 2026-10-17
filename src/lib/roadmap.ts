@@ -201,7 +201,8 @@ export function buildRoadmap(
     };
   });
 
-  const nothingPicked = filters.categories.length === 0;
+  // 나라로 고르고 있으면 조각은 하나도 켜지 않는다(점은 placeStatus 가 나라로 거른다).
+  const nothingPicked = filters.categories.length === 0 && !(filters.cuisines && filters.cuisines.length > 0);
 
   const wedges: RoadmapWedge[] = CATEGORIES.map((category, i) => {
     const on = filters.categories.includes(category);

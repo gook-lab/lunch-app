@@ -319,3 +319,16 @@ describe('지난번 메뉴 빼기', () => {
     expect(r.candidates.map((p) => p.id)).toEqual(['m1', 'm2', 'm3', 'm4', 'm5']);
   });
 });
+
+describe('나라로 거르기', () => {
+  it('나라 칩이 있으면 메뉴·세부 대신 나라로 거른다', () => {
+    const places = [
+      place('a', { category: '면', sub: '짬뽕·짜장' }),
+      place('b', { category: '면', sub: '라멘·우동' }),
+      place('c', { category: '밥', sub: '덮밥·초밥' }),
+    ];
+    const r = selectCandidates(places, [], filters({ excludeRecent: false, cuisines: ['일식'] }), TODAY);
+    expect(r.candidates.map((p) => p.id)).toEqual(['b', 'c']);
+    expect(r.afterCategoryCount).toBe(2);
+  });
+});

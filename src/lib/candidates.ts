@@ -12,6 +12,7 @@
  */
 
 import { daysBetween, type DayId } from './date';
+import { cuisineOf } from './category';
 
 export interface Place {
   id: string;
@@ -67,6 +68,8 @@ export interface Filters {
   categories: string[];
   /** 켜진 세부 칩. 메뉴 하나를 골랐을 때만 생긴다. 비어 있으면 메뉴로만 거른다. */
   subs?: string[];
+  /** 켜진 나라 칩(한식·중식…). "나라로" 보기에서만 생기고, 있으면 메뉴·세부 대신 이것으로 거른다. */
+  cuisines?: string[];
   /** 최근 방문 제외 칩. 끌 수 있다. */
   excludeRecent: boolean;
   /**
@@ -76,11 +79,12 @@ export interface Filters {
   avoidLastCategory?: boolean;
 }
 
-/** 카테고리 조건에 맞는가. 세부를 골랐으면 세부로, 아니면 메뉴로 본다. */
+/** 카테고리 조건에 맞는가. 나라를 골랐으면 나라로, 세부를 골랐으면 세부로, 아니면 메뉴로 본다. */
 export function matchesCategory(
   place: Pick<Place, 'category' | 'sub'>,
-  filters: Pick<Filters, 'categories' | 'subs'>,
+  filters: Pick<Filters, 'categories' | 'subs' | 'cuisines'>,
 ): boolean {
+  if (filters.cuisines && filters.cuisines.length > 0) return filters.cuisines.includes(cuisineOf(place));
   if (filters.subs && filters.subs.length > 0) return filters.subs.includes(place.sub ?? '');
   return filters.categories.length === 0 || filters.categories.includes(place.category);
 }

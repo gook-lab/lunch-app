@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CATEGORIES, MENUS, categoryFromKakao, categoryHue, categoryIcon, classify, subsOf } from './category';
+import { CATEGORIES, MENUS, categoryFromKakao, categoryHue, categoryIcon, categorySummary, classify, cuisineOf, subsOf } from './category';
 
 describe('categoryFromKakao', () => {
   it('카카오 분류에서 세부를 고른다 — 구체적인 쪽이 이긴다', () => {
@@ -67,5 +67,24 @@ describe('메뉴 표', () => {
         expect(categoryHue(s)).toBe(m.hue);
       }
     }
+  });
+});
+
+describe('나라', () => {
+  it('세부마다 나라가 하나씩 정해져 있다', () => {
+    for (const m of MENUS) for (const sub of m.subs) expect(cuisineOf({ category: m.id, sub })).toMatch(/^(한식|중식|일식|양식|아시안)$/);
+    expect(cuisineOf({ category: '면', sub: '짬뽕·짜장' })).toBe('중식');
+    expect(cuisineOf({ category: '면', sub: '라멘·우동' })).toBe('일식');
+    expect(cuisineOf({ category: '면', sub: '쌀국수' })).toBe('아시안');
+    expect(cuisineOf({ category: '면', sub: '파스타' })).toBe('양식');
+  });
+
+  it('세부가 없으면 메뉴로 — 빵·양식은 양식, 나머지는 한식', () => {
+    expect(cuisineOf({ category: '빵·양식', sub: null })).toBe('양식');
+    expect(cuisineOf({ category: '밥' })).toBe('한식');
+  });
+
+  it('요약은 나라를 먼저 말한다', () => {
+    expect(categorySummary({ categories: [], subs: [], cuisines: ['중식', '일식'] })).toBe('중식·일식');
   });
 });

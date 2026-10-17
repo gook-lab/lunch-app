@@ -111,7 +111,7 @@ export function countWord(n: number): string {
 
 export function gameGate(
   result: CandidateResult,
-  filters: Pick<Filters, 'maxWalkMin' | 'categories'>,
+  filters: Pick<Filters, 'maxWalkMin' | 'categories' | 'cuisines'>,
 ): GameGate | null {
   const count = result.candidates.length;
   if (count >= MIN_GAME_CANDIDATES) return null;
@@ -134,7 +134,10 @@ export function gameGate(
   // 1곳. 사용자가 좁힌 범위 탓이면 넓히기를, 아니면 가게 더 넣기를 권한다.
   // 안 되는 이유보다 무엇이 모자란지를 먼저 말한다. 규칙 문장은 제목이 대신한다.
   const title = '한 곳만 더 있으면 시작할 수 있어요';
-  if (result.afterCategoryCount < result.activeCount && filters.categories.length > 0) {
+  if (
+    result.afterCategoryCount < result.activeCount &&
+    (filters.categories.length > 0 || (filters.cuisines?.length ?? 0) > 0)
+  ) {
     return { title, lines: ['메뉴를 전체로 바꾸면 가게가 더 나와요.'], fix: { kind: 'category' } };
   }
   if (result.activeCount > count && wider) {
