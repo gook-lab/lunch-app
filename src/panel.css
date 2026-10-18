@@ -307,3 +307,23 @@
   .stage:not(.stage--full) > .stage__main > .stage__top > .stage__expand { order: 1; margin-left: auto; }
   .stage:not(.stage--full) > .stage__main > .stage__top > .stage__opts { order: 2; flex-basis: 100%; margin-left: 0; }
 }
+
+/*
+ * 휴대폰 실행 단추 — 게임판 바로 아래 제자리(10/18 리뷰: 늘 떠 있는 단추가 쉬는 화면에서 과녁을 가렸다).
+ * 제자리를 지나 아래로 내려갔을 때만 탭 바 위에 띄운다(RunDock). 상자가 단추 높이를 지켜 화면이 안 출렁인다.
+ */
+@media (max-width: 959px) {
+  .stage__run { position: static; box-shadow: none; }
+  .run-dock { min-height: 50px; }
+  .run-dock--on > .stage__run {
+    position: fixed;
+    left: max(var(--space-4), env(safe-area-inset-left));
+    right: max(var(--space-4), env(safe-area-inset-right));
+    bottom: calc(72px + env(safe-area-inset-bottom) + var(--space-2));
+    z-index: 5;
+    width: auto;
+    box-shadow: var(--shadow-md);
+  }
+  /* 게임 중엔 상태 문구뿐이라 띄우지 않는다. */
+  .stage--busy .run-dock--on > .stage__run { position: static; box-shadow: none; }
+}

@@ -93,6 +93,7 @@ import { ratePromptTarget } from './lib/ratePrompt';
 import { compactGameIds, readRecentGames, rememberGame } from './lib/gameRecents';
 import { shouldShowRatePrompt } from './lib/promptVisibility';
 import { CategoryChips, type CategoryView } from './components/CategoryChips';
+import { RunDock } from './components/RunDock';
 import './App.css';
 // 종이 식권 테마는 App.css 뒤에 — 같은 명시도로 덮는다.
 import './theme.css';
@@ -1590,18 +1591,23 @@ export default function App() {
                   ) : gate ? null : (
                     // 오늘 이미 정했으면 다시 하기는 보조 동작이다. 위 배너가 "정했어요" 라고 하는데
                     // 가장 큰 빨간 버튼이 또 돌리라고 하면 화면이 두 말을 한다(10/9 UI 점검).
-                    <Button
-                      block
-                      className="stage__run"
-                      size={decidedPlace ? 'md' : 'lg'}
-                      variant={decidedPlace ? 'secondary' : 'primary'}
-                      onClick={spin}
-                      disabled={spinning}
-                    >
-                      {spinning
-                        ? '게임 중'
-                        : `${decidedPlace ? '다시 ' : ''}${actionLabel(mode)} (${playable.list.length}곳 중에서)`}
-                    </Button>
+                    (() => {
+                      const runButton = (
+                        <Button
+                          block
+                          className="stage__run"
+                          size={decidedPlace ? 'md' : 'lg'}
+                          variant={decidedPlace ? 'secondary' : 'primary'}
+                          onClick={spin}
+                          disabled={spinning}
+                        >
+                          {spinning
+                            ? '게임 중'
+                            : `${decidedPlace ? '다시 ' : ''}${actionLabel(mode)} (${playable.list.length}곳 중에서)`}
+                        </Button>
+                      );
+                      return wide ? runButton : <RunDock>{runButton}</RunDock>;
+                    })()
                   )}
 
                   {/* 휴대폰은 실행 단추 아래. 데스크톱은 게임 제목 줄 오른쪽(stageOpts). */}
