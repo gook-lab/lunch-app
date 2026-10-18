@@ -41,6 +41,14 @@ describe('활쏘기 사로 배치', () => {
     }
   });
 
+  it('5·6곳은 4열 2줄(4+1·4+2) — 3열로 세 줄 높이가 되지 않게', () => {
+    for (const n of [5, 6]) {
+      const l = rangeLayout(n, seededRandom(n));
+      expect(l.cols).toBe(4);
+      expect(l.rows).toBe(2);
+    }
+  });
+
   it('15곳은 4열, 휴대폰(360px)에서도 과녁 지름 40px 넘게', () => {
     const l = rangeLayout(15, seededRandom(1));
     expect(l.cols).toBe(4);

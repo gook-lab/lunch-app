@@ -50,10 +50,11 @@ export interface RangeLayout {
   line: number;
 }
 
-/** 열 수. 15곳이면 4열 — 390px 에서 칸 폭이 90px 쯤이라 이름표 다섯 글자가 들어간다. */
+/** 열 수. 5~16곳은 4열. 15곳이면 4열 — 390px 에서 칸 폭이 90px 쯤이라 이름표 다섯 글자가 들어간다. */
 export function rangeColumns(count: number): number {
   if (count <= 3) return Math.max(1, count);
-  if (count <= 6) return 3;
+  // 5~6곳은 4열(4+1·4+2, 끝 줄 가운데). 3열×2줄이면 사로가 세로로 길어져 휴대폰 실행 단추가 탭 바에 가렸다(10/18 리뷰).
+  if (count <= 4) return 3;
   if (count <= 16) return 4;
   return 5;
 }
