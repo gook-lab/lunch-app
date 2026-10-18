@@ -29,7 +29,10 @@ export type AppEvent =
   // 함께 고르기를 직접 펼침 — 접어 둔 뒤 실제로 덜 쓰이는지 본다(10/18).
   | 'together_open'
   // 가게 고치기 위치 검색. 검색어는 남기지 않고 결과 유무만.
-  | 'place_search';
+  | 'place_search'
+  // 별점 카드 보임 / 별점 남기기 누름 — placement(top·below)별로 비율을 본다.
+  | 'rate_prompt_view'
+  | 'rate_prompt_open';
 
 export function initAnalytics(): void {
   if (!ON) return;

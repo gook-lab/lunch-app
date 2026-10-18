@@ -1022,6 +1022,9 @@ export default function App() {
     </Button>
   );
   const runControl = wide ? runButton : <RunDock>{runButton}</RunDock>;
+  const ratePrompt = places.length > 0 && shouldShowRatePrompt(tourWasUnseenAtLoad, tourOpen) && (
+    <RatePrompt key={today} today={today} target={rateTarget} ratings={ratings} placement={wide ? 'top' : 'below'} />
+  );
 
   // 판 옵션 두 개(오늘 나온 곳 빼기 · 결과 바로 보기). 이 브라우저에만 남는다.
   const stageOpts = gate ? null : (
@@ -1364,9 +1367,9 @@ export default function App() {
         >
           {/* 게임 중·결과가 나와도 배너를 그대로 둔다. 결과가 나오는 순간 사라지면 아래 화면 전체가
             위로 올라붙었다(10/14 사용자). 새로 "여기로 결정" 을 누르면 배너 내용만 바뀐다. */}
-          {places.length > 0 && shouldShowRatePrompt(tourWasUnseenAtLoad, tourOpen) && (
-            <RatePrompt key={today} today={today} target={rateTarget} ratings={ratings} />
-          )}
+          {/* 휴대폰은 게임 아래(함께 고르기 위)로 옮겼다. 맨 위에 뜨면 판이 130px 내려가 실행 단추가
+            첫 화면 밖으로 밀렸다(10/18 리뷰). 데스크톱은 탭 맨 위 그대로. */}
+          {wide && ratePrompt}
           {decidedPlace && (
             <section className="decided" aria-label="오늘 정한 곳">
               <span className="decided__check" aria-hidden="true">
@@ -1649,7 +1652,8 @@ export default function App() {
                 </div>
               </section>
 
-              {/* 휴대폰은 게임 아래에 함께 고르기를 둔다. 데스크톱은 오른쪽 칸 맨 아래. */}
+              {/* 휴대폰은 게임 아래에 별점 카드·함께 고르기를 둔다. 데스크톱은 오른쪽 칸 맨 아래. */}
+              {!wide && ratePrompt}
               {!wide && together}
 
               {/* 조건은 게임 옆(데스크톱)·아래(휴대폰)에 둔다. 첫 화면은 게임이 차지한다. */}
