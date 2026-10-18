@@ -8,18 +8,26 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 export function RunDock({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const [docked, setDocked] = useState(false);
+  // 띄우기 직전 상자 높이(단추 + 바깥 여백). 띄운 동안 이만큼 자리를 지켜 아래가 당겨 올라오지 않게.
+  const [height, setHeight] = useState<number | undefined>(undefined);
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
     const io = new IntersectionObserver(([entry]) => {
       // 제자리가 화면 위로 지나갔을 때만. 아직 아래에 있으면(판을 보는 중) 띄우지 않는다.
-      setDocked(!entry.isIntersecting && entry.boundingClientRect.top < 0);
+      const next = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+      if (next) setHeight((h) => h ?? entry.boundingClientRect.height);
+      setDocked(next);
     });
     io.observe(el);
     return () => io.disconnect();
   }, []);
   return (
-    <div ref={ref} className={docked ? 'run-dock run-dock--on' : 'run-dock'}>
+    <div
+      ref={ref}
+      className={docked ? 'run-dock run-dock--on' : 'run-dock'}
+      style={docked && height ? { minHeight: height } : undefined}
+    >
       {children}
     </div>
   );

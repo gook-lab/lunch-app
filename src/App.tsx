@@ -94,6 +94,7 @@ import { compactGameIds, readRecentGames, rememberGame } from './lib/gameRecents
 import { shouldShowRatePrompt } from './lib/promptVisibility';
 import { CategoryChips, type CategoryView } from './components/CategoryChips';
 import { RunDock } from './components/RunDock';
+import { menuSummary } from './lib/filterSummary';
 import './App.css';
 // 종이 식권 테마는 App.css 뒤에 — 같은 명시도로 덮는다.
 import './theme.css';
@@ -148,6 +149,15 @@ function formatDay(day: string): string {
   if (!y || !m || !d) return '';
   const w = WEEKDAY[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
   return `${m}월 ${d}일 ${w}요일`;
+}
+
+/** 휴대폰 머리말용 짧은 날짜 "10/8 (목)". 시계·날씨와 한 줄에 들어가게(10/18). */
+function formatDayShort(day: string): string {
+  const m = Number(day.slice(4, 6));
+  const d = Number(day.slice(6, 8));
+  if (!m || !d) return '';
+  const w = WEEKDAY[new Date(Date.UTC(Number(day.slice(0, 4)), m - 1, d)).getUTCDay()];
+  return `${m}/${d} (${w})`;
 }
 
 /**
@@ -272,6 +282,18 @@ export default function App() {
   // 데스크톱(960px~)은 오른쪽 칸에 후보·조건을 펼쳐 두고, 휴대폰은 요약 한 줄 → 시트로 연다.
   const wide = useMedia('(min-width: 960px)');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  /*
+   * 휴대폰 조건 시트는 열 때 방문 기록을 한 칸 쌓는다. 안드로이드 뒤로가기가 화면을 떠나지 않고
+   * 시트만 닫게(10/18). 닫을 땐 그 칸을 되돌린다 — popstate 가 시트를 닫는다.
+   */
+  const openFilters = () => {
+    window.history.pushState({ ...window.history.state, lunchSheet: true }, '');
+    setFiltersOpen(true);
+  };
+  const closeFilters = () => {
+    if (window.history.state?.lunchSheet) window.history.back();
+    else setFiltersOpen(false);
+  };
   const [partyComposeRequest, setPartyComposeRequest] = useState(0);
   // 핀볼 공 개수(가게 id → 개수). 이번 방문 동안만 쓴다. 핀볼일 때만 확률이 된다(lib/weights.ts).
   const [ballCounts, setBallCounts] = useState<Record<string, number>>({});
@@ -868,7 +890,10 @@ export default function App() {
           className="together__toggle"
           aria-expanded={togetherOpen}
           aria-controls="together-body"
-          onClick={() => setTogetherPick(!togetherOpen)}
+          onClick={() => {
+            if (!togetherOpen) track('together_open');
+            setTogetherPick(!togetherOpen);
+          }}
         >
           <span className="together__title">
             <span aria-hidden="true">🙌 </span>함께 고르기
@@ -895,7 +920,7 @@ export default function App() {
     />
   );
   // 오늘의 조건 한 줄. 휴대폰 요약 단추와 데스크톱 고르는 범위가 같은 말을 쓴다.
-  const rangeSummary = `도보 ${filters.maxWalkMin}분${filters.excludeRecent ? ' · 최근 1주 제외' : ''}${
+  const rangeSummary = `${menuSummary(filters)} · 도보 ${filters.maxWalkMin}분${filters.excludeRecent ? ' · 최근 1주 제외' : ''}${
     result.lastCategory?.applied ? ` · ${result.lastCategory.category} 빼기` : ''
   }`;
   const categoryChips = (
@@ -916,7 +941,7 @@ export default function App() {
   );
   const filtersPanel = (
     <>
-      {wide && categoryChips}
+      {categoryChips}
       <CandidateChips result={result} winnerId={winner?.id ?? null} votes={wide ? voteCounts : undefined} />
       {wide && notice && <p className="notice">{notice}</p>}
       {/* 데스크톱 오른쪽 칸에선 범위 정하기도 한 구역으로 묶고 제목을 단다. 점심 팟 바로 아래 붙어
@@ -982,6 +1007,22 @@ export default function App() {
     mode === 'pinball' && boardBalls && winnerIndex !== null && boardBalls.some((n) => n !== boardBalls[0])
       ? { mine: boardBalls[winnerIndex] ?? 1, total: boardBalls.reduce((a, n) => a + n, 0) }
       : null;
+  // 실행 단추. 오늘 이미 정했으면 다시 하기는 보조 동작이라 작은 보조 단추로 낮춘다(10/9 UI 점검).
+  // 휴대폰은 RunDock 이 판 아래 제자리에 두고, 그 자리를 지나 내려갔을 때만 띄운다(10/18).
+  const runButton = (
+    <Button
+      block
+      className="stage__run"
+      size={decidedPlace ? 'md' : 'lg'}
+      variant={decidedPlace ? 'secondary' : 'primary'}
+      onClick={spin}
+      disabled={spinning}
+    >
+      {spinning ? '게임 중' : `${decidedPlace ? '다시 ' : ''}${actionLabel(mode)} (${playable.list.length}곳 중에서)`}
+    </Button>
+  );
+  const runControl = wide ? runButton : <RunDock>{runButton}</RunDock>;
+
   // 판 옵션 두 개(오늘 나온 곳 빼기 · 결과 바로 보기). 이 브라우저에만 남는다.
   const stageOpts = gate ? null : (
     <div className="stage__opts" role="group" aria-label="게임 옵션">
@@ -1211,7 +1252,13 @@ export default function App() {
             {/* 식권 번호(NO. 0287)·"사내 점심 식권" 은 무슨 뜻인지 안 읽혔다(10/14 사용자). 날짜와 한마디만. */}
             {/* 데스크톱은 날씨·시계를 탭 왼쪽으로 옮긴다(10/17 사용자: 머리말 가운데가 비어 보였다). */}
             <p className="app__date">
-              {wide ? '점심 뭐 먹지?' : <>{formatDay(today)} · <LiveClock /></>} {!wide && weather}
+              {wide ? (
+                '점심 뭐 먹지?'
+              ) : (
+                <>
+                  <span aria-label={formatDay(today)}>{formatDayShort(today)}</span> · <LiveClock />
+                </>
+              )} {!wide && weather}
             </p>
             <div className="app__titleRow">
               <h1>{TAB_TITLE[tab]}</h1>
@@ -1363,7 +1410,7 @@ export default function App() {
                     type="button"
                     className="today__summary"
                     aria-haspopup="dialog"
-                    onClick={() => setFiltersOpen(true)}
+                    onClick={openFilters}
                   >
                     <span className="today__summaryMain">고를 가게 {result.candidates.length}곳</span>
                     {/* 카테고리는 바로 아래 칩이 보여 준다. 여기까지 쓰면 휴대폰에서 잘렸다(10/14). */}
@@ -1374,8 +1421,8 @@ export default function App() {
                   </button>
                 )}
                 {wide && modebar}
-                {/* 데스크톱은 메뉴 칩을 오른쪽 칸(고를 가게)으로 옮겨 판에 한 줄을 더 준다(10/18 UI 점검). */}
-                {!expanded && !wide && categoryChips}
+                {/* 메뉴 칩은 판 위에 두지 않는다. 데스크톱은 오른쪽 칸(고를 가게), 휴대폰은 바꾸기 시트 안(10/18).
+                  휴대폰 첫 화면에 판과 실행 단추가 같이 보이게 하려는 것 — 지금 고른 메뉴는 요약 줄이 말한다. */}
                 {!wide && modebar}
                 {/* 데스크톱에선 판·실행·예측을 한 세로 칸으로 묶어 판이 남는 높이를 다 쓴다. 휴대폰·크게 보기에선 display: contents 라 없는 것과 같다. */}
                 <div className="stage__main">
@@ -1591,23 +1638,7 @@ export default function App() {
                   ) : gate ? null : (
                     // 오늘 이미 정했으면 다시 하기는 보조 동작이다. 위 배너가 "정했어요" 라고 하는데
                     // 가장 큰 빨간 버튼이 또 돌리라고 하면 화면이 두 말을 한다(10/9 UI 점검).
-                    (() => {
-                      const runButton = (
-                        <Button
-                          block
-                          className="stage__run"
-                          size={decidedPlace ? 'md' : 'lg'}
-                          variant={decidedPlace ? 'secondary' : 'primary'}
-                          onClick={spin}
-                          disabled={spinning}
-                        >
-                          {spinning
-                            ? '게임 중'
-                            : `${decidedPlace ? '다시 ' : ''}${actionLabel(mode)} (${playable.list.length}곳 중에서)`}
-                        </Button>
-                      );
-                      return wide ? runButton : <RunDock>{runButton}</RunDock>;
-                    })()
+                    runControl
                   )}
 
                   {/* 휴대폰은 실행 단추 아래. 데스크톱은 게임 제목 줄 오른쪽(stageOpts). */}
@@ -1637,13 +1668,13 @@ export default function App() {
 
         <Sheet
           open={filtersOpen && !wide && tab === 'roadmap'}
-          onClose={() => setFiltersOpen(false)}
+          onClose={closeFilters}
           title={`고를 가게 ${result.candidates.length}곳`}
           className="filters-sheet"
         >
           {/* 데스크톱은 오른쪽 칸에 이미 그린다. 닫힌 시트에 한 벌 더 그리지 않는다. */}
           {!wide && filtersPanel}
-          <Button block variant="secondary" onClick={() => setFiltersOpen(false)}>
+          <Button block variant="secondary" onClick={closeFilters}>
             이대로 할게요
           </Button>
         </Sheet>

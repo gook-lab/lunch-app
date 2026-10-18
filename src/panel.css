@@ -327,3 +327,41 @@
   /* 게임 중엔 상태 문구뿐이라 띄우지 않는다. */
   .stage--busy .run-dock--on > .stage__run { position: static; box-shadow: none; }
 }
+
+/*
+ * 휴대폰 첫 화면 압축(10/18) — 판과 실행 단추가 첫 화면에 같이 보이게.
+ * 날짜·시계·날씨는 한 줄(조언 문구는 뺀다), 데모 안내도 한 줄.
+ * 조건 요약은 "고를 가게 N곳 · 바꾸기" 한 줄 + 고른 값(메뉴·도보·최근 제외) 한 줄 — 잘리지 않게 접어 쓴다.
+ */
+@media (max-width: 959px) {
+  .app__date { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; white-space: nowrap; min-width: 0; }
+  .app__date .weather-line { flex-wrap: nowrap; min-width: 0; }
+  .app__date .weather-line__hint { display: none; }
+  .demo-note { flex-wrap: nowrap; white-space: nowrap; }
+  .today__summary {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'main go' 'rest rest';
+    row-gap: 2px;
+  }
+  .today__summaryMain { grid-area: main; }
+  .today__summaryGo { grid-area: go; }
+  .today__summaryRest { grid-area: rest; white-space: normal; }
+  /* 시트가 떠 있는 동안 뒤 화면이 같이 스크롤되지 않게. */
+  html:has(dialog.filters-sheet[open]) { overflow: hidden; }
+}
+@media (max-width: 959px) {
+  .app__date .weather-line__nearMore { display: none; }
+  .app__date .weather-line__near { min-width: 44px; font-size: var(--fs-xs); }
+  .demo-note__text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .demo-note .linkish { flex: none; }
+}
+@media (max-width: 959px) {
+  /* 누를 자리는 44px 그대로, 줄 높이엔 넣지 않는다(데모 안내 단추와 같은 방식). */
+  .app__date .weather-line__near { margin-block: -12px; }
+  .app { row-gap: var(--space-3); }
+}
+/* 단추 바깥 여백은 상자가 갖는다. 단추가 fixed 로 빠져도 상자 높이(RunDock 이 잰 값)가 그대로라 아래가 안 움직인다. */
+@media (max-width: 959px) {
+  .run-dock { padding-top: var(--space-2); }
+  .run-dock > .stage__run { margin-top: 0; }
+}

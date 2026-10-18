@@ -25,7 +25,11 @@ export type AppEvent =
   | 'party_join'
   | 'party_game'
   | 'party_guess'
-  | 'cat_view';
+  | 'cat_view'
+  // 함께 고르기를 직접 펼침 — 접어 둔 뒤 실제로 덜 쓰이는지 본다(10/18).
+  | 'together_open'
+  // 가게 고치기 위치 검색. 검색어는 남기지 않고 결과 유무만.
+  | 'place_search';
 
 export function initAnalytics(): void {
   if (!ON) return;

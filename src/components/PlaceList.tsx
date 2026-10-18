@@ -23,6 +23,7 @@ import { RECENT_WINDOW_DAYS } from '../lib/candidates';
 import { daysBetween, type DayId } from '../lib/date';
 import { officeCoord, walkMinutesBetween } from '../lib/walk';
 import { searchPlacesNear, type PlaceHit } from '../services/placeSearch';
+import { track } from '../lib/analytics';
 import { updatePlace } from '../services/lunch';
 import type { RatingSummary } from '../lib/ratings';
 import { RatingBadge, RatingEditor, RatingReviews } from './Rating';
@@ -165,9 +166,11 @@ function EditRow({ place, onDone }: { place: Place; onDone: () => void }) {
     setSearchNote(null);
     try {
       const found = await searchPlacesNear(q, officeCoord());
+      track('place_search', { result: found.length > 0 ? 'hit' : 'none' });
       setHits(found);
       if (found.length === 0) setSearchNote('회사 근처에서 찾지 못했어요. 주소로 다시 찾아 보세요.');
     } catch {
+      track('place_search', { result: 'unavailable' });
       setHits(null);
       setSearchNote('여기선 검색을 쓸 수 없어요. 아래 고급에서 좌표를 넣거나 지도 탭에서 가게를 옮겨 주세요.');
       setAdvOpen(true);

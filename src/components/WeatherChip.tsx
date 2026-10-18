@@ -50,8 +50,14 @@ export function WeatherChip({ office, nearOn = false, onSetWalkFilter, variant =
         </span>
         {hint && <span className="weather-line__hint">{hint.message}</span>}
         {near && (
-          <button type="button" className="linkish weather-line__near" onClick={() => onSetWalkFilter(5)}>
-            5분 안 가게만 보기
+          // 휴대폰 머리말 한 줄에선 "5분 안" 만 보인다(10/18). 읽는 이름은 늘 전체 문구.
+          <button
+            type="button"
+            className="linkish weather-line__near"
+            aria-label="5분 안 가게만 보기"
+            onClick={() => onSetWalkFilter(5)}
+          >
+            5분 안<span className="weather-line__nearMore"> 가게만 보기</span>
           </button>
         )}
       </span>

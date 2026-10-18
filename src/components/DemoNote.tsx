@@ -21,8 +21,10 @@ export function DemoNote() {
   return (
     <p className="demo-note">
       <span aria-hidden="true">🧪 </span>
-      {/* 휴대폰에서 두 줄을 먹어 첫 화면이 밀렸다(10/14). 한 줄로. 가게가 예시라는 건 "데모" 로 충분하다. */}
-      {asking ? '넣은 가게와 기록을 다 지울까요?' : '체험 중에 넣은 가게와 기록은 이 브라우저에만 남아요.'}
+      {/* 휴대폰에서 두 줄을 먹어 첫 화면이 밀렸다(10/14·10/18). "처음부터 다시" 까지 한 줄에 들어가게 짧게. */}
+      <span className="demo-note__text">
+        {asking ? '넣은 가게와 기록을 다 지울까요?' : '체험 기록은 이 브라우저에만 남아요.'}
+      </span>
       {dirty &&
         (asking ? (
           <>

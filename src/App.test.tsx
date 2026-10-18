@@ -735,9 +735,17 @@ describe('게임 방식 레일의 Tab 순서', () => {
     expect(before(screen.getByRole('group', { name: '방식' }), screen.getByRole('group', { name: '메뉴 고르기' }))).toBe(true);
   });
 
-  it('휴대폰은 메뉴 칩 아래에 보이므로 DOM 도 칩 뒤다', () => {
+  it('휴대폰은 메뉴 칩이 바꾸기 시트 안에 있고, 고르면 요약 줄이 바로 바뀐다', () => {
     render(<App />);
-    expect(before(screen.getByRole('group', { name: '메뉴 고르기' }), screen.getByRole('group', { name: '방식' }))).toBe(true);
+    // 첫 화면엔 칩이 없고 요약이 고른 값을 말한다.
+    expect(screen.queryByRole('group', { name: '메뉴 고르기' })).toBeNull();
+    const summary = document.querySelector('.today__summary') as HTMLButtonElement;
+    expect(summary.textContent).toContain('전체 메뉴');
+    fireEvent.click(summary);
+    const chips = screen.getByRole('group', { name: '메뉴 고르기' });
+    expect(chips.closest('dialog')).not.toBeNull();
+    fireEvent.click(within(chips).getByRole('button', { name: /^면/ }));
+    expect(document.querySelector('.today__summary')?.textContent).toContain('면 · 도보');
   });
 });
 
