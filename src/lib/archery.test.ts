@@ -41,6 +41,18 @@ describe('활쏘기 사로 배치', () => {
     }
   });
 
+  it('1~8곳은 사로 비율이 같다 — 적은 곳도 4열 크기로 가운데, 판 높이가 출렁이지 않게', () => {
+    const base = rangeLayout(7, seededRandom(7));
+    for (const n of [1, 2, 3, 4, 5, 6, 8]) {
+      const l = rangeLayout(n, seededRandom(n));
+      expect(l.aspect).toBeCloseTo(base.aspect, 6);
+      expect(l.size).toBeCloseTo(base.size, 6);
+    }
+    // 두 곳이면 가운데 두 칸.
+    const two = rangeLayout(2, () => 0.5);
+    expect(two.targets.map((t) => Math.round(t.x))).toEqual([38, 63]);
+  });
+
   it('5·6곳은 4열 2줄(4+1·4+2) — 3열로 세 줄 높이가 되지 않게', () => {
     for (const n of [5, 6]) {
       const l = rangeLayout(n, seededRandom(n));

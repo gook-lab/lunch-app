@@ -15,8 +15,10 @@
 /* ───────── 사로 배치 ───────── */
 
 /** 하늘 띠 · 과녁 한 줄 · 궁수 띠 높이(단위 u = 칸 폭). */
-const SKY_U = 0.42;
-const ROW_U = 0.86;
+// 하늘 띠를 조금 덜어 과녁 줄 사이에 준다 — 두 줄 이름표가 아래 줄 과녁에 닿지 않게(10/18).
+// 두 줄 사로 높이(0.36 + 0.89×2 + 1.05)는 전과 같아 판 비율·실행 단추 자리가 그대로다.
+const SKY_U = 0.36;
+const ROW_U = 0.89;
 const ARCHER_U = 1.05;
 /** 과녁 지름(칸 폭 u 에 곱함). 이름표는 칸 폭의 0.82 까지. */
 const TARGET_U = 0.5;
@@ -50,22 +52,27 @@ export interface RangeLayout {
   line: number;
 }
 
-/** 열 수. 5~16곳은 4열. 15곳이면 4열 — 390px 에서 칸 폭이 90px 쯤이라 이름표 다섯 글자가 들어간다. */
+/**
+ * 열 수. 16곳까지는 4열 — 390px 에서 칸 폭이 90px 쯤이라 이름표 다섯 글자가 들어간다.
+ * 적은 곳(1~4)도 4열 칸 크기로 한 줄에 가운데 둔다. 열을 줄이면 과녁이 커지며 사로가 세로로 길어져
+ * 휴대폰 실행 단추가 탭 바에 가렸다(5~6곳·2~3곳, 10/18 리뷰).
+ */
 export function rangeColumns(count: number): number {
-  if (count <= 3) return Math.max(1, count);
-  // 5~6곳은 4열(4+1·4+2, 끝 줄 가운데). 3열×2줄이면 사로가 세로로 길어져 휴대폰 실행 단추가 탭 바에 가렸다(10/18 리뷰).
-  if (count <= 4) return 3;
-  if (count <= 16) return 4;
-  return 5;
+  return count <= 16 ? 4 : 5;
 }
+
+/** 과녁 줄 높이는 적어도 두 줄 — 1~4곳도 5~8곳과 같은 사로 비율이라 판 크기가 후보 수마다 출렁이지 않는다. */
+const MIN_ROWS = 2;
 
 /** 과녁 자리와 흔들림 박자. 같은 rng 면 같은 사로다. */
 export function rangeLayout(count: number, rng: () => number = Math.random): RangeLayout {
   const cols = rangeColumns(count);
   const rows = Math.max(1, Math.ceil(count / cols));
-  // 칸 크기는 2.5열보다 크게 하지 않는다 — 두 곳이면 과녁이 판 절반을 덮었다.
-  const u = 1 / Math.max(cols, 2.5);
-  const heightU = SKY_U + rows * ROW_U + ARCHER_U;
+  const u = 1 / cols;
+  const bandRows = Math.max(rows, MIN_ROWS);
+  // 줄이 모자라면(1~4곳) 과녁 줄을 띠 가운데로 내린다.
+  const rowOffset = (bandRows - rows) / 2;
+  const heightU = SKY_U + bandRows * ROW_U + ARCHER_U;
   const aspect = 1 / (heightU * u);
   const cellW = 100 / cols;
   const targets: Target[] = [];
@@ -76,7 +83,8 @@ export function rangeLayout(count: number, rng: () => number = Math.random): Ran
     const x0 = (100 - inRow * cellW) / 2 + (c + 0.5) * cellW;
     targets.push({
       x: x0 + (rng() - 0.5) * cellW * 0.06,
-      y: ((SKY_U + (r + 0.36) * ROW_U) / heightU) * 100,
+      // 과녁은 줄 위쪽에 — 아래에 두 줄 이름표가 들어갈 자리를 남긴다(10/18).
+      y: ((SKY_U + (r + rowOffset + 0.28) * ROW_U) / heightU) * 100,
       slide: u * 100 * (0.025 + rng() * 0.02),
       periodMs: Math.round(2400 + rng() * 1600),
       delayMs: -Math.round(rng() * 3000),

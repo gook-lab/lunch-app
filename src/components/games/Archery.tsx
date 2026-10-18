@@ -138,7 +138,8 @@ export function Archery({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
   const winner = winnerIndex === null ? null : candidates[winnerIndex];
   const finalShot = shots.at(-1) ?? null;
   const splitDone = finalShot?.kind === 'split' && (phase === 'settle' || (shot === finalShot && phase === 'impact'));
-  const nameMax = expanded ? 8 : layout.cols >= 4 ? 6 : 8;
+  // 이름표는 두 줄까지(10/18 리뷰) — 한 줄 6자에서 '한 그릇 …' 처럼 잘렸다. 줄은 CSS 가 접는다.
+  const nameMax = expanded ? 16 : 12;
   const name = (i: number | null) => (i === null ? '' : shortName(candidates[i].name, 10));
 
   /** 이 발이 지금 꽂혀 있는가(닿은 뒤부터 판 끝까지). */
@@ -355,7 +356,7 @@ export function Archery({ candidates, winnerIndex, spinning, run, onSpinEnd, exp
                     </span>
                   )}
                 </span>
-                <span className="archery__tag" aria-hidden="true">
+                <span className="archery__tag" aria-hidden="true" title={p.name}>
                   {shortName(p.name, isWin ? 12 : nameMax)}
                 </span>
               </div>

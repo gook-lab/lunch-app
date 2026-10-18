@@ -74,7 +74,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 1px;
   width: calc(var(--cell-w) * 0.82);
   transform: translate(-50%, calc(var(--size) * -0.5));
   animation: archery-slide var(--period) var(--ease-inout) var(--delay) infinite alternate;
@@ -121,10 +121,16 @@
   color: var(--color-text);
   font-size: var(--fs-xs);
   font-weight: 700;
-  line-height: 1.4;
-  white-space: nowrap;
+  /* 두 줄까지 — 줄 높이를 줄여 두 줄이어도 아래 줄 과녁 위에 닿지 않게(390px 4열에서 실측). */
+  line-height: 1.08;
+  text-align: center;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 .archery--big .archery__tag { font-size: var(--fs-sm); }
 .archery__target--wobble .archery__face { animation: archery-wobble 420ms var(--ease-out); }
@@ -135,6 +141,9 @@
   transition: scale 300ms var(--ease-out);
 }
 .archery__target--win .archery__tag {
+  /* 당첨 이름표는 한 줄로 넓게(12자). */
+  display: block;
+  white-space: nowrap;
   max-width: none;
   border-color: var(--color-accent);
   background: var(--color-accent);
