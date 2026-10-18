@@ -260,4 +260,18 @@ describe('보물찾기', () => {
     expect(tag.length).toBeLessThanOrEqual(6);
     expect(r.container.querySelector('.treasure__spot')?.getAttribute('title')).toBe('아주아주 긴 가게 이름 1');
   });
+
+  it('상자를 열면 보물이 도감에 들고, 당첨 X 는 그대로다', () => {
+    localStorage.clear();
+    const onSpinEnd = vi.fn();
+    const r = render(<Treasure candidates={places(5)} winnerIndex={2} spinning run={4} onSpinEnd={onSpinEnd} />);
+    tick(planFor(5, 2, 4).endMs + 100);
+    expect(onSpinEnd).toHaveBeenCalledTimes(1);
+    expect(openTreasures(r.container)).toEqual(['가게3']);
+    const dex = JSON.parse(localStorage.getItem('lunch-app:treasure-dex') ?? '{}').found as string[];
+    expect(dex.length).toBeGreaterThan(0);
+    // 끝 장면에 찾은 보물 이름과 처음 찾은 소식이 보인다.
+    expect(r.container.querySelector('.treasure__found')?.textContent).toBeTruthy();
+    expect(r.container.querySelector('.treasure__news')?.textContent).toMatch(/새 보물/);
+  });
 });

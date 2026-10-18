@@ -9,7 +9,8 @@
  * → 점선을 따라 깡총 걸어감(카메라가 따라감) → 파바박 → (꽃게가 집음) → 나온 것(꽝·낡은 장화·동전 한 닢·미믹).
  * 마지막 구덩이는 (텅 빈 줄 알았는데 더 판다) → 상자가 솟고 → 금빛과 함께 열리며 동전이 쏟아진 뒤 onSpinEnd 를 한 번 부른다.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Button, Sheet } from '@gook-lab/ui';
 import { useAmbience } from '../../hooks/useAmbience';
 import type { AmbienceSeason } from '../../lib/ambience';
 import { SceneWeather } from './scene/SceneWeather';
@@ -31,6 +32,21 @@ import {
   type DigPhase,
   type MapLayout,
 } from '../../lib/treasure';
+import { specialsFor } from '../../lib/fishDex';
+import {
+  getTreasureDex,
+  recordTreasures,
+  TREASURE_EMOJI,
+  TREASURE_GROUP_LABEL,
+  TREASURE_GROUPS,
+  TREASURE_KINDS,
+  TREASURE_TOTAL,
+  treasureGroupComplete,
+  treasureKindFor,
+  treasureName,
+  treasureNews,
+  type TreasureId,
+} from '../../lib/treasureDex';
 import { prefersReducedMotion, type GameProps } from './types';
 import './Treasure.css';
 
@@ -79,6 +95,30 @@ export function Treasure({ candidates, winnerIndex, spinning, run, onSpinEnd, ex
   const ambience = useAmbience();
   const count = candidates.length;
   const [state, setState] = useState<TreasureState>({ run: -1, dig: -1, phase: 'intro' });
+  /*
+   * 보물 도감(10/18) — 상자 속 보물은 판 번호 시드로 정하는 연출이다. 당첨과 상관없다.
+   * 계절 보물 하나, 특별한 날(비·눈·안개·금요일)이면 그날 보물도 함께 든다.
+   */
+  const specials = specialsFor(ambience);
+  const kind = useMemo(() => treasureKindFor(seededRandom(run * 31 + 7)), [run]);
+  const found = [`${ambience.season}-${kind}`, ...specials.map((sp) => `${sp}-${kind}`)] as TreasureId[];
+  const [showDex, setShowDex] = useState(false);
+  const [news, setNews] = useState<{ run: number; text: string; big: boolean } | null>(null);
+  // 끝 타이머가 판 도중 바뀐 날씨에 다시 걸리지 않게, 기록할 보물은 ref 로 읽는다.
+  const foundRef = useRef(found);
+  useEffect(() => {
+    foundRef.current = found;
+  });
+  const collect = (forRun: number) => {
+    const before = getTreasureDex();
+    recordTreasures(foundRef.current);
+    const n = treasureNews(before, foundRef.current);
+    if (n) setNews({ run: forRun, ...n });
+  };
+  const collectRef = useRef(collect);
+  useEffect(() => {
+    collectRef.current = collect;
+  });
   const layout = useMemo(() => treasureLayout(count, seededRandom(LAYOUT_SEED + count)), [count]);
   // 일정은 판 번호 시드라 몇 번 계산해도 같다. 구덩이·길을 그리려고 렌더에서도 쓴다.
   const plan = useMemo(
@@ -92,7 +132,10 @@ export function Treasure({ candidates, winnerIndex, spinning, run, onSpinEnd, ex
     if (prefersReducedMotion() || !plan) {
       // 움직임 줄이기(또는 한 곳뿐)면 파는 장면 없이 열린 보물 상자만 보인다.
       setState({ run, dig: plan ? plan.digs.length - 1 : 0, phase: 'settle' });
-      const t = window.setTimeout(onSpinEnd, 0);
+      const t = window.setTimeout(() => {
+        collectRef.current(run);
+        onSpinEnd();
+      }, 0);
       return () => window.clearTimeout(t);
     }
 
@@ -104,7 +147,12 @@ export function Treasure({ candidates, winnerIndex, spinning, run, onSpinEnd, ex
       timers.push(window.setTimeout(() => setState((s) => (s.run === run ? { ...s, dig, phase } : s)), ms));
     for (const e of timeline(plan)) at(e.ms, e.dig, e.phase);
     at(plan.settleMs, plan.digs.length - 1, 'settle');
-    timers.push(window.setTimeout(onSpinEnd, plan.endMs));
+    timers.push(
+      window.setTimeout(() => {
+        collectRef.current(run);
+        onSpinEnd();
+      }, plan.endMs),
+    );
 
     const sounds: [number, TreasureSfxName | SfxName][] = [[40, 'unroll']];
     plan.digs.forEach((d) => {
@@ -462,10 +510,75 @@ export function Treasure({ candidates, winnerIndex, spinning, run, onSpinEnd, ex
           )}
         </div>
       </div>
-      <p className="treasure__status" aria-live="polite">
-        {status}
-      </p>
+      <div className="treasure__controls">
+        <p className="treasure__status" aria-live="polite">
+          {status}
+        </p>
+        <p className={news?.big ? 'treasure__news treasure__news--big' : 'treasure__news'} role="status">
+          {news && news.run === run && phase === 'settle' ? news.text : ''}
+        </p>
+        {phase === 'settle' && winnerIndex !== null && (
+          <span className="treasure__found">
+            {found.map((id) => (
+              <span key={id}>
+                {TREASURE_EMOJI[kind]} {treasureName(id)}{' '}
+              </span>
+            ))}
+          </span>
+        )}
+        <Button variant="secondary" size="sm" onClick={() => setShowDex(true)}>
+          도감
+        </Button>
+      </div>
+      <TreasureDexSheet open={showDex} onClose={() => setShowDex(false)} />
     </div>
+  );
+}
+
+/** 보물 도감 — 계절 넷·특별한 날 넷 × 일곱 가지 = 56칸. 찾은 것만 이름이 보인다. */
+function TreasureDexSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const seen = new Set(open ? getTreasureDex() : []);
+  return (
+    <Sheet open={open} onClose={onClose} title="보물 도감">
+      <div className="treasure-dex">
+        <p className="treasure-dex__count">
+          {seen.size >= TREASURE_TOTAL ? (
+            <>
+              🏆 <strong>도감을 다 채웠어요!</strong> {TREASURE_TOTAL}개 전부 찾은 보물왕이에요.
+            </>
+          ) : (
+            <>
+              {TREASURE_TOTAL}개 중 <strong>{seen.size}개</strong>를 찾았어요. 계절마다, 비·눈·안개 오는 날과 금요일엔 특별한 보물이 나와요.
+            </>
+          )}
+        </p>
+        {TREASURE_GROUPS.map((g) => (
+          <section key={g} className="treasure-dex__group" aria-label={`${TREASURE_GROUP_LABEL[g]} 보물`}>
+            <h3 className="treasure-dex__title">
+              {TREASURE_GROUP_LABEL[g]}
+              {treasureGroupComplete(seen, g) && <span className="treasure-dex__done"> · 다 모았어요 ✓</span>}
+            </h3>
+            <ul className="treasure-dex__grid">
+              {TREASURE_KINDS.map((k) => {
+                const id = `${g}-${k}` as TreasureId;
+                const got = seen.has(id);
+                return (
+                  <li key={id} className={got ? 'treasure-dex__item treasure-dex__item--found' : 'treasure-dex__item'}>
+                    <span className="treasure-dex__icon" aria-hidden="true">
+                      {got ? TREASURE_EMOJI[k] : '?'}
+                    </span>
+                    <span className="treasure-dex__name">{got ? treasureName(id) : '아직 못 찾았어요'}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))}
+      </div>
+      <Button variant="secondary" onClick={onClose}>
+        닫기
+      </Button>
+    </Sheet>
   );
 }
 
