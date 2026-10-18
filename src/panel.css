@@ -259,3 +259,51 @@
   cursor: pointer;
 }
 .edit__adv[open] > summary { margin-bottom: var(--space-2); }
+
+/*
+ * 데스크톱 무대 밀도(10/18 UI 점검) — 1280px 에서 가운데 판 안 게임 그림이 작아 좌우가 비어 보였다.
+ * 게임은 판 높이에 맞춰 크므로(desktop.css 크게 보기 규칙) 높이를 늘린다:
+ * 메뉴 칩 줄은 오른쪽 칸(고를 가게)으로 옮기고, 제목 줄·판·실행 단추 사이를 촘촘하게.
+ * 레일·오른쪽 칸 폭은 그대로 둔다.
+ */
+@media (min-width: 960px) {
+  .today > .stage:not(.stage--full) { grid-template-rows: minmax(0, 1fr); padding-block: var(--space-3); }
+  .stage:not(.stage--full) > .modebar { grid-row: 1; }
+  .stage:not(.stage--full) > .stage__main { grid-row: 1; grid-column: 2; padding-top: 0; gap: var(--space-2); }
+  /* 크게 보기는 메뉴 칩 줄 오른쪽에 떠 있었다. 줄이 빠졌으니 제목 줄 끝에 붙인다. */
+  .stage:not(.stage--full) .stage__expand { position: relative; top: auto; right: auto; margin-left: var(--space-2); }
+  .stage:not(.stage--full) > .stage__main > .stage__top { min-height: 36px; gap: var(--space-2) var(--space-3); }
+  .stage:not(.stage--full) > .stage__main > .stage__top > .stage__opts { flex-wrap: nowrap; }
+  .stage:not(.stage--full) > .stage__main > .stage__run,
+  .stage:not(.stage--full) > .stage__main > .result-bar { margin-top: var(--space-1); }
+  /* 오른쪽 칸 맨 위 — 메뉴 칩이 고를 가게 칩 바로 위에서 거름 역할을 한다. */
+  .today__filters > .catbar-wrap { margin: 0; }
+}
+/* 노트북 폭 — 날씨 조언·5분 단추까지 넣으면 제목이 "오늘 / 점심" 두 줄로 접혔다(10/18). 1380px 아래에선 뺀다. */
+@media (min-width: 960px) and (max-width: 1379px) {
+  .topbar__now .weather-line__hint, .topbar__now .weather-line__near { display: none; }
+}
+@media (min-width: 960px) {
+  .app__header .app__titleRow { flex-wrap: nowrap; white-space: nowrap; }
+}
+
+/* 휴대폰 게임 선택 — 접힌 6개는 3칸×2줄로 폭에 맞춘다. 넘기기는 전체 게임 보기를 편 뒤에만(안내 줄과 함께). */
+@media (max-width: 959px) {
+  .modebar-shell:has(.modebar__more[aria-expanded='false']) .modebar {
+    grid-auto-columns: minmax(0, 1fr);
+    overflow-x: visible;
+  }
+  /* 펼친 목록: 오른쪽 끝을 흐려 더 있다는 걸 칸 잘림 말고도 보여 준다. 끝까지 넘기면 여백이 받친다. */
+  .modebar-shell:has(.modebar__more[aria-expanded='true']) .modebar {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+    padding-right: 24px;
+  }
+  /* 게임 중엔 실행 단추가 "게임 중" 상태 문구뿐이다. 화면 아래에 떠서 판을 가리지 않게 제자리에 둔다(10/18). */
+  .stage--busy .stage__run { position: static; box-shadow: none; }
+}
+/* 좁은 데스크톱(960~1199px) — 제목 줄이 세 줄로 접혔다. 크게 보기는 제목 옆, 옵션 두 개는 그 아래 한 줄. */
+@media (min-width: 960px) and (max-width: 1199px) {
+  .stage:not(.stage--full) > .stage__main > .stage__top > .stage__expand { order: 1; margin-left: auto; }
+  .stage:not(.stage--full) > .stage__main > .stage__top > .stage__opts { order: 2; flex-basis: 100%; margin-left: 0; }
+}

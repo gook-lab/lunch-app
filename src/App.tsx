@@ -897,8 +897,25 @@ export default function App() {
   const rangeSummary = `도보 ${filters.maxWalkMin}분${filters.excludeRecent ? ' · 최근 1주 제외' : ''}${
     result.lastCategory?.applied ? ` · ${result.lastCategory.category} 빼기` : ''
   }`;
+  const categoryChips = (
+    <CategoryChips
+      places={places}
+      selected={filters.categories}
+      subs={filters.subs ?? []}
+      onToggle={toggleCategory}
+      onToggleSub={toggleSub}
+      onClear={clearCategories}
+      onClearSubs={() => updateFilters((f) => ({ ...f, subs: [] }))}
+      disabled={spinning}
+      view={catView}
+      onView={switchCatView}
+      cuisines={filters.cuisines ?? []}
+      onToggleCuisine={toggleCuisine}
+    />
+  );
   const filtersPanel = (
     <>
+      {wide && categoryChips}
       <CandidateChips result={result} winnerId={winner?.id ?? null} votes={wide ? voteCounts : undefined} />
       {wide && notice && <p className="notice">{notice}</p>}
       {/* 데스크톱 오른쪽 칸에선 범위 정하기도 한 구역으로 묶고 제목을 단다. 점심 팟 바로 아래 붙어
@@ -1084,8 +1101,9 @@ export default function App() {
    * Tab 이 오른쪽 메뉴 칩을 다 지난 뒤에 왼쪽 레일로 되돌아갔다(10/15 리뷰). 휴대폰은 칩 아래에
    * 보이므로 DOM 도 칩 뒤다. 자리(grid)는 CSS 가 정하므로 화면은 그대로다.
    */
-  const compactModes = compactGameIds(mode, recentGames, RECOMMENDED_MODE_IDS, 8, ['pinball', 'tournament']);
+  const compactModes = compactGameIds(mode, recentGames, RECOMMENDED_MODE_IDS, wide ? 8 : 6, ['pinball', 'tournament']);
   // 데스크톱 레일도 추천·최근 8개만 먼저 보이고 나머지는 전체 게임 보기 아래에 둔다(10/17 정보 위계).
+  // 휴대폰은 6개 — 3칸×2줄이 화면 폭에 다 들어가 접힌 상태에선 옆으로 넘길 게 없다(토너먼트가 반쯤 잘렸다, 10/18).
   const visibleModes = showAllGames ? GAME_MODES : GAME_MODES.filter((item) => compactModes.includes(item.id));
   const hiddenGameCount = GAME_MODES.length - compactModes.length;
   const modeButtons = (
@@ -1355,22 +1373,8 @@ export default function App() {
                   </button>
                 )}
                 {wide && modebar}
-                {!expanded && (
-                  <CategoryChips
-                    places={places}
-                    selected={filters.categories}
-                    subs={filters.subs ?? []}
-                    onToggle={toggleCategory}
-                    onToggleSub={toggleSub}
-                    onClear={clearCategories}
-                    onClearSubs={() => updateFilters((f) => ({ ...f, subs: [] }))}
-                    disabled={spinning}
-                    view={catView}
-                    onView={switchCatView}
-                    cuisines={filters.cuisines ?? []}
-                    onToggleCuisine={toggleCuisine}
-                  />
-                )}
+                {/* 데스크톱은 메뉴 칩을 오른쪽 칸(고를 가게)으로 옮겨 판에 한 줄을 더 준다(10/18 UI 점검). */}
+                {!expanded && !wide && categoryChips}
                 {!wide && modebar}
                 {/* 데스크톱에선 판·실행·예측을 한 세로 칸으로 묶어 판이 남는 높이를 다 쓴다. 휴대폰·크게 보기에선 display: contents 라 없는 것과 같다. */}
                 <div className="stage__main">

@@ -529,6 +529,8 @@ describe('사다리 — 사용자가 고르는 출발점', () => {
 describe('카드 뒤집기 — 사용자가 고르는 카드', () => {
   it('딜러가 섞은 뒤 나머지가 먼저 꽝으로 뒤집히고, 고른 카드가 마지막에 뒤집혀 결과 카드와 같다', () => {
     render(<App />);
+    // 휴대폰 접힌 게임 목록은 6개라 카드는 전체 게임 보기 안에 있다.
+    fireEvent.click(screen.getByRole('button', { name: /전체 게임 보기/ }));
     fireEvent.click(screen.getByRole('button', { name: '카드' }));
     const cards = screen.getAllByRole('button', { name: /번 카드 고르기$/ });
     expect(cards.length).toBeGreaterThan(1);
