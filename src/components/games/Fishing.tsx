@@ -14,7 +14,8 @@
  * 도감: 낚은 물고기 종류를 localStorage 에 기록하고, 도감 버튼으로 본다.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Sheet } from '@gook-lab/ui';
+import { Button } from '@gook-lab/ui';
+import { DexSheet } from './DexSheet';
 import { shortName } from '../../lib/name';
 import { withJosa } from '../../lib/josa';
 import { fishingPlan, fishLooks, FISH_SPECIES, pondLayout, SKY } from '../../lib/fishing';
@@ -334,44 +335,32 @@ function FishDexSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (op
   const total = kinds.length * groups.length;
 
   return (
-    <Sheet open={open} onClose={() => onOpenChange(false)} title="낚시 도감">
-      <div className="fishing-dex">
-        <p className="fishing-dex__count">
-          {seen.size >= FISH_TOTAL ? (
-            <>🏆 <strong>도감을 다 채웠어요!</strong> {total}마리 전부 낚은 낚시왕이에요.</>
-          ) : (
-            <>
-              {total}마리 중 <strong>{seen.size}마리</strong>를 낚았어요. 계절마다, 비·눈·안개 오는 날과 금요일엔 특별한 물고기가 나와요.
-            </>
-          )}
-        </p>
-        {groups.map((g) => (
-          <section key={g.id} className="fishing-dex__season" aria-label={`${g.label} 물고기`}>
-            <h3 className="fishing-dex__seasonTitle">
-              {g.label}
-              {groupComplete(seen, g.id) && <span className="fishing-dex__done"> · 다 모았어요 ✓</span>}
-            </h3>
-            <ul className="fishing-dex__grid">
-              {kinds.map((k) => {
-                const id = `${g.id}-${k}` as FishSpeciesId;
-                const got = seen.has(id);
-                const hue = g.id in SEASON_HUE ? SEASON_HUE[g.id as keyof typeof SEASON_HUE] : 0;
-                return (
-                  <li key={id} className={['fishing-dex__item', got ? 'fishing-dex__item--caught' : ''].filter(Boolean).join(' ')}>
-                    <span className="fishing-dex__icon" style={{ '--h': `${hue}deg` } as React.CSSProperties} aria-hidden="true">
-                      {got ? FISH_EMOJI[k] : '?'}
-                    </span>
-                    <span className="fishing-dex__name">{got ? fishName(id) : g.hint}</span>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        ))}
-      </div>
-      <Button variant="secondary" onClick={() => onOpenChange(false)}>
-        닫기
-      </Button>
-    </Sheet>
+    <DexSheet
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title="낚시 도감"
+      noun="물고기"
+      summary={
+        seen.size >= FISH_TOTAL ? (
+          <>🏆 <strong>도감을 다 채웠어요!</strong> {total}마리 전부 낚은 낚시왕이에요.</>
+        ) : (
+          <>
+            {total}마리 중 <strong>{seen.size}마리</strong>를 낚았어요. 계절마다, 비·눈·안개 오는 날과 금요일엔 특별한 물고기가 나와요.
+          </>
+        )
+      }
+      groups={groups.map((g) => ({
+        id: g.id,
+        label: g.label,
+        hint: g.hint,
+        complete: groupComplete(seen, g.id),
+        entries: kinds.map((k) => {
+          const id = `${g.id}-${k}` as FishSpeciesId;
+          const hue = g.id in SEASON_HUE ? SEASON_HUE[g.id as keyof typeof SEASON_HUE] : 0;
+          // 계절 물고기는 빛깔을 돌려 보인다(연출 전용).
+          return { id, icon: FISH_EMOJI[k], name: fishName(id), found: seen.has(id), iconStyle: { filter: `hue-rotate(${hue}deg)` } };
+        }),
+      }))}
+    />
   );
 }

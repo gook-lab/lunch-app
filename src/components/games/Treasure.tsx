@@ -10,7 +10,8 @@
  * 마지막 구덩이는 (텅 빈 줄 알았는데 더 판다) → 상자가 솟고 → 금빛과 함께 열리며 동전이 쏟아진 뒤 onSpinEnd 를 한 번 부른다.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Sheet } from '@gook-lab/ui';
+import { Button } from '@gook-lab/ui';
+import { DexSheet } from './DexSheet';
 import { useAmbience } from '../../hooks/useAmbience';
 import type { AmbienceSeason } from '../../lib/ambience';
 import { SceneWeather } from './scene/SceneWeather';
@@ -539,46 +540,33 @@ export function Treasure({ candidates, winnerIndex, spinning, run, onSpinEnd, ex
 function TreasureDexSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const seen = new Set(open ? getTreasureDex() : []);
   return (
-    <Sheet open={open} onClose={onClose} title="보물 도감">
-      <div className="treasure-dex">
-        <p className="treasure-dex__count">
-          {seen.size >= TREASURE_TOTAL ? (
-            <>
-              🏆 <strong>도감을 다 채웠어요!</strong> {TREASURE_TOTAL}개 전부 찾은 보물왕이에요.
-            </>
-          ) : (
-            <>
-              {TREASURE_TOTAL}개 중 <strong>{seen.size}개</strong>를 찾았어요. 계절마다, 비·눈·안개 오는 날과 금요일엔 특별한 보물이 나와요.
-            </>
-          )}
-        </p>
-        {TREASURE_GROUPS.map((g) => (
-          <section key={g} className="treasure-dex__group" aria-label={`${TREASURE_GROUP_LABEL[g]} 보물`}>
-            <h3 className="treasure-dex__title">
-              {TREASURE_GROUP_LABEL[g]}
-              {treasureGroupComplete(seen, g) && <span className="treasure-dex__done"> · 다 모았어요 ✓</span>}
-            </h3>
-            <ul className="treasure-dex__grid">
-              {TREASURE_KINDS.map((k) => {
-                const id = `${g}-${k}` as TreasureId;
-                const got = seen.has(id);
-                return (
-                  <li key={id} className={got ? 'treasure-dex__item treasure-dex__item--found' : 'treasure-dex__item'}>
-                    <span className="treasure-dex__icon" aria-hidden="true">
-                      {got ? TREASURE_EMOJI[k] : '?'}
-                    </span>
-                    <span className="treasure-dex__name">{got ? treasureName(id) : '아직 못 찾았어요'}</span>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        ))}
-      </div>
-      <Button variant="secondary" onClick={onClose}>
-        닫기
-      </Button>
-    </Sheet>
+    <DexSheet
+      open={open}
+      onClose={onClose}
+      title="보물 도감"
+      noun="보물"
+      summary={
+        seen.size >= TREASURE_TOTAL ? (
+          <>
+            🏆 <strong>도감을 다 채웠어요!</strong> {TREASURE_TOTAL}개 전부 찾은 보물왕이에요.
+          </>
+        ) : (
+          <>
+            {TREASURE_TOTAL}개 중 <strong>{seen.size}개</strong>를 찾았어요. 계절마다, 비·눈·안개 오는 날과 금요일엔 특별한 보물이 나와요.
+          </>
+        )
+      }
+      groups={TREASURE_GROUPS.map((g) => ({
+        id: g,
+        label: TREASURE_GROUP_LABEL[g],
+        hint: '아직 못 찾았어요',
+        complete: treasureGroupComplete(seen, g),
+        entries: TREASURE_KINDS.map((k) => {
+          const id = `${g}-${k}` as TreasureId;
+          return { id, icon: TREASURE_EMOJI[k], name: treasureName(id), found: seen.has(id) };
+        }),
+      }))}
+    />
   );
 }
 
