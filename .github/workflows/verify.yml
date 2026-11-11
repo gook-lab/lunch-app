@@ -1,0 +1,33 @@
+name: verify
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # pnpm 버전은 package.json 의 packageManager 를 읽는다. setup-node 의 cache 보다 먼저 와야 한다.
+      - uses: pnpm/action-setup@v4
+
+      # registry-url 과 scope 가 @gook-lab 만 GitHub Packages 로 보내고, 인증은 NODE_AUTH_TOKEN 으로 붙는다.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://npm.pkg.github.com
+          scope: '@gook-lab'
+
+      - run: pnpm install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - run: pnpm verify
