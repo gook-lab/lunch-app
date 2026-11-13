@@ -2,6 +2,7 @@
   "name": "lunch-app",
   "private": true,
   "version": "0.0.0",
+  "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@10.34.1",
   "scripts": {
