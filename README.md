@@ -91,12 +91,11 @@
 
 ```bash
 git clone https://github.com/gook-lab/lunch-app.git && cd lunch-app
-echo "//npm.pkg.github.com/:_authToken=$(gh auth token)" >> ~/.npmrc   # 아래 설명 참고
 pnpm install
 pnpm dev:demo       # Firebase 없이 데모 데이터로 실행
 ```
 
-MODUL 패키지(`@gook-lab/ui` · `tokens` · `motion`)는 GitHub Packages 에 있습니다. 공개 패키지여도 GitHub Packages 는 내려받을 때 토큰을 요구하므로, 토큰이 없으면 `pnpm install` 이 `ERR_PNPM_FETCH_401` 로 멈춥니다. `gh auth token` 대신 [classic 토큰](https://github.com/settings/tokens/new?scopes=read:packages)을 `read:packages` 권한으로 만들어 넣어도 됩니다.
+MODUL 패키지(`@gook-lab/ui` · `tokens` · `motion`)는 npm 공개 레지스트리에서 받으므로 토큰 없이 설치됩니다.
 
 `pnpm dev:demo` 만으로는 카카오 키가 없어 지도 탭이 "지도를 쓸 수 없어요"로 멈춥니다. 회사 위치 정하기와 가게 넣기가 모두 지도에서 시작하므로, 키 없이 해 볼 수 있는 것은 빈 화면의 "예시로 둘러보기"(예시 가게 15곳)로 게임을 돌리고 결정·목록·별점을 눌러 보는 데까지입니다. 지도까지 쓰려면 `.env.local` 에 `VITE_KAKAO_JS_KEY` 를 넣고, 카카오 개발자 콘솔의 Web 플랫폼 도메인에 `http://localhost:5173` 을 등록합니다.
 

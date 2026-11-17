@@ -391,16 +391,16 @@ packages:
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
 
   '@gook-lab/motion@0.2.7':
-    resolution: {integrity: sha512-gj+sNMN/pQzqNGNtLqJE27rQKYhd8DPI8EDLjkbmc8AA+oHagY7rknUTHUT9o4E7R2i3oD9Z0oCBdqNuuADgnA==, tarball: https://npm.pkg.github.com/download/@gook-lab/motion/0.2.7/84bf0454408da9125d6f16510f52aed73f787623}
+    resolution: {integrity: sha512-rmSDQsVhlXq1Gwtd6jQ+spOC8fGtJCaVzPK9IWp94Hs9QfotaqWuNDkUMgxpWVZU/NGtj02hR5Y9Zi5YxoYl2A==}
     peerDependencies:
       '@gook-lab/tokens': 0.2.7
       react: '>=18'
 
   '@gook-lab/tokens@0.2.7':
-    resolution: {integrity: sha512-SGsLOlWZYfTWlZUGGOO99b5Daj4j7OR7Zqr9yN5QJ9BAZbH9s/NOzrLHpqf7ZOueKexBTSRNqZk2Aud0GmUTgw==, tarball: https://npm.pkg.github.com/download/@gook-lab/tokens/0.2.7/dad34122e8b8f976fb1974ecb90a021caceaea91}
+    resolution: {integrity: sha512-FkflVDAYGzNM4ftxIyN/h1fvNJQCbWNA2mClE4y8Ag8jU8Zr6Iy9jYfD5U2c2RoGYPLFMyZNJXBrEUSihOst4g==}
 
   '@gook-lab/ui@0.2.7':
-    resolution: {integrity: sha512-Ox+R6YbaoVZqPZLNBJdO+39Oz+bCvughGQB3kZ2nm3jYgnSgi1osx7sjDCLooHCIty8pSJo7kLH14ovDC456RQ==, tarball: https://npm.pkg.github.com/download/@gook-lab/ui/0.2.7/e3784f4a629d282f74111ecfd676e4a62a172e7d}
+    resolution: {integrity: sha512-hrF3fxZkUHef9qja5eJ2mz6AOpV1f+xIvz+K5MPzmuaWvlxJ0rDDIVC+/Pzo5E9GdyHUbBc1PG6FBBmleZeVZA==}
     peerDependencies:
       '@gook-lab/tokens': ^0.2.7
       '@hookform/resolvers': '>=3.9'
