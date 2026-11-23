@@ -22,31 +22,8 @@ import { winnersOf } from './lib/predictions';
 import { castVote, clearVote, myUid, subscribeVotes, type Vote } from './services/predictions';
 import { buzz, playChime, soundOn } from './lib/celebrate';
 import { sfx } from './lib/sfx';
-import {
-  Bomb,
-  Balloon,
-  CarRace,
-  Cards,
-  Fishing,
-  Archery,
-  Curling,
-  PaperPlane,
-  Treasure,
-  Claw,
-  Penalty,
-  Bowling,
-  Dice,
-  Gacha,
-  HorseRace,
-  Ladder,
-  Memory,
-  Pinball,
-  Plinko,
-  Slot,
-  Tournament,
-  Wheel,
-  preloadGames,
-} from './components/games';
+import { preloadGames } from './components/games';
+import { GameStage } from './components/GameStage';
 import { DirectionsLink } from './components/DirectionsLink';
 import { ShareButton } from './components/ShareButton';
 import {
@@ -1418,8 +1395,9 @@ export default function App() {
                       <GameBoundary
                         resetKey={`${mode}|${run}|${(board ?? result.candidates).map((p) => p.id).join(',')}`}
                       >
-                        {(() => {
-                          const game = {
+                        <GameStage
+                          mode={mode}
+                          game={{
                             candidates: board ?? result.candidates,
                             winnerIndex,
                             spinning,
@@ -1428,62 +1406,13 @@ export default function App() {
                             // 데스크톱 작게 보기도 판 칸을 채우는 큰 그림으로 그린다(stage--fit, desktop.css).
                             // 핀볼은 판이 시작되면 데스크톱에서도 가까이 당긴 넓은 판(320:340)으로 바꾼다. 확률 칸은 접힌다.
                             expanded: expanded || fitBoard || (wide && mode === 'pinball' && (spinning || winnerIndex !== null)),
-                          };
-                          // 사다리는 사용자가 판을 고친다. 후보 구성이 바뀌면 새 판이어야 하므로
-                          // 후보 id 를 key 로 준다. 돌린 순간 얼리는 board 는 같은 id 라 판이 유지된다.
-                          if (mode === 'ladder') {
-                            const key = game.candidates.map((p) => p.id).join(',');
-                            return <Ladder key={key} {...game} onRequestSpin={spin} />;
-                          }
-                          if (mode === 'cards') {
-                            const key = game.candidates.map((p) => p.id).join(',');
-                            return <Cards key={key} {...game} onRequestSpin={spin} />;
-                          }
-                          if (mode === 'memory') {
-                            const key = game.candidates.map((p) => p.id).join(',');
-                            return <Memory key={key} {...game} onRequestSpin={spin} onActivity={onActivity} />;
-                          }
-                          if (mode === 'tournament') {
-                            // 응원 고른 것은 같은 후보 구성 안에서만 유지한다.
-                            const key = game.candidates.map((p) => p.id).join(',');
-                            return <Tournament key={key} {...game} />;
-                          }
-                          if (mode === 'slot') return <Slot {...game} />;
-                          if (mode === 'pinball') {
-                            const balls =
-                              board && boardBalls
-                                ? boardBalls
-                                : ballCountsFor(
-                                    game.candidates.map((p) => p.id),
-                                    ballCounts,
-                                  );
-                            return <Pinball {...game} balls={balls} onBallCounts={changeBalls} />;
-                          }
-                          if (mode === 'gacha') return <Gacha {...game} />;
-                          if (mode === 'plinko') return <Plinko {...game} />;
-                          if (mode === 'horse') return <HorseRace {...game} />;
-                          if (mode === 'racing') return <CarRace {...game} />;
-                          if (mode === 'dice') {
-                            const key = game.candidates.map((p) => p.id).join(',');
-                            return <Dice key={key} {...game} />;
-                          }
-                          if (mode === 'bomb') {
-                            // 폭탄도 주사위처럼 "지난 판 자리" 에서 출발한다. 후보 구성이 바뀌면 그 자리는
-                            // 다른 가게(또는 없는 자리)라 새로 시작한다.
-                            const key = game.candidates.map((p) => p.id).join(',');
-                            return <Bomb key={key} {...game} />;
-                          }
-                          if (mode === 'balloon') return <Balloon {...game} />;
-                          if (mode === 'fishing') return <Fishing {...game} />;
-                          if (mode === 'archery') return <Archery {...game} />;
-                          if (mode === 'curling') return <Curling {...game} />;
-                          if (mode === 'plane') return <PaperPlane {...game} />;
-                          if (mode === 'treasure') return <Treasure {...game} />;
-                          if (mode === 'claw') return <Claw {...game} />;
-                          if (mode === 'penalty') return <Penalty {...game} />;
-                          if (mode === 'bowling') return <Bowling {...game} />;
-                          return <Wheel {...game} />;
-                        })()}
+                          }}
+                          frozenBalls={board && boardBalls ? boardBalls : null}
+                          ballCounts={ballCounts}
+                          onRequestSpin={spin}
+                          onActivity={onActivity}
+                          onBallCounts={changeBalls}
+                        />
                       </GameBoundary>
                     )}
                   </div>
