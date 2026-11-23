@@ -19,7 +19,7 @@ function enabled(): boolean {
 let ctx: AudioContext | null = null;
 
 /** 공유 AudioContext. 못 만들면 null. */
-export function audio(): AudioContext | null {
+function audio(): AudioContext | null {
   try {
     if (ctx) {
       if (ctx.state === 'suspended') void ctx.resume();
@@ -218,47 +218,6 @@ export function sfxLater(plan: [ms: number, name: SfxName, arg?: number][]): () 
   return () => timers.forEach((t) => window.clearTimeout(t));
 }
 
-/**
- * CSS transition 으로 움직이는 요소를 따라가며, 값이 step 만큼 지날 때마다 소리를 낸다.
- * 돌림판(각도)·슬롯(세로 위치)이 쓴다. 칸을 지나는 순간 딸깍해서 점점 느려지는 틱이 된다.
- */
-export function followTicks(
-  el: HTMLElement | null,
-  read: (el: HTMLElement) => number,
-  step: number,
-  durMs: number,
-  name: SfxName = 'tick',
-): () => void {
-  if (!el || !enabled() || step <= 0) return () => {};
-  let raf = 0;
-  let prev: number | null = null;
-  const until = performance.now() + durMs + 100;
-  const loop = (now: number) => {
-    const v = read(el);
-    if (Number.isFinite(v)) {
-      if (prev !== null && Math.floor(v / step) !== Math.floor(prev / step)) sfx(name);
-      prev = v;
-    }
-    if (now < until) raf = requestAnimationFrame(loop);
-  };
-  raf = requestAnimationFrame(loop);
-  return () => cancelAnimationFrame(raf);
-}
-
-/** 계산된 transform 의 회전각(도, 0~360). */
-export function readRotation(el: HTMLElement): number {
-  const m = new DOMMatrixReadOnly(getComputedStyle(el).transform);
-  const deg = (Math.atan2(m.b, m.a) * 180) / Math.PI;
-  return (deg + 360) % 360;
-}
-
-/** 계산된 transform 의 세로 이동(px). */
-export function readTranslateY(el: HTMLElement): number {
-  const t = getComputedStyle(el).transform;
-  if (!t || t === 'none') return 0;
-  return new DOMMatrixReadOnly(t).m42;
-}
-
 /* ───────── 활쏘기 ─────────
  * 활쏘기 소리는 위 SOUNDS 표 밖에 둔다 — 다른 게임 작업과 같은 줄을 고치지 않게(10/15 동시 작업).
  * 켜기·최소 간격·오디오 없음 처리는 sfx() 와 같다.
@@ -295,7 +254,7 @@ export type ArcherySfx = keyof typeof ARCHERY_SOUNDS;
 const archeryLast = new Map<ArcherySfx, number>();
 
 /** 활쏘기 소리 한 번. 이름이 위 SOUNDS 표에 있으면 sfx() 로 넘긴다. */
-export function archerySfx(name: ArcherySfx | SfxName): void {
+function archerySfx(name: ArcherySfx | SfxName): void {
   if (!(name in ARCHERY_SOUNDS)) {
     sfx(name as SfxName);
     return;
@@ -500,7 +459,7 @@ export type ClawSfxName = keyof typeof CLAW_SOUNDS;
 const clawLast = new Map<ClawSfxName, number>();
 
 /** 인형뽑기 소리 한 번. 이름이 위 SOUNDS 표에 있으면 sfx() 로 넘긴다. */
-export function clawSfx(name: ClawSfxName | SfxName): void {
+function clawSfx(name: ClawSfxName | SfxName): void {
   if (!(name in CLAW_SOUNDS)) {
     sfx(name as SfxName);
     return;
@@ -799,7 +758,7 @@ export type WheelSlotSfx = keyof typeof WHEEL_SLOT_SOUNDS;
 const wheelSlotLast = new Map<WheelSlotSfx, number>();
 
 /** 돌림판·슬롯 소리(또는 공용 소리) 한 번. 소리를 끈 사람에겐 아무 일도 없다. */
-export function wheelSlotSfx(name: WheelSlotSfx | SfxName): void {
+function wheelSlotSfx(name: WheelSlotSfx | SfxName): void {
   if (!(name in WHEEL_SLOT_SOUNDS)) {
     sfx(name as SfxName);
     return;
@@ -880,7 +839,7 @@ export type LadderDiceSfxName = keyof typeof LADDER_DICE_SOUNDS;
 const ladderDiceLast = new Map<LadderDiceSfxName, number>();
 
 /** 사다리·주사위 소리(또는 공용 소리) 한 번. 소리를 끈 사람에겐 아무 일도 없다. */
-export function ladderDiceSfx(name: LadderDiceSfxName | SfxName): void {
+function ladderDiceSfx(name: LadderDiceSfxName | SfxName): void {
   if (!(name in LADDER_DICE_SOUNDS)) {
     sfx(name as SfxName);
     return;
