@@ -798,7 +798,6 @@ export function Pinball({
       ctx.fillText(`${mark}${shortName(place.name)}${which} ${champion ? '✓' : `#${rank + 1}`}`, CANVAS_W - 6, y);
       ctx.restore();
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   });
 
   /*

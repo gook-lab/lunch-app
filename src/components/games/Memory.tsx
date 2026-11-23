@@ -25,6 +25,7 @@ import { seededRandom } from '../../lib/random';
 import { prefersReducedMotion, type GameProps } from './types';
 import { sfx } from '../../lib/sfx';
 import { useAmbience } from '../../hooks/useAmbience';
+import { useLatest } from '../../hooks/useLatest';
 import { ambienceClasses } from './scene/outfit';
 import { Climax } from './scene/Climax';
 import './scene/scene.css';
@@ -107,6 +108,7 @@ export function Memory({
     sfx('flip');
     onActivity?.();
   };
+  const latest = useLatest({ candidates, commit, finish, flip });
 
   // 새 판: 실행되면 판을 깔고, 카드를 눌러 시작했으면 그 카드부터 뒤집는다.
   useEffect(() => {
@@ -128,14 +130,12 @@ export function Memory({
       say: '',
     };
     if (prefersReducedMotion() || isSettled(b.faces)) {
-      finish(b);
+      latest.current.finish(b);
       return;
     }
-    commit(b);
-    if (start !== null && start < b.faces.length) flip(start);
-    // flip·finish 는 매 렌더 새로 만들어지지만 ref 로 최신 판을 읽는다.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spinning, winnerIndex, run, count]);
+    latest.current.commit(b);
+    if (start !== null && start < b.faces.length) latest.current.flip(start);
+  }, [spinning, winnerIndex, run, count, latest]);
 
   // 두 장이 열리면 짝인지 보고, 판이 굳었으면 마무리한다.
   useEffect(() => {
@@ -146,7 +146,7 @@ export function Memory({
       () => {
         const b = ref.current;
         if (!b) return;
-        const name = candidates[b.faces[a] as number]?.name ?? '';
+        const name = latest.current.candidates[b.faces[a] as number]?.name ?? '';
         const out = hit ? b.out.map((o, i) => o || i === a || i === c) : b.out;
         sfx(hit ? 'match' : 'tap');
         const next = {
@@ -155,14 +155,13 @@ export function Memory({
           open: [],
           say: hit ? `${name} 짝을 맞췄어요. 이번 판에서 빠져요.` : '짝이 아니에요. 다시 덮을게요.',
         };
-        if (isSettled(next.faces)) finish(next);
-        else commit(next);
+        if (isSettled(next.faces)) latest.current.finish(next);
+        else latest.current.commit(next);
       },
       hit ? MATCH_MS : MISS_MS,
     );
     return () => window.clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board]);
+  }, [board, latest]);
 
   // 자동 진행: 한 장씩 뒤집는다.
   useEffect(() => {
@@ -170,15 +169,14 @@ export function Memory({
     const t = window.setTimeout(() => {
       const b = ref.current;
       if (!b) return;
-      flip(
+      latest.current.flip(
         b.open.length === 0
           ? autoFirst(b.faces, b.out, random.current)
           : autoSecond(b.faces, b.out, b.open[0], random.current),
       );
     }, AUTO_MS);
     return () => window.clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board]);
+  }, [board, latest]);
 
   // 마무리 장면을 보여 주고 끝을 알린다.
   useEffect(() => {

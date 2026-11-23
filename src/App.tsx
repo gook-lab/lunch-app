@@ -22,31 +22,8 @@ import { winnersOf } from './lib/predictions';
 import { castVote, clearVote, myUid, subscribeVotes, type Vote } from './services/predictions';
 import { buzz, playChime, soundOn } from './lib/celebrate';
 import { sfx } from './lib/sfx';
-import {
-  Bomb,
-  Balloon,
-  CarRace,
-  Cards,
-  Fishing,
-  Archery,
-  Curling,
-  PaperPlane,
-  Treasure,
-  Claw,
-  Penalty,
-  Bowling,
-  Dice,
-  Gacha,
-  HorseRace,
-  Ladder,
-  Memory,
-  Pinball,
-  Plinko,
-  Slot,
-  Tournament,
-  Wheel,
-  preloadGames,
-} from './components/games';
+import { preloadGames } from './components/games';
+import { GameStage } from './components/GameStage';
 import { DirectionsLink } from './components/DirectionsLink';
 import { ShareButton } from './components/ShareButton';
 import {
@@ -71,7 +48,7 @@ import { useTodayKST } from './hooks/useTodayKST';
 import { useLunchData } from './hooks/useLunchData';
 import { addShown, readShown, readSkipShown, withoutShown, writeSkipShown } from './lib/shownToday';
 import { MIN_GAME_CANDIDATES, recentlyVisitedIds, selectCandidates, type Filters, type Place } from './lib/candidates';
-import { categoryHue } from './lib/category';
+import { categoryHue, categoryLabel } from './lib/category';
 import { josa, withJosa } from './lib/josa';
 import { officeCoord, officeSource } from './lib/walk';
 import { retryLoad } from './lib/retryLoad';
@@ -79,7 +56,6 @@ import { gameGate, noticeMessage } from './lib/messages';
 import { decideToday } from './services/lunch';
 import { DemoNote } from './components/DemoNote';
 import { loadDemoSample } from './services/demoStore';
-import { categoryLabel } from './lib/category';
 import { PlaceList, Settings } from './components/deferred';
 import { GameTitle } from './components/games/GameHelp';
 import { GameBoundary } from './components/games/GameBoundary';
@@ -90,10 +66,11 @@ import { RatingBadge } from './components/Rating';
 import { useRatings } from './hooks/useRatings';
 import { RatePrompt } from './components/RatePrompt';
 import { ratePromptTarget } from './lib/ratePrompt';
-import { compactGameIds, readRecentGames, rememberGame } from './lib/gameRecents';
+import { readRecentGames, rememberGame } from './lib/gameRecents';
 import { shouldShowRatePrompt } from './lib/promptVisibility';
 import { CategoryChips, type CategoryView } from './components/CategoryChips';
 import { RunDock } from './components/RunDock';
+import { ModeBar } from './components/ModeBar';
 import { menuSummary } from './lib/filterSummary';
 import './App.css';
 // 종이 식권 테마는 App.css 뒤에 — 같은 명시도로 덮는다.
@@ -178,26 +155,7 @@ function focusIfLost(node: HTMLElement | null) {
 const NO_IDS: string[] = [];
 const DEFAULT_MODE: GameMode = 'archery';
 const CAT_VIEW_KEY = 'lunch-app:cat-view';
-const RECOMMENDED_MODE_IDS: GameMode[] = [
-  'archery',
-  'wheel',
-  'ladder',
-  'claw',
-  'fishing',
-  'cards',
-  'pinball',
-  'tournament',
-];
 const ALL_MODE_IDS = new Set(GAME_MODES.map((item) => item.id));
-
-function revealPickedMode(node: HTMLElement | null) {
-  const on = node?.querySelector<HTMLElement>('.modebar__item--on');
-  if (!node || !on) return;
-  const box = node.getBoundingClientRect();
-  const item = on.getBoundingClientRect();
-  if (item.right > box.right || item.left < box.left) node.scrollLeft += item.left - box.left - 8;
-  if (item.bottom > box.bottom || item.top < box.top) node.scrollTop += item.top - box.top - 8;
-}
 
 export default function App() {
   const today = useTodayKST();
@@ -387,9 +345,9 @@ export default function App() {
    */
   const fitBoard = wide && !expanded && !['slot', 'pinball', 'tournament'].includes(mode);
 
-  // 지난 판을 내려놓고 처음 화면으로. 결과 줄의 ✕ 와 방식 바꾸기가 같이 쓴다. 예전엔 결과를 지우려면
-  // 다른 게임으로 갔다 와야 했다(10/16 사용자).
-  const clearBoard = useCallback(() => {
+  // 지난 판을 내려놓고 처음 화면으로. 결과 줄의 ✕, 방식 바꾸기, 조건·공 개수 바꾸기, 날이 바뀔 때 같이 쓴다.
+  // 예전엔 결과를 지우려면 다른 게임으로 갔다 와야 했다(10/16 사용자).
+  const resetRound = useCallback(() => {
     setSpinning(false);
     closeResult();
     setBoard(null);
@@ -407,7 +365,7 @@ export default function App() {
       // 잠기기 전에 도착한다. 판만 비우고 진행 상태를 두면 새 게임판이
       // winnerIndex 없이 "진행 중" 에 갇혀 워치독(SPIN_TIMEOUT_MS, 30초)까지 기다린다(10/8 실측).
       // 탭 이동(goTab)처럼 연출을 끊는다.
-      clearBoard();
+      resetRound();
       setMode(next);
       setRecentGames((recent) => rememberGame(next, recent));
       try {
@@ -416,7 +374,7 @@ export default function App() {
         // 시크릿 창에서는 저장이 막힌다. 동작에는 영향 없다.
       }
     },
-    [clearBoard],
+    [resetRound],
   );
 
   const result = useMemo(() => selectCandidates(places, visits, filters, today), [places, visits, filters, today]);
@@ -616,14 +574,10 @@ export default function App() {
   // 조건·공 개수를 바꾸면 판은 사라졌는데 차임이 울리고 탭 바에 "결과" 가 붙었다.
   const updateFilters = useCallback(
     (patch: (f: Filters) => Filters) => {
-      closeResult();
-      setBoard(null);
-      setWinner(null);
-      setWinnerIndex(null);
-      setSpinning(false);
+      resetRound();
       setFilters(patch);
     },
-    [closeResult],
+    [resetRound],
   );
 
   // 자정을 넘기면 어제 판을 내려놓는다. 탭을 켜 둔 채 날이 바뀌면 어제 당첨이 결과 카드에
@@ -632,18 +586,12 @@ export default function App() {
   useEffect(() => {
     if (dayRef.current === today) return;
     dayRef.current = today;
-    window.clearTimeout(resultTimer.current);
-    setSpinning(false);
-    setBoard(null);
+    resetRound();
     setBoardBalls(null);
-    setWinner(null);
-    setWinnerIndex(null);
-    setResultPending(false);
-    setResultOpen(false);
     setConfirming(null);
     setSaveProblem(false);
     setSaveWaiting(false);
-  }, [today]);
+  }, [today, resetRound]);
 
   // 팟 알림이 있으면 탭 제목 앞에 개수를 단다. 다른 창을 보고 있어도 브라우저 탭에서 보인다.
   const baseTitle = useRef(document.title);
@@ -1057,12 +1005,13 @@ export default function App() {
     </div>
   );
 
+  const modeLabel = GAME_MODES.find((m) => m.id === mode)?.label;
   const ticket = winner ? (
     <div className="card card--result ticket">
       {/* 어떤 게임으로 뽑았는지 남긴다. 결과 모달이 게임판을 가리므로 여기서 이어 준다. */}
       <p className="ticket__eyebrow">
         <span aria-hidden="true">{MODE_ICON[mode]} </span>
-        {withJosa(GAME_MODES.find((m) => m.id === mode)?.label ?? '게임', '으로/로')} 뽑은 오늘의 점심
+        {withJosa(modeLabel ?? '게임', '으로/로')} 뽑은 오늘의 점심
       </p>
       <PlaceThumb place={winner} size="lg" className="ticket__thumb" />
       <h2 className="ticket__name" ref={resultRef} tabIndex={-1}>
@@ -1095,7 +1044,7 @@ export default function App() {
             오늘 점심으로 정했어요
           </p>
           {/* 정한 다음 할 일은 같이 갈 사람에게 알리기. 가장 큰 단추로 둔다. */}
-          <ShareButton place={winner} primary game={`${MODE_ICON[mode]} ${GAME_MODES.find((m) => m.id === mode)?.label ?? ''}`} />
+          <ShareButton place={winner} primary game={`${MODE_ICON[mode]} ${modeLabel ?? ''}`} />
           <div className="ticket__next">
             <DirectionsLink place={winner} />
             <Button variant="secondary" onClick={() => {
@@ -1141,70 +1090,16 @@ export default function App() {
     </div>
   ) : null;
 
-  /*
-   * 게임 방식 고르기. 데스크톱에선 왼쪽 레일이라 DOM 에서도 메뉴 칩보다 앞에 둔다 — 뒤에 두면
-   * Tab 이 오른쪽 메뉴 칩을 다 지난 뒤에 왼쪽 레일로 되돌아갔다(10/15 리뷰). 휴대폰은 칩 아래에
-   * 보이므로 DOM 도 칩 뒤다. 자리(grid)는 CSS 가 정하므로 화면은 그대로다.
-   */
-  const compactModes = compactGameIds(mode, recentGames, RECOMMENDED_MODE_IDS, wide ? 8 : 6, ['pinball', 'tournament']);
-  // 데스크톱 레일도 추천·최근 8개만 먼저 보이고 나머지는 전체 게임 보기 아래에 둔다(10/17 정보 위계).
-  // 휴대폰은 6개 — 3칸×2줄이 화면 폭에 다 들어가 접힌 상태에선 옆으로 넘길 게 없다(토너먼트가 반쯤 잘렸다, 10/18).
-  const visibleModes = showAllGames ? GAME_MODES : GAME_MODES.filter((item) => compactModes.includes(item.id));
-  const hiddenGameCount = GAME_MODES.length - compactModes.length;
-  const modeButtons = (
-    <>
-      {visibleModes.map((m) => (
-        <button
-          key={m.id}
-          type="button"
-          aria-pressed={mode === m.id}
-          className={mode === m.id ? 'modebar__item modebar__item--on' : 'modebar__item'}
-          onClick={() => pickMode(m.id)}
-          disabled={spinning}
-        >
-          <span className="modebar__icon" aria-hidden="true">
-            {MODE_ICON[m.id]}
-          </span>
-          {m.label}
-        </button>
-      ))}
-    </>
-  );
-  const modebar = wide ? (
-    <div className="modebar" role="group" aria-label="방식" ref={revealPickedMode}>
-      {modeButtons}
-      <button
-        type="button"
-        className="modebar__more modebar__all"
-        aria-expanded={showAllGames}
-        onClick={() => setShowAllGames((open) => !open)}
-        disabled={spinning}
-      >
-        {showAllGames ? '게임 접기' : `전체 게임 보기 (${hiddenGameCount})`}
-      </button>
-    </div>
-  ) : (
-    <div className="modebar-shell">
-      <div className="modebar" role="group" aria-label="방식" ref={revealPickedMode}>
-        {modeButtons}
-      </div>
-      <div className="modebar-shell__action">
-        <button
-          type="button"
-          className="modebar__more"
-          aria-expanded={showAllGames}
-          onClick={() => setShowAllGames((open) => !open)}
-          disabled={spinning}
-        >
-          {showAllGames ? '게임 접기' : `전체 게임 보기 (${hiddenGameCount})`}
-        </button>
-      </div>
-      {showAllGames && (
-        <p className="modebar-shell__hint" role="status">
-          좌우로 밀어 다른 게임 보기 <span aria-hidden="true">↔</span>
-        </p>
-      )}
-    </div>
+  const modebar = (
+    <ModeBar
+      wide={wide}
+      mode={mode}
+      recentGames={recentGames}
+      showAll={showAllGames}
+      spinning={spinning}
+      onPick={pickMode}
+      onToggleAll={() => setShowAllGames((open) => !open)}
+    />
   );
 
   // 가게가 하나도 없을 때 — 고르기·목록 탭이 같은 안내와 단추를 쓴다(10/14 목록 탭은 한 줄 글뿐이었다).
@@ -1500,8 +1395,9 @@ export default function App() {
                       <GameBoundary
                         resetKey={`${mode}|${run}|${(board ?? result.candidates).map((p) => p.id).join(',')}`}
                       >
-                        {(() => {
-                          const game = {
+                        <GameStage
+                          mode={mode}
+                          game={{
                             candidates: board ?? result.candidates,
                             winnerIndex,
                             spinning,
@@ -1510,62 +1406,13 @@ export default function App() {
                             // 데스크톱 작게 보기도 판 칸을 채우는 큰 그림으로 그린다(stage--fit, desktop.css).
                             // 핀볼은 판이 시작되면 데스크톱에서도 가까이 당긴 넓은 판(320:340)으로 바꾼다. 확률 칸은 접힌다.
                             expanded: expanded || fitBoard || (wide && mode === 'pinball' && (spinning || winnerIndex !== null)),
-                          };
-                          // 사다리는 사용자가 판을 고친다. 후보 구성이 바뀌면 새 판이어야 하므로
-                          // 후보 id 를 key 로 준다. 돌린 순간 얼리는 board 는 같은 id 라 판이 유지된다.
-                          if (mode === 'ladder') {
-                            const key = game.candidates.map((p) => p.id).join(',');
-                            return <Ladder key={key} {...game} onRequestSpin={spin} />;
-                          }
-                          if (mode === 'cards') {
-                            const key = game.candidates.map((p) => p.id).join(',');
-                            return <Cards key={key} {...game} onRequestSpin={spin} />;
-                          }
-                          if (mode === 'memory') {
-                            const key = game.candidates.map((p) => p.id).join(',');
-                            return <Memory key={key} {...game} onRequestSpin={spin} onActivity={onActivity} />;
-                          }
-                          if (mode === 'tournament') {
-                            // 응원 고른 것은 같은 후보 구성 안에서만 유지한다.
-                            const key = game.candidates.map((p) => p.id).join(',');
-                            return <Tournament key={key} {...game} />;
-                          }
-                          if (mode === 'slot') return <Slot {...game} />;
-                          if (mode === 'pinball') {
-                            const balls =
-                              board && boardBalls
-                                ? boardBalls
-                                : ballCountsFor(
-                                    game.candidates.map((p) => p.id),
-                                    ballCounts,
-                                  );
-                            return <Pinball {...game} balls={balls} onBallCounts={changeBalls} />;
-                          }
-                          if (mode === 'gacha') return <Gacha {...game} />;
-                          if (mode === 'plinko') return <Plinko {...game} />;
-                          if (mode === 'horse') return <HorseRace {...game} />;
-                          if (mode === 'racing') return <CarRace {...game} />;
-                          if (mode === 'dice') {
-                            const key = game.candidates.map((p) => p.id).join(',');
-                            return <Dice key={key} {...game} />;
-                          }
-                          if (mode === 'bomb') {
-                            // 폭탄도 주사위처럼 "지난 판 자리" 에서 출발한다. 후보 구성이 바뀌면 그 자리는
-                            // 다른 가게(또는 없는 자리)라 새로 시작한다.
-                            const key = game.candidates.map((p) => p.id).join(',');
-                            return <Bomb key={key} {...game} />;
-                          }
-                          if (mode === 'balloon') return <Balloon {...game} />;
-                          if (mode === 'fishing') return <Fishing {...game} />;
-                          if (mode === 'archery') return <Archery {...game} />;
-                          if (mode === 'curling') return <Curling {...game} />;
-                          if (mode === 'plane') return <PaperPlane {...game} />;
-                          if (mode === 'treasure') return <Treasure {...game} />;
-                          if (mode === 'claw') return <Claw {...game} />;
-                          if (mode === 'penalty') return <Penalty {...game} />;
-                          if (mode === 'bowling') return <Bowling {...game} />;
-                          return <Wheel {...game} />;
-                        })()}
+                          }}
+                          frozenBalls={board && boardBalls ? boardBalls : null}
+                          ballCounts={ballCounts}
+                          onRequestSpin={spin}
+                          onActivity={onActivity}
+                          onBallCounts={changeBalls}
+                        />
                       </GameBoundary>
                     )}
                   </div>
@@ -1632,7 +1479,7 @@ export default function App() {
                           className="result-bar__clear"
                           aria-label="결과 지우기"
                           title="결과 지우기"
-                          onClick={clearBoard}
+                          onClick={resetRound}
                         >
                           ✕
                         </button>
