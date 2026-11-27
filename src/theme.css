@@ -202,6 +202,17 @@
   .status--inline:has(.firstSteps) .status__actions { flex-direction: row; flex-wrap: wrap; justify-content: center; }
 }
 
+/* 없는 주소 — 어느 앱인지 먼저 알린다 */
+.notfound__brand {
+  font-family: var(--app-mono);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-neutral-700);
+}
+/* 정적 public/404.html 과 같은 점선 칸 한 장 */
+.notfound .status { width: min(100%, 420px); padding-block: var(--space-8); }
+
 /* 지도 오류 — 지도 자리의 점선 상자 */
 .map__troubleBox {
   display: flex;
