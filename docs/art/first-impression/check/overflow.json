@@ -1,0 +1,78 @@
+{
+  "first-empty-1440x900": {
+    "size": "1440x900",
+    "overflowX": 0
+  },
+  "first-sample-1440x900": {
+    "size": "1440x900",
+    "overflowX": 0
+  },
+  "first-empty-844x390": {
+    "size": "844x390",
+    "overflowX": 0
+  },
+  "first-sample-844x390": {
+    "size": "844x390",
+    "overflowX": 0
+  },
+  "first-empty-390x844": {
+    "size": "390x844",
+    "overflowX": 0
+  },
+  "first-sample-390x844": {
+    "size": "390x844",
+    "overflowX": 0
+  },
+  "first-tour-390x844": {
+    "size": "390x844",
+    "overflowX": 0
+  },
+  "first-empty-dark-390x844": {
+    "size": "390x844",
+    "overflowX": 0
+  },
+  "loading-1440x900": {
+    "size": "1440x900",
+    "overflowX": 0
+  },
+  "loading-390x844": {
+    "size": "390x844",
+    "overflowX": 0
+  },
+  "loading-dark-390x844": {
+    "size": "390x844",
+    "overflowX": 0
+  },
+  "loading-slow-390x844": {
+    "size": "390x844",
+    "overflowX": 0
+  },
+  "loading-fail-390x844": {
+    "size": "390x844",
+    "overflowX": 0
+  },
+  "loading-nojs-390x844": {
+    "size": "390x844",
+    "overflowX": 0
+  },
+  "404-1440x900": {
+    "size": "1440x900",
+    "overflowX": 0
+  },
+  "404-390x844": {
+    "size": "390x844",
+    "overflowX": 0
+  },
+  "404-dark-390x844": {
+    "size": "390x844",
+    "overflowX": 0
+  },
+  "404-static-1440x900": {
+    "size": "1440x900",
+    "overflowX": 0
+  },
+  "404-static-390x844": {
+    "size": "390x844",
+    "overflowX": 0
+  }
+}

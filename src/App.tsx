@@ -14,6 +14,7 @@ import { ballCountsFor, pickWinner } from './lib/weights';
 import { CandidateChips } from './components/CandidateChips';
 import { useMedia } from './hooks/useMedia';
 import { StatusScreen } from './components/StatusScreen';
+import { FirstSteps } from './components/FirstSteps';
 import { Confetti } from './components/Confetti';
 import { Predictions } from './components/Predictions';
 import { Parties } from './components/Parties';
@@ -52,6 +53,7 @@ import { categoryHue, categoryLabel } from './lib/category';
 import { josa, withJosa } from './lib/josa';
 import { officeCoord, officeSource } from './lib/walk';
 import { retryLoad } from './lib/retryLoad';
+import { hideBoot } from './lib/boot';
 import { gameGate, noticeMessage } from './lib/messages';
 import { decideToday } from './services/lunch';
 import { DemoNote } from './components/DemoNote';
@@ -745,14 +747,20 @@ export default function App() {
     return () => cancel(id);
   }, [state]);
 
+  // 목록이 준비되거나 실패하면 index.html 의 로딩 화면을 걷는다. 그전엔 그 화면이 아래 "불러오는 중" 을 덮는다.
+  useEffect(() => {
+    if (state !== 'loading') hideBoot();
+  }, [state]);
+
   if (state === 'loading') {
     return (
       <main className="app app--center">
         <StatusScreen
           role="status"
+          // index.html 의 로딩 화면(#boot)과 같은 그림 · 같은 글. 다시 시도할 때 이 화면이 보여도 처음과 같다.
           art={<span className="status__ring">🍱</span>}
-          title="불러오는 중이에요"
-          lines={['가게 목록과 방문 기록을 읽고 있어요']}
+          title="오늘 점심"
+          lines={['점심 고를 준비를 하고 있어요']}
         />
       </main>
     );
@@ -1103,6 +1111,8 @@ export default function App() {
   );
 
   // 가게가 하나도 없을 때 — 고르기·목록 탭이 같은 안내와 단추를 쓴다(10/14 목록 탭은 한 줄 글뿐이었다).
+  // 처음 온 사람에게는 이 화면이 첫인상이라, 첫 게임까지 남은 단계를 세 칸으로 보여 준다(11/27). 단추는 그대로.
+  const officeSaved = officeSource() === 'saved';
   const emptyScreen = (
     <StatusScreen
       inline
@@ -1113,17 +1123,12 @@ export default function App() {
         </span>
       }
       title="아직 가게가 없어요"
-      lines={
-        // 회사부터 정한다. 지도 탭도 그 전에는 가게 찾기를 숨긴다.
-        officeSource() === 'saved'
-          ? ['지도에서 자주 가는 가게를 넣어 주세요.', '두 곳 이상 넣으면 게임을 시작할 수 있어요.']
-          : ['먼저 회사 위치를 정해 주세요.', '그다음 가게를 두 곳 이상 넣으면 게임을 시작할 수 있어요.']
-      }
+      lines={[officeSaved ? '가게를 두 곳 이상 넣으면 게임을 시작할 수 있어요.' : '세 단계면 첫 게임을 돌릴 수 있어요.']}
       action={
-        <>
+        <div className="status__actions">
           <Button onClick={() => goTab('map')}>
             <span aria-hidden="true">🗺️ </span>
-            {officeSource() === 'saved' ? '지도에서 가게 넣기' : '회사 위치 정하기'}
+            {officeSaved ? '지도에서 가게 넣기' : '회사 위치 정하기'}
           </Button>
           {/* 데모는 빈 상태로 시작한다. 둘러보기만 할 사람은 지어낸 예시를 깐다. */}
           {import.meta.env.VITE_DEMO === '1' && (
@@ -1137,9 +1142,11 @@ export default function App() {
               예시로 둘러보기
             </Button>
           )}
-        </>
+        </div>
       }
-    />
+    >
+      <FirstSteps officeSaved={officeSaved} />
+    </StatusScreen>
   );
 
   return (

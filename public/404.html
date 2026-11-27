@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="robots" content="noindex" />
+    <title>없는 주소 · 오늘 점심</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#f3f2f2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#161413" media="(prefers-color-scheme: dark)" />
+    <!--
+      정적 404 — JS 없이 한 장. 앱 경로(/foo 등)는 vercel.json 이 index.html 로 돌려 앱 안 NotFound 가 그린다.
+      이 파일은 돌리지 않는 경로(/assets/*, /api/*)가 없을 때 Vercel 이 404 로 준다. 모양은 앱 안 404 와 같다.
+    -->
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f3f2f2; --text: #201e1d; --muted: #605d5d; --line: #9b9797; --box: #f8f4f4; --accent: #ec3013;
+        --mono: 'Nanum Gothic Coding', ui-monospace, 'SF Mono', Menlo, monospace;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root { --bg: #161413; --text: #f3f2f2; --muted: #bab6b6; --line: #7d7979; --box: #2d2b2b; --accent: #ff563c; }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; min-height: 100%; }
+      body {
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+        min-height: 100svh; padding: 24px 16px; text-align: center;
+        background: var(--bg); color: var(--text);
+        font-family: Archivo, system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+        word-break: keep-all; overflow-wrap: anywhere;
+      }
+      p, h1 { margin: 0; }
+      .brand { font-family: var(--mono); font-size: 14px; font-weight: 700; letter-spacing: .08em; color: var(--muted); }
+      .ticket {
+        display: flex; flex-direction: column; align-items: center; gap: 12px;
+        width: min(100%, 420px); padding: 32px 20px;
+        border: 1px dashed var(--line); background: var(--box);
+      }
+      .code {
+        display: inline-flex; align-items: center; margin-block: 12px;
+        font-family: var(--mono); font-size: 43px; font-weight: 800; letter-spacing: .1em; line-height: 1;
+      }
+      .code span { font-size: 32px; }
+      h1 { font-family: var(--mono); font-size: 16px; font-weight: 700; }
+      .lines { display: grid; gap: 2px; font-size: 14px; color: var(--muted); line-height: 1.5; }
+      a.btn {
+        display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px;
+        background: var(--text); color: var(--bg); font-weight: 700; text-decoration: none;
+      }
+      a.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    </style>
+  </head>
+  <body>
+    <p class="brand"><span aria-hidden="true">🍱 </span>오늘 점심</p>
+    <main class="ticket">
+      <p class="code" aria-hidden="true">4<span>🍽</span>4</p>
+      <h1>이 주소엔 점심이 없어요</h1>
+      <p class="lines">
+        <span>주소가 바뀌었거나 잘못 옮겨졌을 수 있어요.</span>
+        <span>점심은 처음 화면에서 바로 고를 수 있어요.</span>
+      </p>
+      <a class="btn" href="/">처음 화면으로</a>
+    </main>
+  </body>
+</html>

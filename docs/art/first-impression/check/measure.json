@@ -1,0 +1,407 @@
+{
+  "note": "node scripts/measure-first-impression.mjs — vite preview 프로덕션 데모 빌드, Playwright Chromium 빈 캐시, 1440x900, 3회 중앙값(ms, 내비게이션 기준). before 에는 #boot 가 없어 bootGone 은 null.",
+  "before": {
+    "label": "before (main 30eb887, demo build)",
+    "url": "http://localhost:5351/",
+    "viewport": "1440x900",
+    "runs": 3,
+    "slow": "4 Mbps / 40 ms RTT (CDP)",
+    "at": "2026-11-27T02:28:54.391Z",
+    "cases": {
+      "empty/fast": {
+        "median": {
+          "fcp": 76,
+          "lcp": 220,
+          "usable": 174,
+          "bootGone": null,
+          "reqUsable": 11,
+          "kbUsable": 224,
+          "reqAll": 68,
+          "kbAll": 560,
+          "wallUsable": 184
+        },
+        "runs": [
+          {
+            "fcp": 72,
+            "lcp": 220,
+            "usable": 169,
+            "bootGone": null,
+            "reqUsable": 10,
+            "kbUsable": 198,
+            "reqAll": 68,
+            "kbAll": 560,
+            "wallUsable": 181
+          },
+          {
+            "fcp": 80,
+            "lcp": 216,
+            "usable": 179,
+            "bootGone": null,
+            "reqUsable": 45,
+            "kbUsable": 353,
+            "reqAll": 68,
+            "kbAll": 560,
+            "wallUsable": 229
+          },
+          {
+            "fcp": 76,
+            "lcp": 316,
+            "usable": 174,
+            "bootGone": null,
+            "reqUsable": 11,
+            "kbUsable": 224,
+            "reqAll": 68,
+            "kbAll": 560,
+            "wallUsable": 184
+          }
+        ]
+      },
+      "empty/slow": {
+        "median": {
+          "fcp": 592,
+          "lcp": 960,
+          "usable": 730,
+          "bootGone": null,
+          "reqUsable": 11,
+          "kbUsable": 224,
+          "reqAll": 68,
+          "kbAll": 560,
+          "wallUsable": 746
+        },
+        "runs": [
+          {
+            "fcp": 588,
+            "lcp": 1024,
+            "usable": 728,
+            "bootGone": null,
+            "reqUsable": 11,
+            "kbUsable": 224,
+            "reqAll": 68,
+            "kbAll": 560,
+            "wallUsable": 742
+          },
+          {
+            "fcp": 592,
+            "lcp": 960,
+            "usable": 734,
+            "bootGone": null,
+            "reqUsable": 11,
+            "kbUsable": 224,
+            "reqAll": 68,
+            "kbAll": 560,
+            "wallUsable": 748
+          },
+          {
+            "fcp": 592,
+            "lcp": 812,
+            "usable": 730,
+            "bootGone": null,
+            "reqUsable": 11,
+            "kbUsable": 224,
+            "reqAll": 68,
+            "kbAll": 560,
+            "wallUsable": 746
+          }
+        ]
+      },
+      "sample/fast": {
+        "median": {
+          "fcp": 76,
+          "lcp": 336,
+          "usable": 203,
+          "bootGone": null,
+          "reqUsable": 17,
+          "kbUsable": 224,
+          "reqAll": 74,
+          "kbAll": 630,
+          "wallUsable": 220
+        },
+        "runs": [
+          {
+            "fcp": 72,
+            "lcp": 316,
+            "usable": 200,
+            "bootGone": null,
+            "reqUsable": 17,
+            "kbUsable": 216,
+            "reqAll": 74,
+            "kbAll": 630,
+            "wallUsable": 220
+          },
+          {
+            "fcp": 76,
+            "lcp": 456,
+            "usable": 203,
+            "bootGone": null,
+            "reqUsable": 11,
+            "kbUsable": 224,
+            "reqAll": 74,
+            "kbAll": 630,
+            "wallUsable": 208
+          },
+          {
+            "fcp": 76,
+            "lcp": 336,
+            "usable": 203,
+            "bootGone": null,
+            "reqUsable": 25,
+            "kbUsable": 236,
+            "reqAll": 74,
+            "kbAll": 630,
+            "wallUsable": 224
+          }
+        ]
+      },
+      "sample/slow": {
+        "median": {
+          "fcp": 592,
+          "lcp": 880,
+          "usable": 774,
+          "bootGone": null,
+          "reqUsable": 13,
+          "kbUsable": 247,
+          "reqAll": 74,
+          "kbAll": 630,
+          "wallUsable": 783
+        },
+        "runs": [
+          {
+            "fcp": 592,
+            "lcp": 1048,
+            "usable": 765,
+            "bootGone": null,
+            "reqUsable": 13,
+            "kbUsable": 244,
+            "reqAll": 74,
+            "kbAll": 630,
+            "wallUsable": 775
+          },
+          {
+            "fcp": 580,
+            "lcp": 864,
+            "usable": 782,
+            "bootGone": null,
+            "reqUsable": 13,
+            "kbUsable": 247,
+            "reqAll": 74,
+            "kbAll": 630,
+            "wallUsable": 788
+          },
+          {
+            "fcp": 592,
+            "lcp": 880,
+            "usable": 774,
+            "bootGone": null,
+            "reqUsable": 13,
+            "kbUsable": 247,
+            "reqAll": 74,
+            "kbAll": 630,
+            "wallUsable": 783
+          }
+        ]
+      }
+    }
+  },
+  "after": {
+    "label": "after (feat/first-impression, demo build)",
+    "url": "http://localhost:5351/",
+    "viewport": "1440x900",
+    "runs": 3,
+    "slow": "4 Mbps / 40 ms RTT (CDP)",
+    "at": "2026-11-27T02:27:36.129Z",
+    "cases": {
+      "empty/fast": {
+        "median": {
+          "fcp": 44,
+          "lcp": 212,
+          "usable": 191,
+          "bootGone": 430,
+          "reqUsable": 11,
+          "kbUsable": 227,
+          "reqAll": 68,
+          "kbAll": 563,
+          "wallUsable": 213
+        },
+        "runs": [
+          {
+            "fcp": 36,
+            "lcp": 212,
+            "usable": 180,
+            "bootGone": 418,
+            "reqUsable": 11,
+            "kbUsable": 227,
+            "reqAll": 68,
+            "kbAll": 563,
+            "wallUsable": 192
+          },
+          {
+            "fcp": 44,
+            "lcp": 212,
+            "usable": 192,
+            "bootGone": 430,
+            "reqUsable": 11,
+            "kbUsable": 203,
+            "reqAll": 68,
+            "kbAll": 563,
+            "wallUsable": 213
+          },
+          {
+            "fcp": 44,
+            "lcp": 212,
+            "usable": 191,
+            "bootGone": 430,
+            "reqUsable": 35,
+            "kbUsable": 298,
+            "reqAll": 68,
+            "kbAll": 563,
+            "wallUsable": 240
+          }
+        ]
+      },
+      "empty/slow": {
+        "median": {
+          "fcp": 324,
+          "lcp": 724,
+          "usable": 702,
+          "bootGone": 941,
+          "reqUsable": 11,
+          "kbUsable": 227,
+          "reqAll": 68,
+          "kbAll": 563,
+          "wallUsable": 731
+        },
+        "runs": [
+          {
+            "fcp": 324,
+            "lcp": 720,
+            "usable": 699,
+            "bootGone": 940,
+            "reqUsable": 11,
+            "kbUsable": 227,
+            "reqAll": 68,
+            "kbAll": 563,
+            "wallUsable": 728
+          },
+          {
+            "fcp": 324,
+            "lcp": 724,
+            "usable": 702,
+            "bootGone": 941,
+            "reqUsable": 11,
+            "kbUsable": 227,
+            "reqAll": 68,
+            "kbAll": 563,
+            "wallUsable": 731
+          },
+          {
+            "fcp": 320,
+            "lcp": 728,
+            "usable": 703,
+            "bootGone": 943,
+            "reqUsable": 11,
+            "kbUsable": 227,
+            "reqAll": 68,
+            "kbAll": 563,
+            "wallUsable": 731
+          }
+        ]
+      },
+      "sample/fast": {
+        "median": {
+          "fcp": 40,
+          "lcp": 396,
+          "usable": 221,
+          "bootGone": 443,
+          "reqUsable": 11,
+          "kbUsable": 227,
+          "reqAll": 74,
+          "kbAll": 633,
+          "wallUsable": 228
+        },
+        "runs": [
+          {
+            "fcp": 40,
+            "lcp": 380,
+            "usable": 223,
+            "bootGone": 444,
+            "reqUsable": 11,
+            "kbUsable": 203,
+            "reqAll": 74,
+            "kbAll": 633,
+            "wallUsable": 230
+          },
+          {
+            "fcp": 32,
+            "lcp": 444,
+            "usable": 203,
+            "bootGone": 425,
+            "reqUsable": 12,
+            "kbUsable": 229,
+            "reqAll": 74,
+            "kbAll": 633,
+            "wallUsable": 210
+          },
+          {
+            "fcp": 40,
+            "lcp": 396,
+            "usable": 221,
+            "bootGone": 443,
+            "reqUsable": 11,
+            "kbUsable": 227,
+            "reqAll": 74,
+            "kbAll": 633,
+            "wallUsable": 228
+          }
+        ]
+      },
+      "sample/slow": {
+        "median": {
+          "fcp": 320,
+          "lcp": 1000,
+          "usable": 738,
+          "bootGone": 960,
+          "reqUsable": 12,
+          "kbUsable": 237,
+          "reqAll": 74,
+          "kbAll": 633,
+          "wallUsable": 745
+        },
+        "runs": [
+          {
+            "fcp": 320,
+            "lcp": 1016,
+            "usable": 748,
+            "bootGone": 969,
+            "reqUsable": 12,
+            "kbUsable": 237,
+            "reqAll": 74,
+            "kbAll": 633,
+            "wallUsable": 760
+          },
+          {
+            "fcp": 320,
+            "lcp": 1000,
+            "usable": 738,
+            "bootGone": 960,
+            "reqUsable": 12,
+            "kbUsable": 237,
+            "reqAll": 74,
+            "kbAll": 633,
+            "wallUsable": 745
+          },
+          {
+            "fcp": 320,
+            "lcp": 868,
+            "usable": 729,
+            "bootGone": 950,
+            "reqUsable": 12,
+            "kbUsable": 238,
+            "reqAll": 74,
+            "kbAll": 633,
+            "wallUsable": 735
+          }
+        ]
+      }
+    }
+  }
+}

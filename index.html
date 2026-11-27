@@ -23,8 +23,123 @@
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
+    <!-- 로딩 화면: JS 없이 바로 보이는 인라인 화면(#boot). 앱이 첫 화면(목록 준비 · 실패 · 없는 주소)을 그리면
+         src/lib/boot.ts 가 걷는다. 모양은 앱 안 불러오는 중 화면(StatusScreen)과 같다 — 점선 고리 · 식권 글씨. -->
+    <style>
+      #boot {
+        --b-bg: #f3f2f2; --b-text: #201e1d; --b-muted: #605d5d; --b-line: #bab6b6;
+        position: fixed; inset: 0; z-index: 1000;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+        padding: 24px 16px; text-align: center;
+        background: var(--b-bg); color: var(--b-text);
+        /* 웹 글꼴 이름을 쓰지 않는다. 쓰면 글꼴 파일(약 80KB)이 index.js 와 같은 대역폭을 나눠 첫 화면이 0.12초 늦었다(11/27 측정). */
+        font-family: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+        word-break: keep-all; transition: opacity .2s ease;
+      }
+      :root[data-theme='dark'] #boot { --b-bg: #161413; --b-text: #f3f2f2; --b-muted: #bab6b6; --b-line: #605d5d; }
+      /* 계절 물들임 — season.css 의 바탕과 같은 식이라 걷힐 때 색이 바뀌지 않는다. */
+      :root[data-season='spring'] #boot { --b-seed: #c23a6b; }
+      :root[data-season='summer'] #boot { --b-seed: #0b74b0; }
+      :root[data-season='autumn'] #boot { --b-seed: #b04a0e; }
+      :root[data-season='winter'] #boot { --b-seed: #3b6b94; }
+      :root[data-season] #boot { background: color-mix(in srgb, var(--b-seed) 6%, var(--b-bg)); }
+      :root[data-theme='dark'][data-season] #boot { background: color-mix(in srgb, var(--b-seed) 9%, var(--b-bg)); }
+      #boot.boot--out { opacity: 0; pointer-events: none; }
+      #boot p { margin: 0; }
+      .boot__ring {
+        display: grid; place-items: center; width: 56px; height: 56px;
+        border: 3px dashed var(--b-line); border-radius: 50%; font-size: 24px;
+        animation: boot-spin 2.4s linear infinite;
+      }
+      .boot__name {
+        font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+        font-size: 16px; font-weight: 700; letter-spacing: .08em;
+      }
+      .boot__msg, .boot__help p { font-size: 14px; color: var(--b-muted); line-height: 1.5; text-wrap: balance; }
+      .boot__help { display: none; flex-direction: column; align-items: center; gap: 12px; max-width: 320px; }
+      #boot.boot--slow .boot__help, #boot.boot--fail .boot__help { display: flex; }
+      #boot.boot--slow .boot__msg, #boot.boot--fail .boot__msg { display: none; }
+      #boot.boot--fail .boot__ring { animation: none; border-style: solid; }
+      .boot__reload {
+        min-height: 44px; padding: 0 16px; border: 0; border-radius: 0; cursor: pointer;
+        background: var(--b-text); color: var(--b-bg); font: inherit; font-size: 15px; font-weight: 700;
+      }
+      .boot__reload:focus-visible { outline: 2px solid #ec3013; outline-offset: 2px; }
+      @keyframes boot-spin { to { rotate: 360deg; } }
+      @media (prefers-reduced-motion: reduce) {
+        #boot, .boot__ring { animation: none; transition: none; }
+      }
+    </style>
+    <script>
+      // 테마 · 계절을 첫 그리기 전에 정한다(lib/theme.ts · lib/season.ts 와 같은 저장값 · 같은 규칙). 앱이 뜨면 같은 값을 다시 건다.
+      // 로딩 화면 제어 — 15초 넘으면 느린 망 안내, 진입 스크립트(type=module)를 못 받으면 실패 안내. 둘 다 다시 불러오기.
+      // 진입 스크립트보다 먼저 오류를 듣도록 <head> 에 둔다. #boot 가 아직 없으면 DOMContentLoaded 에 반영한다.
+      (function () {
+        var root = document.documentElement;
+        try {
+          var theme = localStorage.getItem('lunch-app:theme');
+          var dark = theme === 'dark' || (theme !== 'light' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) root.setAttribute('data-theme', 'dark');
+          root.style.colorScheme = dark ? 'dark' : 'light';
+          var season = localStorage.getItem('lunch-app:season') || 'auto';
+          if (season === 'auto') {
+            var m = new Date(Date.now() + 9 * 3600 * 1000).getUTCMonth() + 1;
+            season = m >= 3 && m <= 5 ? 'spring' : m >= 6 && m <= 8 ? 'summer' : m >= 9 && m <= 11 ? 'autumn' : 'winter';
+          }
+          if (/^(spring|summer|autumn|winter)$/.test(season)) root.setAttribute('data-season', season);
+        } catch (e) {
+          /* 저장이 막힌 창 — 기본 밝은 바탕으로 둔다 */
+        }
+        var state = null;
+        var finished = false;
+        function apply() {
+          var boot = document.getElementById('boot');
+          if (!boot || !state || finished) return;
+          boot.className = state.kind;
+          boot.querySelector('.boot__helpText').textContent = state.msg;
+        }
+        function show(kind, msg) {
+          if (finished) return;
+          state = { kind: kind, msg: msg };
+          apply();
+        }
+        document.addEventListener('DOMContentLoaded', apply);
+        var slow = setTimeout(function () {
+          show('boot--slow', '연결이 느려요. 다시 불러오면 나아질 수 있어요.');
+        }, 15000);
+        window.addEventListener('error', function (e) {
+          var t = e.target;
+          if (t && t.tagName === 'SCRIPT' && t.type === 'module') show('boot--fail', '앱 파일을 받지 못했어요. 연결을 확인하고 다시 불러와 주세요.');
+        }, true);
+        window.__lunchBoot = {
+          done: function () {
+            if (finished) return;
+            finished = true;
+            clearTimeout(slow);
+            var boot = document.getElementById('boot');
+            if (!boot) return;
+            var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+            boot.className = 'boot--out';
+            setTimeout(function () { boot.remove(); }, reduce ? 0 : 220);
+          }
+        };
+      })();
+    </script>
   </head>
   <body>
+    <div id="boot" role="status" aria-live="polite">
+      <span class="boot__ring" aria-hidden="true">🍱</span>
+      <p class="boot__name">오늘 점심</p>
+      <p class="boot__msg">점심 고를 준비를 하고 있어요</p>
+      <div class="boot__help">
+        <p class="boot__helpText">연결이 느려요. 다시 불러오면 나아질 수 있어요.</p>
+        <button type="button" class="boot__reload" onclick="location.reload()">다시 불러오기</button>
+      </div>
+      <noscript>
+        <p class="boot__nojs">자바스크립트를 켜면 점심을 고를 수 있어요</p>
+        <style>.boot__ring, .boot__msg { display: none; } .boot__nojs { font-size: 14px; }</style>
+      </noscript>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

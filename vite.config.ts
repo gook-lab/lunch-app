@@ -18,9 +18,10 @@ function deferModulFont(): Plugin {
 }
 
 /**
- * 팀용 빌드에서 Firebase 청크를 index.html 에 modulepreload 로 건다. lunch.ts 의 동적 import 는
+ * 데이터 구현 청크를 index.html 에 modulepreload 로 건다. lunch.ts 의 동적 import 는
  * index.js 를 다 받고 실행한 뒤에야 시작돼, Slow 4G 에서 firebase 청크(154KB gz)가 한 단계
- * 늦게 출발했다(10/15). 미리 받아 두면 index.js 와 나란히 받는다. 데모 빌드엔 이 청크가 없어 아무것도 안 붙는다.
+ * 늦게 출발했다(10/15). 미리 받아 두면 index.js 와 나란히 받는다. 데모 빌드는 firebase 대신
+ * 브라우저 저장 청크 넷(각 1KB 안팎)을 같은 방식으로 건다(11/27).
  *
  * 대가가 있다. 같은 대역폭을 나눠 index.js 가 늦게 끝나 FCP 는 1.20→1.66초로 늦고, 대신 LCP 는
  * 2.97→2.31초, firebase 청크 끝은 2.49→1.83초로 당겨졌다(Slow 4G·CPU 4배, 10/15). 팀용 첫 화면은
@@ -40,11 +41,11 @@ export const WARM_FIREBASE = [
   { href: 'https://firestore.googleapis.com', crossorigin: 'use-credentials' },
 ] as const
 
-function preloadFirebase(): Plugin {
+function preloadServices(): Plugin {
   let base = '/'
   let emulator = false
   return {
-    name: 'preload-firebase',
+    name: 'preload-services',
     configResolved(config) {
       base = config.base
       emulator = config.env.VITE_FIREBASE_EMULATOR === '1'
@@ -54,8 +55,11 @@ function preloadFirebase(): Plugin {
       handler(_html, ctx) {
         if (!ctx.bundle) return
         const chunks = Object.values(ctx.bundle).filter((c): c is Rollup.OutputChunk => c.type === 'chunk')
-        const entry = chunks.find((c) => c.facadeModuleId?.endsWith('/services/lunch.firebase.ts'))
-        if (!entry) return
+        // 첫 화면이 바로 부르는 데이터 구현 청크(lunch · parties · predictions · ratings 의 demo/firebase 쪽).
+        // 데모 빌드도 이 넷을 index.js 를 실행한 뒤에야 받기 시작해 한 왕복 늦었다(11/27, 4 Mbps 측정).
+        const services = chunks.filter((c) => /\/services\/(lunch|parties|predictions|ratings)\.(demo|firebase)\.ts$/.test(c.facadeModuleId ?? ''))
+        if (services.length === 0) return
+        const firebase = services.some((c) => c.facadeModuleId?.endsWith('/services/lunch.firebase.ts'))
         // 그 청크가 정적으로 끌어오는 청크까지(firebase SDK 묶음). index 가 이미 받는 것은 뺀다.
         const files = new Set<string>()
         const walk = (c: Rollup.OutputChunk) => {
@@ -66,14 +70,14 @@ function preloadFirebase(): Plugin {
             if (next) walk(next)
           }
         }
-        walk(entry)
+        services.forEach(walk)
         const preloads = [...files].map((f) => ({
           tag: 'link',
           attrs: { rel: 'modulepreload', crossorigin: true, href: base + f },
           injectTo: 'head' as const,
         }))
-        // 에뮬레이터 빌드는 Google 서버에 붙지 않으니 미리 열 연결도 없다.
-        if (emulator) return preloads
+        // 데모 빌드와 에뮬레이터 빌드는 Google 서버에 붙지 않으니 미리 열 연결도 없다.
+        if (!firebase || emulator) return preloads
         const warm = WARM_FIREBASE.map((w) => ({
           tag: 'link',
           attrs: { rel: 'preconnect', href: w.href, crossorigin: w.crossorigin },
@@ -87,7 +91,7 @@ function preloadFirebase(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [deferModulFont(), preloadFirebase(), react()],
+  plugins: [deferModulFont(), preloadServices(), react()],
   build: {
     // firebase 청크(526KB, gzip 154KB)만 500KB 를 넘는다. onSnapshot 을 써서 firestore/lite 로 못 줄이고,
     // 첫 화면은 이 청크를 기다리지 않는다(위 modulepreload 로 나란히 받음). 알고 둔 크기라 기준을 600 으로 둔다.
