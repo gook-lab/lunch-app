@@ -128,7 +128,7 @@ MODUL 패키지(`@gook-lab/ui` · `tokens` · `motion`)는 npm 공개 레지스�
 
 배포 주소는 카카오 개발자 콘솔의 Web 플랫폼 도메인에도 등록해야 지도가 열립니다.
 
-`vercel.json` 은 `/api`·`/assets` 를 뺀 모든 경로를 `index.html` 로 돌립니다. 그래서 `/foo` 같은 없는 주소도 Vercel 기본 404 대신 앱의 "이런 주소는 없어요" 화면을 받습니다(이때 응답 코드는 200 입니다).
+앱이 받는 주소는 `/` 하나뿐이라 `vercel.json` 은 어떤 경로도 `index.html` 로 돌리지 않습니다. `/foo` 같은 없는 주소는 Vercel 이 `public/404.html`(앱의 404 화면과 같은 모양, `noindex`)을 404 상태로 줍니다(2026-11-27).
 
 ## 검증
 
