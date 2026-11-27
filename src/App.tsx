@@ -52,6 +52,7 @@ import { categoryHue, categoryLabel } from './lib/category';
 import { josa, withJosa } from './lib/josa';
 import { officeCoord, officeSource } from './lib/walk';
 import { retryLoad } from './lib/retryLoad';
+import { hideBoot } from './lib/boot';
 import { gameGate, noticeMessage } from './lib/messages';
 import { decideToday } from './services/lunch';
 import { DemoNote } from './components/DemoNote';
@@ -745,14 +746,20 @@ export default function App() {
     return () => cancel(id);
   }, [state]);
 
+  // 목록이 준비되거나 실패하면 index.html 의 로딩 화면을 걷는다. 그전엔 그 화면이 아래 "불러오는 중" 을 덮는다.
+  useEffect(() => {
+    if (state !== 'loading') hideBoot();
+  }, [state]);
+
   if (state === 'loading') {
     return (
       <main className="app app--center">
         <StatusScreen
           role="status"
+          // index.html 의 로딩 화면(#boot)과 같은 그림 · 같은 글. 다시 시도할 때 이 화면이 보여도 처음과 같다.
           art={<span className="status__ring">🍱</span>}
-          title="불러오는 중이에요"
-          lines={['가게 목록과 방문 기록을 읽고 있어요']}
+          title="오늘 점심"
+          lines={['점심 고를 준비를 하고 있어요']}
         />
       </main>
     );

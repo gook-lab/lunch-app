@@ -31,7 +31,7 @@ async function builtHtml(env: { demo: string; emulator: string }): Promise<strin
   return String(html.source);
 }
 
-describe('팀용 index.html — Firebase 연결 미리 열기', () => {
+describe('index.html — 데이터 청크 · Firebase 연결 미리 열기', () => {
   it('팀용 빌드는 다른 태그보다 앞에서 두 서버에 preconnect 를 건다', async () => {
     const html = await builtHtml({ demo: '', emulator: '' });
     // 콘솔 오류를 남기던 빈 fetch 로 되돌아가지 않는다.
@@ -42,6 +42,13 @@ describe('팀용 index.html — Firebase 연결 미리 열기', () => {
     // 막는 스타일시트·모듈 스크립트보다 앞이어야 HTML 을 읽자마자 출발한다.
     expect(at).toBeLessThan(html.indexOf('rel="stylesheet"'));
     expect(at).toBeLessThan(html.indexOf('<script type="module"'));
+  }, 60_000);
+
+  it('데모 빌드도 첫 화면이 부르는 데이터 구현 청크 넷을 index.js 와 나란히 받는다', async () => {
+    const html = await builtHtml({ demo: '1', emulator: '' });
+    for (const name of ['lunch', 'parties', 'predictions', 'ratings']) {
+      expect(html).toMatch(new RegExp(`rel="modulepreload"[^>]*href="/assets/${name}\\.demo-[^"]+\\.js"`));
+    }
   }, 60_000);
 
   it('데모 빌드와 에뮬레이터 빌드에는 넣지 않는다', async () => {
