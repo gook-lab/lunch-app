@@ -15,13 +15,15 @@ interface Props {
   /** 개발자용 원문(오류 코드 등). 고정폭 상자에 따로 둔다. */
   code?: string;
   action?: ReactNode;
+  /** 설명과 단추 사이에 놓을 것(첫 사용 단계 등). */
+  children?: ReactNode;
   /** 불러오는 중이면 status, 실패면 alert 로 읽힌다. */
   role?: 'status' | 'alert';
   /** 탭 안에 들어가면 화면 높이를 다 쓰지 않는다. */
   inline?: boolean;
 }
 
-export function StatusScreen({ art, title, lines = [], code, action, role, inline = false }: Props) {
+export function StatusScreen({ art, title, lines = [], code, action, children, role, inline = false }: Props) {
   return (
     <section className={inline ? 'status status--inline' : 'status'} role={role} aria-live={role === 'status' ? 'polite' : undefined}>
       <div className="status__art" aria-hidden="true">
@@ -36,6 +38,7 @@ export function StatusScreen({ art, title, lines = [], code, action, role, inlin
           ))}
         </p>
       )}
+      {children}
       {action}
     </section>
   );

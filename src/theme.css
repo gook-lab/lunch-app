@@ -148,6 +148,59 @@
   text-decoration: none;
 }
 .status__btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.status__actions { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
+
+/* 첫 게임까지 세 칸(FirstSteps) — 식권 칸처럼 점선으로 이은 번호. 끝낸 칸은 채우고 지금 칸은 강조색 테. */
+.firstSteps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: min(100%, 420px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.firstSteps__step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding-inline: var(--space-1);
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+  color: var(--color-neutral-700);
+}
+/* 칸 사이 점선. 번호 동그라미 가운데 높이에 건다. */
+.firstSteps__step + .firstSteps__step::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  right: calc(50% + 18px);
+  width: calc(100% - 36px);
+  border-top: 1px dashed var(--color-neutral-500);
+}
+.firstSteps__num {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px dashed var(--color-neutral-500);
+  border-radius: 50%;
+  background: var(--color-bg);
+  font-family: var(--app-mono);
+  font-weight: 700;
+}
+.firstSteps__step--now { color: var(--color-text); font-weight: 700; }
+.firstSteps__step--now .firstSteps__num { border: 2px solid var(--color-accent); color: var(--color-accent-700); }
+.firstSteps__step--done .firstSteps__num { border-style: solid; border-color: var(--color-text); background: var(--color-text); color: var(--color-bg); }
+
+/* 휴대폰 가로(낮은 화면) — 빈 화면(세 칸이 있는 상태 화면)만 그림을 빼고 단추를 한 줄로 놓아
+   첫 단추가 아래 탭에 가리지 않게 한다(11/27, 844×390 에서 단추가 탭 밑에 깔렸다). */
+@media (max-height: 500px) {
+  .status--inline:has(.firstSteps) { gap: var(--space-2); padding-block: var(--space-4); }
+  .status--inline:has(.firstSteps) .status__art { display: none; }
+  .status--inline:has(.firstSteps) .status__actions { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+}
 
 /* 지도 오류 — 지도 자리의 점선 상자 */
 .map__troubleBox {
